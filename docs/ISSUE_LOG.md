@@ -20,16 +20,15 @@
 
 ## 이슈 목록
 
-| 이슈 ID | 상태 | 우선순위 | 유형 | 내용 | 결정 필요 사항 | 담당자 | 기록일 | 해결일 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ISSUE-001 | Open | High | Decision | MVP 기능 범위 최종 확정 필요 | 10주 MVP에서 반드시 구현할 기능과 제외할 기능 확정 | 미정 | 2026-06-30 | - |
-| ISSUE-002 | Open | Medium | Decision | `FLOW.md`를 `USER_FLOW.md`로 변경할지 결정 필요 | 현재 파일명을 유지할지, 사용자 흐름 문서임을 명확히 하기 위해 변경할지 결정 | 미정 | 2026-06-30 | - |
-| ISSUE-003 | Open | Medium | Decision | 추천 결과 저장 기능을 1차 구현에 포함할지 결정 필요 | 추천 결과 저장을 첫 구현에 포함할지, 복사 기능 이후 2순위로 둘지 결정 | 미정 | 2026-06-30 | - |
-| ISSUE-004 | Open | Medium | Decision | LocalStorage만 사용할지 SQLite까지 고려할지 결정 필요 | MVP에서는 LocalStorage만 사용할지, SQLite 도입 가능성을 검토할지 결정 | 미정 | 2026-06-30 | - |
+| 이슈 ID | 상태 | 우선순위 | 유형 | 내용 | 결정 필요 사항 | 해결 내용 | 담당자 | 기록일 | 해결일 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ISSUE-001 | Open | High | Decision | MVP 기능 범위 최종 확정 필요 | 10주 MVP에서 반드시 구현할 기능과 제외할 기능 확정 | - | 미정 | 2026-06-30 | - |
+| ISSUE-002 | Resolved | Medium | Decision | USER_FLOW.md 파일명 정리 완료 | 사용자 흐름 문서 파일명 정리 | 운영진 요구 파일명에 맞춰 FLOW.md를 USER_FLOW.md로 변경 | Codex | 2026-06-30 | 2026-06-30 |
+| ISSUE-003 | Open | Medium | Decision | 추천 결과 저장 기능을 1차 구현에 포함할지 결정 필요 | 추천 결과 저장을 첫 구현에 포함할지, 복사 기능 이후 2순위로 둘지 결정 | - | 미정 | 2026-06-30 | - |
+| ISSUE-004 | Open | Medium | Decision | LocalStorage만 사용할지 SQLite까지 고려할지 결정 필요 | MVP에서는 LocalStorage만 사용할지, SQLite 도입 가능성을 검토할지 결정 | - | 미정 | 2026-06-30 | - |
 
 ## 이슈 추가 템플릿
 
-| 이슈 ID | 상태 | 우선순위 | 유형 | 내용 | 결정 필요 사항 | 담당자 | 기록일 | 해결일 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ISSUE-000 | Open | High / Medium / Low | Decision / Bug / Risk / Question |  |  | 미정 | YYYY-MM-DD | - |
-
+| 이슈 ID | 상태 | 우선순위 | 유형 | 내용 | 결정 필요 사항 | 해결 내용 | 담당자 | 기록일 | 해결일 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ISSUE-000 | Open | High / Medium / Low | Decision / Bug / Risk / Question |  |  |  | 미정 | YYYY-MM-DD | - |

@@ -19,7 +19,6 @@
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
-- [ ] USER_FLOW.md 파일명 정리 여부 결정
 - [ ] 샘플 데이터 구조 고민
 - [ ] 첫 MVP 화면 구현 순서 정리
 
@@ -31,10 +30,11 @@
 
 ## Done
 
+- [x] USER_FLOW.md 파일명 정리 여부 결정
 - [x] GitHub 협업 규칙 문서 작성
 - [x] PRD.md 작성
 - [x] README.md 작성
 - [x] AGENTS.md 작성
-- [x] FLOW.md 작성
+- [x] USER_FLOW.md 작성
 - [x] IA.md 작성
 - [x] SCREEN_SPEC.md 작성

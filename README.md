@@ -86,6 +86,14 @@ campuslog/
 ├── frontend/
 ├── backend/
 ├── docs/
+│   ├── USER_FLOW.md
+│   ├── IA.md
+│   ├── SCREEN_SPEC.md
+│   ├── GIT_WORKFLOW.md
+│   ├── WORK_STATUS.md
+│   ├── TASK_LOG.md
+│   ├── TODO.md
+│   └── ISSUE_LOG.md
 ├── README.md
 ├── PRD.md
 └── AGENTS.md

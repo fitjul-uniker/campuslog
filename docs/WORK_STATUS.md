@@ -36,10 +36,12 @@ MVP 범위 자체는 팀 논의 후 다시 확정할 예정입니다.
 - [x] `PRD.md`
 - [x] `README.md`
 - [x] `AGENTS.md`
-- [x] `docs/FLOW.md`
+- [x] `docs/USER_FLOW.md`
 - [x] `docs/IA.md`
 - [x] `docs/SCREEN_SPEC.md`
 - [x] `docs/GIT_WORKFLOW.md`
+
+사용자 흐름 문서는 `docs/USER_FLOW.md`를 기준으로 확인합니다.
 
 ## 현재 완료된 개발 작업
 
@@ -60,7 +62,7 @@ MVP 범위 자체는 팀 논의 후 다시 확정할 예정입니다.
 ## 다음 작업자가 먼저 확인해야 할 문서
 
 1. `PRD.md`
-2. `docs/FLOW.md`
+2. `docs/USER_FLOW.md`
 3. `docs/IA.md`
 4. `docs/SCREEN_SPEC.md`
 5. `README.md`
