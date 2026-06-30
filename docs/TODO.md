@@ -14,7 +14,6 @@
 
 - [ ] MVP 기능 범위 최종 확정
 - [ ] 문서 3개 보완 검토
-- [ ] GitHub 협업 규칙 문서 작성
 - [ ] 다음 멘토링 질문 정리
 
 ## Medium Priority
@@ -32,10 +31,10 @@
 
 ## Done
 
+- [x] GitHub 협업 규칙 문서 작성
 - [x] PRD.md 작성
 - [x] README.md 작성
 - [x] AGENTS.md 작성
 - [x] FLOW.md 작성
 - [x] IA.md 작성
 - [x] SCREEN_SPEC.md 작성
-

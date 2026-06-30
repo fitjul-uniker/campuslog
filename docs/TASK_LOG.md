@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-06-30 - GitHub 협업 규칙 문서 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-06-30 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog 팀이 GitHub에서 안전하게 협업하기 위한 브랜치, PR, 커밋, Codex 작업 규칙 문서를 추가 |
+| 수정한 파일 | `docs/GIT_WORKFLOW.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/TODO.md` |
+| 변경 내용 | GitHub 협업 규칙 문서를 새로 작성하고, 완료 문서 목록과 TODO 상태를 업데이트 |
+| 검증한 내용 | `PRD.md`, `README.md`, `AGENTS.md`, `docs/FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`를 확인 |
+| 남은 작업 | MVP 기능 범위 최종 확정, 구현 시작 전 화면 구현 순서 정리 |
+| 관련 커밋 메시지 | `docs: add GitHub workflow guide` |
+
 ### 2026-06-30 - 작업 상태 기록 문서 추가
 
 | 항목 | 내용 |
@@ -42,4 +55,3 @@
 | 검증한 내용 | `PRD.md`, `README.md`, `AGENTS.md`, `docs/FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`를 기준 문서로 확인 |
 | 남은 작업 | MVP 기능 범위 최종 확정, GitHub 협업 규칙 문서 작성, 구현 시작 전 화면 구현 순서 정리 |
 | 관련 커밋 메시지 | `docs: add work tracking templates` |
-

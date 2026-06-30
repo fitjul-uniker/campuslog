@@ -39,6 +39,7 @@ MVP 범위 자체는 팀 논의 후 다시 확정할 예정입니다.
 - [x] `docs/FLOW.md`
 - [x] `docs/IA.md`
 - [x] `docs/SCREEN_SPEC.md`
+- [x] `docs/GIT_WORKFLOW.md`
 
 ## 현재 완료된 개발 작업
 
@@ -48,7 +49,6 @@ MVP 범위 자체는 팀 논의 후 다시 확정할 예정입니다.
 ## 아직 시작하지 않은 작업
 
 - MVP 기능 범위 최종 확정
-- GitHub 협업 규칙 문서 작성
 - Next.js 프론트엔드 초기 세팅
 - 활동 경험 목록 / 작성 / 수정 화면 구현
 - AI 경험 분석 결과 화면 구현
@@ -65,16 +65,16 @@ MVP 범위 자체는 팀 논의 후 다시 확정할 예정입니다.
 4. `docs/SCREEN_SPEC.md`
 5. `README.md`
 6. `AGENTS.md`
-7. `docs/TODO.md`
-8. `docs/ISSUE_LOG.md`
-9. `docs/TASK_LOG.md`
+7. `docs/GIT_WORKFLOW.md`
+8. `docs/TODO.md`
+9. `docs/ISSUE_LOG.md`
+10. `docs/TASK_LOG.md`
 
 ## 다음 추천 작업
 
 - [ ] MVP 기능 범위를 팀원들과 최종 확정
 - [ ] `docs/TODO.md`의 High Priority 항목부터 검토
 - [ ] `docs/ISSUE_LOG.md`의 결정 보류 이슈 처리
-- [ ] GitHub 브랜치 / 커밋 / PR 규칙 문서 작성
 - [ ] 구현 시작 전 화면 구현 순서 확정
 
 ## 주의사항
@@ -85,4 +85,3 @@ MVP 범위 자체는 팀 논의 후 다시 확정할 예정입니다.
 - API Key, 토큰, 비밀번호 등 민감한 정보는 문서나 코드에 직접 작성하지 않습니다.
 - 실제 사용자 개인정보나 민감한 활동 기록을 샘플 데이터로 사용하지 않습니다.
 - 기존 문서를 수정할 때는 수정 이유와 변경 내용을 `docs/TASK_LOG.md`에 남깁니다.
-
