@@ -2,7 +2,7 @@
 
 ## Purpose
 
-이 문서는 CampusLog MVP의 메뉴 구조, 페이지 구조, 화면 간 이동 관계를 정리합니다. MVP에서는 로그인 없이 브라우저 LocalStorage를 사용해 핵심 사용자 경험을 검증합니다.
+이 문서는 CampusLog 1차 MVP의 메뉴 구조, 페이지 구조, 화면 간 이동 관계를 정리합니다. 1차 MVP에서는 로그인 없이 브라우저 localStorage를 사용해 핵심 사용자 경험을 검증합니다.
 
 ## MVP Menu Structure
 
@@ -62,10 +62,11 @@ CampusLog
 
 ## Out of Scope IA
 
-이번 MVP에서는 아래 메뉴와 페이지를 만들지 않습니다.
+1차 MVP에서는 아래 메뉴와 페이지를 만들지 않습니다.
 
 - 로그인 / 회원가입 페이지
 - 마이페이지
+- 파일 첨부 관리 페이지
 - 관리자 페이지
 - 결제 페이지
 - 커뮤니티 페이지
@@ -73,4 +74,11 @@ CampusLog
 - GitHub / 블로그 / Notion 연동 설정 페이지
 - PDF 포트폴리오 생성 페이지
 - 여러 추천 후보 탐색 페이지
+- Supabase 사용자 / 파일 관리 화면
 - Spring Boot 백엔드 관리 화면
+
+## Future Expansion IA
+
+2차 MVP에서는 로그인 / 회원가입, 마이페이지, 사용자별 활동 기록, 수료증 / 활동사진 첨부 관리 화면을 확장 IA로 검토할 수 있습니다.
+
+3차 확장에서는 UNIKER 이후 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3를 사용하는 백엔드 포트폴리오 확장용 관리 구조를 별도 검토합니다.
