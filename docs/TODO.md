@@ -8,28 +8,35 @@
 
 - 새 작업은 우선순위에 맞는 섹션에 추가합니다.
 - 완료한 작업은 체크 후 `Done` 섹션으로 이동합니다.
-- MVP 범위 변경이 필요한 작업은 바로 구현하지 않고 `docs/ISSUE_LOG.md`에도 기록합니다.
+- 1차 MVP 범위 변경이 필요한 작업은 바로 구현하지 않고 `docs/ISSUE_LOG.md`에도 기록합니다.
 
 ## High Priority
 
-- [ ] MVP 기능 범위 최종 확정
-- [ ] 문서 3개 보완 검토
-- [ ] 다음 멘토링 질문 정리
+- [ ] Next.js 프론트엔드 초기 세팅
+- [ ] LocalStorage 데이터 구조 설계
+- [ ] `sampleExperiences.ts` 작성
+- [ ] 활동 경험 목록 / 작성 화면 구현 순서 확정
+- [ ] Vercel 배포 준비
 
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
-- [ ] 샘플 데이터 구조 고민
-- [ ] 첫 MVP 화면 구현 순서 정리
+- [ ] OpenAI API 연결 방식 검토
+- [ ] AI 경험 분석 결과 화면 구현 순서 정리
+- [ ] AI 경험 추천 및 활용 화면 구현 순서 정리
+- [ ] 2차 MVP Supabase Auth / Postgres / Storage 도입 범위 검토
 
 ## Low Priority
 
-- [ ] Vercel 배포 검토
-- [ ] SQLite 도입 여부 검토
-- [ ] 향후 Spring Boot / MySQL 확장 방향 정리
+- [ ] 3차 확장 Spring Boot REST API 도입 방향 정리
+- [ ] 3차 확장 MySQL 또는 AWS RDS 전환 방향 정리
+- [ ] 3차 확장 AWS S3 파일 저장 방향 정리
 
 ## Done
 
+- [x] MVP 기능 범위 최종 확정
+- [x] 개발 단계 전략 확정
+- [x] SQLite 도입 여부 검토: 1차 MVP에서는 사용하지 않음
 - [x] USER_FLOW.md 파일명 정리 여부 결정
 - [x] GitHub 협업 규칙 문서 작성
 - [x] PRD.md 작성
