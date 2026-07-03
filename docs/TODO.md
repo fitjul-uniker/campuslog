@@ -27,6 +27,7 @@
 - [ ] OpenAI API 연결 방식 검토
 - [ ] AI 경험 분석 결과 화면 구현 순서 정리
 - [ ] AI 경험 추천 및 활용 화면 구현 순서 정리
+  - [ ] 추천 결과 localStorage 저장 구현 순서 정리 (첫 구현에서는 복사 기능보다 낮은 2순위)
 - [ ] 2차 MVP Supabase Auth / Postgres / Storage 도입 범위 검토
 
 ## Low Priority
