@@ -12,13 +12,12 @@
 
 ## High Priority
 
-- [ ] 활동 경험 상세 화면에서 AI 분석 요청 CTA 실행 흐름 구현
+- [ ] AI 경험 추천 및 활용 기능 구현
 - [ ] Vercel 배포 준비
 
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
-- [ ] OpenAI API 연결 방식 결정
 - [ ] 추천 결과 저장을 `feature/ai-recommendation`에 포함할지 별도 PR로 분리할지 결정
 - [ ] 정렬 옵션의 `오래된순` / `오래된 작성순` 표현 확정
 - [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
@@ -32,6 +31,12 @@
 
 ## Done
 
+- [x] AI 경험 분석 API Route 구현
+- [x] OpenAI API 연결 방식 결정: API Route에서 server-side `fetch` 사용
+- [x] 활동 경험 상세 화면에서 AI 분석 요청 CTA 실행 흐름 구현
+- [x] AI 경험 분석 결과 화면 구현
+- [x] 분석 결과 localStorage 저장 및 `analysisStatus: "analyzed"` 전환 구현
+- [x] AI 분석 실패 시 경험 데이터 유지와 재시도 UI 구현
 - [x] localStorage 기반 경험 CRUD 구현
 - [x] 활동 경험 목록 / 작성 / 수정 / 상세 화면 실제 동작 구현
 - [x] 활동 경험 상세 화면 구현
