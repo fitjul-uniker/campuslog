@@ -27,14 +27,14 @@
 - [ ] `sampleExperiences.ts` 초기 화면 자동 주입 여부 결정
 - [ ] 추천 결과 저장을 `feature/ai-recommendation`에 포함할지 별도 PR로 분리할지 결정
 - [ ] 정렬 옵션의 `오래된순` / `오래된 작성순` 표현 확정
-- [ ] 2차 MVP Supabase Auth / Postgres / Storage 도입 범위 검토
+- [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
 
 ## Low Priority
 
 - [ ] 책갈피 노트 파비콘 구현 방식 결정
-- [ ] 3차 확장 Spring Boot REST API 도입 방향 정리
-- [ ] 3차 확장 MySQL 또는 AWS RDS 전환 방향 정리
-- [ ] 3차 확장 AWS S3 파일 저장 방향 정리
+- [ ] UNIKER 이후 개인 Backend Portfolio Edition의 Spring Boot REST API 도입 방향 정리
+- [ ] UNIKER 이후 개인 Backend Portfolio Edition의 MySQL 또는 AWS RDS 전환 방향 정리
+- [ ] UNIKER 이후 개인 Backend Portfolio Edition의 AWS S3 파일 저장 방향 정리
 
 ## Done
 

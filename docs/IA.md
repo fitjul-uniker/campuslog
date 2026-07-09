@@ -167,11 +167,11 @@ CampusLog
 - 여러 추천 후보 탐색 페이지
 - 역량 태그 모아보기 페이지
 - Supabase 사용자 / 파일 관리 화면
-- Spring Boot 백엔드 관리 화면
+- UNIKER 이후 개인 Backend Portfolio Edition 관리 화면
 
 ## Future Expansion IA
 
-2차 MVP에서는 서비스 소개 랜딩, 로그인 / 회원가입, 마이페이지, 사용자별 활동 기록, 수료증 / 활동사진 첨부 관리 화면을 확장 IA로 검토할 수 있습니다.
+2차 MVP에서는 Next.js Full Stack + Supabase 기반으로 서비스 소개 랜딩, 로그인 / 회원가입, 마이페이지, 사용자별 활동 기록, 수료증 / 활동사진 첨부 관리 화면을 확장 IA로 검토할 수 있습니다.
 
 2차 MVP에서는 사용자의 활용 목적에 따라 적합한 경험을 1순위, 2순위, 3순위까지 추천하고, 각 경험의 추천 이유를 비교해 보여주는 UI를 검토합니다.
 
@@ -179,4 +179,4 @@ CampusLog
 이 화면에서는 특정 역량 태그를 클릭해 연결된 활동 경험 목록을 확인하고, 해당 역량이 자기소개서, 포트폴리오, 면접에서 어떻게 활용될 수 있는지 추천할 수 있습니다.
 장기적으로는 사용자가 자주 쌓은 역량과 부족한 역량을 보고 앞으로 어떤 활동을 하면 좋을지 방향성을 얻는 화면으로 확장할 수 있습니다.
 
-3차 확장에서는 UNIKER 이후 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3를 사용하는 백엔드 포트폴리오 확장용 관리 구조를 별도 검토합니다.
+UNIKER 이후 개인 Backend Portfolio Edition에서는 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3를 사용하는 백엔드 포트폴리오 확장용 관리 구조를 별도 검토합니다.

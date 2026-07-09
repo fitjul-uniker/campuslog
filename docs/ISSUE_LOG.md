@@ -22,12 +22,12 @@
 
 | 이슈 ID | 상태 | 우선순위 | 유형 | 내용 | 결정 필요 사항 | 해결 내용 | 담당자 | 기록일 | 해결일 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ISSUE-001 | Resolved | High | Decision | MVP 기능 범위 최종 확정 필요 | 10주 MVP에서 반드시 구현할 기능과 제외할 기능 확정 | 1차 MVP 범위를 활동 경험 기록, AI 경험 분석, AI 경험 추천 및 활용으로 확정. 로그인 / 회원가입, DB, Supabase, Spring Boot, 파일 업로드는 1차 MVP에서 제외 | Codex | 2026-06-30 | 2026-07-01 |
+| ISSUE-001 | Resolved | High | Decision | MVP 기능 범위 최종 확정 필요 | 10주 MVP에서 반드시 구현할 기능과 제외할 기능 확정 | 1차 MVP 범위를 활동 경험 기록, AI 경험 분석, AI 경험 추천 및 활용으로 확정. 로그인 / 회원가입, DB, Supabase, 파일 업로드, 개인 Backend Portfolio Edition용 별도 백엔드 스택은 1차 MVP에서 제외 | Codex | 2026-06-30 | 2026-07-01 |
 | ISSUE-002 | Resolved | Medium | Decision | USER_FLOW.md 파일명 정리 완료 | 사용자 흐름 문서 파일명 정리 | 운영진 요구 파일명에 맞춰 FLOW.md를 USER_FLOW.md로 변경 | Codex | 2026-06-30 | 2026-06-30 |
 | ISSUE-003 | Resolved | Medium | Decision | 추천 결과 저장 기능 우선순위 결정 | 추천 결과 저장을 첫 구현에 포함할지, 복사 기능 이후 낮은 우선순위로 둘지 결정 | 추천 결과 저장은 1차 MVP 범위에 포함하되, 첫 구현에서는 복사 기능보다 낮은 우선순위로 둠 | Codex | 2026-06-30 | 2026-07-03 |
 | ISSUE-004 | Resolved | Medium | Decision | LocalStorage만 사용할지 SQLite까지 고려할지 결정 필요 | 1차 MVP에서는 LocalStorage만 사용할지, SQLite 도입 가능성을 검토할지 결정 | 1차 MVP는 Browser localStorage만 사용하고 SQLite는 도입하지 않음 | Codex | 2026-06-30 | 2026-07-01 |
-| ISSUE-005 | Deferred | Medium | Decision | 2차 MVP에서 Supabase Auth / DB / Storage 도입 범위 결정 | Supabase Auth, Supabase Postgres, Supabase Storage, Next.js API Route 또는 Server Action의 도입 범위와 우선순위 결정 | 2차 MVP 확장 예정 항목으로 보류 | 미정 | 2026-07-01 | - |
-| ISSUE-006 | Deferred | Low | Decision | 3차 확장에서 Spring Boot / MySQL / RDS / S3 마이그레이션 전략 결정 | UNIKER 이후 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3로 확장할 범위와 마이그레이션 순서 결정 | UNIKER 이후 백엔드 포트폴리오 확장 항목으로 보류 | 미정 | 2026-07-01 | - |
+| ISSUE-005 | Deferred | Medium | Decision | 2차 MVP에서 Next.js Full Stack + Supabase 도입 범위 결정 | Supabase Auth, Supabase Postgres, Supabase Storage, Next.js API Route 또는 Server Action의 도입 범위와 우선순위 결정 | 2차 MVP 확장 예정 항목으로 보류 | 미정 | 2026-07-01 | - |
+| ISSUE-006 | Deferred | Low | Decision | UNIKER 이후 개인 Backend Portfolio Edition 마이그레이션 전략 결정 | Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3로 확장할 범위와 마이그레이션 순서 결정 | CampusLog 본 MVP가 아니라 UNIKER 이후 개인 백엔드 포트폴리오 확장 항목으로 보류 | 미정 | 2026-07-01 | - |
 | ISSUE-007 | Open | Medium | Question | `sampleExperiences.ts` 초기 화면 자동 주입 여부 결정 필요 | 샘플 경험을 실제 사용자 localStorage에 자동 저장할지, 빈 상태 검증용 개발 데이터로만 둘지 결정 | - | 미정 | 2026-07-09 | - |
 | ISSUE-008 | Open | Medium | Decision | OpenAI API 호출 방식 결정 필요 | API Route에서 OpenAI SDK를 사용할지, server-side `fetch`를 사용할지 결정 | - | 미정 | 2026-07-09 | - |
 | ISSUE-009 | Open | Low | Decision | 책갈피 노트 파비콘 구현 방식 결정 필요 | 직접 제작한 파비콘을 사용할지, 임시 Lucide 기반 아이콘으로 시작할지 결정 | - | 미정 | 2026-07-09 | - |
