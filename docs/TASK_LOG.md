@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-09 - PR 언어 규칙 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-09 |
+| 작업자 | Codex |
+| 작업 요약 | 커밋 메시지와 PR 제목은 영어로 유지하되, PR 본문은 한국어로 작성하도록 `AGENTS.md`와 `docs/GIT_WORKFLOW.md`의 협업 규칙을 보강 |
+| 수정한 파일 | `AGENTS.md`, `docs/GIT_WORKFLOW.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `AGENTS.md`의 Git / PR 규칙에 커밋 메시지와 PR 제목은 영어, PR 본문은 한국어라는 기준을 추가. `docs/GIT_WORKFLOW.md`의 PR 생성 절차에도 같은 기준을 명시 |
+| 검증한 내용 | `AGENTS.md`와 `docs/GIT_WORKFLOW.md`의 PR 언어 규칙이 서로 충돌하지 않는지 확인하고 `git diff --check`로 문서 형식을 점검 |
+| 남은 작업 | 다음 PR부터 본문은 한국어, 제목과 커밋 메시지는 영어로 작성 |
+| 관련 커밋 메시지 | `docs: clarify PR language rules` |
+
 ### 2026-07-09 - localStorage 기반 경험 CRUD 구현
 
 | 항목 | 내용 |
