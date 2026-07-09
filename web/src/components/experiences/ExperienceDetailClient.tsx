@@ -6,10 +6,12 @@ import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { ExperienceDetail } from "@/components/experiences/ExperienceDetail";
+import { requestExperienceAnalysis } from "@/lib/analysisApi";
 import {
   deleteExperience,
   getAnalysisByExperienceId,
   getExperienceById,
+  saveAnalysisResult,
 } from "@/lib/storage";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
@@ -23,6 +25,8 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
     undefined,
   );
   const [analysis, setAnalysis] = useState<ExperienceAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
 
   useEffect(() => {
     setExperience(getExperienceById(id));
@@ -32,6 +36,38 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   function handleDelete() {
     deleteExperience(id);
     router.push("/");
+  }
+
+  async function handleAnalyze() {
+    if (!experience) {
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisError("");
+
+    const response = await requestExperienceAnalysis(experience);
+
+    if (!response.ok) {
+      setAnalysisError(response.error.message);
+      setIsAnalyzing(false);
+      return;
+    }
+
+    const savedAnalysis = saveAnalysisResult(response.analysis);
+
+    if (!savedAnalysis) {
+      setAnalysisError(
+        "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해주세요.",
+      );
+      setIsAnalyzing(false);
+      return;
+    }
+
+    setAnalysis(savedAnalysis);
+    setExperience(getExperienceById(id));
+    setIsAnalyzing(false);
+    router.push(`/experiences/${id}/analysis`);
   }
 
   if (experience === undefined) {
@@ -76,6 +112,9 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
         experience={experience}
         analysis={analysis}
         onDelete={handleDelete}
+        onAnalyze={handleAnalyze}
+        isAnalyzing={isAnalyzing}
+        analysisError={analysisError}
       />
     </div>
   );

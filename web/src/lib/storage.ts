@@ -1,6 +1,7 @@
 import { createIsoTimestamp } from "@/lib/date";
 import type {
   AnalysisStatus,
+  AnalysisApiResult,
   Experience,
   ExperienceAnalysis,
   ExperienceFormInput,
@@ -306,12 +307,30 @@ export function getAnalysisByExperienceId(
   return readStoredAnalyses()[experienceId] ?? null;
 }
 
-export function saveAnalysisResult(result: ExperienceAnalysis): ExperienceAnalysis {
+export function saveAnalysisResult(
+  result: AnalysisApiResult,
+): ExperienceAnalysis | null {
+  const experiences = readStoredExperiences();
+  const sourceExperience = experiences.find(
+    (experience) => experience.id === result.experienceId,
+  );
+
+  if (!sourceExperience) {
+    return null;
+  }
+
+  const timestamp = createIsoTimestamp();
+  const analysis: ExperienceAnalysis = {
+    id: createId("analysis"),
+    ...result,
+    generatedAt: timestamp,
+    sourceExperienceUpdatedAt: sourceExperience.updatedAt,
+  };
+
   const analyses = readStoredAnalyses();
-  analyses[result.experienceId] = result;
+  analyses[result.experienceId] = analysis;
   writeJson(STORAGE_KEYS.analyses, analyses);
 
-  const experiences = readStoredExperiences();
   saveExperiences(
     experiences.map((experience) =>
       experience.id === result.experienceId
@@ -320,7 +339,7 @@ export function saveAnalysisResult(result: ExperienceAnalysis): ExperienceAnalys
     ),
   );
 
-  return result;
+  return analysis;
 }
 
 export function getRecommendationResults(): RecommendationResult[] {

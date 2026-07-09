@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-09 - AI 경험 분석 기능 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-09 |
+| 작업자 | Codex |
+| 작업 요약 | `feature/ai-analysis` 범위로 특정 활동 경험을 Next.js API Route와 OpenAI API로 분석하고, 분석 결과를 localStorage에 저장해 경험의 분석 상태를 갱신하는 흐름을 구현 |
+| 수정한 파일 | `web/src/app/api/analyze/route.ts`, `web/src/lib/types.ts`, `web/src/lib/storage.ts`, `web/src/lib/analysisApi.ts`, `web/src/components/ai/AnalysisResult.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `web/src/components/experiences/ExperienceDetail.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | `/api/analyze` POST Route를 추가하고 서버 환경 변수 `OPENAI_API_KEY`로만 OpenAI Responses API를 호출하도록 구현. 분석 요청 / 응답 / 오류 타입을 보강하고, API 응답 형태와 저장된 `ExperienceAnalysis` 타입을 분리. `saveAnalysisResult`가 `id`, `generatedAt`, `sourceExperienceUpdatedAt`을 저장 시점에 부여하고 해당 경험의 `analysisStatus`를 `analyzed`로 변경하도록 보완. 상세 화면에는 AI 분석 요청, loading / disabled, 실패 안내, 분석 결과 보기 액션을 연결. 분석 결과 화면에는 요약, 핵심 역량 태그, 주요 성과, 키워드, 생성일, 재분석 필요 안내와 다시 분석 액션을 추가 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build` 통과. `/api/analyze` 직접 호출로 `MISSING_API_KEY`, OpenAI 오류 일반화 응답, 유효한 새 API Key 기준 성공 응답을 확인. dev server에서 새 경험 작성, 상세 화면 이동, 분석 요청 loading / disabled, 실패 후 경험 데이터 유지와 재시도 UI, 분석 결과 없음 화면, 새로고침 후 경험 목록 유지, `/api/recommend` 미생성, 클라이언트 정적 번들에 API Key 관련 문자열이 포함되지 않음을 확인 |
+| 남은 작업 | 유효한 API Key를 사용하는 일반 `npm run dev` 환경에서는 상위 쉘의 기존 `OPENAI_API_KEY`가 `.env.local`보다 우선되지 않도록 로컬 환경 정리가 필요. 유효 키 기준으로 브라우저에서 상세 화면 버튼 클릭부터 localStorage 분석 결과 저장, 목록의 `분석 완료`, 경험 수정 후 `needs_reanalysis`, 다시 분석 후 `analyzed` 복귀까지 전체 성공 흐름을 추가 확인해야 함. AI 추천 기능은 이번 PR에서 구현하지 않았고 다음 `feature/ai-recommendation` 범위로 남김 |
+| 관련 커밋 메시지 | 후보: `feature: add AI experience analysis` |
+
 ### 2026-07-09 - PR 언어 규칙 정리
 
 | 항목 | 내용 |

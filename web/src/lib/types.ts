@@ -49,6 +49,36 @@ export type ExperienceAnalysis = {
   sourceExperienceUpdatedAt: string;
 };
 
+export type AnalysisApiResult = Pick<
+  ExperienceAnalysis,
+  "experienceId" | "summary" | "competencyTags" | "achievements" | "keywords"
+>;
+
+export type AnalyzeRequest = {
+  experience: Experience;
+};
+
+export type ApiErrorCode =
+  | "BAD_REQUEST"
+  | "OPENAI_API_ERROR"
+  | "MISSING_API_KEY"
+  | "UNKNOWN_ERROR";
+
+export type ApiErrorResponse = {
+  ok: false;
+  error: {
+    code: ApiErrorCode;
+    message: string;
+  };
+};
+
+export type AnalyzeResponse =
+  | {
+      ok: true;
+      analysis: AnalysisApiResult;
+    }
+  | ApiErrorResponse;
+
 export type RecommendationResult = {
   id: string;
   purpose: RecommendationPurpose;

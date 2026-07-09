@@ -726,6 +726,33 @@ h2 {
   gap: 12px;
 }
 
+.analysis-helper {
+  color: #7a4f11;
+  font-weight: 750;
+}
+
+.analysis-notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid rgba(169, 113, 31, 0.32);
+  border-radius: 8px;
+  background: #fff6e6;
+  color: #7a4f11;
+  padding: 14px;
+}
+
+.analysis-notice svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.analysis-notice p {
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+
 .muted-text {
   margin-bottom: 0;
   color: var(--color-text-muted);

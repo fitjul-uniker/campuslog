@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpenText, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpenText, RefreshCcw, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { AnalysisResult } from "@/components/ai/AnalysisResult";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { formatDateTime } from "@/lib/date";
+import { requestExperienceAnalysis } from "@/lib/analysisApi";
 import {
   getAnalysisByExperienceId,
   getExperienceById,
+  saveAnalysisResult,
 } from "@/lib/storage";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
@@ -22,11 +24,49 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     undefined,
   );
   const [analysis, setAnalysis] = useState<ExperienceAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
 
   useEffect(() => {
     setExperience(getExperienceById(id));
     setAnalysis(getAnalysisByExperienceId(id));
   }, [id]);
+
+  async function handleAnalyze() {
+    if (!experience) {
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisError("");
+
+    const response = await requestExperienceAnalysis(experience);
+
+    if (!response.ok) {
+      setAnalysisError(response.error.message);
+      setIsAnalyzing(false);
+      return;
+    }
+
+    const savedAnalysis = saveAnalysisResult(response.analysis);
+
+    if (!savedAnalysis) {
+      setAnalysisError(
+        "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해주세요.",
+      );
+      setIsAnalyzing(false);
+      return;
+    }
+
+    const updatedExperience = getExperienceById(id);
+
+    if (updatedExperience) {
+      setExperience(updatedExperience);
+    }
+
+    setAnalysis(savedAnalysis);
+    setIsAnalyzing(false);
+  }
 
   if (experience === undefined) {
     return (
@@ -66,74 +106,86 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
         </div>
       </section>
 
-      <section className="detail-panel" aria-labelledby="analysis-title">
-        <div className="detail-header">
-          <div>
-            <p className="experience-meta">{experience.title}</p>
-            <h2 id="analysis-title">
-              {analysis ? "저장된 분석 결과" : "아직 분석 결과가 없습니다"}
-            </h2>
-          </div>
-          <StatusBadge status={experience.analysisStatus} />
-        </div>
-
-        {analysis ? (
-          <>
-            <div className="detail-section">
-              <h3>경험 요약</h3>
-              <p>{analysis.summary}</p>
-            </div>
-            <div className="detail-section">
-              <h3>핵심 역량 태그</h3>
-              <div className="experience-tags">
-                {analysis.competencyTags.map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-            </div>
-            <div className="detail-section">
-              <h3>주요 성과</h3>
-              <ul className="plain-list">
-                {analysis.achievements.map((achievement) => (
-                  <li key={achievement}>{achievement}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="detail-section">
-              <h3>활용 가능한 키워드</h3>
-              <div className="experience-tags">
-                {analysis.keywords.map((keyword) => (
-                  <span key={keyword}>{keyword}</span>
-                ))}
-              </div>
-            </div>
-            <p className="muted-text">
-              분석 생성일 {formatDateTime(analysis.generatedAt)}
+      {analysis ? (
+        <>
+          <AnalysisResult experience={experience} analysis={analysis} />
+          {analysisError ? (
+            <p className="form-error" role="alert">
+              {analysisError}
             </p>
-          </>
-        ) : (
+          ) : null}
+          <div className="panel-actions">
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+            >
+              <RefreshCcw className="button-icon" aria-hidden="true" />
+              {isAnalyzing ? "분석 중..." : "다시 분석하기"}
+            </button>
+            <Link
+              href={`/experiences/${experience.id}`}
+              className="button button-secondary"
+            >
+              <ArrowLeft className="button-icon" aria-hidden="true" />
+              활동 경험 상세로 돌아가기
+            </Link>
+            <Link href="/" className="button button-secondary">
+              대시보드로 돌아가기
+            </Link>
+            <Link href="/recommend" className="button button-ghost">
+              <Sparkles className="button-icon" aria-hidden="true" />
+              AI 추천
+            </Link>
+          </div>
+        </>
+      ) : (
+        <section className="detail-panel" aria-labelledby="analysis-title">
+          <div className="detail-header">
+            <div>
+              <p className="experience-meta">{experience.title}</p>
+              <h2 id="analysis-title">아직 분석 결과가 없습니다</h2>
+            </div>
+            <StatusBadge status={experience.analysisStatus} />
+          </div>
+
           <div className="analysis-empty">
             <p>
-              이번 PR에서는 AI 분석 API를 연결하지 않아 분석 결과 생성은 준비
-              상태로 남겨둡니다.
+              이 경험에 저장된 AI 분석 결과가 없습니다. 상세 화면으로 돌아가거나
+              여기에서 바로 분석을 요청할 수 있습니다.
             </p>
           </div>
-        )}
 
-        <div className="panel-actions">
-          <Link href={`/experiences/${experience.id}`} className="button button-primary">
-            <ArrowLeft className="button-icon" aria-hidden="true" />
-            활동 경험 상세로 돌아가기
-          </Link>
-          <Link href="/" className="button button-secondary">
-            대시보드로 돌아가기
-          </Link>
-          <Link href="/recommend" className="button button-ghost">
-            <Sparkles className="button-icon" aria-hidden="true" />
-            AI 추천
-          </Link>
-        </div>
-      </section>
+          {analysisError ? (
+            <p className="form-error" role="alert">
+              {analysisError}
+            </p>
+          ) : null}
+
+          <div className="panel-actions">
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+            >
+              <Sparkles className="button-icon" aria-hidden="true" />
+              {isAnalyzing ? "분석 중..." : "AI 분석 요청"}
+            </button>
+            <Link
+              href={`/experiences/${experience.id}`}
+              className="button button-secondary"
+            >
+              <ArrowLeft className="button-icon" aria-hidden="true" />
+              활동 경험 상세로 돌아가기
+            </Link>
+            <Link href="/" className="button button-ghost">
+              대시보드로 돌아가기
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BarChart3, PenLine, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart3,
+  PenLine,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { formatDateTime } from "@/lib/date";
@@ -11,6 +17,9 @@ type ExperienceDetailProps = {
   experience: Experience;
   analysis?: ExperienceAnalysis | null;
   onDelete: () => void;
+  onAnalyze: () => void;
+  isAnalyzing: boolean;
+  analysisError?: string;
 };
 
 function isExternalUrl(value: string): boolean {
@@ -21,8 +30,17 @@ export function ExperienceDetail({
   experience,
   analysis,
   onDelete,
+  onAnalyze,
+  isAnalyzing,
+  analysisError,
 }: ExperienceDetailProps) {
   const hasBeenEdited = experience.createdAt !== experience.updatedAt;
+  const canAnalyze =
+    !analysis || experience.analysisStatus === "needs_reanalysis";
+  const analyzeLabel =
+    experience.analysisStatus === "needs_reanalysis"
+      ? "다시 분석하기"
+      : "AI 분석 요청";
 
   function handleDelete() {
     const shouldDelete = window.confirm(
@@ -104,6 +122,11 @@ export function ExperienceDetail({
         <h3>AI 분석</h3>
         {analysis ? (
           <div className="analysis-summary">
+            {experience.analysisStatus === "needs_reanalysis" ? (
+              <p className="analysis-helper">
+                경험이 분석 이후 수정되어 최신 내용 기준 재분석이 필요합니다.
+              </p>
+            ) : null}
             <p>{analysis.summary}</p>
             <div className="experience-tags">
               {analysis.competencyTags.map((tag) => (
@@ -114,22 +137,42 @@ export function ExperienceDetail({
         ) : (
           <p className="muted-text">아직 AI 분석 결과가 없습니다.</p>
         )}
+        {analysisError ? (
+          <p className="form-error" role="alert">
+            {analysisError}
+          </p>
+        ) : null}
       </div>
 
       <div className="panel-actions detail-actions">
+        {canAnalyze ? (
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={onAnalyze}
+            disabled={isAnalyzing}
+          >
+            <Sparkles className="button-icon" aria-hidden="true" />
+            {isAnalyzing ? "분석 중..." : analyzeLabel}
+          </button>
+        ) : null}
+        {analysis ? (
+          <Link
+            href={`/experiences/${experience.id}/analysis`}
+            className="button button-secondary"
+          >
+            <BarChart3 className="button-icon" aria-hidden="true" />
+            분석 결과 보기
+          </Link>
+        ) : null}
         <Link
           href={`/experiences/${experience.id}/edit`}
-          className="button button-primary"
+          className={
+            canAnalyze ? "button button-secondary" : "button button-primary"
+          }
         >
           <PenLine className="button-icon" aria-hidden="true" />
           수정
-        </Link>
-        <Link
-          href={`/experiences/${experience.id}/analysis`}
-          className="button button-secondary"
-        >
-          <BarChart3 className="button-icon" aria-hidden="true" />
-          {analysis ? "분석 결과 보기" : "분석 상태 보기"}
         </Link>
         <Link href="/" className="button button-ghost">
           <ArrowLeft className="button-icon" aria-hidden="true" />
