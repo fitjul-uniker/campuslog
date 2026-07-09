@@ -30,6 +30,45 @@
 
 ## 작업 로그
 
+### 2026-07-09 - 작업 기록 문서 최신화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-09 |
+| 작업자 | Codex |
+| 작업 요약 | 2026-07-09에 진행된 디자인 확정, 구현 계획 작성, 프론트엔드 기본 구조 구현, 브랜치 정리 규칙 추가 작업이 기록 문서에 반영되지 않은 상태를 확인하고 작업 상태 문서를 최신화 |
+| 수정한 파일 | `docs/TASK_LOG.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md` |
+| 변경 내용 | 오늘 커밋 이력을 기준으로 완료된 문서 / 기본 구조 작업을 `TASK_LOG.md`와 `TODO.md`에 반영. `WORK_STATUS.md`의 현재 단계와 완료된 개발 작업을 프론트엔드 기본 구조 머지 상태로 수정. `IMPLEMENTATION_PLAN.md`에 남아 있던 확인 필요 사항 중 후속 결정이 필요한 항목을 `ISSUE_LOG.md`에 추가 |
+| 검증한 내용 | `git log --since='2026-07-09 00:00:00'`, `git show --stat`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `AGENTS.md`를 확인 |
+| 남은 작업 | 이후 작업부터는 실제 변경이 끝날 때 `docs/TASK_LOG.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md` 갱신 필요 여부를 완료 단계에서 먼저 점검 |
+| 관련 커밋 메시지 | `docs: update project status logs` |
+
+### 2026-07-09 - 프론트엔드 기본 구조 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-09 |
+| 작업자 | Codex |
+| 작업 요약 | `feature/base-structure` 범위로 Next.js App Router 기반 프론트엔드 골격을 만들고 기본 라우트, AppShell, Navigation, 공통 스타일, 타입 파일을 추가 |
+| 수정한 파일 | `frontend/package.json`, `frontend/package-lock.json`, `frontend/next.config.ts`, `frontend/eslint.config.mjs`, `frontend/tsconfig.json`, `frontend/next-env.d.ts`, `frontend/src/app/layout.tsx`, `frontend/src/app/page.tsx`, `frontend/src/app/globals.css`, `frontend/src/app/experiences/new/page.tsx`, `frontend/src/app/experiences/[id]/page.tsx`, `frontend/src/app/experiences/[id]/edit/page.tsx`, `frontend/src/app/experiences/[id]/analysis/page.tsx`, `frontend/src/app/recommend/page.tsx`, `frontend/src/components/layout/AppShell.tsx`, `frontend/src/components/layout/Navigation.tsx`, `frontend/src/lib/types.ts`, `frontend/src/lib/utils.ts` |
+| 변경 내용 | 메인 / 경험 작성 / 경험 상세 / 경험 수정 / AI 분석 결과 / AI 추천 라우트의 placeholder 화면을 만들고, 좌측 사이드바형 앱 셸과 모바일 상단 내비게이션의 기본 구조를 추가. `lucide-react`, Next.js, React, TypeScript 기반 설정과 공통 스타일 토큰을 준비 |
+| 검증한 내용 | 커밋 `9c789f5 feature: add frontend base structure`의 변경 파일과 `frontend/src` 구조를 확인. 실제 브라우저 실행 검증은 이 기록 보강 작업에서는 미검증 |
+| 남은 작업 | `feature/experience-crud`에서 localStorage 기반 경험 CRUD, `sampleExperiences.ts`, 상세 / 작성 / 수정 실제 동작 구현 필요 |
+| 관련 커밋 메시지 | `feature: add frontend base structure` |
+
+### 2026-07-09 - 디자인 / 구현 계획 및 작업 규칙 반영
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-09 |
+| 작업자 | Codex |
+| 작업 요약 | 1차 MVP의 디자인 방향을 확정하고, 구현 단계 / 브랜치 / PR 단위 / 위험 요소 / 확인 필요 사항을 `docs/IMPLEMENTATION_PLAN.md`에 정리. PR merge 후 작업 브랜치 정리 여부를 사용자에게 먼저 묻는 규칙을 `AGENTS.md`에 추가 |
+| 수정한 파일 | `docs/DESIGN.md`, `docs/IMPLEMENTATION_PLAN.md`, `AGENTS.md` |
+| 변경 내용 | 노트 / 단권화 컨셉, 캠퍼스 그린 + 민트 색상 방향, 좌측 사이드바형 대시보드, App Router 라우트 구조, localStorage 설계, AI API Route 설계, 7/9~7/16 개발 로드맵을 정리. 작업 완료 후 브랜치 삭제 전 사용자 확인 규칙을 추가 |
+| 검증한 내용 | 커밋 `e0ac8df`, `4465da7`, `0fad08b`, `16e3906`의 변경 파일과 문서 내용을 확인 |
+| 남은 작업 | 구현 계획의 확인 필요 사항을 후속 작업 전에 결정하고, 실제 기능 구현은 `feature/experience-crud`부터 진행 |
+| 관련 커밋 메시지 | `docs: finalize MVP design direction`, `docs: add CampusLog implementation plan`, `docs: clarify MVP implementation plan`, `docs: add branch cleanup prompt rule` |
+
 ### 2026-07-06 - AGENTS 작업 규칙 멘토링 피드백 반영
 
 | 항목 | 내용 |

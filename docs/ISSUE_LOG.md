@@ -28,6 +28,11 @@
 | ISSUE-004 | Resolved | Medium | Decision | LocalStorage만 사용할지 SQLite까지 고려할지 결정 필요 | 1차 MVP에서는 LocalStorage만 사용할지, SQLite 도입 가능성을 검토할지 결정 | 1차 MVP는 Browser localStorage만 사용하고 SQLite는 도입하지 않음 | Codex | 2026-06-30 | 2026-07-01 |
 | ISSUE-005 | Deferred | Medium | Decision | 2차 MVP에서 Supabase Auth / DB / Storage 도입 범위 결정 | Supabase Auth, Supabase Postgres, Supabase Storage, Next.js API Route 또는 Server Action의 도입 범위와 우선순위 결정 | 2차 MVP 확장 예정 항목으로 보류 | 미정 | 2026-07-01 | - |
 | ISSUE-006 | Deferred | Low | Decision | 3차 확장에서 Spring Boot / MySQL / RDS / S3 마이그레이션 전략 결정 | UNIKER 이후 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3로 확장할 범위와 마이그레이션 순서 결정 | UNIKER 이후 백엔드 포트폴리오 확장 항목으로 보류 | 미정 | 2026-07-01 | - |
+| ISSUE-007 | Open | Medium | Question | `sampleExperiences.ts` 초기 화면 자동 주입 여부 결정 필요 | 샘플 경험을 실제 사용자 localStorage에 자동 저장할지, 빈 상태 검증용 개발 데이터로만 둘지 결정 | - | 미정 | 2026-07-09 | - |
+| ISSUE-008 | Open | Medium | Decision | OpenAI API 호출 방식 결정 필요 | API Route에서 OpenAI SDK를 사용할지, server-side `fetch`를 사용할지 결정 | - | 미정 | 2026-07-09 | - |
+| ISSUE-009 | Open | Low | Decision | 책갈피 노트 파비콘 구현 방식 결정 필요 | 직접 제작한 파비콘을 사용할지, 임시 Lucide 기반 아이콘으로 시작할지 결정 | - | 미정 | 2026-07-09 | - |
+| ISSUE-010 | Open | Low | Question | 정렬 옵션 표현 확정 필요 | 문서별 `오래된순` / `오래된 작성순` 표현을 `createdAt` 오름차순 기준으로 통일할지 결정 | - | 미정 | 2026-07-09 | - |
+| ISSUE-011 | Open | Medium | Decision | 추천 결과 저장 구현 PR 범위 결정 필요 | 추천 결과 저장을 `feature/ai-recommendation` 안에서 함께 구현할지, 별도 작은 PR로 분리할지 결정 | - | 미정 | 2026-07-09 | - |
 
 ## 이슈 추가 템플릿
 
