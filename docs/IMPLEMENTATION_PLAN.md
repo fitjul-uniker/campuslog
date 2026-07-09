@@ -286,6 +286,7 @@ export type RecommendationResult = {
 - AI 생성 역량 태그와 분석 결과는 `ExperienceAnalysis`에 둡니다.
 - 추천 결과는 특정 경험 1개를 참조하되, 화면 표시를 위해 추천 당시 제목도 함께 저장합니다.
 - 경험 수정 시 `sourceExperienceUpdatedAt`과 현재 `experience.updatedAt`이 다르면 재분석 필요 상태로 판단할 수 있습니다.
+- `SortOption`의 `period_desc`는 1차 MVP에서 후순위 또는 best-effort 정렬로 둡니다. `period`가 단순 문자열이므로 정확한 기간 정렬을 보장하지 않습니다.
 
 ## 8. localStorage 설계
 
@@ -326,7 +327,7 @@ type StoredRecommendations = RecommendationResult[];
 | `getExperiences()` | 저장된 경험 목록을 읽고 기본값은 최근 수정일 내림차순으로 반환 |
 | `getExperienceById(id)` | 특정 경험 1개 조회 |
 | `updateExperience(id, input)` | 경험을 수정하고 `updatedAt` 갱신. 기존 분석 결과가 있으면 `analysisStatus: "needs_reanalysis"`로 변경 |
-| `deleteExperience(id)` | 경험 삭제. 연결된 분석 결과도 함께 삭제하는 방향을 기본값으로 검토 |
+| `deleteExperience(id)` | 해당 경험, 연결된 분석 결과, 해당 경험을 참조하는 추천 결과를 함께 삭제 |
 | `saveAnalysisResult(result)` | 분석 결과 저장. 해당 경험의 `analysisStatus`를 `analyzed`로 변경 |
 | `getAnalysisByExperienceId(experienceId)` | 특정 경험의 분석 결과 조회 |
 | `saveRecommendationResult(result)` | 추천 결과 저장 |
@@ -335,8 +336,12 @@ type StoredRecommendations = RecommendationResult[];
 
 - 경험 수정 시 기존 분석 결과가 있으면 기존 분석은 삭제하지 않고 경험 상태를 `재분석 필요`로 변경합니다.
 - 재분석 완료 시 `sourceExperienceUpdatedAt`을 최신 `experience.updatedAt`으로 저장합니다.
-- 대시보드 기본 정렬은 최근 수정일 기준입니다.
+- `experience-crud` 단계의 대시보드 기본 정렬은 최근 수정일 기준만 구현합니다.
 - 생성일은 상세 화면 또는 보조 메타에서 확인할 수 있게 합니다.
+- 실제 정렬/필터 옵션 동작은 `feature/sort-filter`에서 구현합니다.
+- `period_desc` 정렬은 `period` 문자열에서 해석 가능한 값이 있을 때만 best-effort로 처리하며, 정확한 기간 정렬을 1차 MVP 완료 기준으로 삼지 않습니다.
+- Next.js App Router에서 `storage.ts`는 `typeof window !== "undefined"` guard를 두고, 서버 렌더링 중 `localStorage`에 직접 접근하지 않습니다.
+- `localStorage`를 읽고 쓰는 화면과 컴포넌트는 `use client`가 필요한 client component로 분리합니다.
 - `localStorage` 데이터 파싱 실패 시 앱이 깨지지 않도록 빈 배열 / 빈 객체로 fallback합니다.
 - 파싱 실패가 발생하면 화면 안에 저장소 데이터를 불러오지 못했다는 오류 상태를 표시할 수 있게 합니다.
 - API 실패나 화면 이동 실패가 있어도 사용자가 입력한 폼 데이터는 가능한 유지합니다.
@@ -469,7 +474,9 @@ type RecommendResponse = {
 - `storage.ts` 경험 CRUD 구현
 - 경험 목록 카드, 작성/수정 폼, 상세 화면 구현
 - 생성일 / 수정일 / 분석 상태 표시
+- 최근 수정순 기본 정렬만 구현
 - 경험 수정 시 재분석 필요 상태 처리
+- 정렬/필터 선택 UI와 실제 필터 동작은 구현하지 않음
 
 수정 예상 파일:
 
@@ -488,6 +495,7 @@ type RecommendResponse = {
 - 새 경험을 저장하면 상세 화면으로 이동합니다.
 - 새로고침 후에도 저장된 경험이 목록에 남아 있습니다.
 - 경험 수정 시 최근 수정일이 갱신됩니다.
+- 경험 목록은 최근 수정순으로 기본 표시됩니다.
 - 기존 분석 결과가 있는 경험을 수정하면 `재분석 필요` 상태가 됩니다.
 - 필수 입력값 누락 시 저장되지 않습니다.
 
@@ -565,7 +573,8 @@ type RecommendResponse = {
 - ExperienceCard 정보 구조 정리
 - EmptyState / LoadingState / 실패 Alert 정리
 - StatusBadge 색상과 라벨 정리
-- 정렬 / 필터 UI 기본 구현
+- 정렬 / 필터 컨트롤의 위치, 간격, 시각적 위계만 polish
+- 실제 정렬 / 필터 동작은 `feature/sort-filter`에서 구현
 
 수정 예상 파일:
 
@@ -581,7 +590,7 @@ type RecommendResponse = {
 
 - 저장된 경험이 없을 때 첫 경험 기록하기 CTA가 가장 먼저 보입니다.
 - AI 추천 CTA는 빈 상태에서도 낮은 우선순위로 접근 가능합니다.
-- 정렬 / 필터가 실제 목록에 반영됩니다.
+- 정렬 / 필터 UI가 목록 영역과 가까운 곳에 배치됩니다.
 - 작동하지 않는 장식용 검색창은 없습니다.
 
 ### 6단계: `responsive/brand-polish`
@@ -676,7 +685,7 @@ feature/base-structure
 → docs/update-project-status
 ```
 
-단, `feature/sort-filter`는 대시보드 구현 상태에 따라 `design/dashboard-polish`보다 먼저 진행할 수 있습니다.
+`feature/sort-filter`는 실제 정렬/필터 동작 구현 PR입니다. 대시보드 UI polish와 섞지 않고 별도 PR로 진행합니다.
 
 ## 12. 각 PR의 완료 기준
 
@@ -693,8 +702,8 @@ feature/base-structure
 
 - 작업 목적: 활동 경험 기록과 조회의 핵심 흐름을 완성합니다.
 - 수정/생성 예상 파일: `storage.ts`, `types.ts`, `sampleExperiences.ts`, 경험 라우트 페이지, 경험 컴포넌트
-- 구현할 내용: create, read, update, delete, 최근 수정일 정렬, 분석 상태 기본값
-- 구현하지 말아야 할 내용: OpenAI API 호출, DB, Supabase, 파일 업로드
+- 구현할 내용: create, read, update, delete, 최근 수정순 기본 정렬, 분석 상태 기본값
+- 구현하지 말아야 할 내용: OpenAI API 호출, DB, Supabase, 파일 업로드, 정렬/필터 선택 UI, 실제 필터 동작
 - 완료 기준: 새 경험 작성, 목록 확인, 상세 확인, 수정, 삭제가 새로고침 후에도 유지됩니다.
 - 확인 방법: 브라우저에서 경험을 생성/수정/삭제하고 localStorage 저장 여부 확인
 
@@ -720,8 +729,8 @@ feature/base-structure
 
 - 작업 목적: 대시보드 정보 구조와 상태 UI를 DESIGN.md 기준으로 정리합니다.
 - 수정/생성 예상 파일: `page.tsx`, `ExperienceCard`, `EmptyState`, `LoadingState`, `StatusBadge`, `globals.css`
-- 구현할 내용: 카드 정보 우선순위, 빈 상태, 로딩, 실패 Alert, CTA 위계
-- 구현하지 말아야 할 내용: storage key 변경, API Route 변경, CRUD 로직 변경
+- 구현할 내용: 카드 정보 우선순위, 빈 상태, 로딩, 실패 Alert, CTA 위계, 정렬/필터 UI polish
+- 구현하지 말아야 할 내용: storage key 변경, API Route 변경, CRUD 로직 변경, 실제 정렬/필터 동작 구현
 - 완료 기준: 새 경험 기록하기가 Primary CTA이고 AI 추천은 Secondary CTA로 보입니다.
 - 확인 방법: 경험 없음 / 경험 있음 / 분석 완료 / 재분석 필요 상태 화면 확인
 
@@ -756,9 +765,9 @@ feature/base-structure
 
 - 작업 목적: 대시보드 목록 정렬과 필터를 실제 동작하게 합니다.
 - 수정/생성 예상 파일: `page.tsx`, `SortSelect`, `FilterDropdown`, `storage.ts` 또는 목록 유틸
-- 구현할 내용: 최근 수정순, 오래된 작성순, 활동 기간순, 분석 상태 필터, 태그/키워드 필터
+- 구현할 내용: 최근 수정순, 오래된 작성순, 활동 기간순 best-effort, 분석 상태 필터, 태그/키워드 필터
 - 구현하지 말아야 할 내용: 장식용 검색창, 복잡한 분석 대시보드
-- 완료 기준: 선택한 정렬 / 필터가 경험 목록에 즉시 반영됩니다.
+- 완료 기준: 선택한 정렬 / 필터가 경험 목록에 즉시 반영됩니다. 단, 활동 기간순은 `period` 문자열 기반 best-effort 정렬이며 정확한 기간 정렬을 보장하지 않습니다.
 - 확인 방법: 여러 경험과 분석 상태를 만들어 정렬 / 필터 결과 확인
 
 ### `fix/form-validation`
@@ -784,6 +793,7 @@ feature/base-structure
 - 기능 개발 PR이 `main`에 먼저 들어간 뒤 디자인 고도화 PR을 올립니다.
 - 디자인 고도화 작업은 `className`, layout, spacing, color, `AppShell`, `ExperienceCard`, `EmptyState`, `StatusBadge`, `globals.css` 중심으로 합니다.
 - 디자인 고도화 작업에서는 `storage.ts`, `types.ts`, `app/api/*`, `localStorage` key, 저장/수정/삭제 로직, OpenAI API 호출 코드를 수정하지 않는 것을 원칙으로 합니다.
+- 정렬/필터 책임은 분리합니다. `experience-crud`는 최근 수정순 기본 정렬만 구현하고, `dashboard-polish`는 정렬/필터 UI polish만 담당하며, `feature/sort-filter`가 실제 정렬/필터 동작을 구현합니다.
 - QA/보완 작업은 핵심 구조가 안정된 뒤 작은 PR 단위로 진행합니다.
 - 기능 로직과 스타일 변경이 같은 PR에 섞이지 않도록 합니다.
 - `feature/experience-crud`, `feature/ai-analysis`, `feature/ai-recommendation`에서 타입이나 저장 구조가 바뀌면 디자인 PR 시작 전에 main에 먼저 반영합니다.
@@ -812,6 +822,7 @@ feature/base-structure
 | 위험 요소 | 대응 기준 |
 | --- | --- |
 | `localStorage` 데이터 구조가 중간에 바뀌는 문제 | `campuslog:v1:*` key를 고정하고, 타입 변경이 필요하면 별도 마이그레이션 이슈로 기록 |
+| App Router 서버 렌더링 중 `localStorage` 접근 문제 | `storage.ts`에 window guard를 두고, 저장소 접근 화면은 client component로 분리 |
 | AI 분석 결과와 경험 수정 상태가 어긋나는 문제 | `sourceExperienceUpdatedAt`을 저장하고 수정 시 `needs_reanalysis`로 변경 |
 | OpenAI API Key 노출 위험 | API Route에서만 `OPENAI_API_KEY`를 읽고 클라이언트에 전달하지 않음 |
 | 한 번에 너무 큰 PR을 만드는 문제 | base, CRUD, 분석, 추천, 디자인, QA를 브랜치로 분리 |
@@ -849,7 +860,6 @@ feature/base-structure
 - `frontend/.env.local`이 이미 존재하지만 이 문서 작업에서는 내용을 확인하지 않았습니다. AI API 작업 전 `OPENAI_API_KEY`가 안전하게 준비되어 있는지 확인해야 합니다.
 - `docs/GIT_WORKFLOW.md`와 `AGENTS.md`는 작업 후 상태 기록 문서 업데이트를 권장하지만, 이번 요청은 `docs/IMPLEMENTATION_PLAN.md`만 생성하는 범위입니다. 실제 구현 후에는 `docs/update-project-status` PR에서 `WORK_STATUS`, `TASK_LOG`, `TODO`, `ISSUE_LOG` 업데이트가 필요합니다.
 - 정렬 옵션의 `오래된순` 표현은 문서마다 `오래된순`과 `오래된 작성순`으로 표현됩니다. 구현에서는 `createdAt` 오름차순을 의미하는 `오래된 작성순`으로 확정할지 확인이 필요합니다.
-- `deleteExperience` 실행 시 연결된 분석 결과와 추천 결과를 어떻게 처리할지 최종 확인이 필요합니다. 기본 제안은 연결된 분석 결과는 삭제하고, 과거 추천 결과는 추천 기록으로 유지하되 삭제된 경험 표시 정책을 별도로 정하는 것입니다.
 - `sampleExperiences.ts`를 초기 화면에 자동 주입할지, 빈 상태 검증용 개발 데이터로만 둘지 확인이 필요합니다. PRD와 README는 샘플 데이터 사용을 언급하지만, 실제 사용자 저장소에 자동 저장할지 여부는 구현 전에 정해야 합니다.
 - 책갈피 노트 파비콘을 직접 제작할지, 임시 Lucide 기반 아이콘으로 시작할지 확인이 필요합니다.
 - OpenAI 응답 구조화를 OpenAI SDK로 처리할지, API Route의 server-side `fetch`로 처리할지 결정이 필요합니다.
