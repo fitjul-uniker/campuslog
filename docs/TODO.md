@@ -12,19 +12,13 @@
 
 ## High Priority
 
-- [ ] `sampleExperiences.ts` 작성
-- [ ] localStorage 기반 경험 CRUD 구현
-- [ ] 활동 경험 목록 / 작성 / 수정 / 상세 화면 실제 동작 구현
-- [ ] 활동 경험 상세 화면 구현
 - [ ] 활동 경험 상세 화면에서 AI 분석 요청 CTA 실행 흐름 구현
-- [ ] 작성 / 수정 화면 저장 후 활동 경험 상세로 이동하는 흐름 구현
 - [ ] Vercel 배포 준비
 
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
 - [ ] OpenAI API 연결 방식 결정
-- [ ] `sampleExperiences.ts` 초기 화면 자동 주입 여부 결정
 - [ ] 추천 결과 저장을 `feature/ai-recommendation`에 포함할지 별도 PR로 분리할지 결정
 - [ ] 정렬 옵션의 `오래된순` / `오래된 작성순` 표현 확정
 - [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
@@ -38,6 +32,15 @@
 
 ## Done
 
+- [x] localStorage 기반 경험 CRUD 구현
+- [x] 활동 경험 목록 / 작성 / 수정 / 상세 화면 실제 동작 구현
+- [x] 활동 경험 상세 화면 구현
+- [x] 작성 / 수정 화면 저장 후 활동 경험 상세로 이동하는 흐름 구현
+- [x] 경험 삭제 시 연결 분석 결과와 추천 결과 정리 정책 구현
+- [x] 생성 직후에는 생성일만 표시하고 수정 후 수정일 표시
+- [x] 활동기간 시작월 / 종료월 입력 폼 적용
+- [x] `sampleExperiences.ts` 작성
+- [x] `sampleExperiences.ts` 초기 화면 자동 주입 여부 결정: 자동 주입하지 않고 개발 참고용 데이터로만 유지
 - [x] 작업 기록 문서 2026-07-09 상태 최신화
 - [x] 브랜치 정리 프롬프트 규칙 추가
 - [x] Next.js 프론트엔드 초기 세팅
