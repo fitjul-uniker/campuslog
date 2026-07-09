@@ -21,10 +21,10 @@
 
 현재 프로젝트 구조 기준:
 
-- 루트에는 `README.md`, `PRD.md`, `AGENTS.md`, `docs/`, `frontend/`, `backend/`가 존재합니다.
-- `frontend/`에는 아직 Next.js App Router 구현 파일이 없고, `frontend/.env.local`과 `.gitkeep`만 존재합니다.
-- `backend/`는 1차 MVP 구현 대상이 아니며, 1차 MVP에서는 수정하지 않습니다.
-- 따라서 1차 MVP 앱은 기존 구조를 존중해 `frontend/src/...` 하위에 제안합니다.
+- 루트에는 `README.md`, `PRD.md`, `AGENTS.md`, `docs/`, `web/`이 존재합니다.
+- `web/`은 1차/2차 MVP의 Next.js Full Stack 앱입니다.
+- 별도 백엔드 폴더는 두지 않고, `web/src/app/api/*`가 API Route 역할을 담당합니다.
+- 따라서 1차 MVP 앱은 `web/src/...` 하위에 구성합니다.
 
 ## 1. 1차 MVP 구현 목표
 
@@ -35,7 +35,7 @@ CampusLog 1차 MVP는 대학생이 프로젝트, 공모전, 인턴, 대외활동
 - 대표 컨셉은 `대학생활을 단권화하는 AI 경험 기록장`입니다.
 - 첫 화면은 서비스 소개 랜딩이 아니라 저장된 경험 목록이 바로 보이는 메인/경험 목록 대시보드입니다.
 - 경험 원본 데이터, AI 분석 결과, AI 추천 결과는 브라우저 `localStorage`에 저장합니다.
-- AI 분석과 AI 추천은 클라이언트에서 OpenAI API를 직접 호출하지 않고, Next.js API Route를 통해 처리합니다.
+- AI 분석과 AI 추천은 클라이언트에서 OpenAI API를 직접 호출하지 않고, `web/src/app/api/*`의 Next.js API Route를 통해 처리합니다.
 - 1차 MVP는 로그인, DB, Supabase 없이도 경험 기록 -> AI 분석 -> AI 추천 및 활용 흐름을 검증할 수 있어야 합니다.
 - AI 추천은 저장된 경험 전체와 분석 결과를 참고해 가장 적합한 경험 1개만 추천합니다.
 
@@ -98,8 +98,7 @@ CampusLog 1차 MVP는 대학생이 프로젝트, 공모전, 인턴, 대외활동
 - 사용자 이름 기반 개인화 문구
 - GitHub / 블로그 / Notion 자동 연동
 - Supabase Auth / Postgres / Storage
-- Spring Boot 백엔드
-- MySQL / AWS RDS / AWS S3
+- UNIKER 이후 개인 Backend Portfolio Edition용 별도 백엔드 스택
 - 프로필 메뉴 / 계정 드롭다운
 - 팀 / 조직 / 결제 / 업그레이드 UI
 
@@ -127,7 +126,7 @@ Next.js App Router 기준 1차 MVP 라우트는 아래처럼 고정합니다.
 
 ## 5. Next.js App Router 기준 폴더 구조
 
-현재 루트에 `frontend/` 폴더가 이미 있으므로, 1차 MVP의 Next.js 앱은 `frontend/` 안에 구성합니다.
+1차 MVP의 Next.js Full Stack 앱은 `web/` 안에 구성합니다. API 서버 역할은 별도 백엔드 폴더가 아니라 `web/src/app/api/*`의 App Router API Route가 담당합니다.
 
 ```text
 campuslog/
@@ -136,7 +135,7 @@ campuslog/
 ├── AGENTS.md
 ├── docs/
 │   └── IMPLEMENTATION_PLAN.md
-├── frontend/
+├── web/
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── layout.tsx
@@ -172,16 +171,15 @@ campuslog/
 │   ├── public/
 │   ├── .env.local
 │   └── package.json
-└── backend/
 ```
 
 구조 기준:
 
-- `frontend/src/app`은 라우트와 페이지 단위 UI를 담당합니다.
-- `frontend/src/components`는 재사용 가능한 UI 컴포넌트를 담당합니다.
-- `frontend/src/lib/storage.ts`는 `localStorage` 접근과 CRUD를 담당합니다.
-- `frontend/src/lib/types.ts`는 경험, 분석, 추천 타입을 담당합니다.
-- `backend/`는 1차 MVP에서 사용하지 않습니다.
+- `web/src/app`은 라우트와 페이지 단위 UI를 담당합니다.
+- `web/src/app/api/*`는 AI 분석 / 추천 API Route를 담당합니다.
+- `web/src/components`는 재사용 가능한 UI 컴포넌트를 담당합니다.
+- `web/src/lib/storage.ts`는 `localStorage` 접근과 CRUD를 담당합니다.
+- `web/src/lib/types.ts`는 경험, 분석, 추천 타입을 담당합니다.
 
 ## 6. 필요한 컴포넌트 목록
 
@@ -209,7 +207,7 @@ campuslog/
 
 ## 7. 필요한 타입 정의
 
-`frontend/src/lib/types.ts`에 아래 타입을 정의하는 방향을 제안합니다.
+`web/src/lib/types.ts`에 아래 타입을 정의하는 방향을 제안합니다.
 
 ```ts
 export type AnalysisStatus = "unanalyzed" | "analyzed" | "needs_reanalysis";
@@ -417,7 +415,7 @@ type RecommendResponse = {
 
 보안 기준:
 
-- OpenAI API Key는 `frontend/.env.local`의 `OPENAI_API_KEY`를 사용합니다.
+- OpenAI API Key는 `web/.env.local`의 `OPENAI_API_KEY`를 사용합니다.
 - API Key는 서버의 API Route에서만 읽고, 클라이언트 컴포넌트에 노출하지 않습니다.
 - `NEXT_PUBLIC_` prefix가 붙은 환경 변수에 OpenAI API Key를 넣지 않습니다.
 - API Route 응답에는 원본 API 에러 전체나 민감한 환경 정보를 포함하지 않습니다.
@@ -436,7 +434,7 @@ type RecommendResponse = {
 
 목표:
 
-- `frontend/` 안에 Next.js App Router 기반 골격을 만듭니다.
+- `web/` 안에 Next.js App Router 기반 골격을 만듭니다.
 - 라우트, AppShell, 공통 스타일, 타입 파일의 기본 구조를 준비합니다.
 
 작업 범위:
@@ -448,13 +446,13 @@ type RecommendResponse = {
 
 수정 예상 파일:
 
-- `frontend/package.json`
-- `frontend/src/app/layout.tsx`
-- `frontend/src/app/page.tsx`
-- `frontend/src/app/globals.css`
-- `frontend/src/components/layout/*`
-- `frontend/src/lib/types.ts`
-- `frontend/src/lib/utils.ts`
+- `web/package.json`
+- `web/src/app/layout.tsx`
+- `web/src/app/page.tsx`
+- `web/src/app/globals.css`
+- `web/src/components/layout/*`
+- `web/src/lib/types.ts`
+- `web/src/lib/utils.ts`
 
 완료 기준:
 
@@ -480,15 +478,15 @@ type RecommendResponse = {
 
 수정 예상 파일:
 
-- `frontend/src/lib/storage.ts`
-- `frontend/src/lib/types.ts`
-- `frontend/src/lib/sampleExperiences.ts`
-- `frontend/src/app/page.tsx`
-- `frontend/src/app/experiences/new/page.tsx`
-- `frontend/src/app/experiences/[id]/page.tsx`
-- `frontend/src/app/experiences/[id]/edit/page.tsx`
-- `frontend/src/components/experiences/*`
-- `frontend/src/components/common/StatusBadge.tsx`
+- `web/src/lib/storage.ts`
+- `web/src/lib/types.ts`
+- `web/src/lib/sampleExperiences.ts`
+- `web/src/app/page.tsx`
+- `web/src/app/experiences/new/page.tsx`
+- `web/src/app/experiences/[id]/page.tsx`
+- `web/src/app/experiences/[id]/edit/page.tsx`
+- `web/src/components/experiences/*`
+- `web/src/components/common/StatusBadge.tsx`
 
 완료 기준:
 
@@ -515,12 +513,12 @@ type RecommendResponse = {
 
 수정 예상 파일:
 
-- `frontend/src/app/api/analyze/route.ts`
-- `frontend/src/app/experiences/[id]/page.tsx`
-- `frontend/src/app/experiences/[id]/analysis/page.tsx`
-- `frontend/src/components/ai/AnalysisResult.tsx`
-- `frontend/src/lib/storage.ts`
-- `frontend/src/lib/types.ts`
+- `web/src/app/api/analyze/route.ts`
+- `web/src/app/experiences/[id]/page.tsx`
+- `web/src/app/experiences/[id]/analysis/page.tsx`
+- `web/src/components/ai/AnalysisResult.tsx`
+- `web/src/lib/storage.ts`
+- `web/src/lib/types.ts`
 
 완료 기준:
 
@@ -547,12 +545,12 @@ type RecommendResponse = {
 
 수정 예상 파일:
 
-- `frontend/src/app/api/recommend/route.ts`
-- `frontend/src/app/recommend/page.tsx`
-- `frontend/src/components/ai/RecommendationForm.tsx`
-- `frontend/src/components/ai/RecommendationResult.tsx`
-- `frontend/src/lib/storage.ts`
-- `frontend/src/lib/types.ts`
+- `web/src/app/api/recommend/route.ts`
+- `web/src/app/recommend/page.tsx`
+- `web/src/components/ai/RecommendationForm.tsx`
+- `web/src/components/ai/RecommendationResult.tsx`
+- `web/src/lib/storage.ts`
+- `web/src/lib/types.ts`
 
 완료 기준:
 
@@ -578,13 +576,13 @@ type RecommendResponse = {
 
 수정 예상 파일:
 
-- `frontend/src/app/page.tsx`
-- `frontend/src/components/experiences/ExperienceCard.tsx`
-- `frontend/src/components/common/EmptyState.tsx`
-- `frontend/src/components/common/LoadingState.tsx`
-- `frontend/src/components/common/StatusBadge.tsx`
-- `frontend/src/components/common/SortSelect.tsx`
-- `frontend/src/components/common/FilterDropdown.tsx`
+- `web/src/app/page.tsx`
+- `web/src/components/experiences/ExperienceCard.tsx`
+- `web/src/components/common/EmptyState.tsx`
+- `web/src/components/common/LoadingState.tsx`
+- `web/src/components/common/StatusBadge.tsx`
+- `web/src/components/common/SortSelect.tsx`
+- `web/src/components/common/FilterDropdown.tsx`
 
 완료 기준:
 
@@ -609,12 +607,12 @@ type RecommendResponse = {
 
 수정 예상 파일:
 
-- `frontend/src/app/globals.css`
-- `frontend/src/app/layout.tsx`
-- `frontend/src/components/layout/*`
-- `frontend/src/components/experiences/ExperienceCard.tsx`
-- `frontend/src/components/common/EmptyState.tsx`
-- `frontend/public/*`
+- `web/src/app/globals.css`
+- `web/src/app/layout.tsx`
+- `web/src/components/layout/*`
+- `web/src/components/experiences/ExperienceCard.tsx`
+- `web/src/components/common/EmptyState.tsx`
+- `web/public/*`
 
 완료 기준:
 
@@ -639,9 +637,9 @@ type RecommendResponse = {
 
 수정 예상 파일:
 
-- `frontend/src/app/*`
-- `frontend/src/components/*`
-- `frontend/src/lib/*`
+- `web/src/app/*`
+- `web/src/components/*`
+- `web/src/lib/*`
 - `docs/WORK_STATUS.md`
 - `docs/TASK_LOG.md`
 - `docs/TODO.md`
@@ -692,7 +690,7 @@ feature/base-structure
 ### `feature/base-structure`
 
 - 작업 목적: Next.js App Router 앱 골격과 공통 레이아웃을 준비합니다.
-- 수정/생성 예상 파일: `frontend/package.json`, `frontend/src/app/*`, `frontend/src/components/layout/*`, `frontend/src/lib/types.ts`, `frontend/src/lib/utils.ts`
+- 수정/생성 예상 파일: `web/package.json`, `web/src/app/*`, `web/src/components/layout/*`, `web/src/lib/types.ts`, `web/src/lib/utils.ts`
 - 구현할 내용: 기본 라우트, AppShell, Navigation, globals.css, placeholder 페이지
 - 구현하지 말아야 할 내용: 경험 CRUD, AI API 호출, 로그인, 랜딩 페이지
 - 완료 기준: 핵심 라우트가 AppShell 안에서 열리고, 제외 범위 라우트가 없습니다.
@@ -832,7 +830,7 @@ feature/base-structure
 | 빈 상태에서 AI 추천 CTA 처리 기준이 흐려지는 문제 | 첫 경험 기록하기를 우선하고, AI 추천은 낮은 우선순위 또는 비활성 안내로 처리 |
 | API 실패 시 입력 데이터가 사라지는 문제 | 분석/추천 실패 상태에서도 폼 입력과 경험 원본 데이터를 유지 |
 | 추천 결과 저장 우선순위가 과하게 커지는 문제 | 추천 결과 저장은 구현하되 복사 기능보다 낮은 UI 우선순위 유지 |
-| `frontend/.env.local` 관리 문제 | 실제 키는 커밋하지 않고, 필요 시 `.env.local.example` 추가 여부를 별도 PR에서 결정 |
+| `web/.env.local` 관리 문제 | 실제 키는 커밋하지 않고, 필요 시 `.env.local.example` 추가 여부를 별도 PR에서 결정 |
 
 ## 16. 필요한 라이브러리 후보
 
@@ -857,7 +855,7 @@ feature/base-structure
 
 구현 전 사람이 확인해야 할 내용은 아래와 같습니다.
 
-- `frontend/.env.local`이 이미 존재하지만 이 문서 작업에서는 내용을 확인하지 않았습니다. AI API 작업 전 `OPENAI_API_KEY`가 안전하게 준비되어 있는지 확인해야 합니다.
+- `web/.env.local`이 이미 존재하지만 이 문서 작업에서는 내용을 확인하지 않았습니다. AI API 작업 전 `OPENAI_API_KEY`가 안전하게 준비되어 있는지 확인해야 합니다.
 - `docs/GIT_WORKFLOW.md`와 `AGENTS.md`는 작업 후 상태 기록 문서 업데이트를 권장하지만, 이번 요청은 `docs/IMPLEMENTATION_PLAN.md`만 생성하는 범위입니다. 실제 구현 후에는 `docs/update-project-status` PR에서 `WORK_STATUS`, `TASK_LOG`, `TODO`, `ISSUE_LOG` 업데이트가 필요합니다.
 - 정렬 옵션의 `오래된순` 표현은 문서마다 `오래된순`과 `오래된 작성순`으로 표현됩니다. 구현에서는 `createdAt` 오름차순을 의미하는 `오래된 작성순`으로 확정할지 확인이 필요합니다.
 - `sampleExperiences.ts`를 초기 화면에 자동 주입할지, 빈 상태 검증용 개발 데이터로만 둘지 확인이 필요합니다. PRD와 README는 샘플 데이터 사용을 언급하지만, 실제 사용자 저장소에 자동 저장할지 여부는 구현 전에 정해야 합니다.
@@ -865,20 +863,21 @@ feature/base-structure
 - OpenAI 응답 구조화를 OpenAI SDK로 처리할지, API Route의 server-side `fetch`로 처리할지 결정이 필요합니다.
 - 추천 결과 저장은 MVP 범위에 포함되어 있지만 첫 구현에서는 복사보다 낮은 우선순위입니다. `feature/ai-recommendation` 안에서 함께 구현할지, 별도 작은 PR로 분리할지 확인이 필요합니다.
 
-## 18. 다음에 바로 시작할 첫 개발 작업
+## 18. base-structure 완료 후 다음 개발 작업
 
-첫 개발 작업은 `feature/base-structure`입니다.
+`feature/base-structure`는 완료되어 `web/`의 Next.js App Router 기본 구조가 준비된 상태입니다. 다음 개발 작업은 `feature/experience-crud`입니다.
 
 작업 시작 전 확인:
 
 - 현재 브랜치가 `main`이고 깨끗한 상태인지 확인합니다.
-- `frontend/` 안에 Next.js App Router 프로젝트를 초기화할지, 기존 빈 폴더에 직접 파일을 구성할지 결정합니다.
-- shadcn/ui와 Tailwind CSS 도입 여부를 `feature/base-structure` PR에서 함께 결정합니다.
+- `web/`의 기존 App Router 구조와 placeholder 라우트를 확인합니다.
+- localStorage 저장 구조와 `sampleExperiences.ts` 초기 주입 여부를 확인합니다.
+- 실제 경험 CRUD 구현 범위가 1차 MVP를 넘지 않는지 확인합니다.
 
-첫 작업의 최소 완료 기준:
+다음 작업의 최소 완료 기준:
 
-- `frontend/`에서 Next.js 앱이 실행됩니다.
-- `/`가 메인/경험 목록 대시보드의 기본 레이아웃으로 열립니다.
-- 좌측 사이드바형 AppShell이 데스크톱 기준으로 보입니다.
-- `/experiences/new`, `/recommend` 라우트로 이동할 수 있습니다.
+- `web/`에서 Next.js 앱이 실행됩니다.
+- 새 경험 작성, 목록 확인, 상세 확인, 수정, 삭제가 localStorage 기준으로 동작합니다.
+- 경험 저장 후 활동 경험 상세 화면으로 이동합니다.
+- 기존 분석 결과가 있는 경험을 수정하면 `재분석 필요` 상태를 표시할 수 있습니다.
 - 로그인/회원가입, 서비스 소개 랜딩, DB, Supabase, 파일 업로드 관련 구현은 없습니다.

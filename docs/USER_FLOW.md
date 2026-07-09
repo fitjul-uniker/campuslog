@@ -113,15 +113,14 @@
 - 로그인 기반 사용자별 활동 기록 저장
 - 수료증 / 활동사진 / PDF / 산출물 등 첨부파일 저장
 - 첨부파일 미리보기 / 용량 관리 / 파일 삭제 / 파일 보안 처리
-- Supabase Auth / Postgres / Storage 기반 저장 흐름
-- Spring Boot 백엔드 기반 회원 데이터 관리
-- MySQL 데이터베이스 저장 흐름
+- 2차 MVP 이전의 Supabase Auth / Postgres / Storage 기반 저장 흐름
+- UNIKER 이후 개인 Backend Portfolio Edition용 회원 / 데이터베이스 / 파일 저장 흐름
 
 첨부파일 저장은 localStorage 기준 1차 MVP에서는 파일 저장, 용량, 삭제, 보안, 미리보기 처리가 범위를 키우므로 제외합니다.
 1차 MVP에서는 관련 링크 또는 증빙 메모 수준의 텍스트로 대체합니다.
 
 ## Future Flow
 
-- 2차 MVP에서는 서비스 소개 랜딩, Supabase Auth / Postgres 기반 로그인 저장과 Supabase Storage 기반 수료증 / 활동사진 / PDF / 산출물 첨부파일 저장, 미리보기, 삭제 흐름을 검토합니다.
+- 2차 MVP에서는 Next.js Full Stack + Supabase 기반으로 서비스 소개 랜딩, Supabase Auth / Postgres 기반 로그인 저장과 Supabase Storage 기반 수료증 / 활동사진 / PDF / 산출물 첨부파일 저장, 미리보기, 삭제 흐름을 검토합니다.
 - 2차 MVP에서는 사용자의 활용 목적에 따라 적합한 경험을 1순위, 2순위, 3순위까지 추천하고, 각 경험의 추천 이유를 비교해 보여주는 UI를 검토합니다.
-- 3차 확장에서는 UNIKER 이후 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3 기반 백엔드 확장 흐름을 검토합니다.
+- UNIKER 이후 개인 Backend Portfolio Edition에서는 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3 기반 백엔드 포트폴리오 확장 흐름을 별도 검토합니다.

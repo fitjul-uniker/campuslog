@@ -326,7 +326,7 @@
 
 ## Future Screen Memo
 
-- 수료증 / 활동사진 첨부 UI는 2차 MVP에서 Supabase Storage 도입과 함께 확장 예정입니다.
-- 서비스 소개 랜딩, 로그인 / 회원가입, 마이페이지, 사용자별 저장 화면은 2차 MVP에서 Supabase Auth / Postgres 도입과 함께 검토합니다.
+- 수료증 / 활동사진 첨부 UI는 2차 MVP에서 Next.js Full Stack + Supabase Storage 도입과 함께 확장 예정입니다.
+- 서비스 소개 랜딩, 로그인 / 회원가입, 마이페이지, 사용자별 저장 화면은 2차 MVP에서 Next.js Full Stack + Supabase Auth / Postgres 도입과 함께 검토합니다.
 - 2차 MVP에서는 사용자의 활용 목적에 따라 1순위, 2순위, 3순위 경험 추천과 각 추천 이유 비교 UI를 검토합니다.
-- Spring Boot, MySQL 또는 AWS RDS, AWS S3 기반 관리 화면은 UNIKER 이후 3차 확장에서 검토합니다.
+- Spring Boot, MySQL 또는 AWS RDS, AWS S3 기반 관리 화면은 CampusLog 본 MVP가 아니라 UNIKER 이후 개인 Backend Portfolio Edition에서 별도 검토합니다.
