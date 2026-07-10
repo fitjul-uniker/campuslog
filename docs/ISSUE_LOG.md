@@ -32,7 +32,7 @@
 | ISSUE-008 | Resolved | Medium | Decision | OpenAI API 호출 방식 결정 필요 | API Route에서 OpenAI SDK를 사용할지, server-side `fetch`를 사용할지 결정 | 새 dependency를 추가하지 않고 `web/src/app/api/analyze/route.ts`에서 server-side `fetch`로 OpenAI Responses API를 호출하는 방식으로 결정 | Codex | 2026-07-09 | 2026-07-09 |
 | ISSUE-009 | Open | Low | Decision | 책갈피 노트 파비콘 구현 방식 결정 필요 | 직접 제작한 파비콘을 사용할지, 임시 Lucide 기반 아이콘으로 시작할지 결정 | - | 미정 | 2026-07-09 | - |
 | ISSUE-010 | Open | Low | Question | 정렬 옵션 표현 확정 필요 | 문서별 `오래된순` / `오래된 작성순` 표현을 `createdAt` 오름차순 기준으로 통일할지 결정 | - | 미정 | 2026-07-09 | - |
-| ISSUE-011 | Open | Medium | Decision | 추천 결과 저장 구현 PR 범위 결정 필요 | 추천 결과 저장을 `feature/ai-recommendation` 안에서 함께 구현할지, 별도 작은 PR로 분리할지 결정 | - | 미정 | 2026-07-09 | - |
+| ISSUE-011 | Resolved | Medium | Decision | 추천 결과 저장 구현 PR 범위 결정 필요 | 추천 결과 저장을 `feature/ai-recommendation` 안에서 함께 구현할지, 별도 작은 PR로 분리할지 결정 | 추천 결과 저장은 `feature/ai-recommendation` 범위에 포함해 구현. 추천 성공 시 클라이언트에서 `campuslog:v1:recommendations`에 최근순 배열로 저장 | Codex | 2026-07-09 | 2026-07-10 |
 | ISSUE-012 | Resolved | Medium | Bug | 로컬 AI 분석 요청이 `invalid_api_key`로 실패 | `web/.env.local`의 새 API Key가 적용되지 않는 원인 확인 | 상위 쉘 환경에 남아 있던 기존 `OPENAI_API_KEY`가 `web/.env.local`보다 우선 적용되어 발생. `env -u OPENAI_API_KEY npm run dev`로 `.env.local`의 새 키만 사용했을 때 `/api/analyze` 성공 응답을 확인 | Codex | 2026-07-09 | 2026-07-09 |
 
 ## 이슈 추가 템플릿

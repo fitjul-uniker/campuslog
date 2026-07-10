@@ -12,13 +12,11 @@
 
 ## High Priority
 
-- [ ] AI 경험 추천 및 활용 기능 구현
 - [ ] Vercel 배포 준비
 
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
-- [ ] 추천 결과 저장을 `feature/ai-recommendation`에 포함할지 별도 PR로 분리할지 결정
 - [ ] 정렬 옵션의 `오래된순` / `오래된 작성순` 표현 확정
 - [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
 
@@ -31,6 +29,14 @@
 
 ## Done
 
+- [x] AI 경험 추천 및 활용 기능 구현
+- [x] `/api/recommend` AI 경험 추천 API Route 구현
+- [x] 추천 입력 폼과 추천 결과 화면 구현
+- [x] 추천 참고 문장 복사 기능 구현
+- [x] 추천 결과 localStorage 저장 구현
+- [x] 저장된 추천 기록 목록과 선택 열람 UI 구현
+- [x] 왼쪽 내비게이션에서 AI 추천과 추천 기록 메뉴 분리
+- [x] 추천 결과 저장을 `feature/ai-recommendation`에 포함할지 별도 PR로 분리할지 결정: `feature/ai-recommendation`에 포함
 - [x] AI 경험 분석 API Route 구현
 - [x] OpenAI API 연결 방식 결정: API Route에서 server-side `fetch` 사용
 - [x] 활동 경험 상세 화면에서 AI 분석 요청 CTA 실행 흐름 구현

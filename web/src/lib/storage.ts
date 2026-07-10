@@ -43,7 +43,11 @@ function writeJson(key: string, value: unknown): void {
     return;
   }
 
-  window.localStorage.setItem(key, JSON.stringify(value));
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    return;
+  }
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -55,6 +59,18 @@ function isAnalysisStatus(value: unknown): value is AnalysisStatus {
     value === "unanalyzed" ||
     value === "analyzed" ||
     value === "needs_reanalysis"
+  );
+}
+
+function isRecommendationPurpose(
+  value: unknown,
+): value is RecommendationResult["purpose"] {
+  return (
+    value === "cover_letter" ||
+    value === "portfolio" ||
+    value === "interview" ||
+    value === "activity_application" ||
+    value === "other"
   );
 }
 
@@ -107,7 +123,7 @@ function isRecommendationResult(value: unknown): value is RecommendationResult {
 
   return (
     typeof candidate.id === "string" &&
-    typeof candidate.purpose === "string" &&
+    isRecommendationPurpose(candidate.purpose) &&
     typeof candidate.prompt === "string" &&
     typeof candidate.recommendedExperienceId === "string" &&
     typeof candidate.recommendedExperienceTitle === "string" &&
@@ -290,13 +306,9 @@ export function deleteExperience(id: string): boolean {
   const analyses = readStoredAnalyses();
   delete analyses[id];
 
-  const recommendations = readStoredRecommendations().filter(
-    (recommendation) => recommendation.recommendedExperienceId !== id,
-  );
-
   saveExperiences(nextExperiences);
   writeJson(STORAGE_KEYS.analyses, analyses);
-  writeJson(STORAGE_KEYS.recommendations, recommendations);
+  deleteRecommendationsByExperienceId(id);
 
   return true;
 }
@@ -356,4 +368,15 @@ export function saveRecommendationResult(
   writeJson(STORAGE_KEYS.recommendations, [result, ...recommendations]);
 
   return result;
+}
+
+export function deleteRecommendationsByExperienceId(
+  experienceId: string,
+): void {
+  const recommendations = readStoredRecommendations().filter(
+    (recommendation) =>
+      recommendation.recommendedExperienceId !== experienceId,
+  );
+
+  writeJson(STORAGE_KEYS.recommendations, recommendations);
 }
