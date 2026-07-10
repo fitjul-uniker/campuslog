@@ -10,39 +10,59 @@ type ExperienceCardProps = {
   analysis?: ExperienceAnalysis | null;
 };
 
+function getPreviewText(experience: Experience) {
+  return experience.description || experience.achievements;
+}
+
 export function ExperienceCard({ experience, analysis }: ExperienceCardProps) {
-  const tags = analysis?.competencyTags.slice(0, 3) ?? [];
+  const aiTags = [
+    ...(analysis?.competencyTags ?? []),
+    ...(analysis?.keywords ?? []),
+  ].filter((tag, index, tags) => tags.indexOf(tag) === index);
+  const visibleTags = aiTags.slice(0, 4);
+  const hiddenTagCount = Math.max(aiTags.length - visibleTags.length, 0);
   const hasBeenEdited = experience.createdAt !== experience.updatedAt;
+  const displayDate = hasBeenEdited ? experience.updatedAt : experience.createdAt;
+  const previewText = getPreviewText(experience);
 
   return (
     <Link href={`/experiences/${experience.id}`} className="experience-card">
       <article>
         <div className="experience-card-header">
-          <div>
-            <p className="experience-meta">
-              {experience.period} · {experience.role}
-            </p>
+          <div className="experience-card-title-group">
             <h2>{experience.title}</h2>
+            <StatusBadge status={experience.analysisStatus} />
           </div>
-          <StatusBadge status={experience.analysisStatus} />
         </div>
 
-        <p className="experience-card-description">{experience.description}</p>
+        <dl className="experience-card-meta" aria-label="경험 기본 정보">
+          <div>
+            <dt>활동 기간</dt>
+            <dd>{experience.period}</dd>
+          </div>
+          <div>
+            <dt>역할</dt>
+            <dd>{experience.role}</dd>
+          </div>
+        </dl>
 
-        {tags.length > 0 ? (
+        {previewText ? (
+          <p className="experience-card-description">{previewText}</p>
+        ) : null}
+
+        {visibleTags.length > 0 ? (
           <div className="experience-tags" aria-label="AI 역량 태그">
-            {tags.map((tag) => (
+            {visibleTags.map((tag) => (
               <span key={tag}>{tag}</span>
             ))}
+            {hiddenTagCount > 0 ? <span>+{hiddenTagCount}</span> : null}
           </div>
         ) : null}
 
         <div className="experience-card-footer">
           <span>
             {hasBeenEdited ? "최근 수정" : "생성"}{" "}
-            {formatDateTime(
-              hasBeenEdited ? experience.updatedAt : experience.createdAt,
-            )}
+            {formatDateTime(displayDate)}
           </span>
           <span className="card-link">
             상세 보기

@@ -17,6 +17,7 @@
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
+- [ ] 정렬 / 필터 실제 데이터 처리 구현
 - [ ] 정렬 옵션의 `오래된순` / `오래된 작성순` 표현 확정
 - [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
 
@@ -29,6 +30,13 @@
 
 ## Done
 
+- [x] 대시보드 UI/UX polish
+- [x] 경험 카드 정보 위계 정리
+- [x] 대시보드 빈 상태 CTA 위계 정리
+- [x] 경험 목록 skeleton 로딩 상태 구현
+- [x] 대시보드 실패 Alert / 다시 시도 UI 정리
+- [x] 분석 상태 배지 색상과 fallback 정리
+- [x] 정렬 / 필터 컨트롤 UI 배치
 - [x] AI 경험 추천 및 활용 기능 구현
 - [x] `/api/recommend` AI 경험 추천 API Route 구현
 - [x] 추천 입력 폼과 추천 결과 화면 구현

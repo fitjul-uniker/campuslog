@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-10 - 대시보드 UI/UX polish
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-10 |
+| 작업자 | Codex |
+| 작업 요약 | `design/dashboard-polish` 범위로 메인 대시보드의 CTA 위계, 빈 상태, 로딩/실패 상태, 경험 카드 정보 구조, 분석 상태 배지, 정렬/필터 컨트롤 배치를 정리 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/ExperienceCard.tsx`, `web/src/components/common/LoadingState.tsx`, `web/src/components/common/StatusBadge.tsx`, `web/src/components/common/SortSelect.tsx`, `web/src/components/common/FilterDropdown.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 대시보드 상단에서 `새 경험 기록하기`를 Primary CTA, `AI 추천 및 활용`을 Secondary CTA로 정리. 경험 목록 가까이에 저장된 경험 개수와 disabled 정렬/필터 컨트롤을 배치하되 실제 데이터 처리 로직은 추가하지 않음. 빈 상태 문구와 CTA 위계를 보강하고, 카드형 skeleton 로딩 컴포넌트와 실패 Alert / 다시 시도 UI를 추가. 경험 카드는 제목과 분석 상태를 먼저 노출하고 기간 / 역할 / 내용 미리보기 / 제한된 AI 태그 / 최근 수정일 순서로 스캔되도록 개선. 분석 상태 배지는 `미분석`, `분석 완료`, `재분석 필요` 라벨과 색상, fallback을 정리 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build` 통과. dev server에서 경험 없음 빈 상태, 경험 1개 / 여러 개 목록, 긴 제목과 긴 역할 카드, 미분석 상태 배지, 정렬/필터 disabled 표시, 장식용 검색창 없음, 390px 작은 화면의 CTA / 컨트롤 / 카드 overflow 없음, 카드 클릭 후 상세 이동, 새 경험 작성, 상세 조회, 수정, 삭제 후 1개 목록 및 빈 상태 복귀를 확인. AI 분석 요청과 AI 추천 요청 버튼은 API Route까지 도달하고 사용자 친화적 실패 메시지를 표시함을 확인 |
+| 남은 작업 | 로컬 `OPENAI_API_KEY`가 `invalid_api_key`로 응답해 AI 분석 성공 결과 저장, 분석 완료 / 재분석 필요 카드의 실제 브라우저 성공 상태, AI 추천 성공 결과 저장은 이번 환경에서 수동 완료 검증하지 못함. `storage.ts`가 JSON parse 실패를 빈 배열로 처리해 대시보드에서 파싱 실패와 실제 빈 상태를 구분할 수 없는 점은 `ISSUE_LOG.md`에 별도 기록 |
+| 관련 커밋 메시지 | 후보: `design: polish dashboard experience list` |
+
 ### 2026-07-10 - AI 경험 추천 기능 구현
 
 | 항목 | 내용 |
