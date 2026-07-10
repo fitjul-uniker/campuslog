@@ -60,6 +60,7 @@ export type AnalyzeRequest = {
 
 export type ApiErrorCode =
   | "BAD_REQUEST"
+  | "INSUFFICIENT_INPUT"
   | "OPENAI_API_ERROR"
   | "MISSING_API_KEY"
   | "UNKNOWN_ERROR";

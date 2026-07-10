@@ -11,6 +11,49 @@ import type {
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const ANALYSIS_MODEL = "gpt-4.1-mini";
+const INSUFFICIENT_ANALYSIS_MESSAGE =
+  "분석할 만한 경험 정보가 부족합니다. 활동 내용, 본인이 한 역할, 결과나 배운 점을 조금 더 구체적으로 작성해주세요.";
+const MIN_ANALYSIS_TOTAL_CHAR_COUNT = 16;
+const MIN_ANALYSIS_ACTION_CHAR_COUNT = 10;
+const MIN_COMPETENCY_ACTION_CHAR_COUNT = 24;
+const PLACEHOLDER_VALUES = new Set([
+  "test",
+  "tests",
+  "testtest",
+  "testest",
+  "testing",
+  "테스트",
+  "asdf",
+  "asdfasdf",
+  "qwer",
+  "qwerqwer",
+  "dummy",
+  "sample",
+  "샘플",
+  "예시",
+  "없음",
+  "없다",
+  "없습니다",
+  "해당없음",
+  "내용없음",
+  "기록없음",
+  "몰라",
+  "모름",
+  "미정",
+  "무",
+  "none",
+  "null",
+  "undefined",
+]);
+const REPEATED_PLACEHOLDER_TOKENS = [
+  "test",
+  "테스트",
+  "asdf",
+  "qwer",
+  "dummy",
+  "sample",
+  "샘플",
+];
 
 const analysisResponseSchema = {
   type: "object",
@@ -24,30 +67,33 @@ const analysisResponseSchema = {
     },
     competencyTags: {
       type: "array",
-      minItems: 2,
+      minItems: 0,
       maxItems: 5,
       items: {
         type: "string",
       },
-      description: "경험에서 드러나는 핵심 역량 태그",
+      description:
+        "경험에서 명시적 근거가 확인되는 핵심 역량 태그. 근거가 없으면 빈 배열",
     },
     achievements: {
       type: "array",
-      minItems: 1,
+      minItems: 0,
       maxItems: 5,
       items: {
         type: "string",
       },
-      description: "경험에서 말할 수 있는 주요 성과",
+      description:
+        "경험에서 사용자가 실제로 기록한 주요 성과. 근거가 없으면 빈 배열",
     },
     keywords: {
       type: "array",
-      minItems: 3,
+      minItems: 0,
       maxItems: 8,
       items: {
         type: "string",
       },
-      description: "포트폴리오, 자기소개서, 면접 준비에 활용 가능한 키워드",
+      description:
+        "포트폴리오, 자기소개서, 면접 준비에 활용 가능한 키워드. 근거가 없으면 빈 배열",
     },
   },
 } as const;
@@ -85,6 +131,98 @@ function isAnalysisStatus(value: unknown): value is Experience["analysisStatus"]
   );
 }
 
+function compactMeaningfulText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣ㄱ-ㅎㅏ-ㅣ]+/gi, "");
+}
+
+function isRepeatedTokenValue(value: string, token: string): boolean {
+  if (value.length <= token.length || value.length % token.length !== 0) {
+    return false;
+  }
+
+  return token.repeat(value.length / token.length) === value;
+}
+
+function looksLikePlaceholder(value: string): boolean {
+  const compactValue = compactMeaningfulText(value);
+
+  if (!compactValue) {
+    return true;
+  }
+
+  if (PLACEHOLDER_VALUES.has(compactValue)) {
+    return true;
+  }
+
+  if (/^[tes]+$/i.test(compactValue) && compactValue.length <= 12) {
+    return true;
+  }
+
+  if (/^\d+$/.test(compactValue) && compactValue.length <= 12) {
+    return true;
+  }
+
+  if (
+    compactValue.length >= 3 &&
+    new Set(Array.from(compactValue)).size === 1
+  ) {
+    return true;
+  }
+
+  return REPEATED_PLACEHOLDER_TOKENS.some((token) =>
+    isRepeatedTokenValue(compactValue, token),
+  );
+}
+
+function getMeaningfulFieldText(value: string): string {
+  return looksLikePlaceholder(value) ? "" : value.trim();
+}
+
+function countMeaningfulCharacters(values: string[]): number {
+  return values.reduce((total, value) => {
+    const meaningfulText = getMeaningfulFieldText(value);
+
+    return total + compactMeaningfulText(meaningfulText).length;
+  }, 0);
+}
+
+function hasSufficientAnalysisInput(experience: Experience): boolean {
+  const meaningfulFieldCount = [
+    experience.title,
+    experience.role,
+    experience.description,
+    experience.achievements,
+  ].filter((value) => compactMeaningfulText(getMeaningfulFieldText(value)).length >= 2)
+    .length;
+  const totalCharCount = countMeaningfulCharacters([
+    experience.title,
+    experience.role,
+    experience.description,
+    experience.achievements,
+  ]);
+  const actionCharCount = countMeaningfulCharacters([
+    experience.description,
+    experience.achievements,
+  ]);
+
+  return (
+    meaningfulFieldCount >= 2 &&
+    totalCharCount >= MIN_ANALYSIS_TOTAL_CHAR_COUNT &&
+    actionCharCount >= MIN_ANALYSIS_ACTION_CHAR_COUNT
+  );
+}
+
+function hasSufficientCompetencyEvidence(experience: Experience): boolean {
+  return (
+    countMeaningfulCharacters([
+      experience.description,
+      experience.achievements,
+    ]) >= MIN_COMPETENCY_ACTION_CHAR_COUNT
+  );
+}
+
 function isExperienceForAnalysis(value: unknown): value is Experience {
   if (!value || typeof value !== "object") {
     return false;
@@ -110,13 +248,20 @@ function createPrompt(experience: Experience): string {
   return JSON.stringify(
     {
       instruction:
-        "아래 대학생 활동 경험을 분석해 자기소개서, 포트폴리오, 면접 준비에 다시 활용하기 좋은 형태로 정리해주세요. 입력되지 않은 성과를 과장하거나 꾸며내지 말고, 사용자가 기록한 내용에서 추론 가능한 범위만 사용하세요.",
+        "아래 대학생 활동 경험을 분석해 자기소개서, 포트폴리오, 면접 준비에 다시 활용하기 좋은 형태로 정리해주세요. 입력되지 않은 성과를 과장하거나 꾸며내지 말고, 사용자가 기록한 내용에서 추론 가능한 범위만 사용하세요. 근거가 부족한 항목은 억지로 채우지 말고 빈 배열로 반환하세요.",
+      qualityRules: [
+        "핵심 역량 태그는 사용자의 실제 행동, 문제 해결, 협업, 성과가 원문에 드러날 때만 생성합니다.",
+        "활동명, 기간, 역할명만으로 역량 태그를 추정하지 않습니다.",
+        "test, testtest, asdf, 없음처럼 의미 없는 입력은 분석 근거로 사용하지 않습니다.",
+        "원문에 없는 성과, 수치, 협업 여부, 리더십을 사실처럼 만들지 않습니다.",
+      ],
       outputGuidelines: {
         summary: "2~3문장 한국어 요약",
         competencyTags:
-          "문제 해결력, 협업/커뮤니케이션, 실행력/주도성, 분석력/데이터 활용력처럼 넓은 역량 범주 중심",
-        achievements: "동사와 결과가 보이는 주요 성과",
-        keywords: "구체 기술, 활동 방식, 산출물, 준비 상황에 재사용할 키워드",
+          "0~5개. 문제 해결력, 협업/커뮤니케이션, 실행력/주도성, 분석력/데이터 활용력처럼 넓은 역량 범주 중심. 근거가 없으면 빈 배열",
+        achievements: "0~5개. 동사와 결과가 보이는 주요 성과. 근거가 없으면 빈 배열",
+        keywords:
+          "0~8개. 구체 기술, 활동 방식, 산출물, 준비 상황에 재사용할 키워드. 근거가 없으면 빈 배열",
       },
       experience: {
         title: experience.title,
@@ -196,7 +341,7 @@ function normalizeStringList(value: unknown, maxItems: number): string[] {
 
 function parseAnalysisResult(
   rawOutput: string,
-  experienceId: string,
+  experience: Experience,
 ): AnalysisApiResult | null {
   try {
     const parsed = JSON.parse(stripJsonFence(rawOutput)) as Record<
@@ -206,21 +351,23 @@ function parseAnalysisResult(
 
     const summary =
       typeof parsed.summary === "string" ? parsed.summary.trim() : "";
-    const competencyTags = normalizeStringList(parsed.competencyTags, 5);
+    const competencyTags = hasSufficientCompetencyEvidence(experience)
+      ? normalizeStringList(parsed.competencyTags, 5)
+      : [];
     const achievements = normalizeStringList(parsed.achievements, 5);
     const keywords = normalizeStringList(parsed.keywords, 8);
 
     if (
       !summary ||
-      competencyTags.length === 0 ||
-      achievements.length === 0 ||
-      keywords.length === 0
+      (competencyTags.length === 0 &&
+        achievements.length === 0 &&
+        keywords.length === 0)
     ) {
       return null;
     }
 
     return {
-      experienceId,
+      experienceId: experience.id,
       summary,
       competencyTags,
       achievements,
@@ -259,6 +406,14 @@ export async function POST(request: Request) {
       "BAD_REQUEST",
       "분석할 경험 데이터가 올바르지 않습니다.",
       400,
+    );
+  }
+
+  if (!hasSufficientAnalysisInput(body.experience)) {
+    return createErrorResponse(
+      "INSUFFICIENT_INPUT",
+      INSUFFICIENT_ANALYSIS_MESSAGE,
+      422,
     );
   }
 
@@ -343,12 +498,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const analysis = parseAnalysisResult(outputText, body.experience.id);
+    const analysis = parseAnalysisResult(outputText, body.experience);
 
     if (!analysis) {
       return createErrorResponse(
         "OPENAI_API_ERROR",
-        "AI 분석 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
+        "입력된 경험에서 분석에 필요한 단서를 충분히 찾지 못했습니다. 활동에서 맡은 일, 직접 한 행동, 결과나 배운 점을 조금 더 구체적으로 기록한 뒤 다시 요청해주세요.",
         502,
       );
     }
