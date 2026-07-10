@@ -127,7 +127,7 @@ export default function RecommendPage() {
             label: "첫 경험 기록하기",
           }}
           secondaryAction={{
-            href: "/",
+            href: "/dashboard",
             label: "대시보드로 돌아가기",
           }}
         />
@@ -152,7 +152,7 @@ export default function RecommendPage() {
             <History className="button-icon" aria-hidden="true" />
             추천 기록
           </Link>
-          <Link href="/" className="button button-secondary">
+          <Link href="/dashboard" className="button button-secondary">
             <ArrowLeft className="button-icon" aria-hidden="true" />
             대시보드
           </Link>
