@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { BookMarked } from "lucide-react";
 
 import { Navigation } from "@/components/layout/Navigation";
 
@@ -13,7 +14,7 @@ export function AppShell({ children }: AppShellProps) {
       <aside className="app-sidebar" aria-label="CampusLog 사이드바">
         <Link href="/" className="brand" aria-label="CampusLog 홈">
           <span className="brand-mark" aria-hidden="true">
-            CL
+            <BookMarked />
           </span>
           <span>
             <span className="brand-name">CampusLog</span>
@@ -27,7 +28,7 @@ export function AppShell({ children }: AppShellProps) {
       <header className="mobile-header">
         <Link href="/" className="mobile-brand" aria-label="CampusLog 홈">
           <span className="brand-mark" aria-hidden="true">
-            CL
+            <BookMarked />
           </span>
           <span className="brand-name">CampusLog</span>
         </Link>

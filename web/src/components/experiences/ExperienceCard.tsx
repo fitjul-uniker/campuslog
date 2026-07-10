@@ -27,7 +27,7 @@ export function ExperienceCard({ experience, analysis }: ExperienceCardProps) {
 
   return (
     <Link href={`/experiences/${experience.id}`} className="experience-card">
-      <article>
+      <article className="experience-card-body">
         <div className="experience-card-header">
           <div className="experience-card-title-group">
             <h2>{experience.title}</h2>

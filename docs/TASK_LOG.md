@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-10 - 브랜드 및 반응형 UI/UX 개선
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-10 |
+| 작업자 | Codex |
+| 작업 요약 | `design/responsive-brand-polish` 범위로 Campus Green + Mint 브랜드 톤, 데스크톱 / 모바일 AppShell 레이아웃, CTA / 카드 / EmptyState / 상세 화면의 반응형 마감을 정리 |
+| 수정한 파일 | `web/src/app/layout.tsx`, `web/src/app/globals.css`, `web/src/components/layout/AppShell.tsx`, `web/src/components/experiences/ExperienceCard.tsx`, `web/public/favicon.svg`, `web/public/app-icon.svg`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 전역 디자인 토큰에서 Campus Green / Mint 역할, focus ring, border, shadow, hover 상태를 정리. 데스크톱 AppShell은 좌측 사이드바와 우측 메인 콘텐츠가 안정적으로 보이도록 보강하고, 860px 이하에서는 사이드바 없이 상단 App Bar와 세로 스크롤 중심으로 동작하도록 조정. 모바일에서 CTA 버튼이 1열로 내려가고, ExperienceCard의 긴 제목 / 긴 역할 / 긴 태그 / 최근 수정일 / 상세 링크가 가로 overflow 없이 줄바꿈되도록 보강. EmptyState, Alert, Skeleton, 상세 / 추천 패널의 spacing, radius, shadow, overflow-wrap을 브랜드 톤에 맞게 정리. 새 로고를 직접 제작하지 않고 기존 `lucide-react`의 `BookMarked` 아이콘을 브랜드 마크와 favicon / app icon 후보로 재사용 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build` 통과. dev server에서 Desktop Dashboard(1440px), Tablet Dashboard(768px), Mobile Dashboard(390px), Experience List, Experience Detail, Empty State, Error State, AI Analysis 실패 상태, AI Recommendation 실패 상태, 긴 제목 / 긴 역할 / 긴 링크 케이스를 확인. 모바일 빈 상태와 추천 입력 화면에서 CTA 겹침 없음, 데스크톱 사이드바 표시, 모바일 App Bar 표시, 주요 화면 가로 overflow 없음 확인. 새 경험 작성, 경험 수정, 경험 삭제 후 빈 상태 복귀 확인 |
+| 남은 작업 | 로컬 `OPENAI_API_KEY`가 401 `invalid_api_key`로 응답해 AI 분석 성공 결과 저장, AI 추천 성공 결과 저장, 추천 저장 / 추천 기록 유지의 성공 흐름은 이번 환경에서 완료 검증하지 못함. LoadingState는 CSS와 컴포넌트 구조를 유지하며 색상 / spacing만 정리했으나 localStorage 로드가 즉시 끝나 장시간 skeleton 화면은 브라우저에서 별도 캡처하지 못함 |
+| 관련 커밋 메시지 | 후보: `design: polish responsive brand UI` |
+
 ### 2026-07-10 - 대시보드 UI/UX polish
 
 | 항목 | 내용 |
