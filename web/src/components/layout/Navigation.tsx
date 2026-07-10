@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpenText, PenLine, Sparkles } from "lucide-react";
+import { BookOpenText, History, PenLine, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,13 @@ const navigationItems = [
     label: "AI 추천",
     description: "경험 활용",
     icon: Sparkles,
+    exact: true,
+  },
+  {
+    href: "/recommend/history",
+    label: "추천 기록",
+    description: "저장된 추천",
+    icon: History,
   },
 ];
 
@@ -42,7 +49,9 @@ export function Navigation() {
     <nav className="navigation" aria-label="주요 메뉴">
       {navigationItems.map((item) => {
         const Icon = item.icon;
-        const isActive = isActivePath(pathname, item.href);
+        const isActive = item.exact
+          ? pathname === item.href
+          : isActivePath(pathname, item.href);
 
         return (
           <Link

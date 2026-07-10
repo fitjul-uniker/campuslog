@@ -1,0 +1,499 @@
+import { NextResponse } from "next/server";
+
+import type {
+  ApiErrorCode,
+  ApiErrorResponse,
+  Experience,
+  ExperienceAnalysis,
+  RecommendationApiResult,
+  RecommendationPurpose,
+  RecommendRequest,
+  RecommendResponse,
+} from "@/lib/types";
+
+const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
+const RECOMMENDATION_MODEL = "gpt-4.1-mini";
+
+const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
+  cover_letter: "자기소개서",
+  portfolio: "포트폴리오",
+  interview: "면접",
+  activity_application: "대외활동/지원서",
+  other: "기타",
+};
+
+const recommendationResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "recommendedExperienceId",
+    "recommendedExperienceTitle",
+    "reason",
+    "relatedTags",
+    "highlightedAchievement",
+    "usageDirection",
+    "draftSentence",
+  ],
+  properties: {
+    recommendedExperienceId: {
+      type: "string",
+      description: "추천한 경험의 id. 반드시 입력으로 받은 experiences 중 하나여야 함",
+    },
+    recommendedExperienceTitle: {
+      type: "string",
+      description: "추천한 경험의 제목",
+    },
+    reason: {
+      type: "string",
+      description: "이 경험이 사용자의 활용 목적과 질문에 가장 적합한 이유",
+    },
+    relatedTags: {
+      type: "array",
+      minItems: 1,
+      maxItems: 6,
+      items: {
+        type: "string",
+      },
+      description: "추천 경험과 질문에 관련된 역량 태그 또는 키워드",
+    },
+    highlightedAchievement: {
+      type: "string",
+      description: "원본 경험 또는 분석 결과에서 강조할 수 있는 성과",
+    },
+    usageDirection: {
+      type: "string",
+      description: "자기소개서, 포트폴리오, 면접 등 현재 목적에 맞는 활용 방향",
+    },
+    draftSentence: {
+      type: "string",
+      description: "사용자가 참고해 수정할 수 있는 한국어 초안 문장",
+    },
+  },
+} as const;
+
+function createErrorResponse(
+  code: ApiErrorCode,
+  message: string,
+  status: number,
+) {
+  return NextResponse.json<ApiErrorResponse>(
+    {
+      ok: false,
+      error: {
+        code,
+        message,
+      },
+    },
+    { status },
+  );
+}
+
+function hasText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isRecommendationPurpose(
+  value: unknown,
+): value is RecommendationPurpose {
+  return (
+    value === "cover_letter" ||
+    value === "portfolio" ||
+    value === "interview" ||
+    value === "activity_application" ||
+    value === "other"
+  );
+}
+
+function isAnalysisStatus(value: unknown): value is Experience["analysisStatus"] {
+  return (
+    value === "unanalyzed" ||
+    value === "analyzed" ||
+    value === "needs_reanalysis"
+  );
+}
+
+function isExperienceForRecommendation(value: unknown): value is Experience {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    hasText(candidate.id) &&
+    hasText(candidate.title) &&
+    hasText(candidate.period) &&
+    hasText(candidate.role) &&
+    hasText(candidate.description) &&
+    typeof candidate.achievements === "string" &&
+    isStringArray(candidate.relatedLinks) &&
+    hasText(candidate.createdAt) &&
+    hasText(candidate.updatedAt) &&
+    isAnalysisStatus(candidate.analysisStatus)
+  );
+}
+
+function isExperienceAnalysisForRecommendation(
+  value: unknown,
+): value is ExperienceAnalysis {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    hasText(candidate.id) &&
+    hasText(candidate.experienceId) &&
+    hasText(candidate.summary) &&
+    isStringArray(candidate.competencyTags) &&
+    isStringArray(candidate.achievements) &&
+    isStringArray(candidate.keywords) &&
+    hasText(candidate.generatedAt) &&
+    hasText(candidate.sourceExperienceUpdatedAt)
+  );
+}
+
+function createPrompt(body: RecommendRequest): string {
+  const analysesByExperienceId = new Map(
+    body.analyses.map((analysis) => [analysis.experienceId, analysis]),
+  );
+
+  return JSON.stringify(
+    {
+      instruction:
+        "저장된 대학생 활동 경험 중 사용자의 활용 목적과 질문에 가장 설득력 있게 쓸 수 있는 경험 1개만 추천해주세요.",
+      selectionGuidelines: [
+        "제목 유사도만 보지 말고 목적, 질문, 역할, 성과, 분석 태그, 키워드의 적합성을 함께 판단합니다.",
+        "분석 결과가 있으면 summary, competencyTags, achievements, keywords를 적극 활용합니다.",
+        "분석 결과가 없거나 오래되었으면 원본 description, achievements, role을 우선 참고합니다.",
+        "원본 경험이나 분석 결과에 없는 성과를 사실처럼 만들지 않습니다.",
+        "recommendedExperienceId는 반드시 experiences 배열에 있는 id 중 하나를 그대로 사용합니다.",
+      ],
+      outputGuidelines: {
+        reason: "추천 이유는 2~4문장 한국어로 작성",
+        relatedTags: "역량 태그 또는 활용 키워드 2~6개",
+        highlightedAchievement: "원본에 근거한 성과 1개",
+        usageDirection: "현재 목적에 맞게 어떤 관점으로 풀면 좋은지 설명",
+        draftSentence:
+          "사용자가 자기소개서/포트폴리오/면접 답변 초안으로 참고할 수 있는 자연스러운 한국어 문장",
+      },
+      userInput: {
+        purpose: body.purpose,
+        purposeLabel: PURPOSE_LABELS[body.purpose],
+        prompt: body.prompt,
+      },
+      experiences: body.experiences.map((experience) => {
+        const analysis = analysesByExperienceId.get(experience.id);
+
+        return {
+          id: experience.id,
+          title: experience.title,
+          period: experience.period,
+          role: experience.role,
+          description: experience.description,
+          achievements: experience.achievements,
+          relatedLinks: experience.relatedLinks,
+          analysis: analysis
+            ? {
+                summary: analysis.summary,
+                competencyTags: analysis.competencyTags,
+                achievements: analysis.achievements,
+                keywords: analysis.keywords,
+                isStale:
+                  analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
+              }
+            : null,
+        };
+      }),
+    },
+    null,
+    2,
+  );
+}
+
+function extractOutputText(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const response = payload as {
+    output_text?: unknown;
+    output?: unknown;
+  };
+
+  if (typeof response.output_text === "string" && response.output_text.trim()) {
+    return response.output_text;
+  }
+
+  if (!Array.isArray(response.output)) {
+    return null;
+  }
+
+  for (const item of response.output) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const content = (item as { content?: unknown }).content;
+
+    if (!Array.isArray(content)) {
+      continue;
+    }
+
+    for (const contentItem of content) {
+      if (!contentItem || typeof contentItem !== "object") {
+        continue;
+      }
+
+      const text = (contentItem as { text?: unknown }).text;
+
+      if (typeof text === "string" && text.trim()) {
+        return text;
+      }
+    }
+  }
+
+  return null;
+}
+
+function stripJsonFence(value: string): string {
+  const match = value.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  return (match?.[1] ?? value).trim();
+}
+
+function normalizeStringList(value: unknown, maxItems: number): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+function parseRecommendationResult(
+  rawOutput: string,
+  experiences: Experience[],
+): RecommendationApiResult | null {
+  try {
+    const parsed = JSON.parse(stripJsonFence(rawOutput)) as Record<
+      string,
+      unknown
+    >;
+
+    const recommendedExperienceId =
+      typeof parsed.recommendedExperienceId === "string"
+        ? parsed.recommendedExperienceId.trim()
+        : "";
+    const recommendedExperience = experiences.find(
+      (experience) => experience.id === recommendedExperienceId,
+    );
+    const reason = typeof parsed.reason === "string" ? parsed.reason.trim() : "";
+    const relatedTags = normalizeStringList(parsed.relatedTags, 6);
+    const highlightedAchievement =
+      typeof parsed.highlightedAchievement === "string"
+        ? parsed.highlightedAchievement.trim()
+        : "";
+    const usageDirection =
+      typeof parsed.usageDirection === "string"
+        ? parsed.usageDirection.trim()
+        : "";
+    const draftSentence =
+      typeof parsed.draftSentence === "string"
+        ? parsed.draftSentence.trim()
+        : "";
+
+    if (
+      !recommendedExperience ||
+      !reason ||
+      relatedTags.length === 0 ||
+      !highlightedAchievement ||
+      !usageDirection ||
+      !draftSentence
+    ) {
+      return null;
+    }
+
+    return {
+      recommendedExperienceId: recommendedExperience.id,
+      recommendedExperienceTitle: recommendedExperience.title,
+      reason,
+      relatedTags,
+      highlightedAchievement,
+      usageDirection,
+      draftSentence,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function readRequestBody(
+  request: Request,
+): Promise<RecommendRequest | null> {
+  try {
+    const body = (await request.json()) as unknown;
+
+    if (!body || typeof body !== "object") {
+      return null;
+    }
+
+    const candidate = body as Record<string, unknown>;
+    const rawExperiences = candidate.experiences;
+    const rawAnalyses = candidate.analyses;
+
+    if (
+      !isRecommendationPurpose(candidate.purpose) ||
+      !hasText(candidate.prompt) ||
+      !Array.isArray(rawExperiences) ||
+      !Array.isArray(rawAnalyses)
+    ) {
+      return null;
+    }
+
+    const experiences = rawExperiences.filter(isExperienceForRecommendation);
+    const analyses = rawAnalyses.filter(isExperienceAnalysisForRecommendation);
+
+    if (
+      experiences.length === 0 ||
+      experiences.length !== rawExperiences.length ||
+      analyses.length !== rawAnalyses.length
+    ) {
+      return null;
+    }
+
+    return {
+      purpose: candidate.purpose,
+      prompt: candidate.prompt.trim(),
+      experiences,
+      analyses,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function POST(request: Request) {
+  const body = await readRequestBody(request);
+
+  if (!body) {
+    return createErrorResponse(
+      "BAD_REQUEST",
+      "추천에 필요한 입력 데이터가 올바르지 않습니다.",
+      400,
+    );
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey?.trim()) {
+    return createErrorResponse(
+      "MISSING_API_KEY",
+      "서버에 OPENAI_API_KEY가 설정되어 있지 않습니다.",
+      500,
+    );
+  }
+
+  try {
+    const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: RECOMMENDATION_MODEL,
+        input: [
+          {
+            role: "system",
+            content:
+              "당신은 CampusLog의 AI 경험 추천 도우미입니다. 저장된 경험 중 가장 적합한 경험 1개를 고르고, 과장 없이 한국어 추천 이유와 활용 문장을 제공합니다.",
+          },
+          {
+            role: "user",
+            content: createPrompt(body),
+          },
+        ],
+        text: {
+          format: {
+            type: "json_schema",
+            name: "campuslog_experience_recommendation",
+            strict: true,
+            schema: recommendationResponseSchema,
+          },
+        },
+        max_output_tokens: 1100,
+        store: false,
+      }),
+    });
+
+    if (!openAiResponse.ok) {
+      try {
+        const errorPayload = (await openAiResponse.json()) as {
+          error?: {
+            code?: unknown;
+            type?: unknown;
+          };
+        };
+
+        console.warn("CampusLog recommend OpenAI request failed", {
+          status: openAiResponse.status,
+          code: errorPayload.error?.code,
+          type: errorPayload.error?.type,
+        });
+      } catch {
+        console.warn("CampusLog recommend OpenAI request failed", {
+          status: openAiResponse.status,
+        });
+      }
+
+      return createErrorResponse(
+        "OPENAI_API_ERROR",
+        "AI 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+        502,
+      );
+    }
+
+    const openAiPayload = (await openAiResponse.json()) as unknown;
+    const outputText = extractOutputText(openAiPayload);
+
+    if (!outputText) {
+      return createErrorResponse(
+        "OPENAI_API_ERROR",
+        "AI 추천 응답을 해석하지 못했습니다. 다시 시도해주세요.",
+        502,
+      );
+    }
+
+    const recommendation = parseRecommendationResult(
+      outputText,
+      body.experiences,
+    );
+
+    if (!recommendation) {
+      return createErrorResponse(
+        "OPENAI_API_ERROR",
+        "AI 추천 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
+        502,
+      );
+    }
+
+    return NextResponse.json<RecommendResponse>({
+      ok: true,
+      recommendation,
+    });
+  } catch {
+    return createErrorResponse(
+      "UNKNOWN_ERROR",
+      "알 수 없는 오류로 AI 추천을 완료하지 못했습니다.",
+      500,
+    );
+  }
+}

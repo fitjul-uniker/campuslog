@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-10 - AI 경험 추천 기능 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-10 |
+| 작업자 | Codex |
+| 작업 요약 | `feature/ai-recommendation` 범위로 저장된 경험 전체와 AI 분석 결과를 기준으로 활용 목적에 맞는 경험 1개를 추천하고, 추천 이유 / 태그 / 성과 / 활용 방향 / 참고 문장을 표시하고 저장하는 흐름을 구현 |
+| 수정한 파일 | `web/src/app/api/recommend/route.ts`, `web/src/app/recommend/page.tsx`, `web/src/app/recommend/history/page.tsx`, `web/src/components/ai/RecommendationForm.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/layout/Navigation.tsx`, `web/src/lib/recommendationApi.ts`, `web/src/lib/types.ts`, `web/src/lib/storage.ts`, `web/src/app/globals.css`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | `/api/recommend` POST Route를 추가해 서버 환경 변수 `OPENAI_API_KEY`로만 OpenAI Responses API를 호출하고, 추천 결과 JSON schema를 검증해 반환하도록 구현. 추천 요청 / 응답 타입과 클라이언트 API 호출 함수를 추가. `/recommend` 화면에서 저장된 경험과 분석 결과를 읽고, 경험 없음 / 입력 없음 / 로딩 / 실패 / 성공 상태를 처리하며 성공 시 추천 결과를 `campuslog:v1:recommendations`에 최근순으로 저장. 추천 결과 컴포넌트에는 추천 경험 1개, 추천 이유, 관련 태그, 강조할 성과, 활용 방향, 참고 문장과 복사 버튼을 추가. 왼쪽 내비게이션에 추천 기록 메뉴를 추가하고 `/recommend/history`에서 과거 활용 목적 / 질문 / 추천 경험을 목록으로 선택해 다시 볼 수 있도록 보강 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build`, `git diff --check` 통과. build 결과 `/recommend`와 `/recommend/history` 라우트가 생성됨을 확인. dev server에서 `/recommend` 접근, 경험 없음 빈 상태 표시, `/api/recommend` 잘못된 요청의 `BAD_REQUEST` 응답, 클라이언트 정적 번들에 `OPENAI_API_KEY` / `NEXT_PUBLIC` 문자열이 포함되지 않음을 확인. 저장된 추천 기록 목록 UI는 lint / build 기준으로 검증. 브라우저 자동화에서 경험 생성 시 `type="month"` 입력이 채워지지 않아 2개 경험 생성부터 AI 추천 성공까지의 전체 UI 시나리오는 자동 검증하지 못함 |
+| 남은 작업 | 유효한 `OPENAI_API_KEY`가 설정된 로컬 브라우저에서 경험 2개 이상 생성, 최소 1개 분석 완료, `/recommend` 추천 성공, 참고 문장 복사, 새로고침 후 추천 결과 유지까지 수동 확인 필요. Vercel 배포 준비는 별도 단계로 남음 |
+| 관련 커밋 메시지 | 후보: `feature: add AI experience recommendation` |
+
 ### 2026-07-09 - AI 경험 분석 기능 구현
 
 | 항목 | 내용 |

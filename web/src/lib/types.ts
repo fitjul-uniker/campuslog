@@ -92,3 +92,22 @@ export type RecommendationResult = {
   draftSentence: string;
   generatedAt: string;
 };
+
+export type RecommendationApiResult = Omit<
+  RecommendationResult,
+  "id" | "generatedAt" | "purpose" | "prompt"
+>;
+
+export type RecommendRequest = {
+  purpose: RecommendationPurpose;
+  prompt: string;
+  experiences: Experience[];
+  analyses: ExperienceAnalysis[];
+};
+
+export type RecommendResponse =
+  | {
+      ok: true;
+      recommendation: RecommendationApiResult;
+    }
+  | ApiErrorResponse;
