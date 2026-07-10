@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-10 - AI 추천 결과 컨텍스트 불일치 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-10 |
+| 작업자 | Codex |
+| 작업 요약 | `fix/recommendation-context-alignment` 범위로 AI 추천 결과에서 추천 경험 제목과 추천 이유 / 태그 / 성과 / 활용 방향 / 참고 문장이 서로 다른 경험을 기준으로 섞이는 문제를 수정 |
+| 수정한 파일 | `web/src/app/api/recommend/route.ts`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 기존 `/api/recommend`가 하나의 OpenAI 요청에서 경험 선택과 상세 추천 문장 생성을 함께 처리하던 구조를 분리. 1단계에서는 저장된 경험 전체와 분석 결과를 기준으로 `recommendedExperienceId`만 선택하고, 2단계에서는 서버가 확정한 선택 경험 1개와 해당 분석 결과만 전달해 추천 이유, 관련 태그, 강조할 성과, 활용 방향, 참고 문장을 생성하도록 변경. 서버 응답에서는 선택된 실제 경험의 id / title을 붙여 반환하므로 AI가 다른 경험 제목이나 상세 내용을 섞어 보내는 문제를 줄임 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 유효한 `OPENAI_API_KEY` 기준으로 브라우저에서 사용자가 제보한 대외활동 / 지원서 문항과 실제 경험 데이터를 넣고, 추천 경험과 추천 이유 / 태그 / 성과 / 활용 방향 / 참고 문장이 같은 경험에 근거하는지 수동 재검증 필요 |
+| 관련 커밋 메시지 | 후보: `fix: align recommendation detail context` |
+
 ### 2026-07-10 - 브랜드 및 반응형 UI/UX 개선
 
 | 항목 | 내용 |
