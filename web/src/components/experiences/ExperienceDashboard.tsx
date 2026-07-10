@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpenText, Plus, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, BookOpenText, Plus, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
+import { FilterDropdown } from "@/components/common/FilterDropdown";
+import { LoadingState } from "@/components/common/LoadingState";
+import { SortSelect } from "@/components/common/SortSelect";
 import { ExperienceCard } from "@/components/experiences/ExperienceCard";
 import {
   getAnalysisByExperienceId,
@@ -17,20 +20,35 @@ export function ExperienceDashboard() {
   const [analysesByExperienceId, setAnalysesByExperienceId] = useState<
     Record<string, ExperienceAnalysis | null>
   >({});
+  const [loadError, setLoadError] = useState("");
+
+  const loadDashboardData = useCallback(() => {
+    setLoadError("");
+
+    try {
+      const storedExperiences = getExperiences();
+      setExperiences(storedExperiences);
+      setAnalysesByExperienceId(
+        storedExperiences.reduce<Record<string, ExperienceAnalysis | null>>(
+          (analyses, experience) => {
+            analyses[experience.id] = getAnalysisByExperienceId(experience.id);
+            return analyses;
+          },
+          {},
+        ),
+      );
+    } catch {
+      setExperiences([]);
+      setAnalysesByExperienceId({});
+      setLoadError(
+        "저장된 경험 목록을 불러오지 못했습니다. 데이터를 지우지 않았으니 잠시 후 다시 시도해 주세요.",
+      );
+    }
+  }, []);
 
   useEffect(() => {
-    const storedExperiences = getExperiences();
-    setExperiences(storedExperiences);
-    setAnalysesByExperienceId(
-      storedExperiences.reduce<Record<string, ExperienceAnalysis | null>>(
-        (analyses, experience) => {
-          analyses[experience.id] = getAnalysisByExperienceId(experience.id);
-          return analyses;
-        },
-        {},
-      ),
-    );
-  }, []);
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   return (
     <div className="page-stack">
@@ -39,31 +57,48 @@ export function ExperienceDashboard() {
           <p className="eyebrow">경험 목록 대시보드</p>
           <h1>나의 경험</h1>
           <p className="page-description">
-            프로젝트, 공모전, 인턴, 대외활동 경험을 한곳에서 확인하는
-            시작 화면입니다.
+            저장한 프로젝트, 공모전, 인턴, 대외활동 경험을 확인하고 다시
+            꺼내 쓰기 쉽게 관리합니다.
           </p>
         </div>
 
         <div className="header-actions">
           <Link href="/experiences/new" className="button button-primary">
             <Plus className="button-icon" aria-hidden="true" />
-            새 경험 기록
+            새 경험 기록하기
           </Link>
           <Link href="/recommend" className="button button-secondary">
             <Sparkles className="button-icon" aria-hidden="true" />
-            AI 추천
+            AI 추천 및 활용
           </Link>
         </div>
       </section>
 
-      {experiences === null ? (
-        <section className="placeholder-panel">
-          <p className="muted-text">저장된 경험을 불러오는 중입니다.</p>
+      {loadError ? (
+        <section className="alert-panel" role="alert">
+          <AlertCircle aria-hidden="true" />
+          <div>
+            <h2>경험 목록을 불러오지 못했습니다</h2>
+            <p>{loadError}</p>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={loadDashboardData}
+            >
+              다시 시도
+            </button>
+          </div>
         </section>
+      ) : experiences === null ? (
+        <LoadingState
+          variant="cards"
+          count={3}
+          message="저장된 경험 목록을 불러오는 중입니다."
+        />
       ) : experiences.length === 0 ? (
         <EmptyState
           title="아직 기록한 활동 경험이 없습니다"
-          description="첫 경험을 기록하면 이후 이 화면에서 최근 수정한 경험부터 확인할 수 있습니다."
+          description="경험을 기록하면 AI 분석과 추천에 활용할 수 있습니다. 추천을 받으려면 먼저 활동 경험을 하나 이상 저장해 주세요."
           icon={<BookOpenText />}
           primaryAction={{
             href: "/experiences/new",
@@ -71,18 +106,54 @@ export function ExperienceDashboard() {
           }}
           secondaryAction={{
             href: "/recommend",
-            label: "AI 추천 화면 보기",
+            label: "AI 추천 및 활용",
           }}
         />
       ) : (
-        <section className="experience-list" aria-label="저장된 활동 경험 목록">
-          {experiences.map((experience) => (
-            <ExperienceCard
-              key={experience.id}
-              experience={experience}
-              analysis={analysesByExperienceId[experience.id]}
-            />
-          ))}
+        <section className="experience-list-section">
+          <div className="list-toolbar">
+            <div>
+              <p className="eyebrow">저장된 경험</p>
+              <h2>총 {experiences.length}개</h2>
+              <p className="muted-text">
+                목록은 현재 최근 수정한 경험부터 표시됩니다.
+              </p>
+            </div>
+
+            <div className="list-controls" aria-label="경험 목록 도구">
+              <SortSelect
+                value="updated_desc"
+                disabled
+                helperText="정렬 변경은 추후 제공됩니다."
+                options={[
+                  { value: "updated_desc", label: "최신 수정순" },
+                  { value: "created_asc", label: "오래된 작성순" },
+                  { value: "period_desc", label: "활동 기간순" },
+                ]}
+              />
+              <FilterDropdown
+                value="all"
+                disabled
+                helperText="필터 적용은 추후 제공됩니다."
+                options={[
+                  { value: "all", label: "전체 상태" },
+                  { value: "unanalyzed", label: "미분석" },
+                  { value: "analyzed", label: "분석 완료" },
+                  { value: "needs_reanalysis", label: "재분석 필요" },
+                ]}
+              />
+            </div>
+          </div>
+
+          <div className="experience-list" aria-label="저장된 활동 경험 목록">
+            {experiences.map((experience) => (
+              <ExperienceCard
+                key={experience.id}
+                experience={experience}
+                analysis={analysesByExperienceId[experience.id]}
+              />
+            ))}
+          </div>
         </section>
       )}
     </div>

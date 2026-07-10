@@ -34,6 +34,7 @@
 | ISSUE-010 | Open | Low | Question | 정렬 옵션 표현 확정 필요 | 문서별 `오래된순` / `오래된 작성순` 표현을 `createdAt` 오름차순 기준으로 통일할지 결정 | - | 미정 | 2026-07-09 | - |
 | ISSUE-011 | Resolved | Medium | Decision | 추천 결과 저장 구현 PR 범위 결정 필요 | 추천 결과 저장을 `feature/ai-recommendation` 안에서 함께 구현할지, 별도 작은 PR로 분리할지 결정 | 추천 결과 저장은 `feature/ai-recommendation` 범위에 포함해 구현. 추천 성공 시 클라이언트에서 `campuslog:v1:recommendations`에 최근순 배열로 저장 | Codex | 2026-07-09 | 2026-07-10 |
 | ISSUE-012 | Resolved | Medium | Bug | 로컬 AI 분석 요청이 `invalid_api_key`로 실패 | `web/.env.local`의 새 API Key가 적용되지 않는 원인 확인 | 상위 쉘 환경에 남아 있던 기존 `OPENAI_API_KEY`가 `web/.env.local`보다 우선 적용되어 발생. `env -u OPENAI_API_KEY npm run dev`로 `.env.local`의 새 키만 사용했을 때 `/api/analyze` 성공 응답을 확인 | Codex | 2026-07-09 | 2026-07-09 |
+| ISSUE-013 | Open | Medium | Bug | localStorage JSON parse 실패가 빈 상태와 구분되지 않음 | `storage.ts`의 `readJson` / `readStoredExperiences`가 malformed JSON을 빈 배열로 fallback하므로 대시보드에서 데이터 파싱 실패 Alert를 정확히 표시할 정책을 정해야 함 | 이번 `design/dashboard-polish`에서는 storage 구조와 CRUD 로직 변경 금지 범위를 지키기 위해 수정하지 않고, 대시보드에서는 예기치 않은 load exception만 Alert로 처리 | 미정 | 2026-07-10 | - |
 
 ## 이슈 추가 템플릿
 
