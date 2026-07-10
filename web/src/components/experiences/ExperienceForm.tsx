@@ -19,6 +19,7 @@ type ExperienceFormProps = {
 type PeriodFields = {
   startMonth: string;
   endMonth: string;
+  isOngoing: boolean;
 };
 
 const EMPTY_FORM: ExperienceFormInput = {
@@ -33,6 +34,7 @@ const EMPTY_FORM: ExperienceFormInput = {
 const EMPTY_PERIOD_FIELDS: PeriodFields = {
   startMonth: "",
   endMonth: "",
+  isOngoing: false,
 };
 
 function normalizeMonthValue(value: string): string {
@@ -46,19 +48,26 @@ function normalizeMonthValue(value: string): string {
 }
 
 function parsePeriodFields(period: string): PeriodFields {
+  const isOngoing = /현재|present|ongoing/i.test(period);
   const monthValues = period.match(/\d{4}[.-]\d{1,2}/g) ?? [];
   const [firstMonthValue, secondMonthValue] = monthValues;
 
   if (!firstMonthValue) {
-    return EMPTY_PERIOD_FIELDS;
+    return {
+      ...EMPTY_PERIOD_FIELDS,
+      isOngoing,
+    };
   }
 
   const startMonth = normalizeMonthValue(firstMonthValue);
-  const endMonth = normalizeMonthValue(secondMonthValue ?? firstMonthValue);
+  const endMonth = isOngoing
+    ? ""
+    : normalizeMonthValue(secondMonthValue ?? firstMonthValue);
 
   return {
     startMonth,
     endMonth,
+    isOngoing,
   };
 }
 
@@ -67,9 +76,17 @@ function formatMonthForStorage(month: string): string {
 }
 
 function createPeriodValue(periodFields: PeriodFields): string {
-  const { startMonth, endMonth } = periodFields;
+  const { startMonth, endMonth, isOngoing } = periodFields;
 
-  if (!startMonth || !endMonth) {
+  if (!startMonth) {
+    return "";
+  }
+
+  if (isOngoing) {
+    return `${formatMonthForStorage(startMonth)} ~ 현재`;
+  }
+
+  if (!endMonth) {
     return "";
   }
 
@@ -82,10 +99,26 @@ function createPeriodValue(periodFields: PeriodFields): string {
   )}`;
 }
 
-function isPeriodRangeValid(periodFields: PeriodFields): boolean {
-  const { startMonth, endMonth } = periodFields;
+function getPeriodErrorMessage(periodFields: PeriodFields): string {
+  const { startMonth, endMonth, isOngoing } = periodFields;
 
-  return Boolean(startMonth && endMonth && startMonth <= endMonth);
+  if (!startMonth) {
+    return "활동기간의 시작월을 선택해주세요.";
+  }
+
+  if (isOngoing) {
+    return "";
+  }
+
+  if (!endMonth) {
+    return "종료월을 선택하거나 현재 진행 중을 체크해주세요.";
+  }
+
+  if (startMonth > endMonth) {
+    return "종료월은 시작월보다 빠를 수 없습니다.";
+  }
+
+  return "";
 }
 
 function createFormValue(initialValue?: Experience): ExperienceFormInput {
@@ -138,7 +171,10 @@ export function ExperienceForm({
     }));
   }
 
-  function updatePeriodField(field: keyof PeriodFields, value: string) {
+  const periodErrorMessage = getPeriodErrorMessage(periodFields);
+  const hasPeriodError = Boolean(errorMessage && periodErrorMessage);
+
+  function updatePeriodField(field: "startMonth" | "endMonth", value: string) {
     const nextPeriodFields = {
       ...periodFields,
       [field]: value,
@@ -151,15 +187,27 @@ export function ExperienceForm({
     }));
   }
 
+  function updatePeriodOngoing(isOngoing: boolean) {
+    const nextPeriodFields = {
+      ...periodFields,
+      endMonth: isOngoing ? "" : periodFields.endMonth,
+      isOngoing,
+    };
+
+    setPeriodFields(nextPeriodFields);
+    setFormValue((currentValue) => ({
+      ...currentValue,
+      period: createPeriodValue(nextPeriodFields),
+    }));
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!isPeriodRangeValid(periodFields)) {
-      setErrorMessage(
-        periodFields.startMonth && periodFields.endMonth
-          ? "종료월은 시작월보다 빠를 수 없습니다."
-          : "활동기간의 시작월과 종료월을 모두 선택해주세요.",
-      );
+    const nextPeriodErrorMessage = getPeriodErrorMessage(periodFields);
+
+    if (nextPeriodErrorMessage) {
+      setErrorMessage(nextPeriodErrorMessage);
       return;
     }
 
@@ -205,9 +253,7 @@ export function ExperienceForm({
               onChange={(event) =>
                 updatePeriodField("startMonth", event.target.value)
               }
-              aria-invalid={Boolean(
-                errorMessage && !isPeriodRangeValid(periodFields),
-              )}
+              aria-invalid={hasPeriodError}
               required
             />
           </div>
@@ -219,17 +265,29 @@ export function ExperienceForm({
               type="month"
               value={periodFields.endMonth}
               min={periodFields.startMonth || undefined}
+              disabled={periodFields.isOngoing}
               onChange={(event) =>
                 updatePeriodField("endMonth", event.target.value)
               }
-              aria-invalid={Boolean(
-                errorMessage && !isPeriodRangeValid(periodFields),
-              )}
-              required
+              aria-invalid={hasPeriodError && !periodFields.isOngoing}
+              required={!periodFields.isOngoing}
             />
           </div>
         </div>
-        <p className="period-help">예: 2026.03 - 2026.07</p>
+        <label
+          className="checkbox-field"
+          htmlFor="experience-period-ongoing"
+        >
+          <input
+            id="experience-period-ongoing"
+            name="periodOngoing"
+            type="checkbox"
+            checked={periodFields.isOngoing}
+            onChange={(event) => updatePeriodOngoing(event.target.checked)}
+          />
+          <span>현재 진행 중</span>
+        </label>
+        <p className="period-help">예: 2026.03 - 2026.07 또는 2025.01 ~ 현재</p>
       </fieldset>
 
       <div className="form-field">

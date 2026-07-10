@@ -4,7 +4,7 @@ export const sampleExperiences: Experience[] = [
   {
     id: "sample-uniker-campuslog",
     title: "CampusLog 1차 MVP 기획",
-    period: "2026.06 - 2026.07",
+    period: "2026.06 ~ 현재",
     role: "서비스 기획 및 프론트엔드 구현",
     description:
       "대학생 활동 경험을 기록하고 AI 분석과 추천으로 다시 활용하는 MVP 흐름을 정의했습니다.",
