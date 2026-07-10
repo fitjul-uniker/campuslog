@@ -12,6 +12,7 @@
 
 ## High Priority
 
+- [ ] 유효한 `OPENAI_API_KEY` 기준 AI 분석 / 추천 성공 흐름 재검증
 - [ ] Vercel 배포 준비
 
 ## Medium Priority
@@ -23,13 +24,17 @@
 
 ## Low Priority
 
-- [ ] 책갈피 노트 파비콘 구현 방식 결정
 - [ ] UNIKER 이후 개인 Backend Portfolio Edition의 Spring Boot REST API 도입 방향 정리
 - [ ] UNIKER 이후 개인 Backend Portfolio Edition의 MySQL 또는 AWS RDS 전환 방향 정리
 - [ ] UNIKER 이후 개인 Backend Portfolio Edition의 AWS S3 파일 저장 방향 정리
 
 ## Done
 
+- [x] 브랜드 및 반응형 UI/UX 개선(responsive/brand polish)
+- [x] Campus Green + Mint 브랜드 토큰, focus ring, hover 상태 정리
+- [x] 데스크톱 좌측 사이드바 / 모바일 상단 App Bar 레이아웃 보강
+- [x] 모바일 CTA, 카드, 상세 화면, EmptyState 줄바꿈과 폭 처리 보강
+- [x] 책갈피 노트 파비콘 구현 방식 결정: Lucide `BookMarked` 기반 후보 SVG 적용
 - [x] 대시보드 UI/UX polish
 - [x] 경험 카드 정보 위계 정리
 - [x] 대시보드 빈 상태 CTA 위계 정리
