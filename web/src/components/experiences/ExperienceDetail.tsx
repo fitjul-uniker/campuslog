@@ -128,11 +128,17 @@ export function ExperienceDetail({
               </p>
             ) : null}
             <p>{analysis.summary}</p>
-            <div className="experience-tags">
-              {analysis.competencyTags.map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
-            </div>
+            {analysis.competencyTags.length > 0 ? (
+              <div className="experience-tags">
+                {analysis.competencyTags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
+            ) : (
+              <p className="muted-text">
+                입력 내용에서 근거가 확인된 핵심 역량 태그가 없습니다.
+              </p>
+            )}
           </div>
         ) : (
           <p className="muted-text">아직 AI 분석 결과가 없습니다.</p>

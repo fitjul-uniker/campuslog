@@ -41,29 +41,47 @@ export function AnalysisResult({ experience, analysis }: AnalysisResultProps) {
 
       <div className="detail-section">
         <h3>핵심 역량 태그</h3>
-        <div className="experience-tags">
-          {analysis.competencyTags.map((tag) => (
-            <span key={tag}>{tag}</span>
-          ))}
-        </div>
+        {analysis.competencyTags.length > 0 ? (
+          <div className="experience-tags">
+            {analysis.competencyTags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+        ) : (
+          <p className="muted-text">
+            입력 내용에서 근거가 확인된 핵심 역량 태그가 없습니다.
+          </p>
+        )}
       </div>
 
       <div className="detail-section">
         <h3>주요 성과</h3>
-        <ul className="plain-list">
-          {analysis.achievements.map((achievement) => (
-            <li key={achievement}>{achievement}</li>
-          ))}
-        </ul>
+        {analysis.achievements.length > 0 ? (
+          <ul className="plain-list">
+            {analysis.achievements.map((achievement) => (
+              <li key={achievement}>{achievement}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted-text">
+            입력 내용에서 확인된 주요 성과가 없습니다.
+          </p>
+        )}
       </div>
 
       <div className="detail-section">
         <h3>활용 가능한 키워드</h3>
-        <div className="experience-tags">
-          {analysis.keywords.map((keyword) => (
-            <span key={keyword}>{keyword}</span>
-          ))}
-        </div>
+        {analysis.keywords.length > 0 ? (
+          <div className="experience-tags">
+            {analysis.keywords.map((keyword) => (
+              <span key={keyword}>{keyword}</span>
+            ))}
+          </div>
+        ) : (
+          <p className="muted-text">
+            입력 내용에서 활용 가능한 키워드가 확인되지 않았습니다.
+          </p>
+        )}
       </div>
 
       <p className="muted-text">
