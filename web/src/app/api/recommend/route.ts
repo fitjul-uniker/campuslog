@@ -22,12 +22,27 @@ const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
   other: "기타",
 };
 
-const recommendationResponseSchema = {
+type RecommendationDetailFields = Omit<
+  RecommendationApiResult,
+  "recommendedExperienceId" | "recommendedExperienceTitle"
+>;
+
+const selectionResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["recommendedExperienceId"],
+  properties: {
+    recommendedExperienceId: {
+      type: "string",
+      description: "추천한 경험의 id. 반드시 입력으로 받은 experiences 중 하나여야 함",
+    },
+  },
+} as const;
+
+const recommendationDetailResponseSchema = {
   type: "object",
   additionalProperties: false,
   required: [
-    "recommendedExperienceId",
-    "recommendedExperienceTitle",
     "reason",
     "relatedTags",
     "highlightedAchievement",
@@ -35,17 +50,9 @@ const recommendationResponseSchema = {
     "draftSentence",
   ],
   properties: {
-    recommendedExperienceId: {
-      type: "string",
-      description: "추천한 경험의 id. 반드시 입력으로 받은 experiences 중 하나여야 함",
-    },
-    recommendedExperienceTitle: {
-      type: "string",
-      description: "추천한 경험의 제목",
-    },
     reason: {
       type: "string",
-      description: "이 경험이 사용자의 활용 목적과 질문에 가장 적합한 이유",
+      description: "선택된 경험이 사용자의 활용 목적과 질문에 적합한 이유",
     },
     relatedTags: {
       type: "array",
@@ -54,15 +61,15 @@ const recommendationResponseSchema = {
       items: {
         type: "string",
       },
-      description: "추천 경험과 질문에 관련된 역량 태그 또는 키워드",
+      description: "선택된 경험과 질문에 관련된 역량 태그 또는 키워드",
     },
     highlightedAchievement: {
       type: "string",
-      description: "원본 경험 또는 분석 결과에서 강조할 수 있는 성과",
+      description: "선택된 경험의 원본 또는 분석 결과에서 강조할 수 있는 성과",
     },
     usageDirection: {
       type: "string",
-      description: "자기소개서, 포트폴리오, 면접 등 현재 목적에 맞는 활용 방향",
+      description: "선택된 경험을 현재 목적에 맞게 풀어내는 활용 방향",
     },
     draftSentence: {
       type: "string",
@@ -158,7 +165,51 @@ function isExperienceAnalysisForRecommendation(
   );
 }
 
-function createPrompt(body: RecommendRequest): string {
+type OpenAiStructuredOutputResult =
+  | {
+      ok: true;
+      outputText: string;
+    }
+  | {
+      ok: false;
+      reason: "api_error" | "invalid_output";
+    };
+
+type OpenAiStructuredOutputInput = {
+  apiKey: string;
+  systemContent: string;
+  userContent: string;
+  schemaName: string;
+  schema: unknown;
+  maxOutputTokens: number;
+  logLabel: string;
+};
+
+function createExperiencePromptContext(
+  experience: Experience,
+  analysis?: ExperienceAnalysis | null,
+) {
+  return {
+    id: experience.id,
+    title: experience.title,
+    period: experience.period,
+    role: experience.role,
+    description: experience.description,
+    achievements: experience.achievements,
+    relatedLinks: experience.relatedLinks,
+    analysis: analysis
+      ? {
+          summary: analysis.summary,
+          competencyTags: analysis.competencyTags,
+          achievements: analysis.achievements,
+          keywords: analysis.keywords,
+          isStale: analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
+        }
+      : null,
+  };
+}
+
+function createSelectionPrompt(body: RecommendRequest): string {
   const analysesByExperienceId = new Map(
     body.analyses.map((analysis) => [analysis.experienceId, analysis]),
   );
@@ -166,7 +217,7 @@ function createPrompt(body: RecommendRequest): string {
   return JSON.stringify(
     {
       instruction:
-        "저장된 대학생 활동 경험 중 사용자의 활용 목적과 질문에 가장 설득력 있게 쓸 수 있는 경험 1개만 추천해주세요.",
+        "저장된 대학생 활동 경험 중 사용자의 활용 목적과 질문에 가장 설득력 있게 쓸 수 있는 경험 1개를 고르고 id만 반환해주세요.",
       selectionGuidelines: [
         "제목 유사도만 보지 말고 목적, 질문, 역할, 성과, 분석 태그, 키워드의 적합성을 함께 판단합니다.",
         "분석 결과가 있으면 summary, competencyTags, achievements, keywords를 적극 활용합니다.",
@@ -175,12 +226,8 @@ function createPrompt(body: RecommendRequest): string {
         "recommendedExperienceId는 반드시 experiences 배열에 있는 id 중 하나를 그대로 사용합니다.",
       ],
       outputGuidelines: {
-        reason: "추천 이유는 2~4문장 한국어로 작성",
-        relatedTags: "역량 태그 또는 활용 키워드 2~6개",
-        highlightedAchievement: "원본에 근거한 성과 1개",
-        usageDirection: "현재 목적에 맞게 어떤 관점으로 풀면 좋은지 설명",
-        draftSentence:
-          "사용자가 자기소개서/포트폴리오/면접 답변 초안으로 참고할 수 있는 자연스러운 한국어 문장",
+        recommendedExperienceId:
+          "가장 적합한 경험의 id 하나만 반환하고, 추천 이유나 문장은 작성하지 않습니다.",
       },
       userInput: {
         purpose: body.purpose,
@@ -190,26 +237,50 @@ function createPrompt(body: RecommendRequest): string {
       experiences: body.experiences.map((experience) => {
         const analysis = analysesByExperienceId.get(experience.id);
 
-        return {
-          id: experience.id,
-          title: experience.title,
-          period: experience.period,
-          role: experience.role,
-          description: experience.description,
-          achievements: experience.achievements,
-          relatedLinks: experience.relatedLinks,
-          analysis: analysis
-            ? {
-                summary: analysis.summary,
-                competencyTags: analysis.competencyTags,
-                achievements: analysis.achievements,
-                keywords: analysis.keywords,
-                isStale:
-                  analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
-              }
-            : null,
-        };
+        return createExperiencePromptContext(experience, analysis);
       }),
+    },
+    null,
+    2,
+  );
+}
+
+function createRecommendationDetailPrompt(
+  body: RecommendRequest,
+  selectedExperience: Experience,
+  selectedAnalysis?: ExperienceAnalysis | null,
+): string {
+  return JSON.stringify(
+    {
+      instruction:
+        "아래 selectedExperience 하나만 근거로 추천 이유, 관련 태그, 강조할 성과, 활용 방향, 참고 문장을 작성해주세요.",
+      sourceRules: [
+        "selectedExperience와 selectedAnalysis에 없는 프로젝트명, 서비스명, 수치, 기술, 역할을 넣지 않습니다.",
+        "다른 경험이나 예시 경험의 내용, 태그, 성과를 섞지 않습니다.",
+        "질문과 연결할 때도 selectedExperience에 기록된 행동과 성과만 사용합니다.",
+        "성과 수치가 원본에 없으면 새 수치를 만들지 말고 정성적으로 표현합니다.",
+        "selectedAnalysis가 오래된 분석이면 원본 description, achievements, role을 우선합니다.",
+      ],
+      outputGuidelines: {
+        reason: "추천 이유는 선택된 경험에 근거해 2~4문장 한국어로 작성",
+        relatedTags:
+          "선택된 경험에서 근거가 있는 역량 태그 또는 활용 키워드 2~6개",
+        highlightedAchievement:
+          "선택된 경험의 원본 또는 분석 결과에 근거한 성과 1개",
+        usageDirection:
+          "현재 목적에 맞게 선택된 경험을 어떤 관점으로 풀면 좋은지 설명",
+        draftSentence:
+          "사용자가 자기소개서/포트폴리오/면접 답변 초안으로 참고할 수 있는 자연스러운 한국어 문장",
+      },
+      userInput: {
+        purpose: body.purpose,
+        purposeLabel: PURPOSE_LABELS[body.purpose],
+        prompt: body.prompt,
+      },
+      selectedExperience: createExperiencePromptContext(
+        selectedExperience,
+        selectedAnalysis,
+      ),
     },
     null,
     2,
@@ -261,6 +332,90 @@ function extractOutputText(payload: unknown): string | null {
   return null;
 }
 
+async function requestOpenAiStructuredOutput({
+  apiKey,
+  systemContent,
+  userContent,
+  schemaName,
+  schema,
+  maxOutputTokens,
+  logLabel,
+}: OpenAiStructuredOutputInput): Promise<OpenAiStructuredOutputResult> {
+  const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: RECOMMENDATION_MODEL,
+      input: [
+        {
+          role: "system",
+          content: systemContent,
+        },
+        {
+          role: "user",
+          content: userContent,
+        },
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: schemaName,
+          strict: true,
+          schema,
+        },
+      },
+      max_output_tokens: maxOutputTokens,
+      store: false,
+    }),
+  });
+
+  if (!openAiResponse.ok) {
+    try {
+      const errorPayload = (await openAiResponse.json()) as {
+        error?: {
+          code?: unknown;
+          type?: unknown;
+        };
+      };
+
+      console.warn("CampusLog recommend OpenAI request failed", {
+        phase: logLabel,
+        status: openAiResponse.status,
+        code: errorPayload.error?.code,
+        type: errorPayload.error?.type,
+      });
+    } catch {
+      console.warn("CampusLog recommend OpenAI request failed", {
+        phase: logLabel,
+        status: openAiResponse.status,
+      });
+    }
+
+    return {
+      ok: false,
+      reason: "api_error",
+    };
+  }
+
+  const openAiPayload = (await openAiResponse.json()) as unknown;
+  const outputText = extractOutputText(openAiPayload);
+
+  if (!outputText) {
+    return {
+      ok: false,
+      reason: "invalid_output",
+    };
+  }
+
+  return {
+    ok: true,
+    outputText,
+  };
+}
+
 function stripJsonFence(value: string): string {
   const match = value.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   return (match?.[1] ?? value).trim();
@@ -278,10 +433,10 @@ function normalizeStringList(value: unknown, maxItems: number): string[] {
     .slice(0, maxItems);
 }
 
-function parseRecommendationResult(
+function parseSelectedExperience(
   rawOutput: string,
   experiences: Experience[],
-): RecommendationApiResult | null {
+): Experience | null {
   try {
     const parsed = JSON.parse(stripJsonFence(rawOutput)) as Record<
       string,
@@ -295,6 +450,22 @@ function parseRecommendationResult(
     const recommendedExperience = experiences.find(
       (experience) => experience.id === recommendedExperienceId,
     );
+
+    return recommendedExperience ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function parseRecommendationDetailResult(
+  rawOutput: string,
+): RecommendationDetailFields | null {
+  try {
+    const parsed = JSON.parse(stripJsonFence(rawOutput)) as Record<
+      string,
+      unknown
+    >;
+
     const reason = typeof parsed.reason === "string" ? parsed.reason.trim() : "";
     const relatedTags = normalizeStringList(parsed.relatedTags, 6);
     const highlightedAchievement =
@@ -311,7 +482,6 @@ function parseRecommendationResult(
         : "";
 
     if (
-      !recommendedExperience ||
       !reason ||
       relatedTags.length === 0 ||
       !highlightedAchievement ||
@@ -322,8 +492,6 @@ function parseRecommendationResult(
     }
 
     return {
-      recommendedExperienceId: recommendedExperience.id,
-      recommendedExperienceTitle: recommendedExperience.title,
       reason,
       relatedTags,
       highlightedAchievement,
@@ -402,82 +570,75 @@ export async function POST(request: Request) {
   }
 
   try {
-    const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: RECOMMENDATION_MODEL,
-        input: [
-          {
-            role: "system",
-            content:
-              "당신은 CampusLog의 AI 경험 추천 도우미입니다. 저장된 경험 중 가장 적합한 경험 1개를 고르고, 과장 없이 한국어 추천 이유와 활용 문장을 제공합니다.",
-          },
-          {
-            role: "user",
-            content: createPrompt(body),
-          },
-        ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "campuslog_experience_recommendation",
-            strict: true,
-            schema: recommendationResponseSchema,
-          },
-        },
-        max_output_tokens: 1100,
-        store: false,
-      }),
+    const selectionOutput = await requestOpenAiStructuredOutput({
+      apiKey,
+      systemContent:
+        "당신은 CampusLog의 AI 경험 선택 도우미입니다. 저장된 경험 중 가장 적합한 경험 id 하나만 반환합니다.",
+      userContent: createSelectionPrompt(body),
+      schemaName: "campuslog_experience_selection",
+      schema: selectionResponseSchema,
+      maxOutputTokens: 200,
+      logLabel: "selection",
     });
 
-    if (!openAiResponse.ok) {
-      try {
-        const errorPayload = (await openAiResponse.json()) as {
-          error?: {
-            code?: unknown;
-            type?: unknown;
-          };
-        };
-
-        console.warn("CampusLog recommend OpenAI request failed", {
-          status: openAiResponse.status,
-          code: errorPayload.error?.code,
-          type: errorPayload.error?.type,
-        });
-      } catch {
-        console.warn("CampusLog recommend OpenAI request failed", {
-          status: openAiResponse.status,
-        });
-      }
-
+    if (!selectionOutput.ok) {
       return createErrorResponse(
         "OPENAI_API_ERROR",
-        "AI 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+        selectionOutput.reason === "invalid_output"
+          ? "AI 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
+          : "AI 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
         502,
       );
     }
 
-    const openAiPayload = (await openAiResponse.json()) as unknown;
-    const outputText = extractOutputText(openAiPayload);
-
-    if (!outputText) {
-      return createErrorResponse(
-        "OPENAI_API_ERROR",
-        "AI 추천 응답을 해석하지 못했습니다. 다시 시도해주세요.",
-        502,
-      );
-    }
-
-    const recommendation = parseRecommendationResult(
-      outputText,
+    const selectedExperience = parseSelectedExperience(
+      selectionOutput.outputText,
       body.experiences,
     );
 
-    if (!recommendation) {
+    if (!selectedExperience) {
+      return createErrorResponse(
+        "OPENAI_API_ERROR",
+        "AI 추천 결과가 올바른 경험을 가리키지 않습니다. 다시 시도해주세요.",
+        502,
+      );
+    }
+
+    const analysesByExperienceId = new Map(
+      body.analyses.map((analysis) => [analysis.experienceId, analysis]),
+    );
+    const selectedAnalysis =
+      analysesByExperienceId.get(selectedExperience.id) ?? null;
+    const detailOutput = await requestOpenAiStructuredOutput({
+      apiKey,
+      systemContent:
+        "당신은 CampusLog의 AI 경험 활용 도우미입니다. 제공된 selectedExperience 하나만 근거로 과장 없이 한국어 추천 이유와 활용 문장을 작성합니다.",
+      userContent: createRecommendationDetailPrompt(
+        body,
+        selectedExperience,
+        selectedAnalysis,
+      ),
+      schemaName: "campuslog_experience_recommendation_detail",
+      schema: recommendationDetailResponseSchema,
+      maxOutputTokens: 1000,
+      logLabel: "detail",
+    });
+
+    if (!detailOutput.ok) {
+      return createErrorResponse(
+        "OPENAI_API_ERROR",
+        detailOutput.reason === "invalid_output"
+          ? "AI 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
+          : "AI 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+        502,
+      );
+    }
+
+    const recommendationDetail = parseRecommendationDetailResult(
+      detailOutput.outputText,
+    );
+
+    if (!recommendationDetail) {
       return createErrorResponse(
         "OPENAI_API_ERROR",
         "AI 추천 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
@@ -487,7 +648,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json<RecommendResponse>({
       ok: true,
-      recommendation,
+      recommendation: {
+        recommendedExperienceId: selectedExperience.id,
+        recommendedExperienceTitle: selectedExperience.title,
+        ...recommendationDetail,
+      },
     });
   } catch {
     return createErrorResponse(
