@@ -30,6 +30,7 @@
 
 ## Done
 
+- [x] 디자인 표현 제약 완화 및 프리미엄 UI/UX 기준 문서 정리
 - [x] 브랜드 및 반응형 UI/UX 개선(responsive/brand polish)
 - [x] Campus Green + Mint 브랜드 토큰, focus ring, hover 상태 정리
 - [x] 데스크톱 좌측 사이드바 / 모바일 상단 App Bar 레이아웃 보강

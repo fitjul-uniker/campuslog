@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-11 - 디자인 표현 제약 완화 문서 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-11 |
+| 작업자 | Codex |
+| 작업 요약 | 향후 프론트엔드 디자인 고도화 작업에서 애니메이션, 3D, WebGL, shader, premium landing experience를 불필요하게 제한하지 않도록 디자인 관련 기준 문서를 일관되게 정리 |
+| 수정한 파일 | `AGENTS.md`, `README.md`, `PRD.md`, `docs/DESIGN.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `docs/DESIGN.md`를 중심으로 Three.js, React Three Fiber, GSAP, Framer Motion, WebGL, shader, Lottie, particle, glassmorphism, morphing animation, scroll-based animation, micro interaction, premium landing experience를 성능 / 접근성 / 유지보수성 기준 안에서 사용할 수 있도록 수정. `AGENTS.md`에는 디자인 작업 시 `docs/DESIGN.md`를 우선 확인하고 고급 표현 기술을 정식 선택지로 보도록 규칙을 추가. PRD / IA / Screen Spec / User Flow / Implementation Plan에서는 제품 기능 제외 범위와 디자인 표현 자유를 분리하고, 회원 전환 목적의 별도 랜딩과 premium first viewport를 구분하도록 문구를 정리 |
+| 검증한 내용 | 관련 문서에서 `과한 애니메이션`, `3D 그래픽`, `랜딩 히어로`, `Motion 계열 설치하지 않음`처럼 디자인 표현을 직접 제한하던 문구를 검색하고 수정 방향을 확인 |
+| 남은 작업 | 실제 프론트엔드 디자인 고도화 PR에서 고급 모션 / 3D / WebGL 사용 시 Core Web Vitals, 모바일 렌더링, reduced motion fallback, 텍스트 대비, 키보드 접근성 검증 필요 |
+| 관련 커밋 메시지 | 후보: `docs: relax frontend design constraints` |
+
 ### 2026-07-10 - AI 추천 결과 컨텍스트 불일치 수정
 
 | 항목 | 내용 |
