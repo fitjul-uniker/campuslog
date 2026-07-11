@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, BookOpenText, Plus, Sparkles } from "lucide-react";
+import { AlertCircle, BookOpenText } from "lucide-react";
 import type { AnimationEvent, MouseEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -86,17 +86,6 @@ export function ExperienceDashboard() {
             꺼내 쓰기 쉽게 관리합니다.
           </p>
         </div>
-
-        <div className="header-actions">
-          <Link href="/experiences/new" className="button button-primary">
-            <Plus className="button-icon" aria-hidden="true" />
-            새 경험 기록하기
-          </Link>
-          <Link href="/recommend" className="button button-secondary">
-            <Sparkles className="button-icon" aria-hidden="true" />
-            AI 추천 및 활용
-          </Link>
-        </div>
       </section>
 
       <div
@@ -130,10 +119,6 @@ export function ExperienceDashboard() {
               title="아직 기록한 활동 경험이 없습니다"
               description="경험을 기록하면 AI 분석과 추천에 활용할 수 있습니다. 추천을 받으려면 먼저 활동 경험을 하나 이상 저장해 주세요."
               icon={<BookOpenText />}
-              secondaryAction={{
-                href: "/recommend",
-                label: "AI 추천 및 활용",
-              }}
             />
           ) : (
             <section className="experience-list-section notebook-list-section">

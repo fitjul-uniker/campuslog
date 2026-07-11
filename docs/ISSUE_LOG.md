@@ -37,6 +37,7 @@
 | ISSUE-013 | Open | Medium | Bug | localStorage JSON parse 실패가 빈 상태와 구분되지 않음 | `storage.ts`의 `readJson` / `readStoredExperiences`가 malformed JSON을 빈 배열로 fallback하므로 대시보드에서 데이터 파싱 실패 Alert를 정확히 표시할 정책을 정해야 함 | 이번 `design/dashboard-polish`에서는 storage 구조와 CRUD 로직 변경 금지 범위를 지키기 위해 수정하지 않고, 대시보드에서는 예기치 않은 load exception만 Alert로 처리 | 미정 | 2026-07-10 | - |
 | ISSUE-014 | Open | Medium | Bug | 로컬 AI 분석 / 추천 요청이 `invalid_api_key`로 실패 | 유효한 `OPENAI_API_KEY` 기준으로 AI 분석 성공 저장, AI 추천 성공 저장, 추천 기록 유지까지 재검증 필요 | `design/responsive-brand-polish` 검증 중 `/api/analyze`, `/api/recommend`가 각각 401 `invalid_api_key`로 실패함. 이번 브랜치에서는 API 호출 방식과 환경 변수 처리 로직을 변경하지 않고 UI 실패 상태까지만 확인 | 미정 | 2026-07-10 | - |
 | ISSUE-015 | Resolved | High | Bug | AI 추천 결과에서 추천 경험과 추천 이유 / 태그 / 성과 / 활용 방향 / 참고 문장이 서로 다른 경험 기준으로 섞임 | 추천 경험 선택 결과와 상세 추천 문장 생성 컨텍스트를 같은 경험으로 고정해야 함 | `/api/recommend`를 경험 선택 단계와 상세 추천 문장 생성 단계로 분리. 선택 단계는 `recommendedExperienceId`만 반환하고, 상세 생성 단계에는 서버가 확정한 선택 경험 1개와 해당 분석 결과만 전달하도록 수정. 최종 응답의 추천 경험 id / title은 서버의 선택 경험 객체에서 구성 | Codex | 2026-07-10 | 2026-07-10 |
+| ISSUE-016 | Open | Medium | Decision | 기준 문서는 별도 서비스 소개 랜딩을 제외하고 메인 대시보드를 첫 화면으로 정의하지만 현재 코드는 `/` 표지 진입 화면과 `/dashboard`를 분리해 사용 | 인터랙티브 3D 표지 화면을 명시적인 시작 화면으로 문서에 반영할지, 최종적으로 `/`를 대시보드로 통합할지 결정 필요 | 사용자 요청에 따라 기존 `/` → `/dashboard` 링크 흐름은 유지하고 정적 표지만 3D로 교체. 핵심 경험 / AI 데이터 흐름은 변경하지 않음 | 미정 | 2026-07-11 | - |
 
 ## 이슈 추가 템플릿
 

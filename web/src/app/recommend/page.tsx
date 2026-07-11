@@ -123,12 +123,8 @@ export default function RecommendPage() {
           description="추천은 저장된 활동 경험을 기준으로 실행됩니다. 첫 경험을 기록한 뒤 다시 추천을 요청해 주세요."
           icon={<BookOpenText />}
           primaryAction={{
-            href: "/experiences/new",
-            label: "첫 경험 기록하기",
-          }}
-          secondaryAction={{
             href: "/dashboard",
-            label: "대시보드로 돌아가기",
+            label: "나의 경험에서 기록하기",
           }}
         />
       </div>

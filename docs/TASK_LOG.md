@@ -30,6 +30,58 @@
 
 ## 작업 로그
 
+### 2026-07-11 - 좌측 메뉴 근접 반응 모션 적용
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-11 |
+| 작업자 | Codex |
+| 작업 요약 | 제공된 React Bits `LineSidebar` 프롬프트의 포인터 근접 반응을 현재 CampusLog 좌측 메뉴 스타일에 맞춰 적용 |
+| 수정한 파일 | `web/src/components/layout/Navigation.tsx`, `web/src/app/globals.css`, `docs/TASK_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 별도 패키지나 번호·마커 스타일을 추가하지 않고 포인터의 세로 위치와 각 메뉴 중심 사이 거리를 계산해 가까운 메뉴가 최대 14px 이동하고 선명해지도록 구현. 단일 `requestAnimationFrame` 루프와 120ms 지수 감쇠로 이동·복귀를 처리하고 현재 경로의 활성 메뉴는 효과 1을 유지. 마우스 입력에만 반응하며 `prefers-reduced-motion`에서는 포인터 추적과 transform을 비활성화. Strict Mode cleanup에서 animation frame ref를 초기화하고 모션 설정 실시간 변경 시 effect를 정리하도록 보강. 비활성 메뉴는 낮은 opacity 대신 접근 가능한 색상 혼합과 0.28px의 미세한 blur를 적용하고, 포인터 근접·hover·focus·활성 상태에서는 blur가 사라지도록 구성. 경험 하위 경로에는 `aria-current="location"` 적용 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build` 통과. 브라우저에서 활성 `나의 경험` 메뉴의 effect 1 / translateX 14px / blur 0px, 비활성 메뉴 effect 0 / translateX 0 / blur 0.28px 확인. 독립 리뷰 후 Strict Mode rAF 재시작, 텍스트 대비, 하위 경로 aria-current, reduced-motion 실시간 변경 보완 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | 후보: `design: add proximity motion to sidebar navigation` |
+
+### 2026-07-11 - 공통 책 프레임 및 대시보드 진입 구조 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-11 |
+| 작업자 | Codex |
+| 작업 요약 | 좌측 브랜드를 워드마크 중심으로 단순화하고, AI 추천 진입점을 좌측 메뉴로 통일하며, 모든 비표지 페이지의 책 외곽 크기를 동일하게 정리 |
+| 수정한 파일 | `web/src/components/layout/AppShell.tsx`, `web/src/components/layout/Navigation.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/globals.css`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/TASK_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 좌측 상단 CampusLog의 아이콘·테두리·배경·그림자를 제거하고 글자 크기를 2.8rem으로 확대. 좌측 메뉴의 `AI 추천`을 `AI 추천 및 활용`으로 변경. 나의 경험 헤더와 빈 상태의 추천 링크를 제거해 추천 화면 진입을 좌측 메뉴로 통일. 상세·수정·분석을 포함한 모든 비표지 경로에 공통 `menu-book` 프레임을 적용하고 외곽 높이를 뷰포트 기준으로 고정하며 긴 콘텐츠는 책 내부에서 스크롤하도록 변경. 책 하단에 장식으로 표시되던 `01`, `02` 페이지 번호 제거 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build` 통과. 브라우저 1280×720에서 `/dashboard`, `/experiences/new`, `/recommend`, `/recommend/history`의 책 외곽이 모두 1064×664px인지 확인. CampusLog 아이콘 0개, 배경·테두리 없음, 글자 크기 44.8px, 대시보드 본문 내 `/recommend` 링크 0개, 작성 폼 내부 스크롤 및 문서 전체 overflow 없음 확인. CSS 내 `01`, `02` 생성 규칙 0개 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | 후보: `design: unify notebook page layout` |
+
+### 2026-07-11 - 대시보드 브랜드 및 좌측 메뉴 단순화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-11 |
+| 작업자 | Codex |
+| 작업 요약 | 데스크톱 대시보드의 브랜드 표시, 책형 레이아웃 가로 폭, 좌측 메뉴 구성과 선택 상태 대비를 단순화 |
+| 수정한 파일 | `web/src/components/layout/AppShell.tsx`, `web/src/components/layout/Navigation.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/globals.css`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/TASK_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 데스크톱 브랜드의 `대학생활을 단권화하는 기록장` 설명을 제거하고 `CampusLog`를 확대. 데스크톱 사이드바와 우측 여백을 소폭 줄이고 책형 `menu-book` 최대 너비를 1400px로 확장. 좌측 메뉴와 대시보드 상단에서 `새 경험 기록` 진입을 제거해 우측 하단 `새 경험 기록하기` 페이지 넘김 CTA만 유지하고, AI 추천 빈 상태의 작성 링크도 대시보드로 연결. `/experiences/*` 경로는 `나의 경험` 메뉴의 활성 상태를 유지. 활성 메뉴의 밑줄을 제거하고 활성 메뉴는 불투명하게, 비활성 메뉴는 opacity 0.58로 낮춰 대비하도록 변경 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build` 통과. 데스크톱 1280×720과 모바일 390×844에서 브라우저 확인. 브랜드 설명 0개, 좌측 메뉴 3개, 활성 메뉴 underline 없음 / opacity 1, 비활성 메뉴 opacity 0.58, 대시보드의 `/experiences/new` 링크 1개, 책형 대시보드 너비 1064px, 모바일 가로 overflow 없음 확인. `/experiences/new`에서 `나의 경험` 활성 상태 유지 및 `/recommend` 빈 상태의 작성 링크가 `/dashboard`로 연결되는지 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | 후보: `design: simplify dashboard navigation` |
+
+### 2026-07-11 - 첫 화면 인터랙티브 3D 노트 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-11 |
+| 작업자 | Codex |
+| 작업 요약 | 기존 `/` 표지 진입 화면의 정적 가죽 노트 이미지를 React Three Fiber 기반의 인터랙티브 3D 하드커버 노트로 교체 |
+| 수정한 파일 | `web/package.json`, `web/package-lock.json`, `web/src/app/page.tsx`, `web/src/app/globals.css`, `web/src/components/hero/HeroBook3D.tsx`, `web/src/components/hero/HeroBookCanvas.tsx`, `web/src/components/hero/BookModel.tsx`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 앞표지 / 뒷표지 / 둥근 책등 / 아이보리 종이 묶음을 별도 Mesh로 구성. `black-leather-book.webp`의 사진 외곽과 가짜 책등은 제외하고 중앙 가죽 결만 UV crop해 3D 커버 안쪽의 rounded surface에 재질로 적용. `CampusLog`는 CanvasTexture로 만들어 책 그룹 안에 부착해 회전 / 부유와 함께 이동하도록 수정. 그림자는 책 바로 아래의 짧고 진한 접촉 그림자와 넓고 옅은 확산 그림자 Sprite로 분리하고, 책의 높이와 좌우 회전을 같은 animation frame에서 반영해 두 레이어의 위치 / 폭 / 농도가 함께 변하도록 구성. 화면 전체 pointer 좌표 기반 회전은 유지하고, 실제 책 링크 hover / keyboard focus에서만 Canvas 전체가 1.035배 부드럽게 확대되도록 분리. Canvas는 클릭을 가로채지 않고 기존 `/dashboard` 링크를 유지하며, 새로고침 시 정적 책 이미지가 먼저 보이지 않도록 로딩 / WebGL fallback을 비시각 상태로 변경. `prefers-reduced-motion`에서는 포인터 추적 / 반복 부유 / hover 확대를 비활성화 |
+| 검증한 내용 | `cd web && npm run lint`, `cd web && npm run build`, `npm audit --omit=dev --json` 실행. 브라우저에서 1280×720 데스크톱과 390×844 모바일 렌더링, 가로 overflow 없음, 새로고침 직후 DOM 이미지 0개 / Canvas 준비 후 3D 책 표시, 콘솔 Three.js 경고 / 오류 없음, 노트 클릭 후 `/dashboard` 이동을 확인 |
+| 남은 작업 | 기준 문서는 별도 서비스 소개 랜딩을 제외하지만 현재 코드와 이번 요청은 `/` 표지 진입 화면을 유지하므로, `/`와 `/dashboard`의 역할을 문서에 맞춰 정리할지 팀 결정 필요. `npm audit`의 기존 Next.js / PostCSS 관련 moderate 2건은 자동 수정안이 부적절한 Next.js 9.3.3 다운그레이드이므로 이번 범위에서 변경하지 않음 |
+| 관련 커밋 메시지 | 후보: `feature: add interactive 3d hero book` |
+
 ### 2026-07-10 - AI 추천 결과 컨텍스트 불일치 수정
 
 | 항목 | 내용 |
