@@ -418,7 +418,9 @@ select:disabled {
 .dashboard-right-page {
   position: relative;
   z-index: 1;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
   transform-origin: left center;
   transform-style: preserve-3d;
   will-change: transform;
@@ -439,10 +441,18 @@ select:disabled {
 .dashboard-page-front {
   position: relative;
   z-index: 2;
-  min-height: 100%;
-  overflow-y: auto;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
   background: linear-gradient(90deg, #f4f4f4 0%, #ffffff 8%, #ffffff 96%, #f4f4f4 100%);
   transform: translateZ(0.5px);
+}
+
+.dashboard-page-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
 }
 
 .dashboard-page-front::after,
@@ -479,11 +489,16 @@ select:disabled {
   transform: rotateY(180deg);
 }
 
-.dashboard-page-turn-link {
-  position: absolute;
-  right: 64px;
-  bottom: 31px;
+.dashboard-page-action {
+  position: relative;
   z-index: 4;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: 18px 64px 31px;
+}
+
+.dashboard-page-turn-link {
   color: var(--color-text);
   font-size: 1rem;
   font-weight: 600;
@@ -1931,8 +1946,11 @@ h2 {
   }
 
   .dashboard-page-turn-link {
-    right: 42px;
-    bottom: 27px;
+    font-size: 0.96rem;
+  }
+
+  .dashboard-page-action {
+    padding: 16px 42px 27px;
   }
 
   .dashboard-book .notebook-list-section {
@@ -2018,8 +2036,9 @@ h2 {
 
   .dashboard-book .page-stack {
     display: flex;
-    min-height: auto;
+    min-height: 0;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .menu-book:not(.dashboard-book) .page-stack {
@@ -2062,16 +2081,19 @@ h2 {
   }
 
   .dashboard-right-page {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 0;
     transform-origin: left top;
   }
 
-  .dashboard-page-turn-link {
-    position: relative;
-    right: auto;
-    bottom: auto;
-    display: block;
-    width: fit-content;
-    margin: 0 30px 32px auto;
+  .dashboard-page-front {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .dashboard-page-action {
+    padding: 14px 30px 18px;
   }
 
   .page-stack {

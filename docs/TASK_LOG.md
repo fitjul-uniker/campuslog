@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-11 - 경험 목록 스크롤 및 고정 CTA 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-11 |
+| 작업자 | Codex |
+| 작업 요약 | `codex/fix-experience-list-scroll` 범위로 `/dashboard`에서 저장된 경험이 첫 카드 아래로 잘리고 스크롤되지 않던 문제를 수정하고, 목록 스크롤 중에도 `새 경험 기록하기` CTA가 책 페이지 하단에 고정되도록 보강 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 고정 높이 책 프레임 안에서 오른쪽 페이지와 앞면의 높이 체인을 `height: 100%`, `min-height: 0`으로 닫아 경험 목록 스크롤을 복구. 대시보드 앞면을 목록 전용 `dashboard-page-scroll`과 고정 액션 영역 `dashboard-page-action`으로 분리해 목록 범위가 CTA 위에서 끝나도록 변경. 860px 이하에서도 오른쪽 페이지를 남은 높이에 맞춘 flex 영역으로 두고 목록만 스크롤되도록 조정. localStorage, 경험 CRUD, AI 분석 / 추천 데이터 흐름은 변경하지 않음 |
+| 검증한 내용 | `cd web && npm run lint`, `git diff --check` 통과. 원본 작업 트리와 동일한 격리 복사본에서 `npm run build` 통과. 브라우저에서 1440×900 기준 목록 `scrollTop`이 0에서 90으로 이동하는 동안 CTA 좌표 변화 0px, 390×844 기준 0에서 616.5로 이동하는 동안 CTA 좌표 변화 0px 확인. 두 화면 크기에서 마지막 경험 카드 접근, 빈 상태 CTA 노출, 페이지 넘김 후 `/experiences/new` 이동을 확인. 별도 UI / integration reviewer에서 `critical` / `major` / `minor` / `suggestion` 발견 없음 |
+| 남은 작업 | commit / push / PR 미진행. 사용자 터미널에서 실행 중이던 3000번 개발 서버는 `.next` 산출물 불일치 상태로 확인되어 `Ctrl+C` 후 `npm run dev` 재시작 필요 |
+| 관련 커밋 메시지 | 후보: `fix: keep dashboard list scrollable and CTA fixed` |
+
 ### 2026-07-11 - 최신 main 기반 Fork 인터랙티브 노트 UI 통합
 
 | 항목 | 내용 |
