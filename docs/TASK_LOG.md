@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-11 - 최신 main 기반 Fork 인터랙티브 노트 UI 통합
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-11 |
+| 작업자 | Codex |
+| 작업 요약 | Organization `main`의 디자인 제약 완화 커밋 `bda0118`에서 새 검토 브랜치를 만들고, 개인 Fork `feature/frontend-vibe-coding`의 최종 작업 트리 `0929b98`을 커밋 이력 없이 그대로 이관한 뒤 사용자 수동 테스트를 완료 |
+| 수정한 파일 | `.gitignore`, `web/package.json`, `web/package-lock.json`, `web/public/black-leather-book.webp`, `web/public/cover-book.png`, `web/src/app/page.tsx`, `web/src/app/dashboard/page.tsx`, `web/src/app/globals.css`, `web/src/components/hero/*`, `web/src/components/layout/*`, 관련 경험 / 추천 화면 경로 파일, `PRD.md`, `README.md`, `docs/DESIGN.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md` |
+| 변경 내용 | Fork 커밋을 cherry-pick / merge / rebase하지 않고 비문서 구현 파일의 blob hash가 `0929b98`과 일치하도록 작업 트리에 복원. `/`의 인터랙티브 3D 표지, `/dashboard` 기능 화면, 공통 책 프레임, 단일 새 경험 CTA, 데스크톱 좌측 메뉴 근접 모션을 적용하고 상위 기준 문서부터 작업 기록 문서까지 실제 라우트와 승인된 UX에 맞게 정리 |
+| 검증한 내용 | `cd web && npm ci`, `npm run lint`, `npm run build`, `git diff --check` 통과. 브라우저에서 `/` Canvas 1개 / DOM 이미지 0개 / 콘솔 경고·오류 0개 / `/dashboard` 링크 확인. 대시보드 1064×664px, 새 경험 링크 1개, 대시보드 내 AI 추천 링크 0개, 페이지 번호 0개 확인. 390×844에서 362×732px 책 프레임과 가로 overflow 없음 확인. 사용자가 직접 경험 작성 → `/api/analyze` 200 → 분석 결과 → `/api/recommend` 200 → 추천 기록 저장 / 열람을 포함한 화면 테스트 통과를 확인하고 commit / push / PR 진행을 승인 |
+| 남은 작업 | 모바일 헤더의 AI 추천 진입 부재는 ISSUE-016, WebGL 실패 시 비시각 fallback은 ISSUE-017에서 후속 검토. Draft PR에서 팀 리뷰 후 merge 여부 결정 |
+| 관련 커밋 메시지 | `feature: add interactive notebook experience` |
+
 ### 2026-07-11 - 디자인 표현 제약 완화 문서 정리
 
 | 항목 | 내용 |

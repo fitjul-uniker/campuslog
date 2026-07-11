@@ -81,7 +81,7 @@ export default function RecommendationHistoryPage() {
             label: "AI 추천 받기",
           }}
           secondaryAction={{
-            href: "/",
+            href: "/dashboard",
             label: "대시보드로 돌아가기",
           }}
         />
@@ -105,7 +105,7 @@ export default function RecommendationHistoryPage() {
             <Sparkles className="button-icon" aria-hidden="true" />
             새 추천 받기
           </Link>
-          <Link href="/" className="button button-secondary">
+          <Link href="/dashboard" className="button button-secondary">
             <ArrowLeft className="button-icon" aria-hidden="true" />
             대시보드
           </Link>

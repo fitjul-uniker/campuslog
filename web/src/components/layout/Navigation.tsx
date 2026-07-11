@@ -2,41 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpenText, History, PenLine, Sparkles } from "lucide-react";
+import type { PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 
+const PROXIMITY_RADIUS = 82;
+const SMOOTHING_MS = 120;
+
 const navigationItems = [
   {
-    href: "/",
+    href: "/dashboard",
     label: "나의 경험",
-    description: "기록한 활동 경험",
-    icon: BookOpenText,
-  },
-  {
-    href: "/experiences/new",
-    label: "새 경험 기록",
-    description: "활동 경험 작성",
-    icon: PenLine,
   },
   {
     href: "/recommend",
-    label: "AI 추천",
-    description: "경험 활용",
-    icon: Sparkles,
+    label: "AI 추천 및 활용",
     exact: true,
   },
   {
     href: "/recommend/history",
     label: "추천 기록",
-    description: "저장된 추천",
-    icon: History,
   },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
-  if (href === "/") {
-    return pathname === "/";
+  if (href === "/dashboard") {
+    return pathname === "/dashboard" || pathname.startsWith("/experiences/");
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -44,11 +36,158 @@ function isActivePath(pathname: string, href: string): boolean {
 
 export function Navigation() {
   const pathname = usePathname();
+  const navigationRef = useRef<HTMLElement>(null);
+  const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const targetsRef = useRef<number[]>([]);
+  const currentRef = useRef<number[]>([]);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastFrameRef = useRef(0);
+  const activeIndex = navigationItems.findIndex((item) =>
+    item.exact
+      ? pathname === item.href
+      : isActivePath(pathname, item.href),
+  );
+  const activeIndexRef = useRef(activeIndex);
+
+  activeIndexRef.current = activeIndex;
+
+  const runFrame = useCallback((now: number) => {
+    const deltaTime = Math.min((now - lastFrameRef.current) / 1000, 0.05);
+    const smoothing = Math.max(SMOOTHING_MS, 1) / 1000;
+    const easing = 1 - Math.exp(-deltaTime / smoothing);
+    let isMoving = false;
+
+    lastFrameRef.current = now;
+
+    itemRefs.current.forEach((element, index) => {
+      if (!element) {
+        return;
+      }
+
+      const target = Math.max(
+        targetsRef.current[index] ?? 0,
+        activeIndexRef.current === index ? 1 : 0,
+      );
+      const current = currentRef.current[index] ?? 0;
+      const next = current + (target - current) * easing;
+      const isSettled = Math.abs(target - next) < 0.0015;
+      const effect = isSettled ? target : next;
+
+      currentRef.current[index] = effect;
+      element.style.setProperty("--navigation-effect", effect.toFixed(4));
+      isMoving ||= !isSettled;
+    });
+
+    animationFrameRef.current = isMoving
+      ? requestAnimationFrame(runFrame)
+      : null;
+  }, []);
+
+  const startAnimation = useCallback(() => {
+    if (animationFrameRef.current !== null) {
+      return;
+    }
+
+    lastFrameRef.current = performance.now();
+    animationFrameRef.current = requestAnimationFrame(runFrame);
+  }, [runFrame]);
+
+  const handlePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      if (
+        event.pointerType !== "mouse" ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        return;
+      }
+
+      const navigation = navigationRef.current;
+
+      if (!navigation) {
+        return;
+      }
+
+      const navigationRect = navigation.getBoundingClientRect();
+      const pointerY = event.clientY - navigationRect.top;
+
+      itemRefs.current.forEach((element, index) => {
+        if (!element) {
+          return;
+        }
+
+        const center = element.offsetTop + element.offsetHeight / 2;
+        const proximity = Math.max(
+          0,
+          1 - Math.abs(pointerY - center) / PROXIMITY_RADIUS,
+        );
+
+        targetsRef.current[index] =
+          proximity * proximity * (3 - 2 * proximity);
+      });
+
+      startAnimation();
+    },
+    [startAnimation],
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    targetsRef.current = navigationItems.map(() => 0);
+    startAnimation();
+  }, [startAnimation]);
+
+  useEffect(() => {
+    startAnimation();
+  }, [activeIndex, startAnimation]);
+
+  useEffect(
+    () => () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const motionPreference = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
+    const handleMotionPreference = (event: MediaQueryListEvent | MediaQueryList) => {
+      if (event.matches) {
+        if (animationFrameRef.current !== null) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+
+        targetsRef.current = navigationItems.map(() => 0);
+        currentRef.current = navigationItems.map(() => 0);
+        itemRefs.current.forEach((element) => {
+          element?.style.setProperty("--navigation-effect", "0");
+        });
+        return;
+      }
+
+      startAnimation();
+    };
+
+    handleMotionPreference(motionPreference);
+    motionPreference.addEventListener("change", handleMotionPreference);
+
+    return () => {
+      motionPreference.removeEventListener("change", handleMotionPreference);
+    };
+  }, [startAnimation]);
 
   return (
-    <nav className="navigation" aria-label="주요 메뉴">
-      {navigationItems.map((item) => {
-        const Icon = item.icon;
+    <nav
+      ref={navigationRef}
+      className="navigation"
+      aria-label="주요 메뉴"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      {navigationItems.map((item, index) => {
         const isActive = item.exact
           ? pathname === item.href
           : isActivePath(pathname, item.href);
@@ -56,15 +195,20 @@ export function Navigation() {
         return (
           <Link
             key={item.href}
+            ref={(element) => {
+              itemRefs.current[index] = element;
+            }}
             href={item.href}
             className={cn("navigation-link", isActive && "is-active")}
-            aria-current={isActive ? "page" : undefined}
+            aria-current={
+              isActive
+                ? pathname === item.href
+                  ? "page"
+                  : "location"
+                : undefined
+            }
           >
-            <Icon className="navigation-icon" aria-hidden="true" />
-            <span>
-              <span className="navigation-label">{item.label}</span>
-              <span className="navigation-description">{item.description}</span>
-            </span>
+            <span className="navigation-label">{item.label}</span>
           </Link>
         );
       })}
