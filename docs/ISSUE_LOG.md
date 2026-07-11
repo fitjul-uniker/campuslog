@@ -40,6 +40,7 @@
 | ISSUE-016 | Open | High | Bug | 860px 이하에서 데스크톱 사이드바가 숨겨지지만 모바일 헤더에는 AI 추천 및 활용 / 추천 기록 메뉴가 없어 해당 화면의 UI 진입 경로가 사라짐 | Fork 작업 트리를 그대로 유지할지, 사용자 수동 검토 후 모바일 상단 메뉴를 추가할지 결정 필요 | 이번 이관에서는 `0929b98`의 코드를 변경하지 않고 현상을 브라우저에서 확인해 기록 | 미정 | 2026-07-11 | - |
 | ISSUE-017 | Open | Medium | Risk | WebGL / Canvas / texture 렌더 실패 시 정적 이미지 노출을 막기 위해 fallback과 error boundary가 비시각 상태를 반환하므로 표지 시각 요소가 비어 보일 수 있음 | 정적 이미지가 먼저 보이지 않는 요구를 유지하면서 오류 발생 때만 표시할 CSS 기반 fallback을 추가할지 결정 필요 | 이번 이관에서는 `0929b98`의 코드를 변경하지 않고 사용자 수동 검토 대상으로 유지 | 미정 | 2026-07-11 | - |
 | ISSUE-018 | Resolved | High | Decision | 최신 기준 문서와 Fork UI의 `/` → `/dashboard` 역할이 달라 branded intro 유지 여부 결정 필요 | 현재 branded intro를 유지할지, 첫 viewport 안에 핵심 기능 진입을 함께 노출할지 결정 | 사용자가 현재 `/` 3D 노트 표지와 `/dashboard` 전환을 직접 테스트해 통과 처리하고 PR 진행을 승인. PRD / DESIGN / IMPLEMENTATION_PLAN과 관련 화면 문서를 실제 승인 구조로 갱신 | Codex | 2026-07-11 | 2026-07-11 |
+| ISSUE-019 | Resolved | High | Bug | `/dashboard`의 고정 높이 책 프레임에서 저장된 경험 목록이 스크롤되지 않아 첫 카드 아래 경험에 접근할 수 없고, CTA도 목록 스크롤 영역과 분리되지 않음 | 데스크톱과 모바일에서 목록만 책 내부 스크롤 대상으로 두고 `새 경험 기록하기` CTA를 고정할 높이 / overflow 구조 확정 필요 | 오른쪽 페이지와 앞면에 확정 높이와 `min-height: 0`을 적용해 내부 스크롤을 복구하고, 목록 전용 `dashboard-page-scroll`과 고정 `dashboard-page-action`을 분리. 1440×900과 390×844에서 마지막 카드 접근 및 스크롤 중 CTA 좌표 변화 0px 확인 | Codex | 2026-07-11 | 2026-07-11 |
 
 ## 이슈 추가 템플릿
 
