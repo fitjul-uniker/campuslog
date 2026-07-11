@@ -6,7 +6,7 @@
 
 ## MVP Included Flow
 
-1차 MVP 흐름은 로그인과 서비스 소개 전용 랜딩 없이 메인/경험 목록 대시보드에서 시작하며, 브라우저 localStorage에 활동 경험과 분석 / 추천 결과를 저장하는 기준으로 설계합니다.
+1차 MVP 흐름은 로그인 없이 메인/경험 목록 대시보드에서 시작하며, 브라우저 localStorage에 활동 경험과 분석 / 추천 결과를 저장하는 기준으로 설계합니다. 서비스 소개만을 위한 회원 전환형 랜딩은 기본 흐름에 포함하지 않지만, premium first viewport, hero-like intro, branded motion은 핵심 행동 진입을 유지하는 조건으로 사용할 수 있습니다.
 
 1. **메인/경험 목록 대시보드에서 활동 경험 기록 시작**
    - 사용자는 첫 화면에서 서비스 이름, 짧은 설명, 저장된 활동 경험 카드 목록을 확인합니다.
@@ -100,7 +100,7 @@
 1차 MVP에서는 아래 흐름을 포함하지 않습니다.
 
 - 로그인 / 회원가입
-- 서비스 소개 랜딩 화면
+- 로그인 / 회원 전환 목적의 별도 서비스 소개 랜딩 화면
 - 학교 인증
 - 결제
 - 커뮤니티
@@ -121,6 +121,7 @@
 
 ## Future Flow
 
-- 2차 MVP에서는 Next.js Full Stack + Supabase 기반으로 서비스 소개 랜딩, Supabase Auth / Postgres 기반 로그인 저장과 Supabase Storage 기반 수료증 / 활동사진 / PDF / 산출물 첨부파일 저장, 미리보기, 삭제 흐름을 검토합니다.
+- 2차 MVP에서는 Next.js Full Stack + Supabase 기반으로 외부 사용자 전환용 서비스 소개 랜딩, Supabase Auth / Postgres 기반 로그인 저장과 Supabase Storage 기반 수료증 / 활동사진 / PDF / 산출물 첨부파일 저장, 미리보기, 삭제 흐름을 검토합니다.
+- 1차 MVP에서도 Three.js, React Three Fiber, GSAP, Framer Motion, WebGL, shader, particle, scroll-based animation, micro interaction 같은 표현은 사용자 흐름을 강화하는 경우 사용할 수 있습니다.
 - 2차 MVP에서는 사용자의 활용 목적에 따라 적합한 경험을 1순위, 2순위, 3순위까지 추천하고, 각 경험의 추천 이유를 비교해 보여주는 UI를 검토합니다.
 - UNIKER 이후 개인 Backend Portfolio Edition에서는 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3 기반 백엔드 포트폴리오 확장 흐름을 별도 검토합니다.

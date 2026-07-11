@@ -33,7 +33,7 @@ CampusLog 1차 MVP는 대학생이 프로젝트, 공모전, 인턴, 대외활동
 구현 기준:
 
 - 대표 컨셉은 `대학생활을 단권화하는 AI 경험 기록장`입니다.
-- 첫 화면은 서비스 소개 랜딩이 아니라 저장된 경험 목록이 바로 보이는 메인/경험 목록 대시보드입니다.
+- 기본 첫 화면은 저장된 경험 목록이 바로 보이는 메인/경험 목록 대시보드입니다. 이는 정보 구조의 기본값이며, premium landing experience, hero-like first viewport, 3D/WebGL 브랜드 비주얼, scroll interaction을 금지하는 의미가 아닙니다.
 - 경험 원본 데이터, AI 분석 결과, AI 추천 결과는 브라우저 `localStorage`에 저장합니다.
 - AI 분석과 AI 추천은 클라이언트에서 OpenAI API를 직접 호출하지 않고, `web/src/app/api/*`의 Next.js API Route를 통해 처리합니다.
 - 1차 MVP는 로그인, DB, Supabase 없이도 경험 기록 -> AI 분석 -> AI 추천 및 활용 흐름을 검증할 수 있어야 합니다.
@@ -78,8 +78,9 @@ CampusLog 1차 MVP는 대학생이 프로젝트, 공모전, 인턴, 대외활동
 - 새 경험 기록하기는 Primary CTA입니다.
 - AI 경험 추천 및 활용은 보이게 유지하되 Secondary CTA입니다.
 - 빈 상태에서는 첫 경험 기록하기를 우선 안내합니다.
-- 카드, 입력, 배지, 버튼은 shadcn/ui로 재현 가능한 단순한 패턴을 우선합니다.
+- 카드, 입력, 배지, 버튼은 shadcn/ui로 빠르게 재현 가능한 패턴을 출발점으로 삼되, 디자인 품질을 높이기 위해 커스텀 컴포넌트와 고급 인터랙션을 사용할 수 있습니다.
 - 캠퍼스 그린 + 민트 계열 포인트를 사용하되, 정확한 hex 값은 구현 후 조정합니다.
+- Three.js, React Three Fiber, GSAP, Framer Motion, WebGL, shader, Lottie, particle, glassmorphism, morphing animation, scroll-based animation, micro interaction은 성능 / 접근성 / 유지보수성을 지키는 범위에서 적극적으로 활용할 수 있습니다.
 
 ## 3. 제외 범위
 
@@ -89,11 +90,10 @@ CampusLog 1차 MVP는 대학생이 프로젝트, 공모전, 인턴, 대외활동
 - DB/Supabase
 - 파일 업로드
 - 마이페이지
-- 서비스 소개 랜딩
+- 로그인 / 회원 전환 목적의 별도 서비스 소개 랜딩
 - 여러 추천 후보 비교
 - PDF 생성
 - 외부 서비스 연동
-- 과한 애니메이션/3D 그래픽
 - 복잡한 차트/분석 대시보드
 - 사용자 이름 기반 개인화 문구
 - GitHub / 블로그 / Notion 자동 연동
@@ -101,6 +101,8 @@ CampusLog 1차 MVP는 대학생이 프로젝트, 공모전, 인턴, 대외활동
 - UNIKER 이후 개인 Backend Portfolio Edition용 별도 백엔드 스택
 - 프로필 메뉴 / 계정 드롭다운
 - 팀 / 조직 / 결제 / 업그레이드 UI
+
+위 제외 범위는 제품 기능과 데이터 흐름 기준입니다. 애니메이션, 3D, WebGL, shader, premium hero, landing-like intro 같은 표현 방식은 제외 범위가 아니며, 핵심 MVP 흐름을 방해하지 않으면 디자인 고도화에서 사용할 수 있습니다.
 
 ## 4. 예상 라우트 구조
 
@@ -122,7 +124,8 @@ Next.js App Router 기준 1차 MVP 라우트는 아래처럼 고정합니다.
 - 작성 / 수정 화면에서는 AI 분석 요청을 실행하지 않습니다.
 - AI 분석 요청은 활동 경험 상세 화면 또는 분석 결과 화면의 다시 분석 액션에서 실행합니다.
 - AI 추천 화면은 특정 경험의 하위 화면이 아니라 독립 라우트입니다.
-- 서비스 소개 랜딩, 로그인, 마이페이지 라우트는 만들지 않습니다.
+- 로그인, 마이페이지 라우트는 만들지 않습니다.
+- 서비스 소개 전용 랜딩 라우트는 기본 MVP 라우트에 포함하지 않습니다. 다만 사용자가 premium landing experience나 branded intro를 요청한 디자인 작업에서는 핵심 대시보드 진입을 유지하는 조건으로 별도 검토할 수 있습니다.
 
 ## 5. Next.js App Router 기준 폴더 구조
 
@@ -186,7 +189,7 @@ campuslog/
 | 컴포넌트 | 역할 | 사용 화면 | 예상 props |
 | --- | --- | --- | --- |
 | `AppShell` | 좌측 사이드바, 모바일 상단 앱 바, 메인 콘텐츠 영역을 감싸는 앱 레이아웃 | 전체 화면 | `children`, `activePath?` |
-| `Sidebar` 또는 `Navigation` | 나의 경험, AI 추천 및 활용으로 이동하는 최소 내비게이션 | 전체 화면 | `activePath`, `items` |
+| `Sidebar` 또는 `Navigation` | 나의 경험, AI 추천 및 활용으로 이동하는 핵심 내비게이션 | 전체 화면 | `activePath`, `items` |
 | `ExperienceCard` | 경험 목록의 리스트형 카드. 제목, 기간, 역할, 상태, 태그, 최근 수정일 표시 | `/` | `experience`, `analysis?`, `onClick?` |
 | `ExperienceForm` | 새 경험 작성과 기존 경험 수정 공통 폼 | `/experiences/new`, `/experiences/[id]/edit` | `initialValue?`, `mode`, `onSubmit`, `onCancel` |
 | `ExperienceDetail` | 저장된 경험 원본 내용, 메타 정보, 분석 상태, 주요 액션 표시 | `/experiences/[id]` | `experience`, `analysis?`, `onAnalyze`, `onEdit`, `onDelete?` |
@@ -619,7 +622,7 @@ type RecommendResponse = {
 - 데스크톱은 좌측 사이드바형 레이아웃으로 보입니다.
 - 모바일은 사이드바 없이 상단 앱 바와 세로 스크롤로 동작합니다.
 - CTA와 카드 텍스트가 모바일에서 겹치지 않습니다.
-- 과한 애니메이션, 3D, 랜딩 히어로가 없습니다.
+- 모션, 3D, hero-like 영역을 사용했다면 핵심 CTA와 카드 목록 가독성을 해치지 않고 모바일 성능 / 접근성 기준을 통과합니다.
 
 ### 7단계: `QA/refinement`
 
@@ -692,7 +695,7 @@ feature/base-structure
 - 작업 목적: Next.js App Router 앱 골격과 공통 레이아웃을 준비합니다.
 - 수정/생성 예상 파일: `web/package.json`, `web/src/app/*`, `web/src/components/layout/*`, `web/src/lib/types.ts`, `web/src/lib/utils.ts`
 - 구현할 내용: 기본 라우트, AppShell, Navigation, globals.css, placeholder 페이지
-- 구현하지 말아야 할 내용: 경험 CRUD, AI API 호출, 로그인, 랜딩 페이지
+- 구현하지 말아야 할 내용: 경험 CRUD, AI API 호출, 로그인, 회원 전환 목적의 별도 랜딩 페이지
 - 완료 기준: 핵심 라우트가 AppShell 안에서 열리고, 제외 범위 라우트가 없습니다.
 - 확인 방법: 로컬 실행 후 `/`, `/experiences/new`, `/recommend` 접근 확인
 
@@ -745,10 +748,10 @@ feature/base-structure
 
 - 작업 목적: 노트 / 단권화 컨셉과 캠퍼스 그린 + 민트 브랜드 톤을 반영합니다.
 - 수정/생성 예상 파일: `globals.css`, `AppShell`, `StatusBadge`, `EmptyState`, `public/*`
-- 구현할 내용: 색상 역할, focus 상태, 배지 톤, 빈 상태 아이콘, 파비콘 후보
-- 구현하지 말아야 할 내용: 과한 애니메이션, 3D 그래픽, 랜딩 히어로, 기능 로직 수정
-- 완료 기준: 화면이 노트형 기록장 분위기를 가지되 과하게 장식적이지 않습니다.
-- 확인 방법: 대시보드와 빈 상태를 중심으로 색상, 대비, 아이콘 확인
+- 구현할 내용: 색상 역할, focus 상태, 배지 톤, 빈 상태 아이콘, 파비콘 후보, 모션 / 3D / WebGL / shader / premium hero 등 브랜드 경험을 높이는 표현
+- 구현하지 말아야 할 내용: 기능 로직 수정, storage key 변경, API payload 변경, 로그인 / DB / 파일 업로드 같은 제품 범위 확장
+- 완료 기준: 화면이 노트형 기록장 분위기와 premium product 품질을 함께 가지며, 핵심 흐름 / 성능 / 접근성을 해치지 않습니다.
+- 확인 방법: 대시보드와 빈 상태를 중심으로 색상, 대비, 아이콘, 모션, 모바일 렌더링, reduced motion fallback 확인
 
 ### `fix/mobile-qa`
 
@@ -789,7 +792,7 @@ feature/base-structure
 ## 13. 기능 개발과 디자인 고도화 충돌 방지 규칙
 
 - 기능 개발 PR이 `main`에 먼저 들어간 뒤 디자인 고도화 PR을 올립니다.
-- 디자인 고도화 작업은 `className`, layout, spacing, color, `AppShell`, `ExperienceCard`, `EmptyState`, `StatusBadge`, `globals.css` 중심으로 합니다.
+- 디자인 고도화 작업은 `className`, layout, spacing, color, motion, visual assets, `AppShell`, `ExperienceCard`, `EmptyState`, `StatusBadge`, `globals.css` 중심으로 합니다. premium interaction을 위해 필요한 경우 전용 visual component, canvas/WebGL component, animation utility, lightweight dependency를 추가할 수 있습니다.
 - 디자인 고도화 작업에서는 `storage.ts`, `types.ts`, `app/api/*`, `localStorage` key, 저장/수정/삭제 로직, OpenAI API 호출 코드를 수정하지 않는 것을 원칙으로 합니다.
 - 정렬/필터 책임은 분리합니다. `experience-crud`는 최근 수정순 기본 정렬만 구현하고, `dashboard-polish`는 정렬/필터 UI polish만 담당하며, `feature/sort-filter`가 실제 정렬/필터 동작을 구현합니다.
 - QA/보완 작업은 핵심 구조가 안정된 뒤 작은 PR 단위로 진행합니다.
@@ -825,6 +828,7 @@ feature/base-structure
 | OpenAI API Key 노출 위험 | API Route에서만 `OPENAI_API_KEY`를 읽고 클라이언트에 전달하지 않음 |
 | 한 번에 너무 큰 PR을 만드는 문제 | base, CRUD, 분석, 추천, 디자인, QA를 브랜치로 분리 |
 | 디자인 고도화와 기능 개발 파일 충돌 문제 | 디자인 PR은 기능 로직 파일을 수정하지 않는 원칙 적용 |
+| 고급 모션 / WebGL / 3D가 성능을 해칠 위험 | lazy loading, reduced motion, 모바일 fallback, canvas 해상도 관리, Core Web Vitals 확인 |
 | 모바일 반응형이 후순위로 밀리는 문제 | `design/responsive-polish`와 `fix/mobile-qa`를 별도 PR로 예약 |
 | 검색 기능을 장식용으로만 만드는 문제 | 1차 MVP 첫 구현에서는 검색을 만들지 않거나, 만들 경우 실제 localStorage 검색으로만 구현 |
 | 빈 상태에서 AI 추천 CTA 처리 기준이 흐려지는 문제 | 첫 경험 기록하기를 우선하고, AI 추천은 낮은 우선순위 또는 비활성 안내로 처리 |
@@ -834,7 +838,7 @@ feature/base-structure
 
 ## 16. 필요한 라이브러리 후보
 
-이번 문서 작업에서는 라이브러리를 설치하지 않습니다. 구현 전에 아래 후보를 PR 단위로 결정합니다.
+이 계획 문서만으로는 라이브러리를 설치하지 않습니다. 구현 전에 아래 후보를 PR 단위로 결정합니다.
 
 | 후보 | 필요한 이유 | 비고 |
 | --- | --- | --- |
@@ -842,14 +846,18 @@ feature/base-structure
 | Tailwind CSS | shadcn/ui와 DESIGN.md의 spacing/color 기준 구현 | Next.js 초기 세팅과 함께 검토 |
 | shadcn/ui | Button, Card, Badge, Select, DropdownMenu, Skeleton, Alert, Dialog 패턴 구현 | 필요한 컴포넌트만 추가 |
 | `lucide-react` | DESIGN.md의 권장 아이콘 사용 | 버튼/상태/내비게이션 아이콘 |
+| `framer-motion` | page transition, layout animation, micro interaction 구현 | UI 상태 변화와 컴포넌트 모션에 적합 |
+| `gsap` | 정교한 timeline, scroll-based animation, morphing interaction 구현 | 복잡한 시퀀스가 필요할 때 검토 |
+| `three`, `@react-three/fiber`, `@react-three/drei` | 3D 오브젝트, WebGL 브랜드 비주얼, interactive hero 구현 | lazy loading / fallback / 모바일 성능 확인 필수 |
+| Lottie player 계열 | 가벼운 벡터 기반 모션 자산 재생 | 파일 크기와 접근성 대체 텍스트 확인 |
 | OpenAI SDK 또는 server-side `fetch` | API Route에서 OpenAI API 호출 | dependency 최소화를 원하면 `fetch` 우선 검토 |
 | `zod` | API payload와 폼 입력 검증 | 필수는 아니며 `fix/form-validation`에서 검토 |
 
 설치 원칙:
 
-- 새 라이브러리는 해당 PR 설명에 이유와 대안을 적은 뒤 설치합니다.
-- Magic UI, Aceternity UI, Motion 계열은 1차 MVP 필수 범위가 아니므로 설치하지 않습니다.
-- 로직이 단순한 경우 새 dependency보다 TypeScript 타입과 기본 검증으로 처리합니다.
+- 새 라이브러리는 해당 PR 설명에 이유, 대안, 번들 / 렌더링 영향, fallback 전략을 적은 뒤 설치합니다.
+- Magic UI, Aceternity UI, Motion 계열, Three.js / React Three Fiber, GSAP, Framer Motion, Lottie 등은 디자인 품질을 높이는 명확한 목적이 있으면 설치할 수 있습니다.
+- 로직이 단순한 경우 새 dependency보다 TypeScript 타입과 기본 검증으로 처리하되, 복잡한 모션 / 3D / 인터랙션 엔진은 검증된 라이브러리를 우선합니다.
 
 ## 17. 확인 필요 사항
 
@@ -880,4 +888,5 @@ feature/base-structure
 - 새 경험 작성, 목록 확인, 상세 확인, 수정, 삭제가 localStorage 기준으로 동작합니다.
 - 경험 저장 후 활동 경험 상세 화면으로 이동합니다.
 - 기존 분석 결과가 있는 경험을 수정하면 `재분석 필요` 상태를 표시할 수 있습니다.
-- 로그인/회원가입, 서비스 소개 랜딩, DB, Supabase, 파일 업로드 관련 구현은 없습니다.
+- 로그인/회원가입, DB, Supabase, 파일 업로드 관련 구현은 없습니다.
+- premium landing experience나 branded hero를 도입하는 경우에도 경험 목록 / 기록 / AI 추천 핵심 흐름은 유지합니다.

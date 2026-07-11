@@ -10,7 +10,7 @@
 
 사용자가 CampusLog에 들어왔을 때 저장된 활동 경험 목록을 바로 확인하고, 새 경험 작성, 기존 경험 상세, AI 경험 추천 및 활용 화면으로 진입할 수 있는 첫 화면입니다.
 
-1차 MVP에서는 로그인 / 회원가입 화면과 서비스 소개 전용 랜딩 화면을 만들지 않습니다.
+1차 MVP에서는 로그인 / 회원가입 화면을 만들지 않습니다. 기본 첫 화면은 메인/경험 목록 대시보드이지만, premium first viewport, hero-like intro, branded interaction, 3D/WebGL 비주얼은 핵심 CTA와 경험 목록 접근성을 해치지 않으면 사용할 수 있습니다.
 
 ### UI 구성 요소
 
@@ -341,7 +341,7 @@
 1차 MVP에서는 아래 화면을 만들지 않습니다.
 
 - 로그인 / 회원가입 화면
-- 서비스 소개 랜딩 화면
+- 로그인 / 회원 전환 목적의 별도 서비스 소개 랜딩 화면
 - 수료증 / 활동사진 첨부 화면
 - 파일 첨부 관리 화면
 - 결제 화면
@@ -355,6 +355,7 @@
 ## Future Screen Memo
 
 - 수료증 / 활동사진 첨부 UI는 2차 MVP에서 Next.js Full Stack + Supabase Storage 도입과 함께 확장 예정입니다.
-- 서비스 소개 랜딩, 로그인 / 회원가입, 마이페이지, 사용자별 저장 화면은 2차 MVP에서 Next.js Full Stack + Supabase Auth / Postgres 도입과 함께 검토합니다.
+- 외부 사용자 전환용 서비스 소개 랜딩, 로그인 / 회원가입, 마이페이지, 사용자별 저장 화면은 2차 MVP에서 Next.js Full Stack + Supabase Auth / Postgres 도입과 함께 검토합니다.
+- premium landing hero, 3D/WebGL 비주얼, shader, particle, scroll-based animation, micro interaction은 1차 MVP에서도 디자인 고도화 범위로 사용할 수 있으며, 성능 / 접근성 / 모바일 안정성을 함께 확인합니다.
 - 2차 MVP에서는 사용자의 활용 목적에 따라 1순위, 2순위, 3순위 경험 추천과 각 추천 이유 비교 UI를 검토합니다.
 - Spring Boot, MySQL 또는 AWS RDS, AWS S3 기반 관리 화면은 CampusLog 본 MVP가 아니라 UNIKER 이후 개인 Backend Portfolio Edition에서 별도 검토합니다.
