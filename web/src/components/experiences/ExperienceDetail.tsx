@@ -180,7 +180,7 @@ export function ExperienceDetail({
           <PenLine className="button-icon" aria-hidden="true" />
           수정
         </Link>
-        <Link href="/" className="button button-ghost">
+        <Link href="/dashboard" className="button button-ghost">
           <ArrowLeft className="button-icon" aria-hidden="true" />
           대시보드
         </Link>

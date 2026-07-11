@@ -35,7 +35,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
 
   function handleDelete() {
     deleteExperience(id);
-    router.push("/");
+    router.push("/dashboard");
   }
 
   async function handleAnalyze() {
@@ -88,7 +88,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
           description="삭제되었거나 저장소에서 불러오지 못한 경험입니다."
           icon={<BookOpenText />}
           primaryAction={{
-            href: "/",
+            href: "/dashboard",
             label: "대시보드로 돌아가기",
           }}
         />

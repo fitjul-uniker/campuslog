@@ -86,7 +86,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
           description="삭제되었거나 저장소에서 불러오지 못한 경험입니다."
           icon={<BookOpenText />}
           primaryAction={{
-            href: "/",
+            href: "/dashboard",
             label: "대시보드로 돌아가기",
           }}
         />
@@ -131,7 +131,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
               <ArrowLeft className="button-icon" aria-hidden="true" />
               활동 경험 상세로 돌아가기
             </Link>
-            <Link href="/" className="button button-secondary">
+            <Link href="/dashboard" className="button button-secondary">
               대시보드로 돌아가기
             </Link>
             <Link href="/recommend" className="button button-ghost">
@@ -180,7 +180,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
               <ArrowLeft className="button-icon" aria-hidden="true" />
               활동 경험 상세로 돌아가기
             </Link>
-            <Link href="/" className="button button-ghost">
+            <Link href="/dashboard" className="button button-ghost">
               대시보드로 돌아가기
             </Link>
           </div>

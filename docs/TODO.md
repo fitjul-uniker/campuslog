@@ -12,14 +12,15 @@
 
 ## High Priority
 
-- [ ] 유효한 `OPENAI_API_KEY` 기준 AI 분석 / 추천 성공 흐름 재검증
 - [ ] Vercel 배포 준비
+- [ ] 모바일 상단에서 AI 추천 및 활용 / 추천 기록 진입 제공 (`ISSUE-016`)
 
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
 - [ ] 정렬 / 필터 실제 데이터 처리 구현
 - [ ] 정렬 옵션의 `오래된순` / `오래된 작성순` 표현 확정
+- [ ] WebGL 오류 발생 시에만 노출되는 이미지 없는 표지 fallback 검토 (`ISSUE-017`)
 - [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
 
 ## Low Priority
@@ -30,6 +31,10 @@
 
 ## Done
 
+- [x] 유효한 `OPENAI_API_KEY` 기준 경험 작성 → AI 분석 → AI 추천 → 추천 기록 흐름 사용자 테스트 통과
+- [x] 최신 Organization main 기반으로 개인 Fork 인터랙티브 노트 UI 작업 트리 이관 및 사용자 수동 테스트 통과
+- [x] `/` 인터랙티브 3D 노트 표지와 `/dashboard` 기능 화면 역할 문서화
+- [x] 공통 책 프레임, 단일 새 경험 CTA, 좌측 메뉴 근접 모션 적용
 - [x] 디자인 표현 제약 완화 및 프리미엄 UI/UX 기준 문서 정리
 - [x] 브랜드 및 반응형 UI/UX 개선(responsive/brand polish)
 - [x] Campus Green + Mint 브랜드 토큰, focus ring, hover 상태 정리

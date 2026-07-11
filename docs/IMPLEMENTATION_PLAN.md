@@ -33,7 +33,7 @@ CampusLog 1차 MVP는 대학생이 프로젝트, 공모전, 인턴, 대외활동
 구현 기준:
 
 - 대표 컨셉은 `대학생활을 단권화하는 AI 경험 기록장`입니다.
-- 기본 첫 화면은 저장된 경험 목록이 바로 보이는 메인/경험 목록 대시보드입니다. 이는 정보 구조의 기본값이며, premium landing experience, hero-like first viewport, 3D/WebGL 브랜드 비주얼, scroll interaction을 금지하는 의미가 아닙니다.
+- 브랜드 첫 화면은 `/`의 인터랙티브 3D 노트 표지이고, 기능 시작 화면은 `/dashboard`의 메인/경험 목록 대시보드입니다. 노트 선택으로 기능 화면에 진입하는 한 단계 전환을 현재 승인된 UX로 사용합니다.
 - 경험 원본 데이터, AI 분석 결과, AI 추천 결과는 브라우저 `localStorage`에 저장합니다.
 - AI 분석과 AI 추천은 클라이언트에서 OpenAI API를 직접 호출하지 않고, `web/src/app/api/*`의 Next.js API Route를 통해 처리합니다.
 - 1차 MVP는 로그인, DB, Supabase 없이도 경험 기록 -> AI 분석 -> AI 추천 및 활용 흐름을 검증할 수 있어야 합니다.
@@ -110,7 +110,8 @@ Next.js App Router 기준 1차 MVP 라우트는 아래처럼 고정합니다.
 
 | Route | 역할 |
 | --- | --- |
-| `/` | 메인/경험 목록 대시보드 |
+| `/` | 인터랙티브 3D 노트 표지 |
+| `/dashboard` | 메인/경험 목록 대시보드 |
 | `/experiences/new` | 활동 경험 작성 |
 | `/experiences/[id]` | 활동 경험 상세 |
 | `/experiences/[id]/edit` | 활동 경험 수정 |
@@ -125,7 +126,7 @@ Next.js App Router 기준 1차 MVP 라우트는 아래처럼 고정합니다.
 - AI 분석 요청은 활동 경험 상세 화면 또는 분석 결과 화면의 다시 분석 액션에서 실행합니다.
 - AI 추천 화면은 특정 경험의 하위 화면이 아니라 독립 라우트입니다.
 - 로그인, 마이페이지 라우트는 만들지 않습니다.
-- 서비스 소개 전용 랜딩 라우트는 기본 MVP 라우트에 포함하지 않습니다. 다만 사용자가 premium landing experience나 branded intro를 요청한 디자인 작업에서는 핵심 대시보드 진입을 유지하는 조건으로 별도 검토할 수 있습니다.
+- 회원 전환 목적의 서비스 소개 전용 랜딩 라우트는 MVP에 포함하지 않습니다. `/`은 사용자가 승인한 branded 3D intro이며, 노트 전체를 `/dashboard`로 이동하는 접근 가능한 링크로 제공합니다.
 
 ## 5. Next.js App Router 기준 폴더 구조
 
@@ -190,11 +191,11 @@ campuslog/
 | --- | --- | --- | --- |
 | `AppShell` | 좌측 사이드바, 모바일 상단 앱 바, 메인 콘텐츠 영역을 감싸는 앱 레이아웃 | 전체 화면 | `children`, `activePath?` |
 | `Sidebar` 또는 `Navigation` | 나의 경험, AI 추천 및 활용으로 이동하는 핵심 내비게이션 | 전체 화면 | `activePath`, `items` |
-| `ExperienceCard` | 경험 목록의 리스트형 카드. 제목, 기간, 역할, 상태, 태그, 최근 수정일 표시 | `/` | `experience`, `analysis?`, `onClick?` |
+| `ExperienceCard` | 경험 목록의 리스트형 카드. 제목, 기간, 역할, 상태, 태그, 최근 수정일 표시 | `/dashboard` | `experience`, `analysis?`, `onClick?` |
 | `ExperienceForm` | 새 경험 작성과 기존 경험 수정 공통 폼 | `/experiences/new`, `/experiences/[id]/edit` | `initialValue?`, `mode`, `onSubmit`, `onCancel` |
 | `ExperienceDetail` | 저장된 경험 원본 내용, 메타 정보, 분석 상태, 주요 액션 표시 | `/experiences/[id]` | `experience`, `analysis?`, `onAnalyze`, `onEdit`, `onDelete?` |
 | `StatusBadge` | 미분석 / 분석 완료 / 재분석 필요 상태 표시 | 대시보드, 상세 | `status` |
-| `EmptyState` | 경험 없음, 분석 없음, 추천 불가 등 빈 상태 안내 | `/`, 분석/추천 화면 | `title`, `description`, `primaryAction?`, `secondaryAction?`, `icon?` |
+| `EmptyState` | 경험 없음, 분석 없음, 추천 불가 등 빈 상태 안내 | `/dashboard`, 분석/추천 화면 | `title`, `description`, `primaryAction?`, `secondaryAction?`, `icon?` |
 | `LoadingState` | 목록 로딩, AI 요청 중, 결과 생성 중 skeleton 표시 | 전체 화면 | `variant`, `count?`, `message?` |
 | `AnalysisResult` | 경험 요약, 핵심 역량 태그, 주요 성과, 키워드, 분석 생성일 표시 | `/experiences/[id]/analysis` | `experience`, `analysis`, `onReanalyze?` |
 | `RecommendationForm` | 활용 목적 선택과 질문 / 문항 입력 폼 | `/recommend` | `initialValue?`, `onSubmit`, `isLoading?` |
