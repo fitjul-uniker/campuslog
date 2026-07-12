@@ -92,7 +92,8 @@ export async function requestRecommendation({
       ok: false,
       error: {
         code: "UNKNOWN_ERROR",
-        message: "AI 추천 요청 중 문제가 발생했습니다. 다시 시도해주세요.",
+        message:
+          "AI 기반 활동 추천 요청 중 문제가 발생했습니다. 다시 시도해주세요.",
       },
     };
   }
@@ -101,7 +102,8 @@ export async function requestRecommendation({
     ok: false,
     error: {
       code: "UNKNOWN_ERROR",
-      message: "AI 추천 응답을 해석하지 못했습니다. 다시 시도해주세요.",
+      message:
+        "AI 기반 활동 추천 응답을 해석하지 못했습니다. 다시 시도해주세요.",
     },
   };
 }

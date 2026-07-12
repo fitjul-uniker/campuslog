@@ -1,18 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpenText, History } from "lucide-react";
+import { ArrowLeft, BookOpenText } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { RecommendationForm } from "@/components/ai/RecommendationForm";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
+import { CampusLogAiMenu } from "@/components/ai/CampusLogAiMenu";
 import { EmptyState } from "@/components/common/EmptyState";
 import { createIsoTimestamp } from "@/lib/date";
 import { requestRecommendation } from "@/lib/recommendationApi";
 import {
   getAnalysisByExperienceId,
   getExperiences,
+  getTrackedActivities,
   saveRecommendationResult,
 } from "@/lib/storage";
 import type {
@@ -40,6 +42,7 @@ function createRecommendationId(): string {
 export default function RecommendPage() {
   const [experiences, setExperiences] = useState<Experience[] | null>(null);
   const [analyses, setAnalyses] = useState<ExperienceAnalysis[]>([]);
+  const [trackedActivityCount, setTrackedActivityCount] = useState(0);
   const [recommendation, setRecommendation] = useState<Recommendation | null>(
     null,
   );
@@ -57,6 +60,7 @@ export default function RecommendPage() {
 
     setExperiences(storedExperiences);
     setAnalyses(storedAnalyses);
+    setTrackedActivityCount(getTrackedActivities().length);
   }, []);
 
   const recommendationId = recommendation?.id;
@@ -89,13 +93,14 @@ export default function RecommendPage() {
   async function handleRecommend(input: RecommendationFormInput) {
     if (!experiences || experiences.length === 0) {
       setRecommendationError(
-        "먼저 경험을 기록해야 AI 추천을 받을 수 있습니다.",
+        "먼저 경험을 기록해야 AI 기반 활동 추천을 받을 수 있습니다.",
       );
       return;
     }
 
     setIsRecommending(true);
     setRecommendationError("");
+    setRecommendation(null);
 
     const response = await requestRecommendation({
       ...input,
@@ -117,6 +122,14 @@ export default function RecommendPage() {
       generatedAt: createIsoTimestamp(),
     });
 
+    if (!savedRecommendation) {
+      setRecommendationError(
+        "활동 추천 결과를 저장하지 못했습니다. 브라우저 저장 공간을 확인한 뒤 다시 시도해 주세요.",
+      );
+      setIsRecommending(false);
+      return;
+    }
+
     setRecommendation(savedRecommendation);
     setIsRecommending(false);
   }
@@ -128,8 +141,21 @@ export default function RecommendPage() {
   if (experiences === null) {
     return (
       <div className="page-stack page-stack-narrow">
+        <section className="page-header">
+          <div>
+            <p className="eyebrow">CampusLog AI</p>
+            <h1>AI 기반 활동 추천</h1>
+            <p className="page-description">
+              저장된 활동 전체와 분석 결과를 바탕으로 지금 활용할 활동을
+              고릅니다.
+            </p>
+          </div>
+        </section>
+
+        <CampusLogAiMenu />
+
         <section className="placeholder-panel">
-          <p className="muted-text">추천 화면을 불러오는 중입니다.</p>
+          <p className="muted-text">활동 추천 화면을 불러오는 중입니다.</p>
         </section>
       </div>
     );
@@ -140,22 +166,39 @@ export default function RecommendPage() {
       <div className="page-stack page-stack-narrow">
         <section className="page-header">
           <div>
-            <p className="eyebrow">AI 경험 추천 및 활용</p>
-            <h1>AI 추천</h1>
+            <p className="eyebrow">CampusLog AI</p>
+            <h1>AI 기반 활동 추천</h1>
             <p className="page-description">
-              저장된 경험 전체와 분석 결과를 바탕으로 지금 활용할 경험을
+              저장된 활동 전체와 분석 결과를 바탕으로 지금 활용할 활동을
               고릅니다.
             </p>
           </div>
         </section>
 
+        <CampusLogAiMenu />
+
         <EmptyState
-          title="먼저 경험을 기록해야 AI 추천을 받을 수 있어요"
-          description="추천은 저장된 활동 경험을 기준으로 실행됩니다. 첫 경험을 기록한 뒤 다시 추천을 요청해 주세요."
+          title={
+            trackedActivityCount > 0
+              ? "등록한 활동을 완료 경험으로 정리하면 AI 기반 활동 추천을 받을 수 있어요"
+              : "먼저 활동을 시작해야 AI 기반 활동 추천을 받을 수 있어요"
+          }
+          description={
+            trackedActivityCount > 0
+              ? "오늘의 기록에서 활동 상태와 쌓인 내용을 확인한 뒤 완료 경험으로 정리해 주세요."
+              : "활동을 추가해 한 일을 쌓거나, 과거 활동을 직접 기록해 주세요."
+          }
           icon={<BookOpenText />}
           primaryAction={{
-            href: "/dashboard",
-            label: "나의 경험에서 기록하기",
+            href: trackedActivityCount > 0 ? "/dashboard" : "/activities/new",
+            label:
+              trackedActivityCount > 0
+                ? "등록한 활동 확인하기"
+                : "활동 추가",
+          }}
+          secondaryAction={{
+            href: "/experiences/new",
+            label: "과거 활동 기록하기",
           }}
         />
       </div>
@@ -166,32 +209,30 @@ export default function RecommendPage() {
     <div className="page-stack page-stack-narrow">
       <section className="page-header">
         <div>
-          <p className="eyebrow">AI 경험 추천 및 활용</p>
-          <h1>AI 추천</h1>
+          <p className="eyebrow">CampusLog AI</p>
+          <h1>AI 기반 활동 추천</h1>
           <p className="page-description">
-            저장된 경험 전체와 분석 결과를 바탕으로 지금 활용할 경험을
+            저장된 활동 전체와 분석 결과를 바탕으로 지금 활용할 활동을
             고릅니다.
           </p>
         </div>
 
         <div className="header-actions">
-          <Link href="/recommend/history" className="button button-secondary">
-            <History className="button-icon" aria-hidden="true" />
-            추천 기록
-          </Link>
-          <Link href="/dashboard" className="button button-secondary">
+          <Link href="/experiences" className="button button-secondary">
             <ArrowLeft className="button-icon" aria-hidden="true" />
-            대시보드
+            나의 활동
           </Link>
         </div>
       </section>
+
+      <CampusLogAiMenu />
 
       <section className="form-panel" aria-labelledby="recommend-form-title">
         <div className="panel-heading">
           <div>
             <h2 id="recommend-form-title">추천 입력</h2>
             <p className="muted-text">
-              저장된 경험 {experiences.length}개와 분석 결과 {analyses.length}
+              저장된 활동 {experiences.length}개와 분석 결과 {analyses.length}
               개를 함께 참고합니다.
             </p>
           </div>
@@ -204,7 +245,7 @@ export default function RecommendPage() {
 
         <p className="sr-only" role="status" aria-live="polite">
           {recommendation
-            ? `${recommendation.recommendedExperienceTitle} AI 추천 결과가 생성되었습니다.`
+            ? `${recommendation.recommendedExperienceTitle} AI 기반 활동 추천 결과가 생성되었습니다.`
             : ""}
         </p>
 
@@ -219,8 +260,8 @@ export default function RecommendPage() {
         <section className="detail-panel" aria-live="polite">
           <div className="detail-header">
             <div>
-              <p className="experience-meta">추천 생성 중</p>
-              <h2>추천할 경험을 찾는 중입니다</h2>
+              <p className="experience-meta">활동 추천 생성 중</p>
+              <h2>추천할 활동을 찾는 중입니다</h2>
             </div>
           </div>
           <div className="recommendation-preview" aria-hidden="true">
@@ -241,9 +282,9 @@ export default function RecommendPage() {
         </div>
       ) : (
         <section className="placeholder-panel" aria-labelledby="ready-title">
-          <h2 id="ready-title">추천 결과 대기 중</h2>
+          <h2 id="ready-title">AI 기반 활동 추천 결과 대기 중</h2>
           <p className="muted-text">
-            활용 목적과 질문을 입력하면 가장 적합한 경험 1개와 참고 문장을
+            활용 목적과 질문을 입력하면 가장 적합한 활동 1개와 참고 문장을
             표시합니다.
           </p>
         </section>

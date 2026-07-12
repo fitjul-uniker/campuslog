@@ -1,5 +1,5 @@
-import { ExperienceDashboard } from "@/components/experiences/ExperienceDashboard";
+import { TodayDashboard } from "@/components/activities/TodayDashboard";
 
 export default function DashboardPage() {
-  return <ExperienceDashboard />;
+  return <TodayDashboard />;
 }

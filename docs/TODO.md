@@ -1,99 +1,109 @@
 # CampusLog TODO
 
-## 목적
+## 문서 상태
 
-이 문서는 CampusLog의 남은 작업을 우선순위별로 관리하기 위한 문서입니다.
+- v1.1 고도화: 완료, commit / review / merge 대기
+- 활성 계획: 2차 MVP
+- 단계 기준: `docs/CURRENT_PHASE.md`
 
-## 작성 규칙
+새 작업은 담당 Track과 완료 조건을 명시합니다. 과거 1차 MVP 제외 목록은 현재 2차 MVP를 제한하지 않습니다. 범위·보안·데이터 정책 결정이 필요한 작업은 `docs/ISSUE_LOG.md`에 함께 기록합니다.
 
-- 새 작업은 우선순위에 맞는 섹션에 추가합니다.
-- 완료한 작업은 체크 후 `Done` 섹션으로 이동합니다.
-- 1차 MVP 범위 변경이 필요한 작업은 바로 구현하지 않고 `docs/ISSUE_LOG.md`에도 기록합니다.
+## Transition — 먼저 완료
 
-## High Priority
+- [ ] v1.1 변경 파일 최종 검토
+- [ ] 사용자의 승인 후 논리적 단위로 commit
+- [ ] 원격 branch push와 Draft PR
+- [ ] 팀 리뷰와 main merge
+- [ ] 승인된 v1.1 기준 commit에 release tag 생성 여부 결정
+- [ ] 2차 MVP Track별 브랜치를 최신 main에서 생성
 
-- [ ] Vercel 배포 준비
+## Track A — 인증·데이터·AI 고도화
 
-## Medium Priority
+담당: 다른 팀원
 
-- [ ] README 실행 방법 보완
-- [ ] 실제 새 활동에 관련 링크를 저장한 뒤 상세의 설명·파비콘 표시와 새로고침 후 유지 여부 수동 확인 (`ISSUE-021`)
-- [ ] WebGL 오류 발생 시에만 노출되는 이미지 없는 표지 fallback 검토 (`ISSUE-017`)
-- [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
+### High
 
-## Low Priority
+- [ ] Supabase project / 환경 변수 / 개발·배포 환경 정책 확정
+- [ ] 로그인·회원가입·로그아웃·세션 복구 구현
+- [ ] 보호 라우트와 로그인 후 원래 화면 복귀 구현
+- [ ] 사용자별 DB schema와 RLS 정책 설계·검증
+- [ ] Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 관계 정의
+- [ ] 합성 초안 RLS·보존·완료 Experience 멱등 저장 contract 구현 (`ISSUE-029`)
+- [ ] repository 경계를 두고 localStorage와 DB 접근 분리
+- [ ] localStorage → 계정 데이터 마이그레이션 정책 결정 (`ISSUE-025`)
+- [ ] 공개 AI API 인증, rate limit, OpenAI spend limit / alert 적용 (`ISSUE-024`)
 
-- [ ] UNIKER 이후 개인 Backend Portfolio Edition의 Spring Boot REST API 도입 방향 정리
-- [ ] UNIKER 이후 개인 Backend Portfolio Edition의 MySQL 또는 AWS RDS 전환 방향 정리
-- [ ] UNIKER 이후 개인 Backend Portfolio Edition의 AWS S3 파일 저장 방향 정리
+### Medium
 
-## Done
+- [ ] 기존 v1.1 데이터 read 호환과 migration 멱등성 구현
+- [ ] 사용자 생성 데이터 판별과 샘플·fixture·파싱 실패 항목 제외 contract 구현
+- [ ] migration 부분 실패 / 재시도 / 원본 보존 구현
+- [ ] AI 분석 결과 schema와 근거 표시 고도화
+- [ ] AI 추천 정확도 평가 기준과 회귀 사례 정의
+- [ ] AI 추천 이유·활용 방향·근거 일치 강화
+- [ ] AI model / prompt version 기록 여부 결정
+- [ ] 서버 오류 code와 사용자용 message 계약 정리
 
-- [x] 경험 목록 내부 스크롤 복구 및 `새 경험 기록하기` CTA 고정 (`ISSUE-019`)
-- [x] 활동 관련 링크를 URL·설명 반복 행으로 입력하고 개별 추가·삭제·검증하도록 구현
-- [x] 관련 링크 상세에 설명·전체 URL·파비콘과 실패 시 `Link2` fallback 표시
-- [x] 기존 `campuslog:v1:experiences` 문자열 링크를 보존하는 v2 마이그레이션과 AI 분석·추천 API 호환 처리
-- [x] 모바일 상단에서 AI 추천 및 활용 / 추천 기록 진입 제공 (`ISSUE-016`)
-- [x] `/`을 제외한 제품 화면의 흰색 공통 앱 셸과 제목 목록-상세 구조 적용
-- [x] 활동 목록 CountUp, 활동·추천 기록 Gooey 검색, AI 분석 Border Beam 액션 적용
-- [x] 유효한 `OPENAI_API_KEY` 기준 경험 작성 → AI 분석 → AI 추천 → 추천 기록 흐름 사용자 테스트 통과
-- [x] 최신 Organization main 기반으로 개인 Fork 인터랙티브 노트 UI 작업 트리 이관 및 사용자 수동 테스트 통과
-- [x] `/` 인터랙티브 3D 노트 표지와 `/dashboard` 기능 화면 역할 문서화
-- [x] 단일 새 경험 CTA와 좌측 메뉴 근접 모션 적용
-- [x] 디자인 표현 제약 완화 및 프리미엄 UI/UX 기준 문서 정리
-- [x] 브랜드 및 반응형 UI/UX 개선(responsive/brand polish)
-- [x] Campus Green + Mint 브랜드 토큰, focus ring, hover 상태 정리
-- [x] 데스크톱 좌측 사이드바 / 모바일 상단 App Bar 레이아웃 보강
-- [x] 모바일 CTA, 카드, 상세 화면, EmptyState 줄바꿈과 폭 처리 보강
-- [x] 파비콘 / 앱 설치 아이콘을 CampusLog 텍스트 워드마크로 적용
-- [x] 대시보드 UI/UX polish
-- [x] 대시보드 빈 상태 CTA 위계 정리
-- [x] 경험 목록 skeleton 로딩 상태 구현
-- [x] 대시보드 실패 Alert / 다시 시도 UI 정리
-- [x] 분석 상태 배지 색상과 fallback 정리
-- [x] AI 경험 추천 및 활용 기능 구현
-- [x] `/api/recommend` AI 경험 추천 API Route 구현
-- [x] 추천 입력 폼과 추천 결과 화면 구현
-- [x] 추천 참고 문장 복사 기능 구현
-- [x] 추천 결과 localStorage 저장 구현
-- [x] 저장된 추천 기록 목록과 선택 열람 UI 구현
-- [x] 왼쪽 내비게이션에서 AI 추천과 추천 기록 메뉴 분리
-- [x] 추천 결과 저장을 `feature/ai-recommendation`에 포함할지 별도 PR로 분리할지 결정: `feature/ai-recommendation`에 포함
-- [x] AI 경험 분석 API Route 구현
-- [x] OpenAI API 연결 방식 결정: API Route에서 server-side `fetch` 사용
-- [x] 활동 경험 상세 화면에서 AI 분석 요청 CTA 실행 흐름 구현
-- [x] AI 경험 분석 결과 화면 구현
-- [x] 분석 결과 localStorage 저장 및 `analysisStatus: "analyzed"` 전환 구현
-- [x] AI 분석 실패 시 경험 데이터 유지와 재시도 UI 구현
-- [x] localStorage 기반 경험 CRUD 구현
-- [x] 활동 경험 목록 / 작성 / 수정 / 상세 화면 실제 동작 구현
-- [x] 활동 경험 상세 화면 구현
-- [x] 작성 / 수정 화면 저장 후 활동 경험 상세로 이동하는 흐름 구현
-- [x] 경험 삭제 시 연결 분석 결과와 추천 결과 정리 정책 구현
-- [x] 생성 직후에는 생성일만 표시하고 수정 후 수정일 표시
-- [x] 활동기간 시작월 / 종료월 입력 폼 적용
-- [x] `sampleExperiences.ts` 작성
-- [x] `sampleExperiences.ts` 초기 화면 자동 주입 여부 결정: 자동 주입하지 않고 개발 참고용 데이터로만 유지
-- [x] 작업 기록 문서 2026-07-09 상태 최신화
-- [x] 브랜치 정리 프롬프트 규칙 추가
-- [x] Next.js 프론트엔드 초기 세팅
-- [x] 프론트엔드 기본 라우트 / AppShell 구조 추가
-- [x] 1차 MVP 구현 계획 문서 작성
-- [x] DESIGN.md 1차 MVP 디자인 방향 확정
-- [x] LocalStorage 데이터 구조 설계
-- [x] 활동 경험 목록 / 작성 / 수정 / 상세 화면 구현 순서 확정
-- [x] AI 경험 분석 결과 화면 구현 순서 정리
-- [x] AI 경험 추천 및 활용 화면 구현 순서 정리
-- [x] 추천 결과 localStorage 저장 구현 순서 정리
-- [x] MVP 기능 범위 최종 확정
-- [x] 개발 단계 전략 확정
-- [x] SQLite 도입 여부 검토: 1차 MVP에서는 사용하지 않음
-- [x] USER_FLOW.md 파일명 정리 여부 결정
-- [x] GitHub 협업 규칙 문서 작성
-- [x] PRD.md 작성
-- [x] README.md 작성
-- [x] AGENTS.md 작성
-- [x] USER_FLOW.md 작성
-- [x] IA.md 작성
-- [x] SCREEN_SPEC.md 작성
-- [x] 문서 정합성 검토 승인 항목 반영
+### Decision required
+
+- [ ] 이메일 인증 포함 여부
+- [ ] 비밀번호 재설정 범위
+- [ ] OAuth provider 도입 여부
+- [ ] Supabase 비밀번호 validation과 계정 열거 방지 오류 문구 정책
+- [ ] Supabase Storage를 사용할 실제 기능
+- [ ] 여러 추천 후보와 비교 기능 범위
+
+## Track B — 디자인·사용자 경험 고도화
+
+담당: 사용자
+
+### High
+
+- [ ] 검정·차콜 디자인 token과 공통 컴포넌트 상태 정리
+- [ ] Track A 인증 contract 기반 로그인 / 회원가입 route UI와 `components/auth/**` 설계
+- [ ] 인증 확인 중 / 세션 만료 / 접근 불가 상태 설계
+- [ ] localStorage 데이터 이전 안내와 진행·부분 실패·완료 UX 설계
+- [ ] 오늘의 기록 핵심 작성 흐름 사용성 검토
+- [ ] 나의 활동 목록·상세 탐색 흐름 개선
+- [ ] CampusLog AI 입력·결과·추천 기록 위계 개선
+
+### Medium
+
+- [ ] Button / Input / Textarea / Badge / Tabs / Dialog / Alert 상태 통일
+- [ ] 모바일 상단 내비게이션과 safe area 재검증
+- [ ] loading / empty / error / success / reconnecting 상태 통일
+- [ ] 키보드 focus 이동과 Dialog 초점 복귀 검증
+- [ ] 200% 확대와 긴 한글·URL 줄바꿈 검증
+- [ ] reduced motion과 애니메이션 fallback 검증
+- [ ] AI 원본·생성 결과·근거의 시각적 구분 개선
+
+## Shared integration
+
+- [ ] 인증 상태 contract를 UI와 공유
+- [ ] repository / API loading·error contract를 UI와 공유
+- [ ] AI 제한 초과 오류 code, `retryAfter`, 입력 보존과 재시도 contract 공유
+- [ ] schema 또는 API response 변경 시 관련 화면 명세 동시 수정
+- [ ] Track 간 공통 파일 담당과 merge 순서 합의
+- [ ] 데스크톱·모바일 핵심 E2E 시나리오 작성
+- [ ] 다른 사용자 데이터 접근 방지 테스트
+- [ ] Vercel + Supabase preview 환경 통합 확인
+
+## Existing open risks
+
+- [ ] malformed localStorage JSON과 빈 상태 구분 (`ISSUE-013`)
+- [ ] WebGL 표지 실패 fallback (`ISSUE-017`)
+- [ ] 관련 링크 실제 저장·새로고침 유지 수동 검증 (`ISSUE-021`)
+- [ ] AI API 비용과 호출 빈도 제한 (`ISSUE-024`)
+
+## v1.1 Done summary
+
+- [x] 과거 활동 경험 CRUD
+- [x] 활동 추가와 planned / active / completed 흐름
+- [x] 날짜별 실제 한 일 작성·수정·삭제
+- [x] 월간 캘린더와 기록 개수
+- [x] 활동 종료 → AI 사실 기반 초안 → 완료 경험 저장
+- [x] 나의 활동에서 완료 경험과 진행 활동 통합
+- [x] AI 경험 분석
+- [x] CampusLog AI 기반 활동 추천과 추천 기록
+- [x] 검정·차콜 공통 앱 셸과 반응형 UI
+- [x] lint / typecheck / production build / 브라우저 검증

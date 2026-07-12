@@ -12,7 +12,8 @@ GitHub를 처음 쓰는 팀원도 안전하게 작업하고, Codex가 만든 코
 - 작업은 작은 단위로 나눕니다.
 - 하나의 브랜치에는 하나의 목적만 담습니다.
 - Codex가 만든 코드도 사람이 반드시 검토합니다.
-- 작업 후에는 커밋과 푸시를 자주 합니다.
+- 사용자가 승인한 범위 안에서만 작은 커밋과 푸시를 자주 합니다.
+- Codex는 사용자의 명시적 승인 전에는 commit, push, PR 생성, merge를 진행하지 않습니다.
 - 큰 변경은 바로 `main`에 반영하지 않습니다.
 - 문제가 생기면 GitHub 기록을 기준으로 되돌립니다.
 
@@ -36,6 +37,47 @@ GitHub를 처음 쓰는 팀원도 안전하게 작업하고, Codex가 만든 코
 - `feature/ai-summary`
 - `fix/localstorage-save-error`
 - `refactor/component-structure`
+
+## 3-1. 2차 MVP 병렬 작업 전략
+
+v1.1 변경은 현재 `feature/progressive-experience-tracking`에서 안정화한 뒤 commit / review / merge합니다. 2차 MVP 기능은 v1.1이 반영된 최신 `main`에서 새 브랜치를 만들어 시작합니다.
+
+### Track A — 인증·데이터·AI
+
+담당: 다른 팀원
+
+- `feature/auth-foundation`
+- `feature/auth-contract`
+- `feature/database-schema`
+- `feature/user-data-sync`
+- `feature/ai-analysis-enhancement`
+- `feature/ai-recommendation-enhancement`
+
+### Track B — 디자인·사용자 경험
+
+담당: 사용자
+
+- `design/tokens-and-components`
+- `ux/auth-and-migration`
+- `ux/activity-flow`
+- `ux/campuslog-ai`
+- `design/responsive-accessibility`
+
+### 병렬 작업 규칙
+
+- Track A는 schema, repository, 인증 상태, API error contract를 먼저 공유합니다.
+- Track B는 공유 contract를 기준으로 화면 상태와 인터랙션을 구현합니다.
+- 인증 화면은 Track A의 client/server 모듈·server action·validation·오류 contract를 먼저 merge하고, Track B가 `/login`, `/signup` route UI와 `components/auth/**`를 연결합니다.
+- `types.ts`, 공통 layout, Navigation, 전역 style처럼 충돌 가능성이 큰 파일은 PR 시작 전에 담당과 merge 순서를 정합니다.
+- schema / API contract와 대규모 디자인 token 변경을 하나의 PR에 섞지 않습니다.
+- 사용자 흐름을 바꾸는 기능은 관련 `USER_FLOW.md`, `IA.md`, `SCREEN_SPEC.md`를 같은 PR에서 갱신합니다.
+- 단계 또는 범위를 바꾸는 작업은 `CURRENT_PHASE.md`, `PRD.md`, `ISSUE_LOG.md`를 함께 갱신합니다.
+
+### Release 기준선
+
+- 팀이 승인한 v1.1 merge commit에는 release tag를 생성할지 검토합니다.
+- tag 이름 예시: `v1.1.0`
+- 2차 MVP 통합 전 v1.1 핵심 흐름 회귀 테스트를 기준으로 사용합니다.
 
 ## 4. 기본 작업 흐름
 

@@ -30,6 +30,45 @@
 
 ## 작업 로그
 
+### 2026-07-13 - v1.1 완료 및 2차 MVP 문서 기준 전환
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex + 문서 reviewer |
+| 작업 요약 | 완료된 1차 MVP와 v1.1을 기준선으로 보존하고 현재 활성 계획 단계를 2차 MVP로 전환 |
+| 수정한 파일 | `AGENTS.md`, `PRD.md`, `README.md`, `docs/CURRENT_PHASE.md`, `docs/archive/MVP_V1_1_BASELINE.md`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/DESIGN.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/GIT_WORKFLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 과거 1차 MVP 제한과 하단 override 패턴을 제거하고 `CURRENT_PHASE.md`를 최우선 활성 기준으로 추가. 2차 MVP를 로그인·회원가입·DB·AI 고도화의 Track A와 디자인·UX 고도화의 Track B로 분리하고, localStorage 마이그레이션·샘플 제외·합성 초안 소유권과 RLS·인증 오류 보안·AI 비용·공통 계약·병렬 PR 원칙을 문서화 |
+| 검증한 내용 | 문서 참조·용어·활성 계획 단계·담당 Track·포함/제외 범위와 과거 1차 MVP 제한 문구를 검색하고 `git diff --check` 및 신규 문서 no-index check로 공백·형식 오류가 없음을 확인. 독립 integration reviewer 재검토에서 critical / major / minor 잔여 없음 확인 |
+| 남은 작업 | v1.1 commit / push / Draft PR은 사용자 승인 후 진행. 2차 MVP 이메일 확인·비밀번호 재설정·OAuth 세부 범위, 마이그레이션 정책, AI 평가 기준은 팀 결정 필요 |
+| 관련 커밋 메시지 | `docs: transition CampusLog to second MVP phase` |
+
+### 2026-07-13 - 오늘 한 일 활동 선택 표시 단순화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘 한 일 기록 폼의 활동 선택 태그에서 체크 아이콘을 제거하고 색상 변화만으로 선택 상태를 구분 |
+| 수정한 파일 | `web/src/components/activities/TodayDashboard.tsx`, `web/src/app/globals.css`, `docs/SCREEN_SPEC.md`, `docs/DESIGN.md` |
+| 변경 내용 | 라디오 선택 동작과 focus-visible은 유지하면서 선택 태그의 배경·테두리·글자색 변화만 사용하도록 단순화 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 로컬 브라우저에서 태그 영역의 SVG 0개, 가로 overflow 0, 콘솔 warning/error 0 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `style: simplify activity tag selection` |
+
+### 2026-07-13 - 진행형 경험 기록·캘린더·AI 완료 경험 합성 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex + data / AI / UI 구현 에이전트 + 독립 reviewer |
+| 작업 요약 | 기존 CampusLog 기능을 보존하면서 진행 활동 간단 등록, 날짜별 한 일, 캘린더, 활동 종료, AI 사실 기반 초안, 기존 Experience 저장 흐름을 새 기능 브랜치에 구현 |
+| 수정한 파일 | `PRD.md`, `README.md`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/DESIGN.md`, 작업 기록 문서, `web/src/lib/types.ts`, `web/src/lib/storage.ts`, `web/src/lib/activitySynthesisApi.ts`, `web/src/lib/activitySynthesisLimits.ts`, `web/src/app/api/synthesize-activity/route.ts`, `web/src/components/activities/**`, `web/src/app/activities/**`, `/dashboard`, `/experiences`, `/recommend`, `/recommend/history`, 내비게이션·기존 경험 복귀 링크, `globals.css` |
+| 변경 내용 | `TrackedActivity`, `DailyLog`, 합성 초안과 신규 localStorage key를 추가. `/dashboard`를 오늘 기록으로 바꾸고 `/experiences`를 완료 경험과 진행 활동을 함께 보여주는 `나의 활동`으로 구성. 진행 활동 등록은 `활동 추가`로 바꾸고 역할 대신 간단한 내용을 저장하며, 기존 localStorage의 `role` 값은 내용으로 호환해 읽음. 예상 종료일은 날짜 또는 `미정`을 명시적으로 선택하고, 오늘의 기록에 보이는 진행 활동 카드는 시간 아이콘·부가 내용 없이 제목만 노출. 전체 활동 수와 진행 중 수를 별도 표시하고 진행 활동 행·인라인 상세에 `진행 중` 상태와 누적 기록을 노출. 진행 활동에서 오늘의 기록으로 이동할 때 해당 `activityId`를 전달해 잘못된 활동에 기록할 가능성을 차단하고, 상세 전환은 이전 패널 제거 후 다음 패널을 표시해 중복 접근성 ID를 방지. `AI 추천 및 활용`과 `추천 기록` 상위 메뉴를 `CampusLog AI` 하나로 통합하고 내부 메뉴를 `AI 기반 활동 추천`과 `추천 기록`으로 구성. 메뉴의 `CampusLog`는 기존 워드마크와 같은 Petrona 800·자간을 사용하고, 추천 성공 결과는 자동 저장하되 localStorage 저장 실패 시 성공 화면 대신 오류를 표시. 완료 활동과 연결 로그만 OpenAI Responses API로 보내 활동 내용·성과·근거 부족 정보를 생성하고, 사용자 승인 후 activityId 기준 멱등 트랜잭션으로 기존 Experience 저장. 최신 기존 서비스의 검정·차콜·웜그레이 스타일과 앱 셸을 재사용 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 브라우저에서 활동 추가, 오늘 기록 저장·수정, 캘린더 개수, 활동 종료 확인, `/api/synthesize-activity` 200, AI 초안, Experience 저장·목록 노출을 확인. 추가로 `/experiences`에서 완료 경험 4개와 검증용 진행 활동 1개가 합산된 전체 5개, `진행 중 1`, 행 배지, 선택 후 진행 상태·간단한 내용·기간·누적 기록 상세, 데스크톱 가로 overflow 0을 확인. 진행 활동 상세에서 오늘의 기록으로 이동했을 때 URL의 `activityId`와 같은 라디오가 checked 상태인지 확인. 검증용 활동은 UI로 삭제해 원래 데이터로 복구. `/recommend`와 `/recommend/history`에서 상위·내부 활성 메뉴, 워드마크와 메뉴의 동일 font-family·font-weight·상대 자간, 데스크톱·390×844 가로 overflow 0, 콘솔 warning/error 없음 확인 |
+| 남은 작업 | 팀 코드 리뷰 후 사용자가 승인하면 commit / push / PR 진행. Tailwind CSS·shadcn/ui는 승인 기술 선택지지만 기존 CSS 화면 전체 마이그레이션은 별도 작업으로 판단 |
+| 관련 커밋 메시지 | `feat: add progressive experience tracking and AI synthesis` |
+
 ### 2026-07-12 - 게시 전 통합 리뷰와 UI 안정화
 
 | 항목 | 내용 |

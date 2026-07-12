@@ -4,13 +4,19 @@ import { motion, useReducedMotion } from "motion/react";
 import type { KeyboardEvent, UIEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { Experience } from "@/lib/types";
+export type MyActivityListItem = {
+  key: string;
+  id: string;
+  title: string;
+  kind: "experience" | "tracked";
+  updatedAt: string;
+};
 
 type AnimatedExperienceListProps = {
-  experiences: Experience[];
-  selectedExperienceId: string | null;
+  items: MyActivityListItem[];
+  selectedItemKey: string | null;
   detailId: string;
-  onSelect: (experience: Experience, trigger: HTMLButtonElement) => void;
+  onSelect: (item: MyActivityListItem, trigger: HTMLButtonElement) => void;
 };
 
 type ScrollFadeState = {
@@ -21,8 +27,8 @@ type ScrollFadeState = {
 const SCROLL_FADE_DISTANCE = 48;
 
 export function AnimatedExperienceList({
-  experiences,
-  selectedExperienceId,
+  items,
+  selectedItemKey,
   detailId,
   onSelect,
 }: AnimatedExperienceListProps) {
@@ -62,7 +68,7 @@ export function AnimatedExperienceList({
     resizeObserver.observe(container);
 
     return () => resizeObserver.disconnect();
-  }, [experiences.length, selectedExperienceId, updateScrollFades]);
+  }, [items.length, selectedItemKey, updateScrollFades]);
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     updateScrollFades(event.currentTarget);
@@ -86,13 +92,13 @@ export function AnimatedExperienceList({
     let nextIndex: number | null = null;
 
     if (event.key === "ArrowDown") {
-      nextIndex = Math.min(index + 1, experiences.length - 1);
+      nextIndex = Math.min(index + 1, items.length - 1);
     } else if (event.key === "ArrowUp") {
       nextIndex = Math.max(index - 1, 0);
     } else if (event.key === "Home") {
       nextIndex = 0;
     } else if (event.key === "End") {
-      nextIndex = experiences.length - 1;
+      nextIndex = items.length - 1;
     }
 
     if (nextIndex === null) {
@@ -111,14 +117,14 @@ export function AnimatedExperienceList({
         className="dashboard-animated-list"
         onScroll={handleScroll}
       >
-        <ul aria-label="저장된 활동 경험 목록">
-          {experiences.map((experience, index) => {
-            const isSelected = experience.id === selectedExperienceId;
+        <ul aria-label="나의 활동 목록">
+          {items.map((item, index) => {
+            const isSelected = item.key === selectedItemKey;
 
             return (
               <motion.li
                 layout="position"
-                key={experience.id}
+                key={item.key}
                 initial={
                   shouldReduceMotion ? false : { opacity: 0, y: 8 }
                 }
@@ -142,11 +148,16 @@ export function AnimatedExperienceList({
                   aria-expanded={isSelected}
                   data-selected={isSelected ? "true" : "false"}
                   onClick={(event) =>
-                    onSelect(experience, event.currentTarget)
+                    onSelect(item, event.currentTarget)
                   }
                   onKeyDown={(event) => handleItemKeyDown(event, index)}
                 >
-                  {experience.title}
+                  <span className="dashboard-activity-title">{item.title}</span>
+                  {item.kind === "tracked" ? (
+                    <span className="dashboard-activity-progress-badge">
+                      진행 중
+                    </span>
+                  ) : null}
                 </button>
               </motion.li>
             );

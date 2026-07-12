@@ -43,6 +43,61 @@ export type ExperienceFormInput = {
   relatedLinks: RelatedLink[];
 };
 
+export type ActivityStatus = "planned" | "active" | "completed";
+
+export type ActivitySynthesisStatus =
+  | "idle"
+  | "processing"
+  | "draft_ready"
+  | "failed"
+  | "saved";
+
+export type TrackedActivity = {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  expectedEndDate: string;
+  status: ActivityStatus;
+  /** Empty until completion; stored as the browser-local YYYY-MM-DD date. */
+  completedAt: string;
+  generatedExperienceId: string;
+  synthesisStatus: ActivitySynthesisStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TrackedActivityInput = Pick<
+  TrackedActivity,
+  "title" | "description" | "startDate" | "expectedEndDate"
+>;
+
+export type DailyLog = {
+  id: string;
+  activityId: string;
+  date: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DailyLogInput = Pick<
+  DailyLog,
+  "activityId" | "date" | "content"
+>;
+
+export type ActivitySynthesisApiResult = {
+  description: string;
+  achievements: string[];
+  usedLogIds: string[];
+  evidenceGaps: string[];
+};
+
+export type ExperienceSynthesisDraft = ActivitySynthesisApiResult & {
+  activityId: string;
+  generatedAt: string;
+};
+
 export type ExperienceAnalysis = {
   id: string;
   experienceId: string;
@@ -82,6 +137,18 @@ export type AnalyzeResponse =
   | {
       ok: true;
       analysis: AnalysisApiResult;
+    }
+  | ApiErrorResponse;
+
+export type SynthesizeActivityRequest = {
+  activity: TrackedActivity;
+  dailyLogs: DailyLog[];
+};
+
+export type SynthesizeActivityResponse =
+  | {
+      ok: true;
+      synthesis: ActivitySynthesisApiResult;
     }
   | ApiErrorResponse;
 
