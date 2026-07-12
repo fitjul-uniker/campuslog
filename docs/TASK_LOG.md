@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-13 - v1.1 commit / push / Draft PR 생성
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex |
+| 작업 요약 | v1.1 진행형 활동 기록 고도화 전체 변경을 검증하고 팀 원격 저장소에 게시 |
+| 수정한 파일 | 게시 상태를 반영한 `docs/CURRENT_PHASE.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `feature/progressive-experience-tracking`의 전체 46개 파일을 `e21a864`로 commit하고 원격 branch에 push한 뒤 `main` 대상 Draft PR #27 생성 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. GitHub CLI Keychain 인증과 원격 branch tracking 확인 |
+| 남은 작업 | Draft PR #27 팀 review와 필요한 수정, 승인 후 main merge. merge 전 2차 MVP 기능을 현재 branch에 추가하지 않음 |
+| 관련 커밋 메시지 | `feature: add progressive activity tracking`, `docs: record v1.1 draft pull request` |
+
 ### 2026-07-13 - v1.1 완료 및 2차 MVP 문서 기준 전환
 
 | 항목 | 내용 |

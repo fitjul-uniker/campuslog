@@ -6,11 +6,11 @@
 - [x] v1.1 진행형 경험 기록·캘린더·AI 완료 경험 합성 고도화
 - [x] v1.1 정적 검사, production build, 데스크톱·모바일 브라우저 검증
 - [x] 2차 MVP 단계와 두 작업 Track 문서화
-- [ ] v1.1 commit / push / Draft PR
+- [x] v1.1 commit / push / Draft PR #27
 - [ ] 팀 리뷰와 main merge
 - [ ] 2차 MVP 기능 브랜치 시작
 
-현재 브랜치는 `feature/progressive-experience-tracking`입니다. 이 브랜치는 `main`의 v1.0 기준 위에 v1.1 고도화를 구현한 상태이며, commit / push / PR은 아직 진행하지 않았습니다.
+현재 브랜치는 `feature/progressive-experience-tracking`입니다. v1.1 전체 변경은 `e21a864`로 commit하고 원격 branch에 push했으며, 팀 저장소의 Draft PR #27에서 review / merge를 기다리고 있습니다.
 
 ## v1.1 완료 기준선
 
@@ -70,13 +70,12 @@
 
 ## 다음 작업 순서
 
-1. 사용자가 v1.1 변경 범위와 커밋 단위를 승인
-2. v1.1 commit / push / Draft PR
-3. 팀 리뷰와 main merge
-4. 최신 main에서 Track별 브랜치 생성
-5. 인증·DB contract와 인증 UX를 먼저 합의
-6. 각 Track 작은 PR로 병렬 진행
-7. 통합 회귀·보안·비용·접근성 검증
+1. Draft PR #27 팀 리뷰와 필요한 수정 반영
+2. 승인 후 main merge
+3. 최신 main에서 Track별 브랜치 생성
+4. 인증·DB contract와 인증 UX를 먼저 합의
+5. 각 Track 작은 PR로 병렬 진행
+6. 통합 회귀·보안·비용·접근성 검증
 
 ## 활성 기준 문서
 
@@ -106,4 +105,4 @@
 
 ## Git 상태 주의
 
-현재 v1.1 변경은 아직 작업 트리에 있으므로 2차 MVP 기능을 더 추가하기 전에 checkpoint를 만들어야 합니다. 사용자의 승인 전에는 commit, push, PR, merge를 진행하지 않습니다.
+v1.1 checkpoint는 commit·push·Draft PR까지 완료했습니다. PR #27이 main에 merge되기 전에는 이 브랜치에 2차 MVP 기능을 추가하지 않고 리뷰 수정만 반영합니다. merge와 이후 브랜치 정리는 팀과 사용자의 승인 후 진행합니다.

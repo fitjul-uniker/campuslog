@@ -2,7 +2,7 @@
 
 ## 문서 상태
 
-- v1.1 고도화: 완료, commit / review / merge 대기
+- v1.1 고도화: commit / push / Draft PR #27 완료, review / merge 대기
 - 활성 계획: 2차 MVP
 - 단계 기준: `docs/CURRENT_PHASE.md`
 
@@ -10,9 +10,9 @@
 
 ## Transition — 먼저 완료
 
-- [ ] v1.1 변경 파일 최종 검토
-- [ ] 사용자의 승인 후 논리적 단위로 commit
-- [ ] 원격 branch push와 Draft PR
+- [x] v1.1 변경 파일 최종 검토
+- [x] 사용자의 승인 후 논리적 단위로 commit
+- [x] 원격 branch push와 Draft PR #27
 - [ ] 팀 리뷰와 main merge
 - [ ] 승인된 v1.1 기준 commit에 release tag 생성 여부 결정
 - [ ] 2차 MVP Track별 브랜치를 최신 main에서 생성
