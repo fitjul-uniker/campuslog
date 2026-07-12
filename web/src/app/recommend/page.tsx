@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ArrowLeft, BookOpenText, History } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
 import { RecommendationForm } from "@/components/ai/RecommendationForm";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
@@ -44,6 +45,9 @@ export default function RecommendPage() {
   );
   const [isRecommending, setIsRecommending] = useState(false);
   const [recommendationError, setRecommendationError] = useState("");
+  const recommendationResultRef = useRef<HTMLDivElement>(null);
+  const lastScrolledRecommendationIdRef = useRef<string | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const storedExperiences = getExperiences();
@@ -54,6 +58,33 @@ export default function RecommendPage() {
     setExperiences(storedExperiences);
     setAnalyses(storedAnalyses);
   }, []);
+
+  const recommendationId = recommendation?.id;
+
+  useEffect(() => {
+    if (
+      !recommendationId ||
+      lastScrolledRecommendationIdRef.current === recommendationId
+    ) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      const resultElement = recommendationResultRef.current;
+
+      if (!resultElement) {
+        return;
+      }
+
+      lastScrolledRecommendationIdRef.current = recommendationId;
+      resultElement.scrollIntoView({
+        behavior: shouldReduceMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [recommendationId, shouldReduceMotion]);
 
   async function handleRecommend(input: RecommendationFormInput) {
     if (!experiences || experiences.length === 0) {
@@ -171,6 +202,12 @@ export default function RecommendPage() {
           onSubmit={handleRecommend}
         />
 
+        <p className="sr-only" role="status" aria-live="polite">
+          {recommendation
+            ? `${recommendation.recommendedExperienceTitle} AI 추천 결과가 생성되었습니다.`
+            : ""}
+        </p>
+
         {recommendationError ? (
           <p className="form-error" role="alert">
             {recommendationError}
@@ -193,10 +230,15 @@ export default function RecommendPage() {
           </div>
         </section>
       ) : recommendation ? (
-        <RecommendationResult
-          result={recommendation}
-          experience={recommendedExperience}
-        />
+        <div
+          ref={recommendationResultRef}
+          className="recommendation-result-anchor"
+        >
+          <RecommendationResult
+            result={recommendation}
+            experience={recommendedExperience}
+          />
+        </div>
       ) : (
         <section className="placeholder-panel" aria-labelledby="ready-title">
           <h2 id="ready-title">추천 결과 대기 중</h2>

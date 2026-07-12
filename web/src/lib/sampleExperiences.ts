@@ -10,7 +10,12 @@ export const sampleExperiences: Experience[] = [
       "대학생 활동 경험을 기록하고 AI 분석과 추천으로 다시 활용하는 MVP 흐름을 정의했습니다.",
     achievements:
       "핵심 사용자 흐름, 화면 정보구조, localStorage 기반 저장 전략을 문서화했습니다.",
-    relatedLinks: ["https://github.com/fitjul-uniker/campuslog"],
+    relatedLinks: [
+      {
+        url: "https://github.com/fitjul-uniker/campuslog",
+        description: "CampusLog GitHub 저장소",
+      },
+    ],
     createdAt: "2026-07-01T00:00:00.000Z",
     updatedAt: "2026-07-09T00:00:00.000Z",
     analysisStatus: "unanalyzed",

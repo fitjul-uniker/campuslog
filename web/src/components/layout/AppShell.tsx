@@ -18,12 +18,12 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell product-shell">
       <Link href="/" className="app-brand" aria-label="CampusLog 홈">
         <span className="brand-name">CampusLog</span>
       </Link>
 
-      <aside className="app-sidebar" aria-label="CampusLog 노트 북마크 메뉴">
+      <aside className="app-sidebar" aria-label="CampusLog 주요 메뉴">
         <Navigation />
       </aside>
 
@@ -31,14 +31,11 @@ export function AppShell({ children }: AppShellProps) {
         <Link href="/" className="mobile-brand" aria-label="CampusLog 홈">
           <span className="brand-name">CampusLog</span>
         </Link>
+        <Navigation variant="mobile" />
       </header>
 
-      <main className="app-main">
-        <div
-          className={`notebook-page menu-book${pathname === "/dashboard" ? " dashboard-book" : ""}`}
-        >
-          {children}
-        </div>
+      <main className="app-main product-main">
+        <div className="product-surface">{children}</div>
       </main>
     </div>
   );

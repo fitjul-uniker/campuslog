@@ -1,11 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { Save } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import type { Experience, ExperienceFormInput } from "@/lib/types";
+import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
+import {
+  MAX_RELATED_LINK_DESCRIPTION_LENGTH,
+  MAX_RELATED_LINKS,
+  MAX_RELATED_LINK_URL_LENGTH,
+  normalizeRelatedLinkUrl,
+} from "@/lib/relatedLinks";
+import type {
+  Experience,
+  ExperienceFormInput,
+  RelatedLink,
+} from "@/lib/types";
 
 type ExperienceFormMode = "create" | "edit";
 
@@ -22,13 +33,29 @@ type PeriodFields = {
   isOngoing: boolean;
 };
 
+type RelatedLinkRow = RelatedLink & {
+  clientId: string;
+  previewUrl: string;
+  legacyUrl: string;
+};
+
+type RelatedLinkValidation = {
+  links: RelatedLink[];
+  errors: Record<string, string>;
+  firstErrorId: string;
+};
+
+type TextFormField = Exclude<keyof ExperienceFormInput, "relatedLinks">;
+
+const RELATED_LINK_ERROR_MESSAGE = "관련 링크 입력을 확인해주세요.";
+
 const EMPTY_FORM: ExperienceFormInput = {
   title: "",
   period: "",
   role: "",
   description: "",
   achievements: "",
-  relatedLinksText: "",
+  relatedLinks: [],
 };
 
 const EMPTY_PERIOD_FIELDS: PeriodFields = {
@@ -132,7 +159,87 @@ function createFormValue(initialValue?: Experience): ExperienceFormInput {
     role: initialValue.role,
     description: initialValue.description,
     achievements: initialValue.achievements,
-    relatedLinksText: initialValue.relatedLinks.join("\n"),
+    relatedLinks: initialValue.relatedLinks.map((link) => ({ ...link })),
+  };
+}
+
+function createRelatedLinkRows(initialValue?: Experience): RelatedLinkRow[] {
+  const relatedLinks = initialValue?.relatedLinks ?? [];
+
+  if (relatedLinks.length === 0) {
+    return [
+      {
+        clientId: "empty-0",
+        url: "",
+        description: "",
+        previewUrl: "",
+        legacyUrl: "",
+      },
+    ];
+  }
+
+  return relatedLinks.map((link, index) => ({
+    clientId: `existing-${index}`,
+    url: link.url,
+    description: link.description,
+    previewUrl: link.url,
+    legacyUrl: normalizeRelatedLinkUrl(link.url) ? "" : link.url,
+  }));
+}
+
+function validateRelatedLinks(rows: RelatedLinkRow[]): RelatedLinkValidation {
+  const links: RelatedLink[] = [];
+  const errors: Record<string, string> = {};
+  const seenUrls = new Set<string>();
+  let firstErrorId = "";
+
+  rows.forEach((row) => {
+    const url = row.url.trim();
+    const description = row.description.trim();
+
+    if (!url && !description) {
+      return;
+    }
+
+    if (!url) {
+      errors[row.clientId] = "설명에 해당하는 URL을 입력해주세요.";
+      firstErrorId ||= row.clientId;
+      return;
+    }
+
+    const normalizedUrl = normalizeRelatedLinkUrl(url);
+
+    if (!normalizedUrl) {
+      if (row.legacyUrl && url === row.legacyUrl.trim()) {
+        links.push({
+          url,
+          description,
+        });
+        return;
+      }
+
+      errors[row.clientId] = "http 또는 https로 연결되는 올바른 URL을 입력해주세요.";
+      firstErrorId ||= row.clientId;
+      return;
+    }
+
+    if (seenUrls.has(normalizedUrl)) {
+      errors[row.clientId] = "이미 추가한 링크입니다.";
+      firstErrorId ||= row.clientId;
+      return;
+    }
+
+    seenUrls.add(normalizedUrl);
+    links.push({
+      url: normalizedUrl,
+      description,
+    });
+  });
+
+  return {
+    links,
+    errors,
+    firstErrorId,
   };
 }
 
@@ -157,14 +264,27 @@ export function ExperienceForm({
   const [periodFields, setPeriodFields] = useState<PeriodFields>(() =>
     parsePeriodFields(initialValue?.period ?? ""),
   );
+  const [relatedLinkRows, setRelatedLinkRows] = useState<RelatedLinkRow[]>(() =>
+    createRelatedLinkRows(initialValue),
+  );
+  const [relatedLinkErrors, setRelatedLinkErrors] = useState<
+    Record<string, string>
+  >({});
   const [errorMessage, setErrorMessage] = useState("");
+  const nextRelatedLinkId = useRef(initialValue?.relatedLinks.length ?? 0);
+  const relatedLinkInputRefs = useRef(new Map<string, HTMLInputElement>());
+  const addRelatedLinkButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setFormValue(createFormValue(initialValue));
     setPeriodFields(parsePeriodFields(initialValue?.period ?? ""));
+    setRelatedLinkRows(createRelatedLinkRows(initialValue));
+    setRelatedLinkErrors({});
+    setErrorMessage("");
+    nextRelatedLinkId.current = initialValue?.relatedLinks.length ?? 0;
   }, [initialValue]);
 
-  function updateField(field: keyof ExperienceFormInput, value: string) {
+  function updateField(field: TextFormField, value: string) {
     setFormValue((currentValue) => ({
       ...currentValue,
       [field]: value,
@@ -201,6 +321,115 @@ export function ExperienceForm({
     }));
   }
 
+  function updateRelatedLink(
+    clientId: string,
+    field: "url" | "description",
+    value: string,
+  ) {
+    setRelatedLinkRows((currentRows) =>
+      currentRows.map((row) =>
+        row.clientId === clientId
+          ? {
+              ...row,
+              [field]: value,
+              ...(field === "url"
+                ? { previewUrl: "", legacyUrl: "" }
+                : {}),
+            }
+          : row,
+      ),
+    );
+    setRelatedLinkErrors((currentErrors) => {
+      if (!currentErrors[clientId]) {
+        return currentErrors;
+      }
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[clientId];
+      return nextErrors;
+    });
+
+    if (
+      relatedLinkErrors[clientId] &&
+      Object.keys(relatedLinkErrors).every((errorId) => errorId === clientId)
+    ) {
+      setErrorMessage((currentMessage) =>
+        currentMessage === RELATED_LINK_ERROR_MESSAGE ? "" : currentMessage,
+      );
+    }
+  }
+
+  function updateRelatedLinkPreview(clientId: string) {
+    setRelatedLinkRows((currentRows) =>
+      currentRows.map((row) =>
+        row.clientId === clientId
+          ? {
+              ...row,
+              previewUrl: normalizeRelatedLinkUrl(row.url) ?? "",
+            }
+          : row,
+      ),
+    );
+  }
+
+  function addRelatedLink() {
+    if (relatedLinkRows.length >= MAX_RELATED_LINKS) {
+      return;
+    }
+
+    const clientId = `new-${nextRelatedLinkId.current}`;
+    nextRelatedLinkId.current += 1;
+    setRelatedLinkRows((currentRows) => [
+      ...currentRows,
+      {
+        clientId,
+        url: "",
+        description: "",
+        previewUrl: "",
+        legacyUrl: "",
+      },
+    ]);
+    window.requestAnimationFrame(() => {
+      relatedLinkInputRefs.current.get(clientId)?.focus();
+    });
+  }
+
+  function removeRelatedLink(clientId: string) {
+    const removedIndex = relatedLinkRows.findIndex(
+      (row) => row.clientId === clientId,
+    );
+    const nextFocusId =
+      relatedLinkRows[removedIndex + 1]?.clientId ??
+      relatedLinkRows[removedIndex - 1]?.clientId ??
+      "";
+
+    setRelatedLinkRows((currentRows) =>
+      currentRows.filter((row) => row.clientId !== clientId),
+    );
+    setRelatedLinkErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[clientId];
+      return nextErrors;
+    });
+
+    if (
+      relatedLinkErrors[clientId] &&
+      Object.keys(relatedLinkErrors).every((errorId) => errorId === clientId)
+    ) {
+      setErrorMessage((currentMessage) =>
+        currentMessage === RELATED_LINK_ERROR_MESSAGE ? "" : currentMessage,
+      );
+    }
+
+    window.requestAnimationFrame(() => {
+      if (nextFocusId) {
+        relatedLinkInputRefs.current.get(nextFocusId)?.focus();
+      } else {
+        addRelatedLinkButtonRef.current?.focus();
+      }
+    });
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -221,8 +450,25 @@ export function ExperienceForm({
       return;
     }
 
+    const relatedLinkValidation = validateRelatedLinks(relatedLinkRows);
+
+    if (relatedLinkValidation.firstErrorId) {
+      setRelatedLinkErrors(relatedLinkValidation.errors);
+      setErrorMessage(RELATED_LINK_ERROR_MESSAGE);
+      window.requestAnimationFrame(() => {
+        relatedLinkInputRefs.current
+          .get(relatedLinkValidation.firstErrorId)
+          ?.focus();
+      });
+      return;
+    }
+
+    setRelatedLinkErrors({});
     setErrorMessage("");
-    onSubmit(normalizedFormValue);
+    onSubmit({
+      ...normalizedFormValue,
+      relatedLinks: relatedLinkValidation.links,
+    });
   }
 
   return (
@@ -327,16 +573,108 @@ export function ExperienceForm({
         />
       </div>
 
-      <div className="form-field">
-        <label htmlFor="experience-links">관련 링크</label>
-        <textarea
-          id="experience-links"
-          name="relatedLinksText"
-          rows={4}
-          value={formValue.relatedLinksText}
-          onChange={(event) => updateField("relatedLinksText", event.target.value)}
-        />
-      </div>
+      <fieldset className="related-links-fieldset">
+        <legend>관련 링크</legend>
+        <div className="related-links-toolbar">
+          <div>
+            <p>작업 결과나 참고 자료를 링크와 설명으로 나누어 정리해보세요.</p>
+            <span>최대 {MAX_RELATED_LINKS}개까지 추가할 수 있습니다.</span>
+          </div>
+          <button
+            ref={addRelatedLinkButtonRef}
+            className="related-link-add"
+            type="button"
+            onClick={addRelatedLink}
+            disabled={relatedLinkRows.length >= MAX_RELATED_LINKS}
+          >
+            <Plus aria-hidden="true" />
+            링크 추가
+          </button>
+        </div>
+
+        {relatedLinkRows.length > 0 ? (
+          <div className="related-link-rows">
+            {relatedLinkRows.map((row, index) => {
+              const urlInputId = `experience-link-url-${row.clientId}`;
+              const descriptionInputId = `experience-link-description-${row.clientId}`;
+              const errorId = `experience-link-error-${row.clientId}`;
+              const rowError = relatedLinkErrors[row.clientId];
+
+              return (
+                <div className="related-link-row" key={row.clientId}>
+                  <RelatedLinkFavicon url={row.previewUrl} />
+                  <div className="form-field related-link-url-field">
+                    <label htmlFor={urlInputId}>URL</label>
+                    <input
+                      ref={(node) => {
+                        if (node) {
+                          relatedLinkInputRefs.current.set(row.clientId, node);
+                        } else {
+                          relatedLinkInputRefs.current.delete(row.clientId);
+                        }
+                      }}
+                      id={urlInputId}
+                      name={`relatedLinkUrl-${index}`}
+                      type="url"
+                      inputMode="url"
+                      autoCapitalize="none"
+                      autoComplete="url"
+                      spellCheck={false}
+                      maxLength={MAX_RELATED_LINK_URL_LENGTH}
+                      placeholder="https://example.com"
+                      value={row.url}
+                      onChange={(event) =>
+                        updateRelatedLink(row.clientId, "url", event.target.value)
+                      }
+                      onBlur={() => updateRelatedLinkPreview(row.clientId)}
+                      aria-invalid={Boolean(rowError)}
+                      aria-describedby={rowError ? errorId : undefined}
+                    />
+                    {rowError ? (
+                      <p className="related-link-field-error" id={errorId}>
+                        {rowError}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="form-field related-link-description-field">
+                    <label htmlFor={descriptionInputId}>
+                      설명 <span>(선택)</span>
+                    </label>
+                    <input
+                      id={descriptionInputId}
+                      name={`relatedLinkDescription-${index}`}
+                      type="text"
+                      maxLength={MAX_RELATED_LINK_DESCRIPTION_LENGTH}
+                      placeholder="예: 프로젝트 GitHub 저장소"
+                      value={row.description}
+                      onChange={(event) =>
+                        updateRelatedLink(
+                          row.clientId,
+                          "description",
+                          event.target.value,
+                        )
+                      }
+                    />
+                  </div>
+                  <button
+                    className="related-link-remove"
+                    type="button"
+                    onClick={() => removeRelatedLink(row.clientId)}
+                    aria-label={`${index + 1}번째 관련 링크 삭제`}
+                    title="링크 삭제"
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="related-links-empty">
+            아직 추가한 링크가 없습니다. 링크 추가를 눌러 시작해보세요.
+          </p>
+        )}
+      </fieldset>
 
       {errorMessage ? (
         <p className="form-error" role="alert">

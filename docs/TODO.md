@@ -13,13 +13,11 @@
 ## High Priority
 
 - [ ] Vercel 배포 준비
-- [ ] 모바일 상단에서 AI 추천 및 활용 / 추천 기록 진입 제공 (`ISSUE-016`)
 
 ## Medium Priority
 
 - [ ] README 실행 방법 보완
-- [ ] 정렬 / 필터 실제 데이터 처리 구현
-- [ ] 정렬 옵션의 `오래된순` / `오래된 작성순` 표현 확정
+- [ ] 실제 새 활동에 관련 링크를 저장한 뒤 상세의 설명·파비콘 표시와 새로고침 후 유지 여부 수동 확인 (`ISSUE-021`)
 - [ ] WebGL 오류 발생 시에만 노출되는 이미지 없는 표지 fallback 검토 (`ISSUE-017`)
 - [ ] 2차 MVP Next.js Full Stack + Supabase Auth / Postgres / Storage 도입 범위 검토
 
@@ -31,24 +29,28 @@
 
 ## Done
 
-- [x] 경험 목록 내부 스크롤 복구 및 `새 경험 기록하기` CTA 고정
+- [x] 경험 목록 내부 스크롤 복구 및 `새 경험 기록하기` CTA 고정 (`ISSUE-019`)
+- [x] 활동 관련 링크를 URL·설명 반복 행으로 입력하고 개별 추가·삭제·검증하도록 구현
+- [x] 관련 링크 상세에 설명·전체 URL·파비콘과 실패 시 `Link2` fallback 표시
+- [x] 기존 `campuslog:v1:experiences` 문자열 링크를 보존하는 v2 마이그레이션과 AI 분석·추천 API 호환 처리
+- [x] 모바일 상단에서 AI 추천 및 활용 / 추천 기록 진입 제공 (`ISSUE-016`)
+- [x] `/`을 제외한 제품 화면의 흰색 공통 앱 셸과 제목 목록-상세 구조 적용
+- [x] 활동 목록 CountUp, 활동·추천 기록 Gooey 검색, AI 분석 Border Beam 액션 적용
 - [x] 유효한 `OPENAI_API_KEY` 기준 경험 작성 → AI 분석 → AI 추천 → 추천 기록 흐름 사용자 테스트 통과
 - [x] 최신 Organization main 기반으로 개인 Fork 인터랙티브 노트 UI 작업 트리 이관 및 사용자 수동 테스트 통과
 - [x] `/` 인터랙티브 3D 노트 표지와 `/dashboard` 기능 화면 역할 문서화
-- [x] 공통 책 프레임, 단일 새 경험 CTA, 좌측 메뉴 근접 모션 적용
+- [x] 단일 새 경험 CTA와 좌측 메뉴 근접 모션 적용
 - [x] 디자인 표현 제약 완화 및 프리미엄 UI/UX 기준 문서 정리
 - [x] 브랜드 및 반응형 UI/UX 개선(responsive/brand polish)
 - [x] Campus Green + Mint 브랜드 토큰, focus ring, hover 상태 정리
 - [x] 데스크톱 좌측 사이드바 / 모바일 상단 App Bar 레이아웃 보강
 - [x] 모바일 CTA, 카드, 상세 화면, EmptyState 줄바꿈과 폭 처리 보강
-- [x] 책갈피 노트 파비콘 구현 방식 결정: Lucide `BookMarked` 기반 후보 SVG 적용
+- [x] 파비콘 / 앱 설치 아이콘을 CampusLog 텍스트 워드마크로 적용
 - [x] 대시보드 UI/UX polish
-- [x] 경험 카드 정보 위계 정리
 - [x] 대시보드 빈 상태 CTA 위계 정리
 - [x] 경험 목록 skeleton 로딩 상태 구현
 - [x] 대시보드 실패 Alert / 다시 시도 UI 정리
 - [x] 분석 상태 배지 색상과 fallback 정리
-- [x] 정렬 / 필터 컨트롤 UI 배치
 - [x] AI 경험 추천 및 활용 기능 구현
 - [x] `/api/recommend` AI 경험 추천 API Route 구현
 - [x] 추천 입력 폼과 추천 결과 화면 구현

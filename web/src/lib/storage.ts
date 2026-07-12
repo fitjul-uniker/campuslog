@@ -1,4 +1,8 @@
 import { createIsoTimestamp } from "@/lib/date";
+import {
+  normalizeRelatedLinksForStorage,
+  parseRelatedLinks,
+} from "@/lib/relatedLinks";
 import type {
   AnalysisStatus,
   AnalysisApiResult,
@@ -9,7 +13,9 @@ import type {
 } from "@/lib/types";
 
 export const STORAGE_KEYS = {
-  experiences: "campuslog:v1:experiences",
+  experiences: "campuslog:v2:experiences",
+  legacyExperiences: "campuslog:v1:experiences",
+  experienceMigration: "campuslog:v2:experiences:migrated",
   analyses: "campuslog:v1:analyses",
   recommendations: "campuslog:v1:recommendations",
 } as const;
@@ -38,15 +44,16 @@ function readJson(key: string): unknown {
   }
 }
 
-function writeJson(key: string, value: unknown): void {
+function writeJson(key: string, value: unknown): boolean {
   if (!canUseLocalStorage()) {
-    return;
+    return false;
   }
 
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
-    return;
+    return false;
   }
 }
 
@@ -74,25 +81,41 @@ function isRecommendationPurpose(
   );
 }
 
-function isExperience(value: unknown): value is Experience {
+function parseExperience(value: unknown): Experience | null {
   if (!value || typeof value !== "object") {
-    return false;
+    return null;
   }
 
   const candidate = value as Record<string, unknown>;
+  const relatedLinks = parseRelatedLinks(candidate.relatedLinks);
 
-  return (
+  if (
     typeof candidate.id === "string" &&
     typeof candidate.title === "string" &&
     typeof candidate.period === "string" &&
     typeof candidate.role === "string" &&
     typeof candidate.description === "string" &&
     typeof candidate.achievements === "string" &&
-    isStringArray(candidate.relatedLinks) &&
+    relatedLinks !== null &&
     typeof candidate.createdAt === "string" &&
     typeof candidate.updatedAt === "string" &&
     isAnalysisStatus(candidate.analysisStatus)
-  );
+  ) {
+    return {
+      id: candidate.id,
+      title: candidate.title,
+      period: candidate.period,
+      role: candidate.role,
+      description: candidate.description,
+      achievements: candidate.achievements,
+      relatedLinks,
+      createdAt: candidate.createdAt,
+      updatedAt: candidate.updatedAt,
+      analysisStatus: candidate.analysisStatus,
+    };
+  }
+
+  return null;
 }
 
 function isExperienceAnalysis(value: unknown): value is ExperienceAnalysis {
@@ -139,11 +162,35 @@ function isRecommendationResult(value: unknown): value is RecommendationResult {
 function readStoredExperiences(): Experience[] {
   const parsed = readJson(STORAGE_KEYS.experiences);
 
-  if (!Array.isArray(parsed)) {
+  if (Array.isArray(parsed)) {
+    if (readJson(STORAGE_KEYS.experienceMigration) !== true) {
+      writeJson(STORAGE_KEYS.experienceMigration, true);
+    }
+
+    return parsed
+      .map(parseExperience)
+      .filter((experience): experience is Experience => experience !== null);
+  }
+
+  if (readJson(STORAGE_KEYS.experienceMigration) === true) {
     return [];
   }
 
-  return parsed.filter(isExperience);
+  const legacyParsed = readJson(STORAGE_KEYS.legacyExperiences);
+
+  if (!Array.isArray(legacyParsed)) {
+    return [];
+  }
+
+  const migratedExperiences = legacyParsed
+    .map(parseExperience)
+    .filter((experience): experience is Experience => experience !== null);
+
+  if (writeJson(STORAGE_KEYS.experiences, migratedExperiences)) {
+    writeJson(STORAGE_KEYS.experienceMigration, true);
+  }
+
+  return migratedExperiences;
 }
 
 function readStoredAnalyses(): StoredAnalyses {
@@ -201,13 +248,6 @@ function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function normalizeLinks(relatedLinksText: string): string[] {
-  return relatedLinksText
-    .split(/\r?\n/)
-    .map((link) => link.trim())
-    .filter(Boolean);
-}
-
 function normalizeInput(input: ExperienceFormInput) {
   return {
     title: input.title.trim(),
@@ -215,7 +255,7 @@ function normalizeInput(input: ExperienceFormInput) {
     role: input.role.trim(),
     description: input.description.trim(),
     achievements: input.achievements.trim(),
-    relatedLinks: normalizeLinks(input.relatedLinksText),
+    relatedLinks: normalizeRelatedLinksForStorage(input.relatedLinks),
   };
 }
 
@@ -224,7 +264,11 @@ function hasRequiredFields(input: ReturnType<typeof normalizeInput>): boolean {
 }
 
 function saveExperiences(experiences: Experience[]): void {
-  writeJson(STORAGE_KEYS.experiences, sortByUpdatedDesc(experiences));
+  if (
+    writeJson(STORAGE_KEYS.experiences, sortByUpdatedDesc(experiences))
+  ) {
+    writeJson(STORAGE_KEYS.experienceMigration, true);
+  }
 }
 
 export function getExperiences(): Experience[] {

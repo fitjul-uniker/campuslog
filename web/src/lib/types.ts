@@ -16,6 +16,11 @@ export type FilterOption =
   | "needs_reanalysis"
   | string;
 
+export type RelatedLink = {
+  url: string;
+  description: string;
+};
+
 export type Experience = {
   id: string;
   title: string;
@@ -23,7 +28,7 @@ export type Experience = {
   role: string;
   description: string;
   achievements: string;
-  relatedLinks: string[];
+  relatedLinks: RelatedLink[];
   createdAt: string;
   updatedAt: string;
   analysisStatus: AnalysisStatus;
@@ -35,7 +40,7 @@ export type ExperienceFormInput = {
   role: string;
   description: string;
   achievements: string;
-  relatedLinksText: string;
+  relatedLinks: RelatedLink[];
 };
 
 export type ExperienceAnalysis = {

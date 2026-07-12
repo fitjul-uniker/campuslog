@@ -26,7 +26,7 @@ export function NewExperienceClient() {
           <p className="eyebrow">활동 경험 작성</p>
           <h1>새 경험 기록</h1>
           <p className="page-description">
-            제목, 기간, 역할, 내용, 성과, 관련 링크를 기록합니다.
+            제목, 기간, 역할, 내용, 성과와 링크별 설명을 기록합니다.
           </p>
         </div>
       </section>

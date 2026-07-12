@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { parseRelatedLinks } from "@/lib/relatedLinks";
 import type {
   AnalysisApiResult,
   AnalyzeRequest,
@@ -119,10 +120,6 @@ function hasText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
 function isAnalysisStatus(value: unknown): value is Experience["analysisStatus"] {
   return (
     value === "unanalyzed" ||
@@ -223,25 +220,41 @@ function hasSufficientCompetencyEvidence(experience: Experience): boolean {
   );
 }
 
-function isExperienceForAnalysis(value: unknown): value is Experience {
+function parseExperienceForAnalysis(value: unknown): Experience | null {
   if (!value || typeof value !== "object") {
-    return false;
+    return null;
   }
 
   const candidate = value as Record<string, unknown>;
+  const relatedLinks = parseRelatedLinks(candidate.relatedLinks);
 
-  return (
+  if (
     hasText(candidate.id) &&
     hasText(candidate.title) &&
     hasText(candidate.period) &&
     hasText(candidate.role) &&
     hasText(candidate.description) &&
     typeof candidate.achievements === "string" &&
-    isStringArray(candidate.relatedLinks) &&
+    relatedLinks !== null &&
     hasText(candidate.createdAt) &&
     hasText(candidate.updatedAt) &&
     isAnalysisStatus(candidate.analysisStatus)
-  );
+  ) {
+    return {
+      id: candidate.id,
+      title: candidate.title,
+      period: candidate.period,
+      role: candidate.role,
+      description: candidate.description,
+      achievements: candidate.achievements,
+      relatedLinks,
+      createdAt: candidate.createdAt,
+      updatedAt: candidate.updatedAt,
+      analysisStatus: candidate.analysisStatus,
+    };
+  }
+
+  return null;
 }
 
 function createPrompt(experience: Experience): string {
@@ -254,6 +267,7 @@ function createPrompt(experience: Experience): string {
         "활동명, 기간, 역할명만으로 역량 태그를 추정하지 않습니다.",
         "test, testtest, asdf, 없음처럼 의미 없는 입력은 분석 근거로 사용하지 않습니다.",
         "원문에 없는 성과, 수치, 협업 여부, 리더십을 사실처럼 만들지 않습니다.",
+        "관련 링크의 설명은 사용자가 적은 참고 정보이며, 링크 내용을 직접 열람하거나 검증했다고 가정하지 않습니다.",
       ],
       outputGuidelines: {
         summary: "2~3문장 한국어 요약",
@@ -386,9 +400,11 @@ async function readRequestBody(request: Request): Promise<AnalyzeRequest | null>
       return null;
     }
 
-    const experience = (body as { experience?: unknown }).experience;
+    const experience = parseExperienceForAnalysis(
+      (body as { experience?: unknown }).experience,
+    );
 
-    if (!isExperienceForAnalysis(experience)) {
+    if (!experience) {
       return null;
     }
 

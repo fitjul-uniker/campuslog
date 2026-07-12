@@ -14,15 +14,18 @@ const navigationItems = [
   {
     href: "/dashboard",
     label: "나의 경험",
+    mobileLabel: "경험",
   },
   {
     href: "/recommend",
     label: "AI 추천 및 활용",
+    mobileLabel: "AI 추천",
     exact: true,
   },
   {
     href: "/recommend/history",
     label: "추천 기록",
+    mobileLabel: "기록",
   },
 ];
 
@@ -34,7 +37,11 @@ function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function Navigation() {
+type NavigationProps = {
+  variant?: "desktop" | "mobile";
+};
+
+export function Navigation({ variant = "desktop" }: NavigationProps) {
   const pathname = usePathname();
   const navigationRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
@@ -182,10 +189,10 @@ export function Navigation() {
   return (
     <nav
       ref={navigationRef}
-      className="navigation"
+      className={`navigation navigation-${variant}`}
       aria-label="주요 메뉴"
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
+      onPointerMove={variant === "desktop" ? handlePointerMove : undefined}
+      onPointerLeave={variant === "desktop" ? handlePointerLeave : undefined}
     >
       {navigationItems.map((item, index) => {
         const isActive = item.exact
@@ -208,7 +215,9 @@ export function Navigation() {
                 : undefined
             }
           >
-            <span className="navigation-label">{item.label}</span>
+            <span className="navigation-label">
+              {variant === "mobile" ? item.mobileLabel : item.label}
+            </span>
           </Link>
         );
       })}
