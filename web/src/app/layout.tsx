@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   title: "CampusLog",
   description: "대학생활을 단권화하는 AI 경험 기록장",
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/app-icon.svg", type: "image/svg+xml" }],
+    icon: [{ url: "/favicon.svg?v=wordmark", type: "image/svg+xml" }],
+    apple: [{ url: "/app-icon.svg?v=wordmark", type: "image/svg+xml" }],
   },
 };
 

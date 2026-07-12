@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { Check, Copy, ExternalLink, X } from "lucide-react";
 import { useState } from "react";
 
 import { formatDateTime } from "@/lib/date";
@@ -14,6 +14,8 @@ import type {
 type RecommendationResultProps = {
   result: Result;
   experience?: Experience | null;
+  variant?: "default" | "embedded";
+  onClose?: () => void;
 };
 
 type CopyStatus = "idle" | "success" | "failed";
@@ -29,8 +31,11 @@ const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
 export function RecommendationResult({
   result,
   experience,
+  variant = "default",
+  onClose,
 }: RecommendationResultProps) {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+  const isEmbedded = variant === "embedded";
 
   async function handleCopy() {
     try {
@@ -46,22 +51,45 @@ export function RecommendationResult({
   }
 
   return (
-    <section className="detail-panel" aria-labelledby="recommendation-title">
+    <section
+      className={
+        isEmbedded
+          ? "recommendation-result is-embedded"
+          : "detail-panel recommendation-result"
+      }
+      aria-labelledby="recommendation-title"
+    >
       <div className="detail-header">
         <div>
-          <p className="experience-meta">추천 경험</p>
+          <p className="experience-meta recommendation-result-kicker">
+            AI 추천 결과
+          </p>
           <h2 id="recommendation-title">
             {result.recommendedExperienceTitle}
           </h2>
         </div>
-        {experience ? (
-          <Link
-            href={`/experiences/${experience.id}`}
-            className="button button-secondary"
-          >
-            <ExternalLink className="button-icon" aria-hidden="true" />
-            상세 보기
-          </Link>
+        {experience || onClose ? (
+          <div className="recommendation-result-header-actions">
+            {experience ? (
+              <Link
+                href={`/experiences/${experience.id}`}
+                className="button button-secondary"
+              >
+                <ExternalLink className="button-icon" aria-hidden="true" />
+                활동
+              </Link>
+            ) : null}
+            {onClose ? (
+              <button
+                className="dashboard-detail-close"
+                type="button"
+                onClick={onClose}
+                aria-label="추천 기록 상세 닫기"
+              >
+                <X aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -104,8 +132,8 @@ export function RecommendationResult({
       <div className="detail-section">
         <h3>관련 태그</h3>
         <div className="experience-tags">
-          {result.relatedTags.map((tag) => (
-            <span key={tag}>{tag}</span>
+          {result.relatedTags.map((tag, index) => (
+            <span key={`${tag}-${index}`}>{tag}</span>
           ))}
         </div>
       </div>

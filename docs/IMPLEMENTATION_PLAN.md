@@ -1,5 +1,7 @@
 # CampusLog 1차 MVP 구현 계획
 
+> 2026-07-12 안내: 이 문서의 기존 경험 카드·정렬/필터·공통 책 프레임 단계는 당시 구현 이력을 설명하는 계획 기록입니다. 현재 제품 화면 기준은 제목 전용 목록, Gooey 검색, 목록-상세 구조, 흰색 공통 앱 셸이며 `PRD.md`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/DESIGN.md`를 우선합니다.
+
 ## 0. 문서 기준
 
 이 문서는 `docs/DESIGN.md`의 디자인 방향을 실제 개발 작업 단위로 나누기 위한 구현 계획입니다. 실제 UI 코드, API 코드, 기존 문서는 수정하지 않고, 1차 MVP의 개발 범위와 작업 순서를 고정하는 기준으로 사용합니다.
@@ -232,6 +234,11 @@ export type FilterOption =
   | "needs_reanalysis"
   | string;
 
+export type RelatedLink = {
+  url: string;
+  description: string;
+};
+
 export type Experience = {
   id: string;
   title: string;
@@ -239,7 +246,7 @@ export type Experience = {
   role: string;
   description: string;
   achievements: string;
-  relatedLinks: string[];
+  relatedLinks: RelatedLink[];
   createdAt: string;
   updatedAt: string;
   analysisStatus: AnalysisStatus;
@@ -251,7 +258,7 @@ export type ExperienceFormInput = {
   role: string;
   description: string;
   achievements: string;
-  relatedLinksText: string;
+  relatedLinks: RelatedLink[];
 };
 
 export type ExperienceAnalysis = {
@@ -282,7 +289,7 @@ export type RecommendationResult = {
 
 타입 설계 기준:
 
-- 경험 제목, 기간, 역할, 내용, 성과, 관련 링크를 원본 경험에 저장합니다.
+- 경험 제목, 기간, 역할, 내용, 성과와 URL·설명으로 구성된 관련 링크 목록을 원본 경험에 저장합니다.
 - 생성일과 수정일은 ISO string으로 저장합니다.
 - 분석 상태는 경험 목록과 상세 화면에서 바로 표시할 수 있도록 `Experience.analysisStatus`에 둡니다.
 - AI 생성 역량 태그와 분석 결과는 `ExperienceAnalysis`에 둡니다.
@@ -296,7 +303,9 @@ export type RecommendationResult = {
 
 ```ts
 export const STORAGE_KEYS = {
-  experiences: "campuslog:v1:experiences",
+  experiences: "campuslog:v2:experiences",
+  legacyExperiences: "campuslog:v1:experiences",
+  experienceMigration: "campuslog:v2:experiences:migrated",
   analyses: "campuslog:v1:analyses",
   recommendations: "campuslog:v1:recommendations",
 } as const;
@@ -307,6 +316,8 @@ export const STORAGE_KEYS = {
 ```ts
 type StoredExperiences = Experience[];
 ```
+
+기존 `campuslog:v1:experiences`의 `relatedLinks: string[]`는 처음 읽을 때 `{ url, description: "" }[]`로 변환해 v2 key에 저장합니다. v1 key는 롤백과 복구를 위해 삭제하거나 덮어쓰지 않으며, 마이그레이션 완료 marker로 이후 v2 삭제·파싱 실패 시 오래된 v1 데이터가 되살아나는 것을 막습니다. 마이그레이션만으로 `updatedAt`이나 분석 상태를 바꾸지 않습니다.
 
 분석 결과 저장 구조:
 
@@ -823,7 +834,7 @@ feature/base-structure
 
 | 위험 요소 | 대응 기준 |
 | --- | --- |
-| `localStorage` 데이터 구조가 중간에 바뀌는 문제 | `campuslog:v1:*` key를 고정하고, 타입 변경이 필요하면 별도 마이그레이션 이슈로 기록 |
+| `localStorage` 데이터 구조가 중간에 바뀌는 문제 | 기존 key를 보존하고 버전 key와 완료 marker를 사용하는 명시적 마이그레이션으로 전환하며 관련 이슈에 기록 |
 | App Router 서버 렌더링 중 `localStorage` 접근 문제 | `storage.ts`에 window guard를 두고, 저장소 접근 화면은 client component로 분리 |
 | AI 분석 결과와 경험 수정 상태가 어긋나는 문제 | `sourceExperienceUpdatedAt`을 저장하고 수정 시 `needs_reanalysis`로 변경 |
 | OpenAI API Key 노출 위험 | API Route에서만 `OPENAI_API_KEY`를 읽고 클라이언트에 전달하지 않음 |

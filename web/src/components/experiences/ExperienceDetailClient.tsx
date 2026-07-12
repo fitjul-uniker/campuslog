@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
-import { ExperienceDetail } from "@/components/experiences/ExperienceDetail";
+import { DashboardExperienceDetail } from "@/components/experiences/DashboardExperienceDetail";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
 import {
   deleteExperience,
@@ -97,20 +97,11 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   }
 
   return (
-    <div className="page-stack">
-      <section className="page-header">
-        <div>
-          <p className="eyebrow">활동 경험 상세</p>
-          <h1>경험 상세</h1>
-          <p className="page-description">
-            저장된 경험의 원본 내용과 분석 상태를 확인합니다.
-          </p>
-        </div>
-      </section>
-
-      <ExperienceDetail
+    <div className="product-page product-detail-page">
+      <DashboardExperienceDetail
         experience={experience}
         analysis={analysis}
+        variant="fullscreen"
         onDelete={handleDelete}
         onAnalyze={handleAnalyze}
         isAnalyzing={isAnalyzing}

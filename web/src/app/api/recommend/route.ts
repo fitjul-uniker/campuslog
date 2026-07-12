@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { parseRelatedLinks } from "@/lib/relatedLinks";
 import type {
   ApiErrorCode,
   ApiErrorResponse,
@@ -123,25 +124,41 @@ function isAnalysisStatus(value: unknown): value is Experience["analysisStatus"]
   );
 }
 
-function isExperienceForRecommendation(value: unknown): value is Experience {
+function parseExperienceForRecommendation(value: unknown): Experience | null {
   if (!value || typeof value !== "object") {
-    return false;
+    return null;
   }
 
   const candidate = value as Record<string, unknown>;
+  const relatedLinks = parseRelatedLinks(candidate.relatedLinks);
 
-  return (
+  if (
     hasText(candidate.id) &&
     hasText(candidate.title) &&
     hasText(candidate.period) &&
     hasText(candidate.role) &&
     hasText(candidate.description) &&
     typeof candidate.achievements === "string" &&
-    isStringArray(candidate.relatedLinks) &&
+    relatedLinks !== null &&
     hasText(candidate.createdAt) &&
     hasText(candidate.updatedAt) &&
     isAnalysisStatus(candidate.analysisStatus)
-  );
+  ) {
+    return {
+      id: candidate.id,
+      title: candidate.title,
+      period: candidate.period,
+      role: candidate.role,
+      description: candidate.description,
+      achievements: candidate.achievements,
+      relatedLinks,
+      createdAt: candidate.createdAt,
+      updatedAt: candidate.updatedAt,
+      analysisStatus: candidate.analysisStatus,
+    };
+  }
+
+  return null;
 }
 
 function isExperienceAnalysisForRecommendation(
@@ -223,6 +240,7 @@ function createSelectionPrompt(body: RecommendRequest): string {
         "분석 결과가 있으면 summary, competencyTags, achievements, keywords를 적극 활용합니다.",
         "분석 결과가 없거나 오래되었으면 원본 description, achievements, role을 우선 참고합니다.",
         "원본 경험이나 분석 결과에 없는 성과를 사실처럼 만들지 않습니다.",
+        "관련 링크 설명은 사용자가 적은 참고 정보로만 사용하며 링크 내용을 직접 열람하거나 검증했다고 가정하지 않습니다.",
         "recommendedExperienceId는 반드시 experiences 배열에 있는 id 중 하나를 그대로 사용합니다.",
       ],
       outputGuidelines: {
@@ -258,6 +276,7 @@ function createRecommendationDetailPrompt(
         "selectedExperience와 selectedAnalysis에 없는 프로젝트명, 서비스명, 수치, 기술, 역할을 넣지 않습니다.",
         "다른 경험이나 예시 경험의 내용, 태그, 성과를 섞지 않습니다.",
         "질문과 연결할 때도 selectedExperience에 기록된 행동과 성과만 사용합니다.",
+        "관련 링크 설명은 사용자가 적은 참고 정보로만 사용하며 링크 내용을 직접 열람하거나 검증했다고 가정하지 않습니다.",
         "성과 수치가 원본에 없으면 새 수치를 만들지 말고 정성적으로 표현합니다.",
         "selectedAnalysis가 오래된 분석이면 원본 description, achievements, role을 우선합니다.",
       ],
@@ -526,7 +545,9 @@ async function readRequestBody(
       return null;
     }
 
-    const experiences = rawExperiences.filter(isExperienceForRecommendation);
+    const experiences = rawExperiences
+      .map(parseExperienceForRecommendation)
+      .filter((experience): experience is Experience => experience !== null);
     const analyses = rawAnalyses.filter(isExperienceAnalysisForRecommendation);
 
     if (

@@ -30,6 +30,71 @@
 
 ## 작업 로그
 
+### 2026-07-12 - 게시 전 통합 리뷰와 UI 안정화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-12 |
+| 작업자 | Codex |
+| 작업 요약 | 현재 작업 트리 전체를 데이터·문서·보안·UI 관점으로 독립 검토하고 게시 전 발견한 경미한 UI 문제를 수정 |
+| 수정한 파일 | `docs/TASK_LOG.md`, `docs/WORK_STATUS.md`, `web/src/app/globals.css`, `web/src/components/experiences/DashboardExperienceDetail.tsx` |
+| 변경 내용 | 활동 상세가 열린 동안 고정 `+` CTA가 본문을 덮지 않도록 숨김 상태를 추가. 모바일 내비게이션에서 포인터 근접 효과용 blur와 `will-change`를 제거. 활동 전체 화면의 문서 제목 계층을 `h1 → h2`로 보정하고 좁은 상세에서 한글 제목이 음절 단위로 끊기지 않도록 줄바꿈 규칙을 정리 |
+| 검증한 내용 | 데이터·문서·보안·UI reviewer에서 critical/major 0건 확인. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 브라우저에서 데스크톱·390×844 모바일의 CTA 비노출, 모바일 메뉴 `filter: none`, 전체 화면 `h1 → h2`, 가로 overflow 0, 콘솔 warning/error 0 확인 |
+| 남은 작업 | 실제 새 관련 링크 저장 → 상세 표시 → 새로고침 유지 수동 검증은 `ISSUE-021`로 유지. 최신 `origin/main` 반영 후 push와 Draft PR 생성 필요 |
+| 관련 커밋 메시지 | `feature: unify CampusLog workspace and related links` |
+
+### 2026-07-12 - 관련 링크 URL·설명 행과 파비콘 표시
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-12 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 관련 링크를 큰 텍스트 입력 대신 URL·설명 반복 행으로 입력하고 상세에서 파비콘과 설명을 함께 확인하도록 개선 |
+| 수정한 파일 | `PRD.md`, `README.md`, `docs/DESIGN.md`, `docs/IA.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/ISSUE_LOG.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `web/src/app/api/analyze/route.ts`, `web/src/app/api/recommend/route.ts`, `web/src/app/globals.css`, `web/src/components/common/RelatedLinkFavicon.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/ExperienceForm.tsx`, `web/src/components/experiences/NewExperienceClient.tsx`, `web/src/lib/relatedLinks.ts`, `web/src/lib/sampleExperiences.ts`, `web/src/lib/storage.ts`, `web/src/lib/types.ts` |
+| 변경 내용 | `RelatedLink { url, description }` 구조와 새 링크 최대 10개, 추가·삭제 후 초점 이동, http/https·중복·설명만 입력 검증을 적용. 공개 도메인만 고정 favicon 제공처에 전달하고 비공개 호스트·IP 주소·실패 응답은 `Link2`로 대체. v1 문자열 배열은 링크 개수와 비-URL 메모를 보존한 채 v2 객체 배열로 자동 마이그레이션하고 완료 marker로 이전 데이터 재등장을 방지. 분석·추천 API 경계는 v1/v2 payload를 모두 정규화하며 URL·설명을 참고 정보로 전달하되 AI가 링크를 열람했다고 가정하지 않도록 prompt 규칙을 추가 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 순수 유틸리티에서 10개 초과 legacy 링크와 비-URL 메모 보존, 단일 토큰과 실제 domain 구분, 공개·비공개 hostname favicon 분기를 확인. 브라우저에서 URL·설명 입력, GitHub favicon, 행 추가 후 자동 초점, 개별 삭제 후 초점 복귀, 390×844 모바일 재배치, 가로 overflow 0과 기존 v1 활동 3개 유지 확인. 독립 UI·integration 리뷰에서 찾은 링크 개수 손실, v1 데이터 재등장, 비-URL 메모 변환, 상세 텍스트·포커스 문제를 수정한 뒤 critical/major 0건으로 재검토 완료 |
+| 남은 작업 | 외부 favicon 제공처가 응답하지 않는 환경에서는 의도한 대로 `Link2` fallback을 사용. 사용자 활동을 변경하지 않기 위해 새 테스트 활동의 실제 저장·삭제는 수행하지 않았으며, 상세의 링크 카드 상태는 타입·빌드·샘플 데이터 기준으로만 검증. 실제 저장 → 상세 표시 → 새로고침 유지 수동 확인은 `ISSUE-021`로 남김 |
+| 관련 커밋 메시지 | `feature: structure related experience links` |
+
+### 2026-07-12 - 추천 결과 가독성과 활동 상세 액션 흐름 개선
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-12 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천 완료 후 결과 자동 스크롤과 추천 결과 타이포 위계를 적용하고, 검색 아이콘·추천 활동 링크·AI 분석 결과 문구·활동 전체 화면 버튼 순서를 정리 |
+| 수정한 파일 | `docs/DESIGN.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `web/src/app/recommend/page.tsx`, `web/src/app/globals.css`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/ui/GooeyInput.tsx` |
+| 변경 내용 | 새 추천 ID가 생성된 경우에만 결과 상단으로 스크롤하고 reduced motion에서는 즉시 이동하도록 구현. 추천 활동 제목은 크고 짙게, 항목 라벨은 작고 옅게, 답변 본문은 읽기 쉬운 중간 크기로 분리. Gooey 검색의 이중 패딩을 제거하고 20px 아이콘을 고정. 추천 결과의 활동 링크를 `활동`, 분석 링크를 `AI 분석 결과`로 변경. 활동 전체 화면 액션을 활동 목록, 분석 액션, 수정, 삭제 순으로 재배치하고 수정의 primary 확장을 제거 |
+| 검증한 내용 | `npm run lint`, `tsc --noEmit`, `npm run build`, `git diff --check` 통과. 브라우저에서 검색 SVG 20×20px, 데스크톱·모바일 가로 overflow 0, 분석 완료 인라인 상세의 `AI 분석 결과`, 미분석 전체 화면의 `활동 목록 → AI 분석 요청 → 수정 → 삭제`, 분석 완료 전체 화면의 `활동 목록 → AI 분석 결과 → 수정 → 삭제`와 기본 크기 수정 버튼을 확인. 브라우저 콘솔 warning/error 없음 |
+| 남은 작업 | 실제 AI 추천 요청은 외부 API 호출과 추천 기록 저장을 발생시키므로 자동 실행하지 않음. 새 추천 성공 후 자동 스크롤은 코드·타입·빌드 기준으로 검증하고 사용자 수동 확인이 필요 |
+| 관련 커밋 메시지 | `fix: refine recommendation result flow` |
+
+### 2026-07-12 - 제품 화면 대시보드 스타일 통합 및 목록-상세 인터랙션
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-12 |
+| 작업자 | Codex |
+| 작업 요약 | `/`의 3D 표지는 유지하고 나머지 제품 페이지를 흰색 대시보드 작업 공간으로 통일했으며, 활동 목록과 추천 기록에 검색·목록 유지형 상세 인터랙션을 적용 |
+| 수정한 파일 | `PRD.md`, `docs/DESIGN.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `web/package.json`, `web/package-lock.json`, `web/src/app/globals.css`, `web/src/app/recommend/history/page.tsx`, `web/src/components/layout/AppShell.tsx`, `web/src/components/layout/Navigation.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/AnimatedExperienceList.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `web/src/components/experiences/ExperienceDetail.tsx`(삭제), `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/recommendations/AnimatedRecommendationList.tsx`, `web/src/components/ui/CountUp.tsx`, `web/src/components/ui/GooeyInput.tsx`, `web/src/components/ui/BorderBeamButton.tsx` |
+| 변경 내용 | 공통 `AppShell`에서 레거시 책 프레임을 제거하고 모든 제품 라우트에 흰색 작업 표면과 모바일 메뉴를 제공. `motion` dependency를 추가해 대시보드·추천 기록의 목록/상세 전환과 CountUp에 사용. 대시보드는 제목 전용 Animated List, CountUp 활동 개수, Gooey `검색`, 선택 후 왼쪽 목록·오른쪽 상세 구조로 재구성. 인라인 상세와 활동 전체 화면은 `DashboardExperienceDetail`을 공유하며 미분석·재분석 필요 상태에 기존 AI 분석 API / localStorage 저장 흐름을 재사용하는 Border Beam형 요청 버튼을 제공. 추천 기록은 기존 상세 정보를 유지한 행, 검색, 선택 후 목록 유지형 우측 상세, 모바일 세로 구조와 초점 복귀를 적용 |
+| 검증한 내용 | `cd web && npm run lint`, `./node_modules/.bin/tsc --noEmit`, `npm run build`, `git diff --check` 통과. 브라우저에서 `/dashboard`, `/experiences/new`, `/experiences/[id]`, `/experiences/[id]/edit`, `/experiences/[id]/analysis`, `/recommend`, `/recommend/history`의 공통 앱 셸, 레거시 책 프레임 0개, 가로 overflow 0, 콘솔 warning/error 0 확인. 데스크톱 활동 검색·상세·전체 화면과 390px 모바일 내비게이션·검색·목록-상세, 900px 추천 기록 단일 열 breakpoint를 확인. 별도 integration reviewer가 찾은 추천 간 복사 상태 잔존, 중간 너비 상세 잘림, 빈 검색 Tab 초점, 전체 화면 heading level, 문서 정합성 문제를 수정. 추천 기록은 저장 데이터가 없는 빈 상태를 실제 확인했으며, 저장 기록 선택 상태는 코드·타입·빌드 기준으로 검증 |
+| 남은 작업 | 저장된 추천 기록이 있는 사용자 환경에서 추천 목록 선택·닫기·검색을 최종 수동 확인. 사용자 승인 전 commit / push / PR은 진행하지 않음 |
+| 관련 커밋 메시지 | `feature: unify product workspace interactions` |
+
+### 2026-07-12 - Pretendard 직접 호스팅과 CampusLog 워드마크 아이콘 적용
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-12 |
+| 작업자 | Codex |
+| 작업 요약 | 사용자가 제공한 Pretendard 원본을 제품 화면 한글 글꼴로 직접 호스팅하고, 좌측 상단 CampusLog 워드마크를 favicon과 Apple 아이콘에 반영 |
+| 수정한 파일 | `web/public/fonts/PretendardVariable.woff2`, `web/public/fonts/LICENSE.txt`, `web/public/favicon.svg`, `web/public/app-icon.svg`, `web/src/app/globals.css`, `web/src/app/layout.tsx`, `docs/DESIGN.md`, `docs/ISSUE_LOG.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `@font-face`로 Pretendard Variable을 등록하고 3D 책 표지의 영어와 제품 워드마크를 제외한 제품 텍스트에 적용. CampusLog 텍스트 워드마크 SVG를 브라우저 favicon과 `metadata.icons.apple`에 연결하고 캐시 구분 query를 추가 |
+| 검증한 내용 | WOFF2가 사용자 제공 `Pretendard-1.3.9.zip` 원본과 SHA-256 기준으로 일치하고 OFL 라이선스 내용이 포함된 것을 확인. 라이선스의 후행 공백만 저장소 형식에 맞게 정리. `npm run lint`, `npx tsc --noEmit`, `npm run build`, 제품 라우트 브라우저 검증 통과 |
+| 남은 작업 | Web App Manifest용 Chrome/Android 설치 아이콘은 이번 변경에 포함하지 않음. 약 2.0MB variable font의 subset 최적화는 Core Web Vitals 후속 검토 항목 |
+| 관련 커밋 메시지 | `style: apply Pretendard and wordmark icons` |
+
 ### 2026-07-11 - 경험 목록 스크롤 및 고정 CTA 수정
 
 | 항목 | 내용 |
@@ -40,8 +105,8 @@
 | 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
 | 변경 내용 | 고정 높이 책 프레임 안에서 오른쪽 페이지와 앞면의 높이 체인을 `height: 100%`, `min-height: 0`으로 닫아 경험 목록 스크롤을 복구. 대시보드 앞면을 목록 전용 `dashboard-page-scroll`과 고정 액션 영역 `dashboard-page-action`으로 분리해 목록 범위가 CTA 위에서 끝나도록 변경. 860px 이하에서도 오른쪽 페이지를 남은 높이에 맞춘 flex 영역으로 두고 목록만 스크롤되도록 조정. localStorage, 경험 CRUD, AI 분석 / 추천 데이터 흐름은 변경하지 않음 |
 | 검증한 내용 | `cd web && npm run lint`, `git diff --check` 통과. 원본 작업 트리와 동일한 격리 복사본에서 `npm run build` 통과. 브라우저에서 1440×900 기준 목록 `scrollTop`이 0에서 90으로 이동하는 동안 CTA 좌표 변화 0px, 390×844 기준 0에서 616.5로 이동하는 동안 CTA 좌표 변화 0px 확인. 두 화면 크기에서 마지막 경험 카드 접근, 빈 상태 CTA 노출, 페이지 넘김 후 `/experiences/new` 이동을 확인. 별도 UI / integration reviewer에서 `critical` / `major` / `minor` / `suggestion` 발견 없음 |
-| 남은 작업 | 완료: PR #24가 merge commit `84e7f6d`로 Organization `main`에 반영됨. 후속: 병합 상태를 반영한 문서 변경의 PR 검토, 로컬 `main` 동기화, 관련 PR 병합 후 작업 브랜치 정리 여부 확인이 필요함. 사용자 터미널에서 실행 중이던 3000번 개발 서버는 `.next` 산출물 불일치 상태로 확인되어 `Ctrl+C` 후 `npm run dev` 재시작 필요 |
-| 관련 커밋 메시지 | `fix: keep dashboard list scrollable and CTA fixed` (`cb13b2a`), PR #24 merge (`84e7f6d`) |
+| 남은 작업 | 완료: PR #24가 merge commit `84e7f6d`로 Organization `main`에 반영되고, 후속 문서도 PR #25의 merge commit `55c3ade`로 반영됨. 로컬 `main` 동기화와 관련 작업 브랜치 정리는 현재 기능 PR 병합 후 확인 필요 |
+| 관련 커밋 메시지 | `fix: keep dashboard list scrollable and CTA fixed` (`cb13b2a`), PR #24 merge (`84e7f6d`), 후속 문서 PR #25 merge (`55c3ade`) |
 
 ### 2026-07-11 - 최신 main 기반 Fork 인터랙티브 노트 UI 통합
 
