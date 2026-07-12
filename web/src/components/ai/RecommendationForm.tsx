@@ -105,7 +105,7 @@ export function RecommendationForm({
           disabled={isLoading}
         >
           <Sparkles className="button-icon" aria-hidden="true" />
-          {isLoading ? "추천할 경험을 찾는 중..." : "AI 추천 요청"}
+          {isLoading ? "추천할 활동을 찾는 중..." : "AI 기반 활동 추천"}
         </button>
       </div>
     </form>

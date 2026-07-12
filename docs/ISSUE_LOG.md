@@ -9,7 +9,7 @@
 - `Open`: 아직 결정 또는 해결되지 않음
 - `In Progress`: 논의 또는 해결 진행 중
 - `Resolved`: 결정 또는 해결 완료
-- `Deferred`: 현재 1차 MVP 이후로 보류
+- `Deferred`: 현재 활성 단계 이후로 보류
 
 ## 유형 기준
 
@@ -26,7 +26,7 @@
 | ISSUE-002 | Resolved | Medium | Decision | USER_FLOW.md 파일명 정리 완료 | 사용자 흐름 문서 파일명 정리 | 운영진 요구 파일명에 맞춰 FLOW.md를 USER_FLOW.md로 변경 | Codex | 2026-06-30 | 2026-06-30 |
 | ISSUE-003 | Resolved | Medium | Decision | 추천 결과 저장 기능 우선순위 결정 | 추천 결과 저장을 첫 구현에 포함할지, 복사 기능 이후 낮은 우선순위로 둘지 결정 | 추천 결과 저장은 1차 MVP 범위에 포함하되, 첫 구현에서는 복사 기능보다 낮은 우선순위로 둠 | Codex | 2026-06-30 | 2026-07-03 |
 | ISSUE-004 | Resolved | Medium | Decision | LocalStorage만 사용할지 SQLite까지 고려할지 결정 필요 | 1차 MVP에서는 LocalStorage만 사용할지, SQLite 도입 가능성을 검토할지 결정 | 1차 MVP는 Browser localStorage만 사용하고 SQLite는 도입하지 않음 | Codex | 2026-06-30 | 2026-07-01 |
-| ISSUE-005 | Deferred | Medium | Decision | 2차 MVP에서 Next.js Full Stack + Supabase 도입 범위 결정 | Supabase Auth, Supabase Postgres, Supabase Storage, Next.js API Route 또는 Server Action의 도입 범위와 우선순위 결정 | 2차 MVP 확장 예정 항목으로 보류 | 미정 | 2026-07-01 | - |
+| ISSUE-005 | In Progress | High | Decision | 2차 MVP에서 Next.js Full Stack + Supabase 도입 범위 결정 | Supabase Auth, Postgres, RLS, 조건부 Storage, Next.js API Route 또는 Server Action의 도입 범위와 우선순위 결정 | 2차 MVP 활성 Track A로 전환. 로그인·회원가입·사용자별 DB는 포함하며 Storage는 실제 파일 기능이 승인될 때 도입 | Track A 담당자 | 2026-07-01 | - |
 | ISSUE-006 | Deferred | Low | Decision | UNIKER 이후 개인 Backend Portfolio Edition 마이그레이션 전략 결정 | Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3로 확장할 범위와 마이그레이션 순서 결정 | CampusLog 본 MVP가 아니라 UNIKER 이후 개인 백엔드 포트폴리오 확장 항목으로 보류 | 미정 | 2026-07-01 | - |
 | ISSUE-007 | Resolved | Medium | Question | `sampleExperiences.ts` 초기 화면 자동 주입 여부 결정 필요 | 샘플 경험을 실제 사용자 localStorage에 자동 저장할지, 빈 상태 검증용 개발 데이터로만 둘지 결정 | `sampleExperiences.ts`는 개발 참고용 샘플 데이터만 정의하고 실제 사용자 localStorage에는 자동 주입하지 않음. 첫 화면은 기본적으로 빈 상태가 보이도록 유지 | Codex | 2026-07-09 | 2026-07-09 |
 | ISSUE-008 | Resolved | Medium | Decision | OpenAI API 호출 방식 결정 필요 | API Route에서 OpenAI SDK를 사용할지, server-side `fetch`를 사용할지 결정 | 새 dependency를 추가하지 않고 `web/src/app/api/analyze/route.ts`에서 server-side `fetch`로 OpenAI Responses API를 호출하는 방식으로 결정 | Codex | 2026-07-09 | 2026-07-09 |
@@ -43,6 +43,14 @@
 | ISSUE-019 | Resolved | High | Bug | `/dashboard`의 고정 높이 책 프레임에서 저장된 경험 목록이 스크롤되지 않아 첫 카드 아래 경험에 접근할 수 없고, CTA도 목록 스크롤 영역과 분리되지 않음 | 데스크톱과 모바일에서 목록만 책 내부 스크롤 대상으로 두고 `새 경험 기록하기` CTA를 고정할 높이 / overflow 구조 확정 필요 | 오른쪽 페이지와 앞면에 확정 높이와 `min-height: 0`을 적용해 내부 스크롤을 복구하고, 목록 전용 `dashboard-page-scroll`과 고정 `dashboard-page-action`을 분리. 1440×900과 390×844에서 마지막 카드 접근 및 스크롤 중 CTA 좌표 변화 0px 확인 | Codex | 2026-07-11 | 2026-07-11 |
 | ISSUE-020 | Resolved | High | Decision | 관련 링크를 URL·설명 객체로 바꿀 때 기존 문자열 배열 보존과 파비콘 로딩 방식 결정 필요 | 기존 v1 활동 손실 없이 새 구조로 전환하고 임의 URL·비공개 호스트 요청을 피하는 방법 결정 | 기존 `campuslog:v1:experiences`를 보존하고 링크 개수·비-URL 메모를 유지한 채 v2 key에 `{ url, description }[]`로 자동 변환. 완료 marker로 이전 데이터 재등장을 차단. 파비콘은 전체 URL이 아닌 공개 도메인만 고정 제공처에 전달하며 비공개 호스트·IP 주소·실패 응답은 `Link2` fallback 사용 | Codex | 2026-07-12 | 2026-07-12 |
 | ISSUE-021 | Open | Low | Risk | 구조화된 관련 링크의 실제 저장·상세 표시·새로고침 유지 E2E 수동 검증 미완료 | 사용자 데이터에 테스트 활동을 남기지 않으면서 URL·설명 저장, 상세 파비콘, 새로고침 유지까지 확인할 방법 결정 | 폼의 URL·설명 입력, 파비콘, 추가·삭제·초점 이동과 기존 v1 활동 유지는 확인했지만 새 테스트 활동 저장은 수행하지 않음. 사용자 수동 확인 후 결과 기록 필요 | 미정 | 2026-07-12 | - |
+| ISSUE-022 | Resolved | High | Decision | 확정된 1차 MVP를 넘어 진행형 경험 기록과 메인 캘린더를 구현할지 결정 필요 | 기존 기능 보존, 새 브랜치, 저장·AI 범위와 메인 화면 역할 결정 | 사용자가 2026-07-13에 MVP 범위를 제한하지 말고 새 브랜치에서 구현하도록 명시적으로 승인. `/dashboard`는 오늘의 기록, `/experiences`는 완료 경험과 진행 활동을 통합한 `나의 활동`으로 분리하고 localStorage + API Route를 유지 | Codex | 2026-07-13 | 2026-07-13 |
+| ISSUE-023 | Resolved | High | Risk | 활동 종료 AI 합성의 환각, 프롬프트 인젝션, 중복 Experience 생성 가능성 | 입력 근거 제한, 서버 검증, 저장 멱등성과 실패 복구 정책 필요 | 완료 상태·날짜 범위를 서버에서 검증하고 모든 사용자 입력을 비신뢰 데이터로 취급. usedLogIds를 실제 입력 ID로 재검증하고 activityId 기준 트랜잭션 저장, draft 무효화, 활동 다시 열기를 구현. 실제 API 200과 단일 Experience 저장 확인 | Codex | 2026-07-13 | 2026-07-13 |
+| ISSUE-024 | Open | High | Risk | 공개 배포에서 AI API Route 반복 호출로 OpenAI 비용이 증가할 수 있음 | `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`의 인증, 입력 상한, rate limit, `retryAfter`, 중복 요청, OpenAI spend limit / alert 정책 결정 | 입력 상한, timeout, API Key 서버 보관은 적용했으나 서버리스 환경의 신뢰 가능한 호출 빈도 제한과 UI 오류 contract는 Vercel 배포 준비와 함께 적용 필요 | Track A + Track B | 2026-07-13 | - |
+| ISSUE-025 | Open | High | Decision | v1.1 localStorage 데이터를 2차 MVP 사용자 DB로 이전할 정책 필요 | 자동 / 수동 이전, 사용자 생성 데이터 판별, 샘플·fixture·파싱 실패 제외, 중복 처리, 부분 실패, 원본 삭제 시점, 동일 요청 멱등성 결정 | 성공 전 localStorage 원본을 삭제하지 않고 사용자 선택과 재시도를 제공하며, 서버 데이터 유무와 관계없이 이전 가능한 로컬 데이터가 있으면 안내하는 것을 기본 원칙으로 설정. 세부 정책은 Track A·B가 공동 확정 | Track A + Track B | 2026-07-13 | - |
+| ISSUE-026 | Open | High | Risk | 인증·DB Track과 디자인·UX Track의 공통 파일 및 계약 충돌 가능성 | 공유 타입, repository, 인증 상태, API error, 공통 컴포넌트의 담당과 merge 순서 결정 | `CURRENT_PHASE.md`와 `IMPLEMENTATION_PLAN.md`에 병렬 개발 계약을 추가. Track A는 인증 모듈·server action·validation·오류 contract, Track B는 해당 contract 기반 route UI·표현 계층을 담당 | 팀 | 2026-07-13 | - |
+| ISSUE-027 | Resolved | High | Decision | 1차 MVP 문서가 v1.1 이후 고도화 개발을 제한함 | 완료된 1차 MVP 기준선을 보존하면서 현재 활성 개발 기준을 전환할 방법 결정 | v1.1을 archive 기준선으로 고정하고 `CURRENT_PHASE.md`를 최우선 문서로 추가. 2차 MVP를 인증·데이터·AI Track과 디자인·UX Track으로 분리 | 사용자 + Codex | 2026-07-13 | 2026-07-13 |
+| ISSUE-028 | Open | High | Risk | 인증 오류 문구가 이메일 계정 존재 여부를 노출할 수 있음 | Supabase 인증 응답 매핑, 비밀번호 validation 공유, 로그인·회원가입 사용자 문구와 계정 열거 방지 정책 결정 | Supabase 원문 오류를 직접 노출하지 않고 Track A가 공통 사용자용 오류 code를 제공하며 Track B는 해당 code의 승인된 문구만 표시하는 것을 기본 원칙으로 설정 | Track A + Track B | 2026-07-13 | - |
+| ISSUE-029 | Open | High | Decision | 활동 종료 AI 합성 초안과 상태의 DB 소유권·보존 계약 필요 | 합성 초안 RLS, 원본 활동·로그 관계, 마이그레이션, 저장 후 삭제, 실패·재시도, 합성 API 제한, 완료 Experience 멱등성 구현 확정 | 미완료 초안과 상태를 사용자 소유 데이터로 취급하고 완료 Experience 저장 검증 후 초안을 제거하는 v1.1 정책을 기본값으로 설정 | Track A | 2026-07-13 | - |
 
 ## 이슈 추가 템플릿
 

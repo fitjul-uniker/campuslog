@@ -606,8 +606,8 @@ export async function POST(request: Request) {
       return createErrorResponse(
         "OPENAI_API_ERROR",
         selectionOutput.reason === "invalid_output"
-          ? "AI 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
-          : "AI 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+          ? "AI 기반 활동 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
+          : "AI 기반 활동 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
         502,
       );
     }
@@ -620,7 +620,7 @@ export async function POST(request: Request) {
     if (!selectedExperience) {
       return createErrorResponse(
         "OPENAI_API_ERROR",
-        "AI 추천 결과가 올바른 경험을 가리키지 않습니다. 다시 시도해주세요.",
+        "AI 기반 활동 추천 결과가 올바른 경험을 가리키지 않습니다. 다시 시도해주세요.",
         502,
       );
     }
@@ -649,8 +649,8 @@ export async function POST(request: Request) {
       return createErrorResponse(
         "OPENAI_API_ERROR",
         detailOutput.reason === "invalid_output"
-          ? "AI 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
-          : "AI 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+          ? "AI 기반 활동 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
+          : "AI 기반 활동 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
         502,
       );
     }
@@ -662,7 +662,7 @@ export async function POST(request: Request) {
     if (!recommendationDetail) {
       return createErrorResponse(
         "OPENAI_API_ERROR",
-        "AI 추천 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
+        "AI 기반 활동 추천 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
         502,
       );
     }
@@ -678,7 +678,7 @@ export async function POST(request: Request) {
   } catch {
     return createErrorResponse(
       "UNKNOWN_ERROR",
-      "알 수 없는 오류로 AI 추천을 완료하지 못했습니다.",
+      "알 수 없는 오류로 AI 기반 활동 추천을 완료하지 못했습니다.",
       500,
     );
   }

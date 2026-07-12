@@ -53,8 +53,8 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
           description="삭제되었거나 저장소에서 불러오지 못한 경험입니다."
           icon={<PenLine />}
           primaryAction={{
-            href: "/dashboard",
-            label: "대시보드로 돌아가기",
+            href: "/experiences",
+            label: "나의 활동으로 돌아가기",
           }}
         />
       </div>

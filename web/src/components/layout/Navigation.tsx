@@ -13,25 +13,28 @@ const SMOOTHING_MS = 120;
 const navigationItems = [
   {
     href: "/dashboard",
-    label: "나의 경험",
-    mobileLabel: "경험",
+    label: "오늘의 기록",
+    mobileLabel: "오늘",
+  },
+  {
+    href: "/experiences",
+    label: "나의 활동",
+    mobileLabel: "활동",
   },
   {
     href: "/recommend",
-    label: "AI 추천 및 활용",
-    mobileLabel: "AI 추천",
-    exact: true,
-  },
-  {
-    href: "/recommend/history",
-    label: "추천 기록",
-    mobileLabel: "기록",
+    label: "CampusLog AI",
+    mobileLabel: "AI",
   },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
   if (href === "/dashboard") {
-    return pathname === "/dashboard" || pathname.startsWith("/experiences/");
+    return pathname === "/dashboard" || pathname.startsWith("/activities/");
+  }
+
+  if (href === "/experiences") {
+    return pathname === "/experiences" || pathname.startsWith("/experiences/");
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -50,9 +53,7 @@ export function Navigation({ variant = "desktop" }: NavigationProps) {
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameRef = useRef(0);
   const activeIndex = navigationItems.findIndex((item) =>
-    item.exact
-      ? pathname === item.href
-      : isActivePath(pathname, item.href),
+    isActivePath(pathname, item.href),
   );
   const activeIndexRef = useRef(activeIndex);
 
@@ -195,9 +196,7 @@ export function Navigation({ variant = "desktop" }: NavigationProps) {
       onPointerLeave={variant === "desktop" ? handlePointerLeave : undefined}
     >
       {navigationItems.map((item, index) => {
-        const isActive = item.exact
-          ? pathname === item.href
-          : isActivePath(pathname, item.href);
+        const isActive = isActivePath(pathname, item.href);
 
         return (
           <Link
@@ -215,8 +214,24 @@ export function Navigation({ variant = "desktop" }: NavigationProps) {
                 : undefined
             }
           >
-            <span className="navigation-label">
-              {variant === "mobile" ? item.mobileLabel : item.label}
+            <span
+              className={cn(
+                "navigation-label",
+                item.href === "/recommend" &&
+                  variant === "desktop" &&
+                  "is-campuslog-ai",
+              )}
+            >
+              {item.href === "/recommend" && variant === "desktop" ? (
+                <>
+                  <span className="navigation-campuslog-brand">CampusLog</span>
+                  <span>AI</span>
+                </>
+              ) : variant === "mobile" ? (
+                item.mobileLabel
+              ) : (
+                item.label
+              )}
             </span>
           </Link>
         );

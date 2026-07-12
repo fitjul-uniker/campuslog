@@ -35,7 +35,7 @@ export function NewExperienceClient() {
         <h2 id="new-form-title">경험 정보</h2>
         <ExperienceForm
           mode="create"
-          cancelHref="/dashboard"
+          cancelHref="/experiences"
           onSubmit={handleSubmit}
         />
       </section>

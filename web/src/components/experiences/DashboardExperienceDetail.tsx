@@ -258,9 +258,9 @@ export function DashboardExperienceDetail({
       <div className="dashboard-detail-actions">
         {isFullscreen ? (
           <>
-            <Link href="/dashboard" className="dashboard-detail-action">
+            <Link href="/experiences" className="dashboard-detail-action">
               <ArrowLeft aria-hidden="true" />
-              활동 목록
+              나의 활동
             </Link>
             {analysisAction}
             {editAction}

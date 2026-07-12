@@ -34,8 +34,14 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   }, [id]);
 
   function handleDelete() {
-    deleteExperience(id);
-    router.push("/dashboard");
+    if (!deleteExperience(id)) {
+      setAnalysisError(
+        "경험을 삭제하지 못했습니다. 저장소 상태를 확인한 뒤 다시 시도해 주세요.",
+      );
+      return;
+    }
+
+    router.push("/experiences");
   }
 
   async function handleAnalyze() {
@@ -88,8 +94,8 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
           description="삭제되었거나 저장소에서 불러오지 못한 경험입니다."
           icon={<BookOpenText />}
           primaryAction={{
-            href: "/dashboard",
-            label: "대시보드로 돌아가기",
+            href: "/experiences",
+            label: "나의 활동으로 돌아가기",
           }}
         />
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, History, RotateCcw, Sparkles } from "lucide-react";
+import { AlertCircle, History, RotateCcw } from "lucide-react";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
+import { CampusLogAiMenu } from "@/components/ai/CampusLogAiMenu";
 import { AnimatedRecommendationList } from "@/components/recommendations/AnimatedRecommendationList";
 import { GooeyInput } from "@/components/ui/GooeyInput";
 import { getExperiences, getRecommendationResults } from "@/lib/storage";
@@ -170,6 +171,11 @@ export default function RecommendationHistoryPage() {
       <div
         className={`recommendation-history-page${hasSelection ? " has-selection" : ""}`}
       >
+        <div className="campuslog-ai-history-header">
+          <p className="eyebrow">CampusLog AI</p>
+          <CampusLogAiMenu />
+        </div>
+
         <LayoutGroup id="recommendation-history-layout">
           <motion.div
             layout
@@ -206,10 +212,6 @@ export default function RecommendationHistoryPage() {
                     {filteredRecommendations.length}개의 기록을 찾았습니다.
                   </p>
                 ) : null}
-                <Link href="/recommend" className="recommendation-history-new">
-                  <Sparkles aria-hidden="true" />
-                  새 추천 받기
-                </Link>
               </header>
 
               {loadError ? (
@@ -236,8 +238,8 @@ export default function RecommendationHistoryPage() {
                 <div className="dashboard-list-state is-empty">
                   <History aria-hidden="true" />
                   <h2>아직 저장된 추천 기록이 없습니다</h2>
-                  <p>AI 추천을 요청하면 결과가 이곳에 저장됩니다.</p>
-                  <Link href="/recommend">AI 추천 받기</Link>
+                  <p>AI 기반 활동 추천을 요청하면 결과가 이곳에 저장됩니다.</p>
+                  <Link href="/recommend">AI 기반 활동 추천 받기</Link>
                 </div>
               ) : filteredRecommendations?.length === 0 ? (
                 <div className="dashboard-list-state is-search-empty">

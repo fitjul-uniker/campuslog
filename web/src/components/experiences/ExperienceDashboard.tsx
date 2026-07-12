@@ -10,18 +10,29 @@ import {
 } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { AnimatedExperienceList } from "@/components/experiences/AnimatedExperienceList";
+import {
+  AnimatedExperienceList,
+  type MyActivityListItem,
+} from "@/components/experiences/AnimatedExperienceList";
 import {
   DASHBOARD_EXPERIENCE_DETAIL_ID,
   DashboardExperienceDetail,
 } from "@/components/experiences/DashboardExperienceDetail";
+import { DashboardTrackedActivityDetail } from "@/components/experiences/DashboardTrackedActivityDetail";
 import {
   getAnalysisByExperienceId,
+  getDailyLogs,
   getExperiences,
+  getTrackedActivities,
   saveAnalysisResult,
 } from "@/lib/storage";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
-import type { Experience, ExperienceAnalysis } from "@/lib/types";
+import type {
+  DailyLog,
+  Experience,
+  ExperienceAnalysis,
+  TrackedActivity,
+} from "@/lib/types";
 import { CountUp } from "@/components/ui/CountUp";
 import { GooeyInput } from "@/components/ui/GooeyInput";
 
@@ -44,6 +55,10 @@ function normalizeSearchValue(value: string): string {
 
 export function ExperienceDashboard() {
   const [experiences, setExperiences] = useState<Experience[] | null>(null);
+  const [trackedActivities, setTrackedActivities] = useState<
+    TrackedActivity[] | null
+  >(null);
+  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
   const [analysesByExperienceId, setAnalysesByExperienceId] = useState<
     Record<string, ExperienceAnalysis | null>
   >({});
@@ -51,9 +66,7 @@ export function ExperienceDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [analysisRequestByExperienceId, setAnalysisRequestByExperienceId] =
     useState<AnalysisRequestState>({});
-  const [selectedExperienceId, setSelectedExperienceId] = useState<
-    string | null
-  >(null);
+  const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
 
@@ -62,7 +75,12 @@ export function ExperienceDashboard() {
 
     try {
       const storedExperiences = getExperiences();
+      const activeTrackedActivities = getTrackedActivities().filter(
+        (activity) => activity.status === "active",
+      );
       setExperiences(storedExperiences);
+      setTrackedActivities(activeTrackedActivities);
+      setDailyLogs(getDailyLogs());
       setAnalysesByExperienceId(
         storedExperiences.reduce<Record<string, ExperienceAnalysis | null>>(
           (analyses, experience) => {
@@ -74,9 +92,11 @@ export function ExperienceDashboard() {
       );
     } catch {
       setExperiences([]);
+      setTrackedActivities([]);
+      setDailyLogs([]);
       setAnalysesByExperienceId({});
       setLoadError(
-        "저장된 경험 목록을 불러오지 못했습니다. 데이터를 지우지 않았으니 잠시 후 다시 시도해 주세요.",
+        "저장된 활동 목록을 불러오지 못했습니다. 데이터를 지우지 않았으니 잠시 후 다시 시도해 주세요.",
       );
     }
   }, []);
@@ -93,51 +113,83 @@ export function ExperienceDashboard() {
     };
   }, []);
 
+  const activityItems = useMemo<MyActivityListItem[] | null>(() => {
+    if (experiences === null || trackedActivities === null) {
+      return null;
+    }
+
+    return [
+      ...experiences.map<MyActivityListItem>((experience) => ({
+        key: `experience:${experience.id}`,
+        id: experience.id,
+        title: experience.title,
+        kind: "experience",
+        updatedAt: experience.updatedAt,
+      })),
+      ...trackedActivities.map<MyActivityListItem>((activity) => ({
+        key: `tracked:${activity.id}`,
+        id: activity.id,
+        title: activity.title,
+        kind: "tracked",
+        updatedAt: activity.updatedAt,
+      })),
+    ].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }, [experiences, trackedActivities]);
+
   useEffect(() => {
     if (
-      selectedExperienceId &&
-      experiences &&
-      !experiences.some(
-        (experience) => experience.id === selectedExperienceId,
-      )
+      selectedItemKey &&
+      activityItems &&
+      !activityItems.some((item) => item.key === selectedItemKey)
     ) {
-      setSelectedExperienceId(null);
+      setSelectedItemKey(null);
     }
-  }, [experiences, selectedExperienceId]);
+  }, [activityItems, selectedItemKey]);
 
+  const selectedItem =
+    activityItems?.find((item) => item.key === selectedItemKey) ?? null;
   const selectedExperience =
-    experiences?.find(
-      (experience) => experience.id === selectedExperienceId,
-    ) ?? null;
+    selectedItem?.kind === "experience"
+      ? (experiences?.find(
+          (experience) => experience.id === selectedItem.id,
+        ) ?? null)
+      : null;
+  const selectedTrackedActivity =
+    selectedItem?.kind === "tracked"
+      ? (trackedActivities?.find(
+          (activity) => activity.id === selectedItem.id,
+        ) ?? null)
+      : null;
+  const selectedTrackedActivityLogs = selectedTrackedActivity
+    ? dailyLogs.filter((log) => log.activityId === selectedTrackedActivity.id)
+    : [];
   const normalizedSearchQuery = normalizeSearchValue(searchQuery);
-  const filteredExperiences = useMemo(() => {
-    if (!experiences || !normalizedSearchQuery) {
-      return experiences;
+  const filteredActivityItems = useMemo(() => {
+    if (!activityItems || !normalizedSearchQuery) {
+      return activityItems;
     }
 
-    return experiences.filter((experience) =>
-      normalizeSearchValue(experience.title).includes(normalizedSearchQuery),
+    return activityItems.filter((item) =>
+      normalizeSearchValue(item.title).includes(normalizedSearchQuery),
     );
-  }, [experiences, normalizedSearchQuery]);
+  }, [activityItems, normalizedSearchQuery]);
 
   useEffect(() => {
     if (
-      selectedExperienceId &&
-      filteredExperiences &&
-      !filteredExperiences.some(
-        (experience) => experience.id === selectedExperienceId,
-      )
+      selectedItemKey &&
+      filteredActivityItems &&
+      !filteredActivityItems.some((item) => item.key === selectedItemKey)
     ) {
-      setSelectedExperienceId(null);
+      setSelectedItemKey(null);
     }
-  }, [filteredExperiences, selectedExperienceId]);
+  }, [filteredActivityItems, selectedItemKey]);
 
-  const handleSelectExperience = (
-    experience: Experience,
+  const handleSelectActivity = (
+    item: MyActivityListItem,
     trigger: HTMLButtonElement,
   ) => {
     lastSelectionTriggerRef.current = trigger;
-    setSelectedExperienceId(experience.id);
+    setSelectedItemKey(item.key);
 
     if (window.matchMedia("(max-width: 860px)").matches) {
       if (mobileScrollTimerRef.current !== null) {
@@ -163,7 +215,7 @@ export function ExperienceDashboard() {
       mobileScrollTimerRef.current = null;
     }
 
-    setSelectedExperienceId(null);
+    setSelectedItemKey(null);
 
     window.requestAnimationFrame(() => {
       if (lastSelectionTriggerRef.current?.isConnected) {
@@ -223,7 +275,7 @@ export function ExperienceDashboard() {
   };
 
   useEffect(() => {
-    if (!selectedExperience) {
+    if (!selectedItem) {
       return;
     }
 
@@ -236,9 +288,10 @@ export function ExperienceDashboard() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleCloseDetail, selectedExperience]);
+  }, [handleCloseDetail, selectedItem]);
 
-  const hasSelection = selectedExperience !== null;
+  const hasSelection = selectedItem !== null;
+  const activeActivityCount = trackedActivities?.length ?? 0;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -261,15 +314,26 @@ export function ExperienceDashboard() {
               <header className="dashboard-experience-heading">
                 <div className="dashboard-experience-heading-row">
                   <div className="dashboard-experience-title-group">
-                    <h1 id="dashboard-experience-heading">활동 목록</h1>
-                    {experiences && !loadError ? (
+                    <h1 id="dashboard-experience-heading">나의 활동</h1>
+                    {activityItems && !loadError ? (
                       <span className="dashboard-experience-count">
-                        <CountUp to={experiences.length} duration={0.75} />
-                        <span className="sr-only">총 {experiences.length}개</span>
+                        <CountUp to={activityItems.length} duration={0.75} />
+                        <span className="sr-only">
+                          전체 활동 {activityItems.length}개
+                        </span>
+                      </span>
+                    ) : null}
+                    {activityItems && !loadError ? (
+                      <span className="dashboard-active-activity-count">
+                        진행 중
+                        <CountUp to={activeActivityCount} duration={0.75} />
+                        <span className="sr-only">
+                          {activeActivityCount}개
+                        </span>
                       </span>
                     ) : null}
                   </div>
-                  {experiences && experiences.length > 0 ? (
+                  {activityItems && activityItems.length > 0 ? (
                     <GooeyInput
                       placeholder="검색"
                       value={searchQuery}
@@ -279,11 +343,11 @@ export function ExperienceDashboard() {
                   ) : null}
                 </div>
                 <p>
-                  활동을 선택하면 기록한 내용을 바로 확인할 수 있습니다.
+                  진행 중인 활동과 완료된 경험을 한곳에서 확인합니다.
                 </p>
-                {normalizedSearchQuery && filteredExperiences ? (
+                {normalizedSearchQuery && filteredActivityItems ? (
                   <p className="master-detail-search-feedback" role="status">
-                    {filteredExperiences.length}개의 활동을 찾았습니다.
+                    {filteredActivityItems.length}개의 활동을 찾았습니다.
                   </p>
                 ) : null}
               </header>
@@ -291,33 +355,33 @@ export function ExperienceDashboard() {
               {loadError ? (
                 <div className="dashboard-list-state is-error" role="alert">
                   <AlertCircle aria-hidden="true" />
-                  <h2>활동 목록을 불러오지 못했습니다</h2>
+                  <h2>나의 활동을 불러오지 못했습니다</h2>
                   <p>{loadError}</p>
                   <button type="button" onClick={loadDashboardData}>
                     <RotateCcw aria-hidden="true" />
                     다시 시도
                   </button>
                 </div>
-              ) : experiences === null ? (
+              ) : activityItems === null ? (
                 <div
                   className="dashboard-list-loading"
                   aria-busy="true"
-                  aria-label="저장된 활동 목록을 불러오는 중입니다"
+                  aria-label="나의 활동을 불러오는 중입니다"
                 >
                   {Array.from({ length: 6 }, (_, index) => (
                     <span key={index} aria-hidden="true" />
                   ))}
                 </div>
-              ) : experiences.length === 0 ? (
+              ) : activityItems.length === 0 ? (
                 <div className="dashboard-list-state is-empty">
                   <span className="dashboard-empty-mark" aria-hidden="true">
                     +
                   </span>
-                  <h2>아직 기록한 활동이 없습니다</h2>
-                  <p>첫 활동을 기록하면 이곳에서 바로 꺼내볼 수 있습니다.</p>
-                  <Link href="/experiences/new">첫 활동 기록하기</Link>
+                  <h2>아직 등록한 활동이 없습니다</h2>
+                  <p>진행할 활동을 시작하거나 과거 경험을 직접 기록해 보세요.</p>
+                  <Link href="/experiences/new">과거 경험 기록하기</Link>
                 </div>
-              ) : filteredExperiences?.length === 0 ? (
+              ) : filteredActivityItems?.length === 0 ? (
                 <div className="dashboard-list-state is-search-empty">
                   <h2>검색 결과가 없습니다</h2>
                   <p>다른 활동 제목을 검색해 보세요.</p>
@@ -327,40 +391,48 @@ export function ExperienceDashboard() {
                 </div>
               ) : (
                 <AnimatedExperienceList
-                  experiences={filteredExperiences ?? []}
-                  selectedExperienceId={selectedExperienceId}
+                  items={filteredActivityItems ?? []}
+                  selectedItemKey={selectedItemKey}
                   detailId={DASHBOARD_EXPERIENCE_DETAIL_ID}
-                  onSelect={handleSelectExperience}
+                  onSelect={handleSelectActivity}
                 />
               )}
             </motion.section>
 
-            <AnimatePresence initial={false} mode="popLayout">
-              {selectedExperience ? (
+            <AnimatePresence initial={false} mode="wait">
+              {selectedExperience || selectedTrackedActivity ? (
                 <motion.div
-                  key="dashboard-experience-detail-slot"
+                  key={selectedItemKey}
                   layout
                   className="dashboard-experience-detail-slot"
                   transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
                 >
-                  <DashboardExperienceDetail
-                    experience={selectedExperience}
-                    analysis={
-                      analysesByExperienceId[selectedExperience.id] ?? null
-                    }
-                    onClose={handleCloseDetail}
-                    onAnalyze={() =>
-                      handleAnalyzeExperience(selectedExperience)
-                    }
-                    isAnalyzing={
-                      analysisRequestByExperienceId[selectedExperience.id]
-                        ?.isLoading ?? false
-                    }
-                    analysisError={
-                      analysisRequestByExperienceId[selectedExperience.id]
-                        ?.error ?? ""
-                    }
-                  />
+                  {selectedExperience ? (
+                    <DashboardExperienceDetail
+                      experience={selectedExperience}
+                      analysis={
+                        analysesByExperienceId[selectedExperience.id] ?? null
+                      }
+                      onClose={handleCloseDetail}
+                      onAnalyze={() =>
+                        handleAnalyzeExperience(selectedExperience)
+                      }
+                      isAnalyzing={
+                        analysisRequestByExperienceId[selectedExperience.id]
+                          ?.isLoading ?? false
+                      }
+                      analysisError={
+                        analysisRequestByExperienceId[selectedExperience.id]
+                          ?.error ?? ""
+                      }
+                    />
+                  ) : selectedTrackedActivity ? (
+                    <DashboardTrackedActivityDetail
+                      activity={selectedTrackedActivity}
+                      logs={selectedTrackedActivityLogs}
+                      onClose={handleCloseDetail}
+                    />
+                  ) : null}
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -370,7 +442,7 @@ export function ExperienceDashboard() {
         <Link
           href="/experiences/new"
           className="dashboard-add-experience"
-          aria-label="새 경험 기록하기"
+          aria-label="과거 경험 기록하기"
         >
           <Plus aria-hidden="true" />
         </Link>

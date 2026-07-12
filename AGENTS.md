@@ -1,228 +1,218 @@
-# AGENTS.md v3
+# AGENTS.md v4
 
 ## Product
 
-CampusLog는 대학생이 프로젝트, 공모전, 인턴, 대외활동 등 다양한 활동 경험을 기록하는 서비스입니다. AI는 기록된 경험을 분석하고, 자기소개서·포트폴리오·면접 준비 상황에 맞는 경험을 추천합니다.
+CampusLog는 대학생이 프로젝트, 공모전, 인턴, 대외활동 등 다양한 활동 경험을 기록하고, AI 분석과 추천을 통해 자기소개서·포트폴리오·면접 준비에 다시 활용하도록 돕는 서비스입니다.
 
-이 프로젝트는 커널아카데미 대학생 AI 크루 UNIKER 1기 팀 핏줄의 10주 MVP 프로젝트입니다. 현재 작업 기준은 4~5주차까지 완성할 1차 MVP입니다. 많은 기능보다, 활동 경험 기록부터 AI 분석과 목적별 경험 추천까지 이어지는 핵심 흐름을 우선합니다.
+1차 MVP와 v1.1 제품 고도화는 완료 기준선입니다. 현재 활성 계획 단계는 **2차 MVP**이며 기능 구현은 v1.1 merge 후 시작합니다. 작업 단계와 허용 범위는 반드시 `docs/CURRENT_PHASE.md`에서 확인합니다.
 
 ## Source of truth
 
-Codex는 모든 문서를 자동으로 기억한다고 가정하지 않습니다. 작업을 시작할 때 필요한 문서를 직접 열어 확인하고, 작업 완료 보고에 확인한 문서를 적습니다.
+작업을 시작할 때 필요한 문서를 직접 열어 확인하고, 완료 보고에 확인한 문서를 적습니다.
 
-기본 우선순위는 아래 순서입니다. 문서와 코드가 다르면 이 우선순위로 판단하고, 불일치가 큰 경우 바로 구현하지 말고 사용자에게 알립니다.
+현재 기준 우선순위는 아래와 같습니다.
 
-1. `PRD.md`: MVP 범위, 제외 기능, 성공 기준
-2. `docs/USER_FLOW.md`: 사용자의 핵심 흐름
-3. `docs/IA.md`: 메뉴 구조와 페이지 이동 관계
-4. `docs/SCREEN_SPEC.md`: 화면별 UI 요소, 입력값, 출력값, 버튼 동작
-5. `docs/DESIGN.md`: 브랜드, 화면 밀도, 모션, 인터랙션, 시각 효과, 프론트엔드 디자인 품질 기준
-6. `README.md`: 프로젝트 소개, 기술 방향, 실행 방법
-7. `docs/GIT_WORKFLOW.md`: 브랜치, PR, 리뷰, 커밋 흐름
-8. `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`: 작업 상태, 기록, 보류 이슈
-9. 현재 코드와 데이터: 이미 구현된 흐름을 깨지 않기 위해 확인
+1. 현재 대화에서 사용자가 명시적으로 승인한 요구사항
+2. `docs/CURRENT_PHASE.md`: 활성 단계, 작업 Track, 포함·제외 범위, 완료 조건
+3. `PRD.md`: 현재 제품 목표와 성공 기준
+4. `docs/USER_FLOW.md`: 현재 사용자 흐름
+5. `docs/IA.md`: 메뉴·라우트·화면 관계
+6. `docs/SCREEN_SPEC.md`: 화면별 입력, 출력, 상태, 버튼 동작
+7. `docs/DESIGN.md`: 현재 디자인 시스템과 UX 품질 기준
+8. 현재 코드, schema, API 계약과 테스트 결과
+9. `README.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/GIT_WORKFLOW.md`
+10. `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`
+11. `docs/archive/**`: 회고와 회귀 확인용이며 현재 구현을 제한하지 않음
 
-기능 범위 판단은 항상 `PRD.md`를 우선합니다. 화면과 흐름 판단은 `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`를 함께 확인합니다.
+기능 범위 판단은 `docs/CURRENT_PHASE.md`와 `PRD.md`를 우선합니다. 문서와 코드가 다르면 무조건 과거 문서로 되돌리지 않고, 현재 사용자 요구와 활성 단계에 맞는 의도를 확인해 코드와 관련 문서를 함께 정리합니다.
 
-작업 유형별로 먼저 확인할 문서는 아래처럼 정합니다.
+사용자가 현재 작업에서 범위 확장을 명시적으로 승인했다면 과거 1차 MVP 제외 목록을 이유로 작업을 중단하지 않습니다. 대신 같은 작업 또는 연결된 문서 PR에서 단계·PRD·화면 명세·결정 기록을 갱신합니다.
 
-- 기능 범위 / 우선순위 판단: `PRD.md` → `docs/TODO.md` → `docs/WORK_STATUS.md`
-- 사용자 흐름 수정: `docs/USER_FLOW.md` → `docs/IA.md` → `docs/SCREEN_SPEC.md`
-- 화면 / UI 구현: `docs/DESIGN.md` → `docs/SCREEN_SPEC.md` → `docs/IA.md` → `docs/USER_FLOW.md` → 현재 코드
-- 디자인 고도화 / 모션 / 인터랙션 / 비주얼 작업: `docs/DESIGN.md` → `docs/SCREEN_SPEC.md` → 현재 코드 → 성능 / 접근성 확인
-- 데이터 구조 / localStorage / 샘플 데이터 작업: `PRD.md` → `docs/USER_FLOW.md` → `docs/SCREEN_SPEC.md` → 현재 코드
-- AI 분석 / 추천 / API 연결 작업: `PRD.md` → `docs/USER_FLOW.md` → `docs/SCREEN_SPEC.md` → 현재 코드
-- 문서 작업: 수정 대상 문서 → 관련 기준 문서 → `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`
-- Git / PR / 리뷰 작업: `docs/GIT_WORKFLOW.md` → 현재 브랜치와 `git status`
+작업 유형별 확인 순서:
 
-## AI Coding Workflow
+- 단계 / 기능 범위: `docs/CURRENT_PHASE.md` → `PRD.md` → `docs/TODO.md` → `docs/WORK_STATUS.md`
+- 인증 / DB / 데이터: `docs/CURRENT_PHASE.md` → `PRD.md` → `docs/USER_FLOW.md` → `docs/SCREEN_SPEC.md` → schema / API 코드
+- AI 분석 / 추천: `docs/CURRENT_PHASE.md` → `PRD.md` → `docs/USER_FLOW.md` → `docs/SCREEN_SPEC.md` → API 코드
+- UI / UX: `docs/CURRENT_PHASE.md` → `docs/DESIGN.md` → `docs/SCREEN_SPEC.md` → `docs/IA.md` → 현재 코드
+- 사용자 흐름: `docs/USER_FLOW.md` → `docs/IA.md` → `docs/SCREEN_SPEC.md`
+- Git / PR: `docs/GIT_WORKFLOW.md` → 현재 브랜치와 `git status`
 
-Codex는 전체 MVP를 한 번에 구현하지 않습니다. 한 번의 작업은 하나의 명확한 목적만 가져야 하며, 검증 가능한 작은 단위로 끝냅니다.
+## Current development tracks
 
-1. **요구사항과 전제 정리**
-   - 사용자의 요청, 수정 대상 파일, MVP 포함 여부, 제외해야 할 기능을 먼저 정리합니다.
-   - 현재 브랜치와 `git status`를 확인합니다.
-   - 작업 유형에 맞는 기준 문서를 실제로 열어 확인합니다.
-   - 애매한 점은 합리적으로 가정하되, 범위가 커지거나 `PRD.md`와 충돌하면 먼저 확인합니다.
+### v1.1 baseline
 
-2. **성공 기준과 검증 방법 정의**
-   - 작업을 시작하기 전 "무엇이 되면 완료인지"와 "어떻게 확인할지"를 짧게 정합니다.
-   - 문서 작업은 기준 문서와의 일관성, 코드 작업은 실행·빌드·테스트 또는 화면 확인을 검증 기준으로 삼습니다.
-
-3. **작은 작업 단위로 제한**
-   - 한 번에 하나의 화면, 하나의 흐름, 하나의 데이터 구조, 하나의 문서 목적만 다룹니다.
-   - 첫 개발은 메인 화면처럼 작고 검증 가능한 단위부터 시작합니다.
-   - 활동 경험 기록, AI 분석, AI 추천을 한 번에 모두 구현하지 않습니다.
-
-4. **MVP 범위와 디자인 품질을 함께 지킴**
-   - 로그인, DB, 파일 업로드처럼 제품 범위를 넓히는 기능은 임의로 추가하지 않습니다.
-   - 디자인 표현 방식은 보수적으로 제한하지 않습니다. Three.js, React Three Fiber, GSAP, Framer Motion, WebGL, shader, Lottie, particle, glassmorphism, scroll-based animation, micro interaction 등은 사용자 경험을 높이고 성능 / 접근성 / 유지보수성을 지킬 수 있다면 사용할 수 있습니다.
-   - 새 dependency는 디자인 품질, 구현 안정성, 유지보수성에 실질적인 이점이 있을 때 추가하고, 사용 이유와 성능 영향을 작업 보고에 적습니다.
-
-5. **수술적으로 수정**
-   - 요청받은 파일과 기능만 수정합니다.
-   - 한 번에 큰 리팩토링을 하지 않고, 기능 하나 또는 문서 하나 단위로 작업합니다.
-   - 기존 사용자 흐름과 저장 데이터 흐름을 깨지 않습니다.
-
-6. **검증 후 보고**
-   - 가능한 검증을 직접 수행합니다.
-   - 검증하지 못한 항목은 "미검증"으로 명확히 적습니다.
-   - 사용자 흐름, 주요 파일 변경 사항, 주요 컴포넌트 / 함수 역할, 데이터 흐름, 테스트 / 확인 방법, 남은 이슈를 요약합니다.
-
-## MVP Scope
-
-이 범위는 1차 MVP 기준입니다. 1차 MVP는 아래 흐름에 집중합니다.
+아래 흐름은 이미 완성된 기준선이며 2차 MVP에서도 회귀시키지 않습니다.
 
 ```text
-활동 경험 입력
-→ AI 요약 / 역량 태그 분석
-→ 활용 문장 생성 / 복사 / 저장
+활동 추가
+→ 날짜별 한 일 기록
+→ 캘린더 확인
+→ 활동 종료
+→ AI 완료 경험 합성
+→ 나의 활동 저장
+→ AI 분석
+→ CampusLog AI 추천과 추천 기록
 ```
 
-1차 MVP에서 집중할 기능은 아래 3개입니다.
+상세 기록은 `docs/archive/MVP_V1_1_BASELINE.md`를 참고합니다.
 
-- 활동 경험 기록
-- AI 경험 분석
-- AI 경험 추천 및 활용 지원
+### Track A — 인증·데이터·AI 고도화
 
-1차 MVP는 Next.js Full Stack, Next.js App Router API Routes, Browser localStorage, `sampleExperiences.ts` 기반 공통 샘플 데이터, OpenAI API, Vercel 배포를 기준으로 합니다.
+다른 팀원이 담당합니다.
 
-1차 MVP에서는 아래 기능을 구현하지 않습니다.
+- 로그인 / 회원가입 / 로그아웃 / 세션
+- Supabase Auth / Postgres와 사용자별 접근 제어
+- 필요 시 Supabase Storage
+- localStorage 데이터의 계정 이전 정책
+- AI 분석 및 추천 품질·근거·결과 구조 고도화
+- 인증된 API, 입력 검증, rate limit, 비용 한도, 오류 로깅
 
-- 로그인 / 회원가입
-- 학교 인증
-- Supabase Auth / Postgres / Storage
-- 데이터베이스 구축
-- 결제
-- 커뮤니티
-- GitHub, 블로그, Notion 등 외부 서비스 자동 연동
-- 수료증 / 활동사진 등 파일 업로드
+### Track B — 디자인·사용자 경험 고도화
+
+사용자가 담당합니다.
+
+- 검정·차콜 기반 최신 CampusLog 디자인 시스템
+- 정보 구조, 폼, 문구, 탐색 흐름 개선
+- 인증 및 데이터 전환 UX
+- 로딩, 빈 상태, 오류, 성공, 네트워크 복구 상태
+- 모바일 / 데스크톱 반응형과 접근성
+- 과한 색상·그라디언트·반복 애니메이션 없는 미니멀 SaaS 완성도
+
+### Track coordination
+
+- 디자인 Track은 API·DB 계약을 임의로 바꾸지 않습니다.
+- 데이터·AI Track은 승인된 사용자 흐름과 화면 상태를 임의로 바꾸지 않습니다.
+- 계약 변경은 관련 타입 / schema / API 문서와 화면 상태를 함께 갱신합니다.
+- 같은 파일을 양쪽 Track에서 수정해야 하면 담당자와 병합 순서를 먼저 정합니다.
+
+## Development workflow
+
+한 번의 작업은 하나의 명확한 목적을 가져야 하며 검증 가능한 작은 단위로 끝냅니다.
+
+1. 요구사항, 담당 Track, 수정 범위와 기존 변경 상태를 확인합니다.
+2. 성공 기준과 검증 방법을 먼저 정합니다.
+3. 하나의 화면, 흐름, schema 또는 API 계약 단위로 구현합니다.
+4. 사용자 데이터와 기존 v1.1 흐름을 보존합니다.
+5. 코드와 관련 활성 문서를 함께 갱신합니다.
+6. lint, typecheck, build, 테스트 또는 브라우저 확인 후 보고합니다.
+
+현재 작업 트리가 이미 수정된 상태라면 기존 변경을 사용자 소유로 보고 보존합니다. 관련 없는 파일을 정리하거나 되돌리지 않습니다.
+
+## 2nd MVP scope
+
+현재 허용 범위:
+
+- 계정 기반 인증과 세션
+- 사용자별 DB 저장과 접근 제어
+- 기존 localStorage 데이터의 안전한 이전 또는 유지 정책
+- 현재 활동·경험·분석·추천 기능의 DB 연결
+- AI 분석·추천 품질과 결과 활용 흐름 고도화
+- 디자인 시스템, 주요 화면과 전체 UX 고도화
+- 공개 배포를 위한 보안, 비용, 관측성, 접근성 개선
+
+별도 승인 전 제외 범위:
+
+- 결제 / 구독
+- 커뮤니티 / 팀 협업
+- 전체 관리자 시스템
+- 네이티브 모바일 앱
+- 공개 프로필 / 소셜 기능
+- 외부 서비스 자동 동기화
 - PDF 포트폴리오 자동 생성
-- 관리자 페이지
-- 모바일 앱
-- 팀 협업 기능
-- 공개 프로필
-- 고급 추천 기능 / 알고리즘
-- 여러 추천 후보 탐색
-- UNIKER 이후 개인 Backend Portfolio Edition에서 검토할 별도 백엔드 스택
+- UNIKER 이후 개인 Backend Portfolio Edition의 Spring Boot / MySQL / AWS 스택
 
-Codex는 사용자가 명시적으로 요청하지 않는 이상 위 제외 기능을 제안하거나 구현하지 않습니다. 제외 기능을 사용자가 요청한 경우에도 바로 구현하지 않고, MVP 범위 변경이 필요한 작업임을 먼저 알립니다.
+## Build and verify
 
-## Development Phase Strategy
+공통 회귀 확인:
 
-CampusLog 개발은 아래 3단계로 나눕니다.
+- 활동 추가와 날짜별 기록이 동작하는가
+- 활동 종료 후 AI 초안과 완료 경험 저장이 유지되는가
+- 나의 활동에서 진행 활동과 완료 경험을 확인할 수 있는가
+- AI 분석과 CampusLog AI 추천 흐름이 유지되는가
 
-- 1차 MVP: 4~5주차까지 Next.js Full Stack, Browser localStorage, `sampleExperiences.ts`, OpenAI API, Vercel로 핵심 흐름을 검증합니다.
-- 2차 MVP: UNIKER 10주차 최종 발표 전까지 Next.js Full Stack + Supabase 기반으로 사용자 계정, DB, 파일 저장 범위를 확장합니다.
-- UNIKER 이후 개인 Backend Portfolio Edition: CampusLog 본 MVP 계획이 아니라 개인 백엔드 포트폴리오 확장안으로 Spring Boot REST API, MySQL 또는 AWS RDS, AWS S3, Spring Security / JWT를 별도 검토합니다.
+Track A 추가 확인:
 
-2차 MVP와 Backend Portfolio Edition 항목은 현재 작업에서 구현하지 않습니다. Codex는 1차 MVP 작업 중 Supabase나 별도 백엔드 포트폴리오 스택을 임의로 도입하지 않습니다.
+- 로그인·회원가입·로그아웃과 세션 복구가 동작하는가
+- 사용자별 데이터가 분리되고 다른 사용자 데이터에 접근할 수 없는가
+- localStorage 마이그레이션이 중복·손실 없이 처리되는가
+- API 인증, 입력 검증, rate limit, 비용 제한이 적용되는가
+- AI 결과가 근거와 실패·재시도 상태를 제공하는가
 
-## Build and Verify
+Track B 추가 확인:
 
-작업 후에는 변경 범위에 맞게 아래 흐름이 유지되는지 확인합니다.
+- `docs/DESIGN.md`의 최신 토큰과 화면 밀도를 따르는가
+- 모바일과 데스크톱에서 가로 잘림이 없는가
+- 키보드 접근성, focus-visible, 텍스트 대비, reduced motion을 지키는가
+- loading / empty / error / success 상태가 사용자에게 명확한가
+- 핵심 CTA와 읽기 흐름을 장식이나 모션이 가리지 않는가
 
-- 사용자가 활동 경험을 입력할 수 있는가
-- 입력한 경험을 다시 확인할 수 있는가
-- AI가 경험을 요약하고 핵심 역량, 주요 성과, 키워드를 정리할 수 있는가
-- 사용자가 자기소개서 문항, 포트폴리오 작성 목적, 면접 질문 등을 입력할 수 있는가
-- AI가 저장된 경험 중 적절한 경험을 추천할 수 있는가
-- AI가 추천 이유와 활용 방향을 함께 제공하는가
-- 로그인, 회원가입, Supabase, 별도 백엔드 포트폴리오 스택 없이도 1차 MVP 핵심 흐름이 동작하는가
+## Security and privacy guardrails
 
-디자인 작업 후에는 아래 기준도 함께 확인합니다.
+- API Key, 토큰, 비밀번호, service role key를 코드나 문서에 직접 넣지 않습니다.
+- 실제 값은 서버 환경 변수로 관리하고 예시에는 placeholder만 사용합니다.
+- `.env`와 실제 사용자 데이터를 커밋하지 않습니다.
+- 인증 토큰과 관리자 권한을 브라우저에 노출하지 않습니다.
+- Row Level Security 또는 동등한 사용자별 접근 제어를 검증합니다.
+- 샘플 데이터에는 전화번호, 이메일, 학번, 주소, 실제 지원서 원문 등 민감정보를 넣지 않습니다.
+- AI 요청에는 기능에 필요한 최소 데이터만 전달하고, 사용자 입력을 비신뢰 데이터로 취급합니다.
+- 데이터 삭제, 계정 삭제, 마이그레이션처럼 되돌리기 어려운 작업은 구현 전 정책을 확정합니다.
+- 공개 배포 전 AI 호출 빈도 제한과 OpenAI project spend limit / alert를 설정합니다.
 
-- 시각적 완성도와 인터랙션 품질이 `docs/DESIGN.md`의 프리미엄 UI/UX 방향과 맞는가
-- 모션, 3D, WebGL, shader, particle, scroll interaction을 사용했다면 핵심 CTA와 읽기 흐름을 가리지 않는가
-- Core Web Vitals, 모바일 렌더링, 키보드 접근성, reduced motion 선호, 텍스트 대비를 크게 해치지 않는가
-
-현재는 문서와 초기 구조를 준비하는 단계입니다. 구현 작업 전에는 `PRD.md`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/DESIGN.md`, `README.md`의 MVP 범위, 핵심 기능, 제외 기능, 디자인 품질 기준이 서로 일치하는지도 확인합니다.
-
-## Guardrails
-
-보안과 개인정보 보호를 위해 아래 규칙을 지킵니다.
-
-- API Key, 토큰, 비밀번호, 인증 정보는 문서나 코드에 직접 넣지 않습니다.
-- 외부 API를 사용할 경우 API Key는 반드시 환경 변수로 관리하고, 예시 파일에는 실제 값 대신 placeholder만 사용합니다.
-- `.env` 파일은 커밋하지 않습니다.
-- 실제 사용자 데이터나 민감한 개인정보를 GitHub에 커밋하지 않습니다.
-- 샘플 데이터는 공개 가능한 활동 이력만 사용합니다.
-- 실제 인물 이름을 사용할 경우에도 전화번호, 이메일, 학번, 주소, 실제 지원서 원문, 민감한 개인정보는 포함하지 않습니다.
-- 실제 학교 인증 정보, 시간표, 캘린더, 위치 기록은 샘플 데이터로 사용하지 않습니다.
-- 샘플 데이터는 서비스 흐름을 검증하기 위한 가짜 예시 또는 공개 가능한 수준의 활동 기록만 사용합니다.
-- 1차 MVP 작업 중 로그인, Supabase, 파일 업로드, UNIKER 이후 Backend Portfolio Edition용 백엔드 스택을 임의로 추가하지 않습니다.
-
-## Change Safety
-
-AI가 코드나 문서를 과하게 바꾸지 않도록 아래 규칙을 지킵니다.
+## Change safety
 
 - 요청하지 않은 파일은 수정하지 않습니다.
-- 기존 내용을 삭제하거나 대체하기 전에는 이유를 설명합니다.
-- 전체 코드나 문서를 한 번에 갈아엎지 않습니다.
-- 대규모 구조 변경이 필요해 보이면 먼저 제안만 하고, 승인 전에는 실행하지 않습니다.
-- 목적 없는 dependency 추가를 피합니다. 단, 디자인 품질, 모션, 3D/WebGL, 접근성, 유지보수성에 실질적인 이점이 있는 라이브러리는 도입할 수 있으며 이유와 성능 영향을 설명합니다.
-- 임시 코드, 테스트 코드, 샘플 데이터는 공개 가능한 수준으로만 작성합니다.
-- 실제 변경 사항이 있으면 아래 기록 문서 갱신을 검토합니다.
-- `docs/WORK_STATUS.md`: 현재 단계, 완료 / 미완료 상태, 다음 작업이 바뀐 경우
-- `docs/TASK_LOG.md`: 어떤 파일을 왜 수정했고 무엇을 검증했는지 남겨야 하는 경우
-- `docs/ISSUE_LOG.md`: 범위 변경, 보류 결정, 버그, 위험, 추가 의사결정이 생긴 경우
-- 사용자가 특정 파일만 수정하라고 제한한 경우, 기록 문서는 직접 수정하지 말고 작업 완료 보고에서 업데이트 제안만 남깁니다.
+- 대규모 리팩토링은 기능 변경과 분리합니다.
+- 기존 내용을 삭제하거나 대체하기 전 이유와 마이그레이션 영향을 확인합니다.
+- 새 dependency는 품질, 안정성, 유지보수성에 실질적 이점이 있을 때만 추가합니다.
+- schema와 저장소를 바꿀 때 기존 데이터 호환, rollback, 중복 방지 정책을 함께 구현합니다.
+- 현재 active 문서에는 최신 기준을 한 번만 적고, 하단 override를 계속 덧붙이지 않습니다.
+- 과거 기준은 `docs/archive/**`로 이동합니다.
 
-## Git and Commit Rules
+변경 후 기록 문서 갱신:
 
-GitHub 협업을 위해 아래 규칙을 지킵니다.
+- `docs/WORK_STATUS.md`: 현재 단계, 완료 / 미완료, 다음 작업
+- `docs/TASK_LOG.md`: 수정 파일, 이유, 검증 결과
+- `docs/ISSUE_LOG.md`: 범위 변경, 결정, 위험, 보류 이슈
+- `docs/TODO.md`: Track별 우선순위와 담당 상태
 
-- `main` 브랜치는 안정 버전으로 유지합니다.
-- `main` 브랜치에서 직접 수정하지 않습니다.
-- 작업은 목적이 드러나는 작은 브랜치에서 진행합니다.
-- 기능 작업은 `feature/*`, 문서 작업은 `docs/*`, 버그 수정은 `fix/*` 브랜치를 사용합니다.
-- 구조 개선은 필요한 경우에만 `refactor/*` 브랜치를 사용합니다.
-- 하나의 브랜치에는 하나의 목적만 담습니다.
-- 작은 작업 단위로 커밋할 수 있게 변경 범위를 작게 유지합니다.
-- 커밋 전에는 변경 파일 목록과 변경 이유를 요약합니다.
+## Git and PR rules
+
+- `main`은 안정 상태로 유지하고 직접 수정하지 않습니다.
+- v1.1 변경은 검증 후 commit / push / review / merge하고, 이후 2차 MVP 브랜치를 시작합니다.
+- 하나의 브랜치와 PR에는 하나의 목적만 담습니다.
+- 권장 브랜치:
+  - `feature/auth-*`, `feature/database-*`, `feature/ai-*`
+  - `design/*`, `ux/*`
+  - `fix/*`, `refactor/*`, `docs/*`
+- 커밋과 PR 제목은 영어, PR 본문은 한국어로 작성합니다.
+- PR에는 작업 Track, 목적, schema / API / UI 영향, 마이그레이션, 검증, 남은 이슈를 적습니다.
 - 사용자가 승인하기 전에는 commit, push, PR 생성, merge를 진행하지 않습니다.
-- 커밋 메시지와 PR 제목은 영어로 작성합니다.
-- PR에는 작업 목적, 수정한 파일, 주요 변경 내용, 확인한 내용, 남은 작업을 적습니다.
-- PR 본문은 한국어로 작성합니다.
-- PR과 merge는 사용자 또는 팀 검토 승인 후 진행합니다.
-- AI가 만든 코드도 사람이 검토할 수 있도록 변경 내용을 명확히 설명합니다.
-- PR merge 또는 작업 완료 후에는 관련 작업 브랜치를 바로 삭제하지 않고, 로컬 / 원격 브랜치 정리를 진행할지 사용자에게 먼저 물어봅니다.
-- 사용자가 동의한 경우에만 merge 완료된 작업 브랜치를 정리합니다.
-- 작업 후 커밋 메시지 후보를 제안합니다.
+- merge 후 브랜치를 삭제하기 전 사용자에게 확인합니다.
 
-## Review and Subagent Rules
+## Review rules
 
-구현 에이전트와 리뷰 에이전트는 분리합니다.
+구현과 최종 리뷰 관점을 분리합니다.
 
-- 구현을 수행한 에이전트는 자기 코드를 최종 리뷰한 것으로 간주하지 않습니다.
-- 코드 리뷰가 필요한 경우 별도의 reviewer subagent 관점으로 검토합니다.
-- 리뷰어는 구현 의도보다 사용자 흐름, 데이터 흐름, MVP 범위, 안정성, 테스트 가능성을 우선 확인합니다.
-- 리뷰 결과는 심각도 기준으로 정리합니다.
+- 인증 / 권한: auth / security reviewer
+- DB / migration: data / schema reviewer
+- AI Route: api / AI reviewer
+- UI / UX: web / accessibility reviewer
+- 전체 완료: integration reviewer
 
-리뷰 심각도 기준은 아래처럼 사용합니다.
+심각도:
 
-- `critical`: 보안 / 개인정보 유출, 데이터 손실, 핵심 흐름 불능, 1차 MVP 범위를 크게 벗어나는 인프라 도입
-- `major`: 사용자가 주요 작업을 완료할 수 없는 버그, localStorage / AI 결과 저장 흐름 오류, PRD와 충돌하는 동작, 검증 누락
-- `minor`: UI 세부 불일치, 네이밍 / 문구 / 문서 정합성 문제, 작은 중복
-- `suggestion`: 당장 막지는 않지만 다음 작업에서 개선하면 좋은 제안
+- `critical`: 개인정보·인증정보 유출, 권한 우회, 다른 사용자 데이터 접근, 데이터 손실, 무제한 비용 위험
+- `major`: 로그인·저장·AI·핵심 흐름 불능, schema / 화면 계약 충돌, 마이그레이션 오류, 필수 검증 누락
+- `minor`: UI 세부 불일치, 네이밍, 카피, 문서 정합성, 작은 중복
+- `suggestion`: 다음 작업에서 개선 가능한 제안
 
-필요한 경우 아래 관점의 subagent를 명시적으로 호출합니다.
+## Output format
 
-- UI 작업: web / ui reviewer 관점
-- API Route 작업: api reviewer 관점
-- 데이터 구조 / localStorage / 샘플 데이터 작업: data / schema reviewer 관점
-- 문서 작업: docs reviewer 관점
-- 전체 작업 후: integration reviewer 관점
-
-전체 작업이 끝나면 integration reviewer 관점으로 사용자 흐름, 문서 기준, 변경 파일, 검증 결과가 서로 맞는지 확인합니다.
-
-## Output Format
-
-작업 완료 후 항상 아래 형식으로 결과를 요약합니다.
+작업 완료 후 아래 형식으로 요약합니다.
 
 ```text
 작업 전 정리:
-- 요구사항 / 전제:
+- 요구사항 / 담당 Track:
 - 수정 범위:
 - 확인한 기준 문서:
 - 성공 기준:
@@ -232,15 +222,15 @@ GitHub 협업을 위해 아래 규칙을 지킵니다.
 - 수정한 파일:
 - 주요 변경 내용:
 - 사용자 흐름 영향:
-- 주요 파일 변경 사항:
+- schema / API / 데이터 영향:
 - 주요 컴포넌트 / 함수 역할:
-- 데이터 흐름:
 - 확인한 기준 문서:
 - 검증한 내용:
 - 테스트 / 확인 방법:
+- 보안 / 개인정보 확인:
 - 남은 이슈:
 - 의도적으로 수정하지 않은 파일:
-- 기록 문서 업데이트 제안:
+- 기록 문서 업데이트:
 - git diff 요약:
 - 추천 커밋 메시지:
 ```

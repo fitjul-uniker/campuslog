@@ -62,7 +62,7 @@ export function RecommendationResult({
       <div className="detail-header">
         <div>
           <p className="experience-meta recommendation-result-kicker">
-            AI 추천 결과
+            AI 기반 활동 추천 결과
           </p>
           <h2 id="recommendation-title">
             {result.recommendedExperienceTitle}
