@@ -40,7 +40,7 @@
 | 수정한 파일 | `docs/TASK_LOG.md`, `docs/WORK_STATUS.md`, `web/src/app/globals.css`, `web/src/components/experiences/DashboardExperienceDetail.tsx` |
 | 변경 내용 | 활동 상세가 열린 동안 고정 `+` CTA가 본문을 덮지 않도록 숨김 상태를 추가. 모바일 내비게이션에서 포인터 근접 효과용 blur와 `will-change`를 제거. 활동 전체 화면의 문서 제목 계층을 `h1 → h2`로 보정하고 좁은 상세에서 한글 제목이 음절 단위로 끊기지 않도록 줄바꿈 규칙을 정리 |
 | 검증한 내용 | 데이터·문서·보안·UI reviewer에서 critical/major 0건 확인. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 브라우저에서 데스크톱·390×844 모바일의 CTA 비노출, 모바일 메뉴 `filter: none`, 전체 화면 `h1 → h2`, 가로 overflow 0, 콘솔 warning/error 0 확인 |
-| 남은 작업 | 실제 새 관련 링크 저장 → 상세 표시 → 새로고침 유지 수동 검증은 `ISSUE-021`로 유지. 최신 `origin/main` 반영 후 push와 Draft PR 생성 필요 |
+| 남은 작업 | 실제 새 관련 링크 저장 → 상세 표시 → 새로고침 유지 수동 검증은 `ISSUE-021`로 유지. 최신 `origin/main` 기준 feature commit `bdca264`를 push하고 Draft PR #26을 생성했으며 팀 리뷰가 필요 |
 | 관련 커밋 메시지 | `feature: unify CampusLog workspace and related links` |
 
 ### 2026-07-12 - 관련 링크 URL·설명 행과 파비콘 표시
