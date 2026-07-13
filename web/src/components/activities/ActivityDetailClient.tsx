@@ -30,15 +30,8 @@ import {
 import { requestActivitySynthesis } from "@/lib/activitySynthesisApi";
 import { ACTIVITY_SYNTHESIS_LIMITS } from "@/lib/activitySynthesisLimits";
 import {
-  createExperienceFromActivity,
-  deleteSynthesisDraft,
-  getDailyLogsByActivityId,
-  getSynthesisDraftByActivityId,
-  getTrackedActivityById,
-  saveSynthesisDraft,
-  setActivitySynthesisStatus,
-  setTrackedActivityStatus,
-} from "@/lib/storage";
+  getCampusLogRepository,
+} from "@/lib/repositories/campuslogRepository";
 import type {
   DailyLog,
   ExperienceSynthesisDraft,
@@ -91,17 +84,20 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   const endActivityButtonRef = useRef<HTMLButtonElement>(null);
   const endConfirmationRef = useRef<HTMLElement>(null);
 
-  const loadActivity = useCallback(() => {
+  const loadActivity = useCallback(async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      const storedActivity = getTrackedActivityById(id);
-      const storedLogs = sortTimelineLogs(getDailyLogsByActivityId(id));
-      const storedDraft = getSynthesisDraftByActivityId(id);
+      const repository = getCampusLogRepository();
+      const [storedActivity, storedLogs, storedDraft] = await Promise.all([
+        repository.trackedActivities.getById(id),
+        repository.dailyLogs.listByActivityId(id),
+        repository.synthesisDrafts.getByActivityId(id),
+      ]);
 
       setActivity(storedActivity);
-      setLogs(storedLogs);
+      setLogs(sortTimelineLogs(storedLogs));
       setDraft(storedDraft);
       setDraftDescription(storedDraft?.description ?? "");
       setDraftAchievements(storedDraft?.achievements.join("\n") ?? "");
@@ -110,7 +106,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       setLogs([]);
       setDraft(null);
       setError(
-        "활동 정보를 불러오지 못했습니다. 저장된 데이터는 지우지 않았으니 다시 시도해 주세요.",
+        "활동 정보를 불러오지 못했습니다. 계정 데이터는 지우지 않았으니 다시 시도해 주세요.",
       );
     } finally {
       setIsLoading(false);
@@ -151,9 +147,13 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     return logs.filter((log) => usedLogIdSet.has(log.id));
   }, [draft, logs]);
 
-  function handleActivate() {
+  async function handleActivate() {
     setError("");
-    const updatedActivity = setTrackedActivityStatus(id, "active");
+    const repository = getCampusLogRepository();
+    const updatedActivity = await repository.trackedActivities.setStatus(
+      id,
+      "active",
+    );
 
     if (!updatedActivity) {
       setError("활동을 시작 상태로 변경하지 못했습니다. 다시 시도해 주세요.");
@@ -189,7 +189,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
 
     setError("");
     setIsSynthesizing(true);
-    const processingActivity = setActivitySynthesisStatus(
+    const repository = getCampusLogRepository();
+    const processingActivity = await repository.trackedActivities.setSynthesisStatus(
       sourceActivity.id,
       "processing",
     );
@@ -204,7 +205,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     const response = await requestActivitySynthesis(processingActivity, logs);
 
     if (!response.ok) {
-      const failedActivity = setActivitySynthesisStatus(
+      const failedActivity = await repository.trackedActivities.setSynthesisStatus(
         processingActivity.id,
         "failed",
       );
@@ -219,22 +220,22 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       ...response.synthesis,
       generatedAt: new Date().toISOString(),
     };
-    const savedDraft = saveSynthesisDraft(nextDraft);
+    const savedDraft = await repository.synthesisDrafts.save(nextDraft);
 
     if (!savedDraft) {
-      const failedActivity = setActivitySynthesisStatus(
+      const failedActivity = await repository.trackedActivities.setSynthesisStatus(
         processingActivity.id,
         "failed",
       );
       setActivity(failedActivity ?? processingActivity);
       setIsSynthesizing(false);
       setError(
-        "AI 초안을 브라우저에 저장하지 못했습니다. 활동과 일일 기록은 그대로 보존되어 있습니다.",
+        "AI 초안을 계정에 저장하지 못했습니다. 활동과 일일 기록은 그대로 보존되어 있습니다.",
       );
       return;
     }
 
-    const readyActivity = setActivitySynthesisStatus(
+    const readyActivity = await repository.trackedActivities.setSynthesisStatus(
       processingActivity.id,
       "draft_ready",
     );
@@ -258,7 +259,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       return;
     }
 
-    const completedActivity = setTrackedActivityStatus(
+    const repository = getCampusLogRepository();
+    const completedActivity = await repository.trackedActivities.setStatus(
       activity.id,
       "completed",
       new Date().toISOString(),
@@ -288,13 +290,17 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     await runSynthesis(activity);
   }
 
-  function handleReopenActivity() {
+  async function handleReopenActivity() {
     if (!activity) {
       return;
     }
 
     setError("");
-    const reopenedActivity = setTrackedActivityStatus(activity.id, "active");
+    const repository = getCampusLogRepository();
+    const reopenedActivity = await repository.trackedActivities.setStatus(
+      activity.id,
+      "active",
+    );
 
     if (!reopenedActivity) {
       setError("활동을 다시 열지 못했습니다. 잠시 후 다시 시도해 주세요.");
@@ -304,7 +310,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     setActivity(reopenedActivity);
   }
 
-  function handleSaveExperience() {
+  async function handleSaveExperience() {
     if (!activity || !draft) {
       return;
     }
@@ -337,8 +343,9 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
 
     setError("");
     setIsSavingExperience(true);
+    const repository = getCampusLogRepository();
 
-    const editedDraft = saveSynthesisDraft({
+    const editedDraft = await repository.synthesisDrafts.save({
       ...draft,
       description,
       achievements,
@@ -350,7 +357,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       return;
     }
 
-    const newExperience = createExperienceFromActivity(activity.id, {
+    const newExperience = await repository.experiences.createFromActivity(activity.id, {
       title: activity.title,
       role: "활동 참여",
       period,
@@ -365,8 +372,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       return;
     }
 
-    setActivity(getTrackedActivityById(activity.id) ?? activity);
-    deleteSynthesisDraft(activity.id);
+    setActivity((await repository.trackedActivities.getById(activity.id)) ?? activity);
+    await repository.synthesisDrafts.delete(activity.id);
     router.push(`/experiences/${newExperience.id}`);
   }
 

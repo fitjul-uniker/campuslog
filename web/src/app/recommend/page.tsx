@@ -11,12 +11,7 @@ import { CampusLogAiMenu } from "@/components/ai/CampusLogAiMenu";
 import { EmptyState } from "@/components/common/EmptyState";
 import { createIsoTimestamp } from "@/lib/date";
 import { requestRecommendation } from "@/lib/recommendationApi";
-import {
-  getAnalysisByExperienceId,
-  getExperiences,
-  getTrackedActivities,
-  saveRecommendationResult,
-} from "@/lib/storage";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   Experience,
   ExperienceAnalysis,
@@ -53,14 +48,43 @@ export default function RecommendPage() {
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const storedExperiences = getExperiences();
-    const storedAnalyses = storedExperiences
-      .map((experience) => getAnalysisByExperienceId(experience.id))
-      .filter((analysis): analysis is ExperienceAnalysis => Boolean(analysis));
+    let isMounted = true;
 
-    setExperiences(storedExperiences);
-    setAnalyses(storedAnalyses);
-    setTrackedActivityCount(getTrackedActivities().length);
+    async function loadRecommendationData() {
+      const repository = getCampusLogRepository();
+      const [storedExperiences, storedTrackedActivities] = await Promise.all([
+        repository.experiences.list(),
+        repository.trackedActivities.list(),
+      ]);
+      const storedAnalyses = (
+        await Promise.all(
+          storedExperiences.map((experience) =>
+            repository.analyses.getByExperienceId(experience.id),
+          ),
+        )
+      ).filter((analysis): analysis is ExperienceAnalysis => Boolean(analysis));
+
+      if (isMounted) {
+        setExperiences(storedExperiences);
+        setAnalyses(storedAnalyses);
+        setTrackedActivityCount(storedTrackedActivities.length);
+      }
+    }
+
+    loadRecommendationData().catch(() => {
+      if (isMounted) {
+        setExperiences([]);
+        setAnalyses([]);
+        setTrackedActivityCount(0);
+        setRecommendationError(
+          "계정 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        );
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const recommendationId = recommendation?.id;
@@ -114,7 +138,8 @@ export default function RecommendPage() {
       return;
     }
 
-    const savedRecommendation = saveRecommendationResult({
+    const repository = getCampusLogRepository();
+    const savedRecommendation = await repository.recommendations.save({
       id: createRecommendationId(),
       purpose: input.purpose,
       prompt: input.prompt,
@@ -124,7 +149,7 @@ export default function RecommendPage() {
 
     if (!savedRecommendation) {
       setRecommendationError(
-        "활동 추천 결과를 저장하지 못했습니다. 브라우저 저장 공간을 확인한 뒤 다시 시도해 주세요.",
+        "활동 추천 결과를 계정에 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       );
       setIsRecommending(false);
       return;

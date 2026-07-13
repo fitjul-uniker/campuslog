@@ -19,14 +19,8 @@ import {
   DashboardExperienceDetail,
 } from "@/components/experiences/DashboardExperienceDetail";
 import { DashboardTrackedActivityDetail } from "@/components/experiences/DashboardTrackedActivityDetail";
-import {
-  getAnalysisByExperienceId,
-  getDailyLogs,
-  getExperiences,
-  getTrackedActivities,
-  saveAnalysisResult,
-} from "@/lib/storage";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   DailyLog,
   Experience,
@@ -70,33 +64,37 @@ export function ExperienceDashboard() {
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
 
-  const loadDashboardData = useCallback(() => {
+  const loadDashboardData = useCallback(async () => {
     setLoadError("");
 
     try {
-      const storedExperiences = getExperiences();
-      const activeTrackedActivities = getTrackedActivities().filter(
+      const repository = getCampusLogRepository();
+      const [storedExperiences, storedTrackedActivities, storedDailyLogs] =
+        await Promise.all([
+          repository.experiences.list(),
+          repository.trackedActivities.list(),
+          repository.dailyLogs.list(),
+        ]);
+      const activeTrackedActivities = storedTrackedActivities.filter(
         (activity) => activity.status === "active",
+      );
+      const storedAnalyses = await Promise.all(
+        storedExperiences.map(async (experience) => [
+          experience.id,
+          await repository.analyses.getByExperienceId(experience.id),
+        ]),
       );
       setExperiences(storedExperiences);
       setTrackedActivities(activeTrackedActivities);
-      setDailyLogs(getDailyLogs());
-      setAnalysesByExperienceId(
-        storedExperiences.reduce<Record<string, ExperienceAnalysis | null>>(
-          (analyses, experience) => {
-            analyses[experience.id] = getAnalysisByExperienceId(experience.id);
-            return analyses;
-          },
-          {},
-        ),
-      );
+      setDailyLogs(storedDailyLogs);
+      setAnalysesByExperienceId(Object.fromEntries(storedAnalyses));
     } catch {
       setExperiences([]);
       setTrackedActivities([]);
       setDailyLogs([]);
       setAnalysesByExperienceId({});
       setLoadError(
-        "저장된 활동 목록을 불러오지 못했습니다. 데이터를 지우지 않았으니 잠시 후 다시 시도해 주세요.",
+        "저장된 활동 목록을 불러오지 못했습니다. 계정 데이터는 지우지 않았으니 잠시 후 다시 시도해 주세요.",
       );
     }
   }, []);
@@ -249,7 +247,8 @@ export function ExperienceDashboard() {
       return;
     }
 
-    const savedAnalysis = saveAnalysisResult(response.analysis);
+    const repository = getCampusLogRepository();
+    const savedAnalysis = await repository.analyses.save(response.analysis);
 
     if (!savedAnalysis) {
       setAnalysisRequestByExperienceId((current) => ({
@@ -267,7 +266,7 @@ export function ExperienceDashboard() {
       ...current,
       [experienceId]: savedAnalysis,
     }));
-    setExperiences(getExperiences());
+    setExperiences(await repository.experiences.list());
     setAnalysisRequestByExperienceId((current) => ({
       ...current,
       [experienceId]: { isLoading: false, error: "" },

@@ -1,18 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { ExperienceForm } from "@/components/experiences/ExperienceForm";
-import { createExperience } from "@/lib/storage";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { ExperienceFormInput } from "@/lib/types";
 
 export function NewExperienceClient() {
   const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState("");
 
-  function handleSubmit(input: ExperienceFormInput) {
-    const createdExperience = createExperience(input);
+  async function handleSubmit(input: ExperienceFormInput) {
+    setErrorMessage("");
+    const repository = getCampusLogRepository();
+    const createdExperience = await repository.experiences.create(input);
 
     if (!createdExperience) {
+      setErrorMessage("경험을 저장하지 못했습니다. 입력값을 다시 확인해주세요.");
       return;
     }
 
@@ -33,6 +38,11 @@ export function NewExperienceClient() {
 
       <section className="form-panel" aria-labelledby="new-form-title">
         <h2 id="new-form-title">경험 정보</h2>
+        {errorMessage ? (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
         <ExperienceForm
           mode="create"
           cancelHref="/experiences"

@@ -7,12 +7,7 @@ import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { DashboardExperienceDetail } from "@/components/experiences/DashboardExperienceDetail";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
-import {
-  deleteExperience,
-  getAnalysisByExperienceId,
-  getExperienceById,
-  saveAnalysisResult,
-} from "@/lib/storage";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
 type ExperienceDetailClientProps = {
@@ -29,12 +24,40 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   const [analysisError, setAnalysisError] = useState("");
 
   useEffect(() => {
-    setExperience(getExperienceById(id));
-    setAnalysis(getAnalysisByExperienceId(id));
+    let isMounted = true;
+
+    async function loadExperience() {
+      try {
+        const repository = getCampusLogRepository();
+        const [storedExperience, storedAnalysis] = await Promise.all([
+          repository.experiences.getById(id),
+          repository.analyses.getByExperienceId(id),
+        ]);
+
+        if (isMounted) {
+          setExperience(storedExperience);
+          setAnalysis(storedAnalysis);
+        }
+      } catch {
+        if (isMounted) {
+          setExperience(null);
+          setAnalysis(null);
+        }
+      }
+    }
+
+    loadExperience();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
-  function handleDelete() {
-    if (!deleteExperience(id)) {
+  async function handleDelete() {
+    const repository = getCampusLogRepository();
+    const didDelete = await repository.experiences.delete(id);
+
+    if (!didDelete) {
       setAnalysisError(
         "경험을 삭제하지 못했습니다. 저장소 상태를 확인한 뒤 다시 시도해 주세요.",
       );
@@ -60,7 +83,8 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
       return;
     }
 
-    const savedAnalysis = saveAnalysisResult(response.analysis);
+    const repository = getCampusLogRepository();
+    const savedAnalysis = await repository.analyses.save(response.analysis);
 
     if (!savedAnalysis) {
       setAnalysisError(
@@ -71,7 +95,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
     }
 
     setAnalysis(savedAnalysis);
-    setExperience(getExperienceById(id));
+    setExperience(await repository.experiences.getById(id));
     setIsAnalyzing(false);
     router.push(`/experiences/${id}/analysis`);
   }

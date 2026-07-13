@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-13 - 사용자별 Supabase schema / RLS foundation 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex |
+| 작업 요약 | 최신 `main`에서 `feature/database-schema` 브랜치를 만들고 사용자별 Supabase DB schema, RLS 정책, repository 경계, localStorage 이전 정책, 주요 화면의 Supabase repository 연결을 추가 |
+| 수정한 파일 | `supabase/migrations/20260713000100_user_data_schema.sql`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/NewActivityClient.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/experiences/NewExperienceClient.tsx`, `web/src/components/experiences/EditExperienceClient.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceForm.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/recommend/history/page.tsx`, `docs/DATA_CONTRACT.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `Experience`, `TrackedActivity`, `DailyLog`, `ExperienceAnalysis`, `Recommendation`, `ExperienceSynthesisDraft`를 사용자별 `user_id`로 분리하는 Postgres table과 RLS CRUD 정책을 작성. 기존 localStorage id를 보존하기 위해 `(user_id, id)` 복합 키를 사용하고, 활동 종료 완료 경험 연결은 `generated_experience_id` unique partial index로 중복을 방지. localStorage migration batch / item ledger 테이블을 추가해 사용자 확인 기반 이전, 부분 실패, 재시도, 원본 보존 정책을 뒷받침. async repository interface, localStorage adapter, Supabase adapter를 추가하고 오늘의 기록, 활동 추가/상세, 나의 활동, 경험 작성/수정/상세/분석, AI 추천, 추천 기록 화면을 repository 경계로 전환. Supabase 설정이 있는 로그인 세션에서는 localStorage를 기본 데이터로 표시하지 않고 계정별 DB 데이터를 사용 |
+| 검증한 내용 | 작업 시작 전 `git pull` 결과 최신 main 확인, 기준 문서 확인, localStorage 모델과 관계 파악. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 Supabase SQL Editor에서 migration 실행 성공(`Success. No rows returned`)과 Table Editor의 사용자 데이터 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료 |
+| 남은 작업 | localStorage 이전 UX와 실제 upsert action은 후속 PR로 진행. SQL-level 또는 자동화된 select / insert / update / delete RLS 정책 검증은 아직 별도로 수행하지 않음 |
+| 관련 커밋 메시지 | `feat: add user-scoped Supabase data repository` |
+
 ### 2026-07-13 - Supabase Auth foundation 시작
 
 | 항목 | 내용 |
