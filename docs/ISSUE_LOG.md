@@ -53,6 +53,7 @@
 | ISSUE-029 | Open | High | Decision | 활동 종료 AI 합성 초안과 상태의 DB 소유권·보존 계약 필요 | 합성 초안 RLS, 원본 활동·로그 관계, 마이그레이션, 저장 후 삭제, 실패·재시도, 합성 API 제한, 완료 Experience 멱등성 구현 확정 | 미완료 초안과 상태를 사용자 소유 데이터로 취급하고 완료 Experience 저장 검증 후 초안을 제거하는 v1.1 정책을 기본값으로 설정 | Track A | 2026-07-13 | - |
 | ISSUE-030 | Open | High | Decision | 이메일 또는 아이디 + 비밀번호와 Google OAuth를 함께 지원하는 인증 contract 필요 | Supabase provider 설정, callback URL, 로그인 후 redirect, 동일 이메일 계정 연결 정책, 이메일 인증, 비밀번호 재설정, 사용자용 오류 code 결정 | Google OAuth는 2차 MVP 인증 범위에 포함. 로그인·회원가입 UI는 현재 디자인 톤으로 최소 구현하고 이후 프론트엔드 Track에서 고도화 | Track A + Track B | 2026-07-13 | - |
 | ISSUE-031 | Open | High | Decision | JD 원문·질문 이미지 OCR 기반 AI 추천 고도화 범위 확정 필요 | 입력 유형, OCR / vision 처리 방식, 원본 이미지 저장 여부, 요구사항 추출 schema, 보유·부족 경험 비교 기준, 답변 초안 저장 여부, 비용 제한 결정 | 인증·DB 전환 이후 AI 고도화 단계에서 진행. OCR 이미지는 우선 원본 저장 없이 일회성 AI 입력으로 처리하고 Storage 도입은 별도 결정 | Track A + Track B | 2026-07-13 | - |
+| ISSUE-032 | Open | Medium | Risk | Supabase 기본 email provider의 signup 발송 제한으로 개발 중 이메일 회원가입 테스트가 막힐 수 있음 | 개발·배포에서 confirm email을 어떻게 둘지, 커스텀 SMTP를 언제 연결할지, 테스트 계정 alias와 재시도 안내를 어떻게 문구화할지 결정 | `feature/auth-foundation` 테스트 중 `RATE_LIMITED` 흐름을 확인. Google OAuth는 우선 테스트 경로로 사용하고 이메일 signup은 Gmail alias와 provider 정책 결정 후 재검증 | Track A + Track B | 2026-07-13 | - |
 
 ## 이슈 추가 템플릿
 

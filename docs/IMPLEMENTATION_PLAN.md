@@ -42,11 +42,19 @@
 4. 보호 라우트와 로그인 후 원래 화면 복귀
 5. 인증 오류 code와 사용자 문구 contract
 
+2026-07-13 진행 상태:
+
+- `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작과 callback, 로그아웃, 보호 라우트 middleware, `/login`, `/signup`, 인증 error / redirect contract를 구현했습니다.
+- 기존 v1.1 커버와 제품 UI는 유지하고 인증이 필요한 route만 보호합니다.
+- 로그아웃은 기존 네비게이션 톤에 맞춰 데스크톱 사이드바 하단과 모바일 헤더 우측에 배치합니다.
+- 다음 작업은 새 브랜치에서 DB schema / RLS / repository / localStorage migration으로 이어갑니다.
+
 권장 PR 단위:
 
-1. `feature/auth-foundation`
-2. `feature/auth-contract`
-3. `feature/protected-routes`
+1. `feature/auth-foundation` 완료
+2. `feature/database-schema`
+3. `refactor/data-repository`
+4. `feature/user-data-sync`
 
 파일 책임:
 

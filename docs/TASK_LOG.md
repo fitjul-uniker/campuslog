@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-13 - Supabase Auth foundation 시작
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex |
+| 작업 요약 | 최신 main에서 `feature/auth-foundation` 브랜치를 만들고 Supabase Auth 기반 인증 뼈대를 추가 |
+| 수정한 파일 | `docs/AUTH_CONTRACT.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `web/.env.example`, `web/package.json`, `web/package-lock.json`, `web/src/middleware.ts`, `web/src/app/auth/callback/route.ts`, `web/src/app/login/page.tsx`, `web/src/app/signup/page.tsx`, `web/src/app/page.tsx`, `web/src/app/globals.css`, `web/src/components/auth/**`, `web/src/components/layout/AppShell.tsx`, `web/src/lib/auth/**`, `web/src/lib/supabase/**` |
+| 변경 내용 | `@supabase/ssr`, `@supabase/supabase-js`를 추가하고 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 환경 변수 계약을 정의. 이메일/비밀번호 로그인·회원가입 server action, Google OAuth 시작, OAuth callback code exchange, 로그아웃 action, 보호 화면·AI API middleware를 추가. `/login`, `/signup` 최소 UI와 설정 누락·공통 오류 문구를 연결하고, 로그인 상태가 아닌 사용자는 보호 화면에서 로그인으로 redirect하도록 구성. 기존 v1.1 커버와 제품 UI는 유지하고 로그아웃은 데스크톱 사이드바 하단, 모바일 헤더 우측에 배치 |
+| 검증한 내용 | `main`에서 `git pull --ff-only` 결과 최신 상태 확인. 사용자가 Supabase project, local `.env.local`, Vercel env, Google OAuth provider를 설정. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. dev 서버에서 `/login` 200, 비로그인 `/dashboard` → `/login?authError=SESSION_REQUIRED`, 보호 API JSON error, 기존 커버 링크 보존, 로그인 UI 렌더를 확인. Google OAuth callback → `/dashboard`, 로그아웃 → `/login?authNotice=SIGNED_OUT` 로컬 흐름을 확인. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있음을 확인 |
+| 남은 작업 | 사용자별 DB schema / RLS, repository, localStorage migration 정책 순서로 진행. 이메일 confirm / SMTP / 비밀번호 재설정과 동일 이메일 provider 연결 정책은 후속 결정 필요 |
+| 관련 커밋 메시지 | `feat: add supabase auth foundation` |
+
 ### 2026-07-13 - 2차 MVP 인증·DB·AI 고도화 우선순위 정리
 
 | 항목 | 내용 |

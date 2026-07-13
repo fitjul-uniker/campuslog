@@ -8,9 +8,10 @@
 - [x] 2차 MVP 단계와 두 작업 Track 문서화
 - [x] v1.1 commit / push / Draft PR #27
 - [x] 팀 리뷰와 main merge
-- [ ] 2차 MVP 기능 브랜치 시작
+- [x] 2차 MVP 기능 브랜치 시작
+- [x] Supabase Auth foundation 구현
 
-현재 브랜치는 `main`이며 `origin/main`과 동기화되어 있습니다. v1.1 전체 변경은 PR #27로 main에 병합되었고, 다음 작업은 최신 main에서 2차 MVP 기능 브랜치를 만드는 것입니다.
+현재 브랜치는 `feature/auth-foundation`입니다. 최신 `main`에서 fast-forward pull을 확인한 뒤 분기했고, Supabase Auth 기반 인증 뼈대 구현과 로컬 검증을 완료했습니다.
 
 ## v1.1 완료 기준선
 
@@ -73,12 +74,12 @@
 
 ## 다음 작업 순서
 
-1. 최신 main에서 `feature/auth-foundation` 브랜치 생성
-2. Supabase project, 환경 변수, Auth helper, session contract 확정
-3. 이메일 또는 아이디 + 비밀번호 로그인·회원가입·로그아웃 구현
-4. Google OAuth provider와 callback / redirect 구현
-5. 보호 라우트와 로그인 후 원래 화면 복귀 구현
-6. DB schema, RLS, repository, localStorage migration 순서로 진행
+1. `feature/auth-foundation` PR을 main에 반영
+2. 최신 main에서 DB schema / RLS 브랜치 시작
+3. Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 테이블과 사용자 소유권 정의
+4. repository 경계를 만들고 현재 localStorage read/write를 계정별 DB 저장으로 교체
+5. localStorage migration 정책과 UX 연결
+6. AI API 인증, rate limit, 비용 제한 적용
 7. 인증·DB 전환이 안정화된 뒤 JD / OCR / 답변 초안 AI 고도화 진행
 8. 통합 회귀·보안·비용·접근성 검증
 
@@ -91,9 +92,10 @@
 5. `docs/SCREEN_SPEC.md`
 6. `docs/DESIGN.md`
 7. `docs/IMPLEMENTATION_PLAN.md`
-8. `docs/TODO.md`
-9. `docs/ISSUE_LOG.md`
-10. `docs/TASK_LOG.md`
+8. `docs/AUTH_CONTRACT.md`
+9. `docs/TODO.md`
+10. `docs/ISSUE_LOG.md`
+11. `docs/TASK_LOG.md`
 
 `docs/archive/**`는 과거 기준선과 회귀 확인용이며 현재 2차 MVP 구현을 제한하지 않습니다.
 
@@ -101,6 +103,7 @@
 
 - 이메일 확인·비밀번호 재설정, Google OAuth callback과 동일 이메일 계정 연결 정책 미확정
 - 비밀번호 validation과 계정 열거 방지 오류 문구 contract 미확정
+- Supabase 기본 email provider signup rate limit 때문에 개발 테스트용 SMTP / confirm email 정책 결정 필요
 - localStorage → DB 마이그레이션 충돌·중복·삭제 정책 미확정
 - 활동 종료 합성 초안 RLS·보존·완료 Experience 멱등 저장 구현 필요
 - RLS와 다른 사용자 데이터 접근 방지 검증 필요
@@ -111,4 +114,4 @@
 
 ## Git 상태 주의
 
-v1.1 checkpoint는 main에 병합되었습니다. 2차 MVP 기능은 `main`에 직접 추가하지 않고, 최신 main에서 작은 기능 브랜치로 시작합니다.
+v1.1 checkpoint는 main에 병합되었습니다. 2차 MVP 기능은 `main`에 직접 추가하지 않고, 최신 main에서 작은 기능 브랜치로 진행합니다.
