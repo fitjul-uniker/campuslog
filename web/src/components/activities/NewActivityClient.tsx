@@ -7,10 +7,7 @@ import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 
 import { getLocalDateKey } from "@/components/activities/activityViewUtils";
-import {
-  createTrackedActivity,
-  setTrackedActivityStatus,
-} from "@/lib/storage";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 
 type ActivityFormValue = {
   title: string;
@@ -41,7 +38,7 @@ export function NewActivityClient() {
     setError("");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
@@ -78,34 +75,27 @@ export function NewActivityClient() {
     }
 
     setIsSaving(true);
-    const createdActivity = createTrackedActivity({
-      title,
-      description,
-      startDate: formValue.startDate,
-      expectedEndDate: formValue.expectedEndDate,
-    });
+    const repository = getCampusLogRepository();
 
-    if (!createdActivity) {
+    try {
+      const createdActivity = await repository.trackedActivities.create({
+        title,
+        description,
+        startDate: formValue.startDate,
+        expectedEndDate: formValue.expectedEndDate,
+      });
+
+      if (!createdActivity) {
+        setIsSaving(false);
+        setError("활동을 저장하지 못했습니다. 입력 내용을 확인해 주세요.");
+        return;
+      }
+
+      router.push(`/activities/${createdActivity.id}`);
+    } catch {
       setIsSaving(false);
-      setError("활동을 저장하지 못했습니다. 입력 내용을 확인해 주세요.");
-      return;
+      setError("활동을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
-
-    const expectedStatus = formValue.startDate > today ? "planned" : "active";
-    const statusAdjustedActivity =
-      createdActivity.status === expectedStatus
-        ? createdActivity
-        : setTrackedActivityStatus(createdActivity.id, expectedStatus);
-
-    if (!statusAdjustedActivity) {
-      setIsSaving(false);
-      setError(
-        "활동은 저장했지만 상태를 설정하지 못했습니다. 오늘의 기록에서 다시 확인해 주세요.",
-      );
-      return;
-    }
-
-    router.push(`/activities/${createdActivity.id}`);
   }
 
   return (

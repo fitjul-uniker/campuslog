@@ -24,7 +24,7 @@ type ExperienceFormProps = {
   mode: ExperienceFormMode;
   initialValue?: Experience;
   cancelHref: string;
-  onSubmit: (input: ExperienceFormInput) => void;
+  onSubmit: (input: ExperienceFormInput) => void | Promise<void>;
 };
 
 type PeriodFields = {
@@ -271,6 +271,7 @@ export function ExperienceForm({
     Record<string, string>
   >({});
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const nextRelatedLinkId = useRef(initialValue?.relatedLinks.length ?? 0);
   const relatedLinkInputRefs = useRef(new Map<string, HTMLInputElement>());
   const addRelatedLinkButtonRef = useRef<HTMLButtonElement>(null);
@@ -281,6 +282,7 @@ export function ExperienceForm({
     setRelatedLinkRows(createRelatedLinkRows(initialValue));
     setRelatedLinkErrors({});
     setErrorMessage("");
+    setIsSubmitting(false);
     nextRelatedLinkId.current = initialValue?.relatedLinks.length ?? 0;
   }, [initialValue]);
 
@@ -430,7 +432,7 @@ export function ExperienceForm({
     });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextPeriodErrorMessage = getPeriodErrorMessage(periodFields);
@@ -465,10 +467,18 @@ export function ExperienceForm({
 
     setRelatedLinkErrors({});
     setErrorMessage("");
-    onSubmit({
-      ...normalizedFormValue,
-      relatedLinks: relatedLinkValidation.links,
-    });
+    setIsSubmitting(true);
+
+    try {
+      await onSubmit({
+        ...normalizedFormValue,
+        relatedLinks: relatedLinkValidation.links,
+      });
+    } catch {
+      setErrorMessage("저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -683,9 +693,13 @@ export function ExperienceForm({
       ) : null}
 
       <div className="panel-actions">
-        <button className="button button-primary" type="submit">
+        <button
+          className="button button-primary"
+          type="submit"
+          disabled={isSubmitting}
+        >
           <Save className="button-icon" aria-hidden="true" />
-          {mode === "create" ? "저장" : "수정 완료"}
+          {isSubmitting ? "저장 중..." : mode === "create" ? "저장" : "수정 완료"}
         </button>
         <Link href={cancelHref} className="button button-secondary">
           취소

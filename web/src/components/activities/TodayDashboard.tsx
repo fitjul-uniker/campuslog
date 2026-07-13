@@ -21,12 +21,8 @@ import {
   getLocalDateKey,
 } from "@/components/activities/activityViewUtils";
 import {
-  createDailyLog,
-  deleteDailyLog,
-  getDailyLogs,
-  getTrackedActivities,
-  updateDailyLog,
-} from "@/lib/storage";
+  getCampusLogRepository,
+} from "@/lib/repositories/campuslogRepository";
 import type { DailyLog, TrackedActivity } from "@/lib/types";
 
 type EditingLog = {
@@ -92,15 +88,20 @@ export function TodayDashboard() {
   const [statusMessage, setStatusMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const loadDashboardData = useCallback(() => {
+  const loadDashboardData = useCallback(async () => {
     setLoadError("");
 
     try {
-      const storedActivities = sortActivities(getTrackedActivities());
-      setActivities(storedActivities);
-      setLogs(sortLogs(getDailyLogs()));
+      const repository = getCampusLogRepository();
+      const [storedActivities, storedLogs] = await Promise.all([
+        repository.trackedActivities.list(),
+        repository.dailyLogs.list(),
+      ]);
+      const sortedActivities = sortActivities(storedActivities);
+      setActivities(sortedActivities);
+      setLogs(sortLogs(storedLogs));
 
-      const activeActivities = storedActivities.filter(
+      const activeActivities = sortedActivities.filter(
         (activity) => activity.status === "active",
       );
       const requestedActivityId = getRequestedActivityId();
@@ -123,7 +124,7 @@ export function TodayDashboard() {
       setActivities([]);
       setLogs([]);
       setLoadError(
-        "저장된 기록을 불러오지 못했습니다. 브라우저의 데이터는 지우지 않았으니 다시 시도해 주세요.",
+        "저장된 기록을 불러오지 못했습니다. 계정 데이터는 지우지 않았으니 다시 시도해 주세요.",
       );
     }
   }, [today]);
@@ -183,7 +184,7 @@ export function TodayDashboard() {
     );
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
     setStatusMessage("");
@@ -202,30 +203,42 @@ export function TodayDashboard() {
       return;
     }
 
-    const savedLog = editingLog
-      ? updateDailyLog(editingLog.id, {
-          activityId: selectedActivityId,
-          date: selectedDate,
-          content: normalizedContent,
-        })
-      : createDailyLog({
-          activityId: selectedActivityId,
-          date: selectedDate,
-          content: normalizedContent,
-        });
+    const repository = getCampusLogRepository();
 
-    if (!savedLog) {
+    try {
+      const savedLog = editingLog
+        ? await repository.dailyLogs.update(editingLog.id, {
+            activityId: selectedActivityId,
+            date: selectedDate,
+            content: normalizedContent,
+          })
+        : await repository.dailyLogs.create({
+            activityId: selectedActivityId,
+            date: selectedDate,
+            content: normalizedContent,
+          });
+
+      if (!savedLog) {
+        setFormError(
+          editingLog
+            ? "기록을 수정하지 못했습니다. 활동 상태와 날짜를 확인해 주세요."
+            : "기록을 저장하지 못했습니다. 활동 상태와 날짜를 확인해 주세요.",
+        );
+        return;
+      }
+
+      setLogs(sortLogs(await repository.dailyLogs.list()));
+      setStatusMessage(
+        editingLog ? "기록을 수정했습니다." : "오늘 한 일을 기록했습니다.",
+      );
+      resetForm();
+    } catch {
       setFormError(
         editingLog
-          ? "기록을 수정하지 못했습니다. 활동 상태와 날짜를 확인해 주세요."
-          : "기록을 저장하지 못했습니다. 활동 상태와 날짜를 확인해 주세요.",
+          ? "기록을 수정하지 못했습니다. 잠시 후 다시 시도해 주세요."
+          : "기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       );
-      return;
     }
-
-    setLogs(sortLogs(getDailyLogs()));
-    setStatusMessage(editingLog ? "기록을 수정했습니다." : "오늘 한 일을 기록했습니다.");
-    resetForm();
   }
 
   function startEditing(log: DailyLog) {
@@ -247,7 +260,7 @@ export function TodayDashboard() {
     window.requestAnimationFrame(() => textareaRef.current?.focus());
   }
 
-  function handleDelete(log: DailyLog) {
+  async function handleDelete(log: DailyLog) {
     const activity = activitiesById[log.activityId];
 
     if (
@@ -258,13 +271,22 @@ export function TodayDashboard() {
       return;
     }
 
-    if (!deleteDailyLog(log.id)) {
+    const repository = getCampusLogRepository();
+    let didDelete = false;
+
+    try {
+      didDelete = await repository.dailyLogs.delete(log.id);
+    } catch {
+      didDelete = false;
+    }
+
+    if (!didDelete) {
       setStatusMessage("");
       setFormError("기록을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
 
-    setLogs(sortLogs(getDailyLogs()));
+    setLogs(sortLogs(await repository.dailyLogs.list()));
     setStatusMessage("기록을 삭제했습니다.");
     setFormError("");
 

@@ -8,11 +8,7 @@ import { AnalysisResult } from "@/components/ai/AnalysisResult";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
-import {
-  getAnalysisByExperienceId,
-  getExperienceById,
-  saveAnalysisResult,
-} from "@/lib/storage";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
 type ExperienceAnalysisClientProps = {
@@ -28,8 +24,33 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
   const [analysisError, setAnalysisError] = useState("");
 
   useEffect(() => {
-    setExperience(getExperienceById(id));
-    setAnalysis(getAnalysisByExperienceId(id));
+    let isMounted = true;
+
+    async function loadAnalysis() {
+      try {
+        const repository = getCampusLogRepository();
+        const [storedExperience, storedAnalysis] = await Promise.all([
+          repository.experiences.getById(id),
+          repository.analyses.getByExperienceId(id),
+        ]);
+
+        if (isMounted) {
+          setExperience(storedExperience);
+          setAnalysis(storedAnalysis);
+        }
+      } catch {
+        if (isMounted) {
+          setExperience(null);
+          setAnalysis(null);
+        }
+      }
+    }
+
+    loadAnalysis();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   async function handleAnalyze() {
@@ -48,7 +69,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       return;
     }
 
-    const savedAnalysis = saveAnalysisResult(response.analysis);
+    const repository = getCampusLogRepository();
+    const savedAnalysis = await repository.analyses.save(response.analysis);
 
     if (!savedAnalysis) {
       setAnalysisError(
@@ -58,7 +80,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       return;
     }
 
-    const updatedExperience = getExperienceById(id);
+    const updatedExperience = await repository.experiences.getById(id);
 
     if (updatedExperience) {
       setExperience(updatedExperience);

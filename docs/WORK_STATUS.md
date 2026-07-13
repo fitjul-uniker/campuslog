@@ -10,8 +10,12 @@
 - [x] 팀 리뷰와 main merge
 - [x] 2차 MVP 기능 브랜치 시작
 - [x] Supabase Auth foundation 구현
+- [x] 사용자별 Supabase DB schema / RLS foundation 작성
+- [x] localStorage 모델과 DB 이전 정책 문서화
+- [x] 주요 화면 데이터 read/write를 Supabase 사용자별 repository로 전환
+- [x] Supabase project migration 적용과 Google 계정 A/B 데이터 분리 수동 smoke test
 
-현재 브랜치는 `feature/auth-foundation`입니다. 최신 `main`에서 fast-forward pull을 확인한 뒤 분기했고, Supabase Auth 기반 인증 뼈대 구현과 로컬 검증을 완료했습니다.
+현재 브랜치는 `feature/database-schema`입니다. 최신 `main`에서 pull 결과가 최신임을 확인한 뒤 분기했고, PR #29로 반영된 Supabase Auth foundation 위에 사용자별 데이터 schema, RLS 정책, repository 경계, localStorage 이전 정책, 주요 화면의 Supabase repository 연결을 추가했습니다. 사용자가 Supabase SQL Editor에서 migration 적용과 Table Editor 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료했습니다.
 
 ## v1.1 완료 기준선
 
@@ -74,14 +78,13 @@
 
 ## 다음 작업 순서
 
-1. `feature/auth-foundation` PR을 main에 반영
-2. 최신 main에서 DB schema / RLS 브랜치 시작
-3. Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 테이블과 사용자 소유권 정의
-4. repository 경계를 만들고 현재 localStorage read/write를 계정별 DB 저장으로 교체
-5. localStorage migration 정책과 UX 연결
-6. AI API 인증, rate limit, 비용 제한 적용
-7. 인증·DB 전환이 안정화된 뒤 JD / OCR / 답변 초안 AI 고도화 진행
-8. 통합 회귀·보안·비용·접근성 검증
+1. localStorage migration 탐지 / 사용자 확인 / 계정 이전 UX 연결
+2. localStorage 원본을 자동 표시하지 않고 가져오기 후보로만 안내
+3. 공개 AI API 인증, rate limit, 비용 제한 적용
+4. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증
+5. SQL-level 또는 자동화된 RLS 정책 검증 필요 여부 결정
+6. 인증·DB 전환이 안정화된 뒤 JD / OCR / 답변 초안 AI 고도화 진행
+7. 통합 회귀·보안·비용·접근성 검증
 
 ## 활성 기준 문서
 
@@ -93,9 +96,10 @@
 6. `docs/DESIGN.md`
 7. `docs/IMPLEMENTATION_PLAN.md`
 8. `docs/AUTH_CONTRACT.md`
-9. `docs/TODO.md`
-10. `docs/ISSUE_LOG.md`
-11. `docs/TASK_LOG.md`
+9. `docs/DATA_CONTRACT.md`
+10. `docs/TODO.md`
+11. `docs/ISSUE_LOG.md`
+12. `docs/TASK_LOG.md`
 
 `docs/archive/**`는 과거 기준선과 회귀 확인용이며 현재 2차 MVP 구현을 제한하지 않습니다.
 
@@ -104,9 +108,9 @@
 - 이메일 확인·비밀번호 재설정, Google OAuth callback과 동일 이메일 계정 연결 정책 미확정
 - 비밀번호 validation과 계정 열거 방지 오류 문구 contract 미확정
 - Supabase 기본 email provider signup rate limit 때문에 개발 테스트용 SMTP / confirm email 정책 결정 필요
-- localStorage → DB 마이그레이션 충돌·중복·삭제 정책 미확정
-- 활동 종료 합성 초안 RLS·보존·완료 Experience 멱등 저장 구현 필요
-- RLS와 다른 사용자 데이터 접근 방지 검증 필요
+- localStorage → DB 마이그레이션 정책은 문서화됐지만 실제 이전 UI와 upsert 구현 필요
+- 활동 종료 합성 초안 RLS·보존·완료 Experience 멱등 저장은 Supabase repository로 연결됐지만 완료 저장 흐름의 실제 브라우저 검증은 추가 필요
+- Google 계정 A/B 데이터 분리 수동 smoke test는 완료했지만 SQL-level 또는 자동화된 RLS 정책 검증은 아직 별도로 수행하지 않음
 - 공개 AI API rate limit과 비용 한도 필요
 - JD 원문·질문 이미지 OCR·부족 경험 비교·답변 초안의 AI 품질 평가 기준 필요
 - OCR 이미지 원본 저장 여부와 Supabase Storage 도입 범위 미확정

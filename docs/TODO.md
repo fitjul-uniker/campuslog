@@ -24,6 +24,7 @@
 진행 메모:
 
 - 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback → `/dashboard`, 로그아웃 → `/login?authNotice=SIGNED_OUT` 로컬 흐름을 확인. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요.
+- 2026-07-13: `feature/database-schema`에서 최신 main 확인 후 사용자별 Supabase schema / RLS migration, localStorage 모델 매핑, repository 경계, localStorage → DB 이전 정책 문서를 추가. 이어서 주요 화면의 read/write를 Supabase repository로 전환해 로그인 계정별 DB 데이터를 사용하도록 변경. 사용자가 Supabase SQL Editor에서 migration 실행 성공과 Table Editor 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료.
 
 ### High
 
@@ -31,11 +32,15 @@
 - [x] 이메일 또는 이에 준하는 아이디 + 비밀번호 로그인·회원가입·로그아웃·세션 복구 구현
 - [x] Google OAuth provider, callback URL, 로그인 후 redirect 구현
 - [x] 보호 라우트와 로그인 후 원래 화면 복귀 구현
-- [ ] 사용자별 DB schema와 RLS 정책 설계·검증
-- [ ] Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 관계 정의
-- [ ] 합성 초안 RLS·보존·완료 Experience 멱등 저장 contract 구현 (`ISSUE-029`)
-- [ ] repository 경계를 두고 localStorage와 DB 접근 분리
-- [ ] localStorage → 계정 데이터 마이그레이션 정책 결정 (`ISSUE-025`)
+- [x] 사용자별 DB schema와 RLS 정책 SQL 작성
+- [x] Supabase migration apply와 사용자 A/B 계정별 데이터 분리 smoke test 수행
+- [x] Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 관계 정의
+- [x] 합성 초안 RLS·보존·완료 Experience 멱등 저장 schema contract 작성 (`ISSUE-029`)
+- [x] 합성 초안 저장과 완료 Experience 생성의 Supabase repository 멱등 흐름 구현 (`ISSUE-029`)
+- [x] repository 경계를 두고 localStorage adapter 추가
+- [x] 주요 UI의 `storage.ts` 직접 호출을 repository 경계로 전환
+- [x] localStorage → 계정 데이터 마이그레이션 정책 문서화 (`ISSUE-025`)
+- [ ] localStorage → 계정 데이터 마이그레이션 탐지 / 확인 / upsert 구현 (`ISSUE-025`)
 - [ ] 공개 AI API 인증, rate limit, OpenAI spend limit / alert 적용 (`ISSUE-024`)
 
 ### Medium
@@ -94,7 +99,7 @@
 - [ ] schema 또는 API response 변경 시 관련 화면 명세 동시 수정
 - [ ] Track 간 공통 파일 담당과 merge 순서 합의
 - [ ] 데스크톱·모바일 핵심 E2E 시나리오 작성
-- [ ] 다른 사용자 데이터 접근 방지 테스트
+- [x] 다른 사용자 데이터 접근 방지 UI smoke test
 - [ ] Vercel + Supabase preview 환경 통합 확인
 
 ## Existing open risks

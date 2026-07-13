@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { ExperienceForm } from "@/components/experiences/ExperienceForm";
-import { getExperienceById, updateExperience } from "@/lib/storage";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceFormInput } from "@/lib/types";
 
 type EditExperienceClientProps = {
@@ -21,11 +21,33 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    setExperience(getExperienceById(id));
+    let isMounted = true;
+
+    async function loadExperience() {
+      try {
+        const repository = getCampusLogRepository();
+        const storedExperience = await repository.experiences.getById(id);
+
+        if (isMounted) {
+          setExperience(storedExperience);
+        }
+      } catch {
+        if (isMounted) {
+          setExperience(null);
+        }
+      }
+    }
+
+    loadExperience();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
-  function handleSubmit(input: ExperienceFormInput) {
-    const updatedExperience = updateExperience(id, input);
+  async function handleSubmit(input: ExperienceFormInput) {
+    const repository = getCampusLogRepository();
+    const updatedExperience = await repository.experiences.update(id, input);
 
     if (!updatedExperience) {
       setErrorMessage("경험을 저장하지 못했습니다. 입력값을 다시 확인해주세요.");

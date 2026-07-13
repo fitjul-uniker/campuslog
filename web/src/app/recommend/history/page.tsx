@@ -14,7 +14,7 @@ import { RecommendationResult } from "@/components/ai/RecommendationResult";
 import { CampusLogAiMenu } from "@/components/ai/CampusLogAiMenu";
 import { AnimatedRecommendationList } from "@/components/recommendations/AnimatedRecommendationList";
 import { GooeyInput } from "@/components/ui/GooeyInput";
-import { getExperiences, getRecommendationResults } from "@/lib/storage";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   Experience,
   RecommendationPurpose,
@@ -51,12 +51,17 @@ export default function RecommendationHistoryPage() {
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
 
-  const loadHistory = useCallback(() => {
+  const loadHistory = useCallback(async () => {
     setLoadError("");
 
     try {
-      setExperiences(getExperiences());
-      setRecommendations(getRecommendationResults());
+      const repository = getCampusLogRepository();
+      const [storedExperiences, storedRecommendations] = await Promise.all([
+        repository.experiences.list(),
+        repository.recommendations.list(),
+      ]);
+      setExperiences(storedExperiences);
+      setRecommendations(storedRecommendations);
     } catch {
       setExperiences([]);
       setRecommendations([]);
