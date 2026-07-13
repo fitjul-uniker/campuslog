@@ -2,8 +2,8 @@
 
 ## 상태
 
-- 브랜치: `feature/database-schema`
-- 범위: 사용자별 Supabase Postgres schema, RLS, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, localStorage 이전 정책
+- 적용 상태: `main`에 반영된 PR #30
+- 범위: 사용자별 Supabase Postgres schema, RLS, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, localStorage 자동 이전·자동 삭제 금지 정책
 - 기준: v1.1 UI/UX와 기존 도메인 타입을 유지하고, DB 전환은 작은 PR로 단계적으로 진행
 - 제외: JD 원문, OCR, 부족 경험 비교, 답변 초안 등 AI 고도화는 이번 작업에서 시작하지 않음
 
@@ -19,7 +19,7 @@
 | `DailyLog` | `campuslog:v1:daily-logs` | `DailyLog[]` | `activityId`로 `TrackedActivity.id` 참조 |
 | `SynthesisDraft` | `campuslog:v1:synthesis-drafts` | `Record<activityId, ExperienceSynthesisDraft>` | 활동별 합성 초안 1개. `usedLogIds`로 사용된 `DailyLog.id` 목록 보존 |
 
-현재 UI는 `web/src/lib/repositories/campuslogRepository.ts`의 async repository 계약을 통해 데이터를 읽고 씁니다. Supabase 환경 변수가 설정된 로그인 세션에서는 Supabase repository를 사용하고, localStorage adapter는 후속 명시적 이전과 설정 누락 fallback을 위해 보존합니다. localStorage 데이터는 로그인 계정의 기본 데이터로 자동 표시하지 않습니다.
+현재 UI는 `web/src/lib/repositories/campuslogRepository.ts`의 async repository 계약을 통해 데이터를 읽고 씁니다. Supabase 환경 변수가 설정된 로그인 세션에서는 Supabase repository를 사용하고, localStorage adapter는 설정 누락 fallback과 미래의 선택적 이전 가능성을 위해 보존합니다. localStorage 데이터는 로그인 계정의 기본 데이터로 자동 표시하지 않습니다.
 
 ## Supabase 테이블 계약
 
@@ -57,27 +57,22 @@ Migration: `supabase/migrations/20260713000100_user_data_schema.sql`
    - 새 경험 생성, 활동 링크, 합성 상태 `saved`, 초안 정리는 한 작업으로 처리합니다.
    - 실패 시 원본 활동, daily log, draft를 보존합니다.
 
-## localStorage -> DB 이전 정책
+## localStorage 처리 정책
 
-- 자동 이전과 자동 삭제는 금지합니다.
-- 로그인 후 이전 가능한 localStorage 데이터가 있으면 사용자에게 먼저 확인을 받습니다.
-- 이전 대상 계산은 실제 사용자 생성 데이터만 포함합니다.
-  - `sampleExperiences.ts` 같은 개발 샘플과 파싱 실패 항목은 제외하고 사유를 결과 contract에 포함합니다.
-  - malformed JSON은 빈 상태로 숨기지 않고 이전 불가 항목으로 보고합니다.
-- 원본 localStorage는 이전 성공 확인 전 삭제하지 않습니다.
-- 이전은 멱등적으로 처리합니다.
-  - 기존 로컬 `id`를 DB `id`로 보존합니다.
-  - `local_data_migration_items`의 `(user_id, entity_type, local_id)` unique 제약으로 재시도 중복을 막습니다.
-  - 경험 분석은 `(user_id, experience_id)`, 합성 초안은 `(user_id, activity_id)` 기준으로 upsert합니다.
-- 부분 실패를 허용하고 재시도할 수 있어야 합니다.
-  - 성공, 실패, 제외 개수를 batch에 기록합니다.
-  - 실패 항목은 원본을 보존하고 같은 local id로 재시도합니다.
-- 충돌은 임의 덮어쓰지 않습니다.
-  - 같은 `id`가 이미 DB에 있으면 동일 local item의 재시도인지 migration ledger로 확인합니다.
-  - 사용자가 만든 서로 다른 데이터가 충돌하면 후속 UX에서 선택 또는 건너뛰기를 제공할 때까지 원본을 유지합니다.
+- 정식 사용자는 계정별 Supabase DB부터 새로 시작합니다.
+- localStorage → 계정 DB 이전 UI와 실제 upsert 구현은 현재 High 필수 범위가 아니며 Deferred / Optional입니다.
+- localStorage 데이터는 로그인 계정의 기본 데이터로 자동 표시하지 않습니다.
+- localStorage 원본은 자동 이전하거나 자동 삭제하지 않습니다.
+- `local_data_migration_batches`와 `local_data_migration_items`는 향후 실제 기존 사용자 데이터 보존 요구가 생길 때 선택적으로 이전 기능을 만들기 위한 안전장치입니다.
+- 미래에 이전 기능을 다시 도입한다면 다음 원칙을 유지합니다.
+  - 사용자 확인 전 자동 이전 금지
+  - 성공 확인 전 원본 삭제 금지
+  - 기존 local id 보존
+  - 부분 실패와 재시도 허용
+  - 샘플·fixture·파싱 실패 항목 제외 사유 제공
+  - 동일 local item의 중복 이전 방지
 
 ## 남은 검증
 
 - 사용자가 Supabase project에 migration을 적용했고 Google 계정 A/B UI smoke test로 계정별 데이터 분리를 확인했습니다.
 - SQL-level 또는 자동화된 select / insert / update / delete RLS 정책 검증은 아직 별도 hardening 작업으로 남아 있습니다.
-- localStorage 이전 UI와 실제 upsert action은 migration UX contract가 준비된 뒤 구현합니다.

@@ -25,6 +25,8 @@
 
 - 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback → `/dashboard`, 로그아웃 → `/login?authNotice=SIGNED_OUT` 로컬 흐름을 확인. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요.
 - 2026-07-13: `feature/database-schema`에서 최신 main 확인 후 사용자별 Supabase schema / RLS migration, localStorage 모델 매핑, repository 경계, localStorage → DB 이전 정책 문서를 추가. 이어서 주요 화면의 read/write를 Supabase repository로 전환해 로그인 계정별 DB 데이터를 사용하도록 변경. 사용자가 Supabase SQL Editor에서 migration 실행 성공과 Table Editor 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료.
+- 2026-07-13: 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UX / upsert 구현은 High 필수 범위에서 제외하고 Deferred / Optional로 전환. localStorage 원본은 자동 이전하거나 자동 삭제하지 않으며, 로그인 세션에서는 계정 DB 데이터를 기본으로 사용.
+- 2026-07-13: 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, 로그인 계정별 DB 분리를 확인. 로그인·DB foundation은 추가 확장보다 안정화 대상으로 두고, 다음 개발 우선순위를 AI API 보호 → AI 분석 품질 개선 → 목적/JD/질문 기반 추천 → 부족 경험 비교와 답변 초안으로 전환.
 
 ### High
 
@@ -40,21 +42,16 @@
 - [x] repository 경계를 두고 localStorage adapter 추가
 - [x] 주요 UI의 `storage.ts` 직접 호출을 repository 경계로 전환
 - [x] localStorage → 계정 데이터 마이그레이션 정책 문서화 (`ISSUE-025`)
-- [ ] localStorage → 계정 데이터 마이그레이션 탐지 / 확인 / upsert 구현 (`ISSUE-025`)
 - [ ] 공개 AI API 인증, rate limit, OpenAI spend limit / alert 적용 (`ISSUE-024`)
+- [ ] AI 분석 품질 개선: 경험 요약 / 역량 / 성과 / 근거 구조 개선 (`ISSUE-034`)
+- [ ] AI 추천 고도화: 목적 / JD 원문 / 지원 질문 기반 추천 contract 정의와 구현 (`ISSUE-031`)
+- [ ] 부족 경험 비교와 추천 경험 기반 답변 초안 생성 (`ISSUE-031`)
 
 ### Medium
 
-- [ ] 기존 v1.1 데이터 read 호환과 migration 멱등성 구현
-- [ ] 사용자 생성 데이터 판별과 샘플·fixture·파싱 실패 항목 제외 contract 구현
-- [ ] migration 부분 실패 / 재시도 / 원본 보존 구현
-- [ ] AI 분석 결과 schema와 근거 표시 고도화
 - [ ] AI 추천 정확도 평가 기준과 회귀 사례 정의
 - [ ] AI 추천 이유·활용 방향·근거 일치 강화
-- [ ] JD / 직무 요구사항 / 우대사항 원문 입력 구조화와 경험 매칭 contract 정의
 - [ ] 질문 이미지 OCR / vision 입력의 일회성 처리와 개인정보·비용 정책 정의
-- [ ] 추천 경험 기반 답변 초안 생성 schema와 저장 여부 결정
-- [ ] 보유 경험과 부족 경험 비교 기준 정의
 - [ ] AI model / prompt version 기록 여부 결정
 - [ ] 서버 오류 code와 사용자용 message 계약 정리
 
@@ -67,6 +64,13 @@
 - [ ] Supabase Storage를 사용할 실제 기능. OCR용 이미지는 우선 원본 저장 없이 처리
 - [ ] 여러 추천 후보와 비교 기능 범위
 
+### Deferred / Optional
+
+- [ ] localStorage → 계정 데이터 마이그레이션 탐지 / 확인 / upsert 구현 (`ISSUE-025`)
+- [ ] 기존 v1.1 데이터 read 호환과 migration 멱등성 구현
+- [ ] 사용자 생성 데이터 판별과 샘플·fixture·파싱 실패 항목 제외 contract 구현
+- [ ] migration 부분 실패 / 재시도 / 원본 보존 구현
+
 ## Track B — 디자인·사용자 경험 고도화
 
 담당: 사용자
@@ -76,7 +80,6 @@
 - [ ] 검정·차콜 디자인 token과 공통 컴포넌트 상태 정리
 - [ ] Track A 인증 contract 기반 로그인 / 회원가입 route UI와 `components/auth/**` 설계
 - [ ] 인증 확인 중 / 세션 만료 / 접근 불가 상태 설계
-- [ ] localStorage 데이터 이전 안내와 진행·부분 실패·완료 UX 설계
 - [ ] 오늘의 기록 핵심 작성 흐름 사용성 검토
 - [ ] 나의 활동 목록·상세 탐색 흐름 개선
 - [ ] CampusLog AI 입력·결과·추천 기록 위계 개선

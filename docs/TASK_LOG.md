@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-13 - AI 개발 우선순위 재정렬
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex |
+| 작업 요약 | 로그인·DB foundation 확인 이후 다음 개발 초점을 AI API 보호와 AI 분석·추천 품질 고도화로 전환 |
+| 수정한 파일 | `PRD.md`, `docs/CURRENT_PHASE.md`, `docs/DATA_CONTRACT.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/ISSUE_LOG.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, 계정별 DB 분리를 확인한 내용을 반영. 다음 개발 순서를 AI API 보호, AI 분석 품질 개선, 목적 / JD / 질문 기반 추천, 부족 경험 비교와 답변 초안으로 정리. localStorage migration은 Deferred / Optional로 유지 |
+| 검증한 내용 | 문서 변경만 수행. `git diff --check`로 whitespace 오류를 확인 |
+| 남은 작업 | 실제 코드 구현은 `feature/ai-api-protection`부터 시작 |
+| 관련 커밋 메시지 | `docs: align roadmap around AI development` |
+
 ### 2026-07-13 - 사용자별 Supabase schema / RLS foundation 추가
 
 | 항목 | 내용 |
@@ -40,7 +53,7 @@
 | 수정한 파일 | `supabase/migrations/20260713000100_user_data_schema.sql`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/NewActivityClient.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/experiences/NewExperienceClient.tsx`, `web/src/components/experiences/EditExperienceClient.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceForm.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/recommend/history/page.tsx`, `docs/DATA_CONTRACT.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
 | 변경 내용 | `Experience`, `TrackedActivity`, `DailyLog`, `ExperienceAnalysis`, `Recommendation`, `ExperienceSynthesisDraft`를 사용자별 `user_id`로 분리하는 Postgres table과 RLS CRUD 정책을 작성. 기존 localStorage id를 보존하기 위해 `(user_id, id)` 복합 키를 사용하고, 활동 종료 완료 경험 연결은 `generated_experience_id` unique partial index로 중복을 방지. localStorage migration batch / item ledger 테이블을 추가해 사용자 확인 기반 이전, 부분 실패, 재시도, 원본 보존 정책을 뒷받침. async repository interface, localStorage adapter, Supabase adapter를 추가하고 오늘의 기록, 활동 추가/상세, 나의 활동, 경험 작성/수정/상세/분석, AI 추천, 추천 기록 화면을 repository 경계로 전환. Supabase 설정이 있는 로그인 세션에서는 localStorage를 기본 데이터로 표시하지 않고 계정별 DB 데이터를 사용 |
 | 검증한 내용 | 작업 시작 전 `git pull` 결과 최신 main 확인, 기준 문서 확인, localStorage 모델과 관계 파악. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 Supabase SQL Editor에서 migration 실행 성공(`Success. No rows returned`)과 Table Editor의 사용자 데이터 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료 |
-| 남은 작업 | localStorage 이전 UX와 실제 upsert action은 후속 PR로 진행. SQL-level 또는 자동화된 select / insert / update / delete RLS 정책 검증은 아직 별도로 수행하지 않음 |
+| 남은 작업 | localStorage 이전 UX와 실제 upsert action은 정식 사용자 데이터 보존 요구가 생길 때 선택 PR로 진행. SQL-level 또는 자동화된 select / insert / update / delete RLS 정책 검증은 아직 별도로 수행하지 않음 |
 | 관련 커밋 메시지 | `feat: add user-scoped Supabase data repository` |
 
 ### 2026-07-13 - Supabase Auth foundation 시작
@@ -53,7 +66,7 @@
 | 수정한 파일 | `docs/AUTH_CONTRACT.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `web/.env.example`, `web/package.json`, `web/package-lock.json`, `web/src/middleware.ts`, `web/src/app/auth/callback/route.ts`, `web/src/app/login/page.tsx`, `web/src/app/signup/page.tsx`, `web/src/app/page.tsx`, `web/src/app/globals.css`, `web/src/components/auth/**`, `web/src/components/layout/AppShell.tsx`, `web/src/lib/auth/**`, `web/src/lib/supabase/**` |
 | 변경 내용 | `@supabase/ssr`, `@supabase/supabase-js`를 추가하고 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 환경 변수 계약을 정의. 이메일/비밀번호 로그인·회원가입 server action, Google OAuth 시작, OAuth callback code exchange, 로그아웃 action, 보호 화면·AI API middleware를 추가. `/login`, `/signup` 최소 UI와 설정 누락·공통 오류 문구를 연결하고, 로그인 상태가 아닌 사용자는 보호 화면에서 로그인으로 redirect하도록 구성. 기존 v1.1 커버와 제품 UI는 유지하고 로그아웃은 데스크톱 사이드바 하단, 모바일 헤더 우측에 배치 |
 | 검증한 내용 | `main`에서 `git pull --ff-only` 결과 최신 상태 확인. 사용자가 Supabase project, local `.env.local`, Vercel env, Google OAuth provider를 설정. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. dev 서버에서 `/login` 200, 비로그인 `/dashboard` → `/login?authError=SESSION_REQUIRED`, 보호 API JSON error, 기존 커버 링크 보존, 로그인 UI 렌더를 확인. Google OAuth callback → `/dashboard`, 로그아웃 → `/login?authNotice=SIGNED_OUT` 로컬 흐름을 확인. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있음을 확인 |
-| 남은 작업 | 사용자별 DB schema / RLS, repository, localStorage migration 정책 순서로 진행. 이메일 confirm / SMTP / 비밀번호 재설정과 동일 이메일 provider 연결 정책은 후속 결정 필요 |
+| 남은 작업 | 사용자별 DB schema / RLS와 repository 전환은 후속 PR에서 진행 완료. localStorage migration UI / upsert는 Deferred / Optional로 전환. 이메일 confirm / SMTP / 비밀번호 재설정과 동일 이메일 provider 연결 정책은 후속 결정 필요 |
 | 관련 커밋 메시지 | `feat: add supabase auth foundation` |
 
 ### 2026-07-13 - 2차 MVP 인증·DB·AI 고도화 우선순위 정리
