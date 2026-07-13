@@ -30,6 +30,84 @@
 
 ## 작업 로그
 
+### 2026-07-14 - 활동 추가·공용 컨트롤·프로필 메뉴 고도화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | Cult UI·Animate UI·Kokonut UI 레퍼런스를 CampusLog 검정·차콜 디자인과 실제 인증·저장 계약에 맞춰 활동 추가, Checkbox, 복사, 프로필 메뉴에 통합 |
+| 수정한 파일 | `web/package.json`, `web/package-lock.json`, `web/src/components/ui/expandable-screen.tsx`, `web/src/components/ui/expandable-screen.module.css`, `web/src/components/ui/dropdown-menu.tsx`, `web/src/components/activities/ActivityCreateForm.tsx`, `web/src/components/activities/ActivityCreateScreen.tsx`, `web/src/components/activities/NewActivityClient.tsx`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/animate-ui/components/radix/checkbox.tsx`, `web/src/components/animate-ui/components/buttons/copy.tsx`, `web/src/components/experiences/ExperienceForm.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/auth/SignOutButton.tsx` 삭제, `web/src/components/layout/AppShell.tsx`, `web/src/components/layout/ProfileMenu.tsx`, `web/src/components/layout/ProfileMenu.module.css`, `web/src/hooks/use-account-profile.ts`, `web/src/app/recommend/page.tsx`, `web/src/lib/auth/actions.ts`, `web/src/lib/auth/contract.ts`, `web/src/app/globals.css`, `docs/CURRENT_PHASE.md`, `docs/USER_FLOW.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/AUTH_CONTRACT.md`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 대시보드 상단·빈 상태의 활동 추가를 누른 버튼 원점에서 화면 가장자리 8px 여백과 28px 둥근 모서리의 near-white 대형 패널로 확장하고, 닫을 때 패널 좌표·크기·색을 원래 CTA로 연속 축소하도록 조정. `CampusLog`, 단계 라벨, 소개 문구를 제거하고 `어떤 활동을 기록할까요?`와 필수 폼만 남겼으며, 팝업 저장 CTA는 아이콘+`저장`으로 축약. dialog semantics, 배경 inert·스크롤 잠금, Escape, focus trap·복귀와 reduced motion을 보존하고 저장 중 닫기를 막음. 빠른 기록은 소개 문단을 제거하고 도움말을 자세한 기록이 AI 분석 정확도에 도움이 된다는 문장으로 교체했으며, 제목을 `현재 진행 중인 활동`으로 변경. 네이티브 체크박스 2곳과 참고 문장 복사를 Radix·motion 공용 컨트롤로 교체하되 날짜/기간 상태, 성공 status와 실패 alert를 보존하고 체크박스 라벨 전체를 44px 조작 영역으로 확장. 활동 폼 오류는 해당 필드의 `aria-invalid`·`aria-describedby`에 연결하고 모바일 버튼의 시각·Tab 순서 및 실제 실행 CTA의 `aria-expanded` 상태를 일치시킴. 좌측 로그아웃과 미사용 전용 컴포넌트·스타일을 제거하고 구분선·중립 표면의 실제 원형 아바타+닉네임 계정 메뉴에 통합하며 모바일은 44px 터치 영역 안에 36px 원형 아바타로 축약. Radix 항목이 form submit 전에 닫히지 않도록 로그아웃 선택 기본 동작을 막아 server action redirect를 안정화. Google 사진은 허용된 HTTPS host만 사용하고 fallback initial을 제공. 로그아웃 완료 알림과 추천 제목 위 중복 `CampusLog AI` eyebrow를 제거 |
+| 검증한 내용 | 최종 `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 실제 로그인 세션의 데스크톱 브라우저에서 새 대시보드 문구, 상단·빈 상태의 Expandable Screen, 가장자리가 보이는 대형 둥근 패널, 제목 초기 초점, 아이콘+`저장`, 닫기 뒤 실행 CTA 초점 복귀, 원형 마스크·외곽 링·구분된 표면의 프로필 영역과 닉네임·로그아웃 메뉴를 확인. 로그아웃을 실제 실행해 `/?authMode=login#auth` 복귀 후 `/dashboard` 재접근이 `SESSION_REQUIRED` 로그인 화면으로 차단되는 것을 확인. development 전용 localStorage 미리보기에서는 테스트 활동 저장 → 상세 이동 → 대시보드에서 날짜별 기록 저장과 캘린더·목록 반영까지 확인했으며 실제 계정 DB에는 테스트 데이터를 쓰지 않음 |
+| 남은 작업 | 새 Expandable Screen과 프로필 메뉴의 실제 390px 기기 시각 smoke test, 실제 Google OAuth callback → 온보딩 → metadata 저장 smoke test. 저장되지 않은 전역 입력의 로그아웃 경고는 공통 dirty-state 계약이 없어 기존 미완료 상태로 유지. 로그아웃 실패 안내·재시도와 현재 기기/전체 기기 scope 정책은 `ISSUE-043`에서 결정. 기존 Next.js/PostCSS moderate advisory는 `ISSUE-036`에서 별도 해결 |
+| 관련 커밋 메시지 | `feat: refine dashboard creation and account controls` |
+
+### 2026-07-14 - CampusLog AI 추천 헤더 위계 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | `/recommend`의 반복 분할 탭을 제거하고 추천 설명과 추천·기록 간 이동 위치를 사용자 피드백에 맞게 정리 |
+| 수정한 파일 | `web/src/app/recommend/page.tsx`, `web/src/app/recommend/history/page.tsx`, `web/src/components/ai/CampusLogAiMenu.tsx` 삭제, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 설명을 `활용 목적과 질문에 맞는 경험을 찾고, 어떻게 풀어낼지 함께 제안합니다.`로 교체. 로딩·빈 상태·정상 상태가 공유하는 헤더 컴포넌트로 중복을 제거하고 `추천 기록`을 헤더 우측 보조 액션으로 이동. 추천 기록 화면에서는 활성 탭 대신 `새 추천 받기` 단일 복귀 액션을 제공. 데스크톱 우측 정렬, 모바일 2열 버튼, visible label, 44px 이상 터치 영역과 focus-visible을 유지 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 브라우저에서 기존 설명·분할 탭이 제거되고 새 설명과 교차 이동 링크가 표시되는지 확인. 기본 데스크톱, 861×800, 390×844, 320×700에서 가로 overflow가 없고 390px 모바일 헤더 버튼이 각 166.5×46px, 320px에서 각 131.5×46px인지 확인. `추천 기록` → `/recommend/history`와 `새 추천 받기` → `/recommend` 양방향 이동 및 깨끗하게 다시 연 브라우저 탭의 warning/error 0건 확인 |
+| 남은 작업 | 추천 결과·근거·입력 구조의 전체 위계 고도화는 Track A AI 계약과 함께 기존 TODO에서 계속 진행. 사용자가 현재 변경 전체를 하나의 Draft PR로 게시하도록 승인했으므로 인증·대시보드·추천 영역을 PR 설명과 리뷰 포인트에서 분리해 검토 |
+| 관련 커밋 메시지 | `refactor: simplify recommendation navigation` |
+
+### 2026-07-14 - 오늘의 기록 플로팅 작성 패널 고도화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | `/dashboard`의 항상 펼쳐진 빠른 기록 폼을 Cult UI Add Note 방식의 반응형 플로팅 패널로 재구성 |
+| 수정한 파일 | `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/ui/floating-panel.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 날짜 맥락과 단일 `기록 남기기` CTA를 먼저 표시하고 활동 radio·textarea·글자 수·취소·저장을 controlled panel로 이동. 일반 닫기·배경·Escape에서는 draft를 보존하고 명시적 작성 취소만 초기화하며, 저장 중에는 중복 제출과 dismiss를 막고 저장 성공 후에만 패널을 닫음. create/update 결과 객체와 delete 결과로 목록을 즉시 갱신해 후속 목록 조회 실패 오인을 제거. 활동 상세 `activityId` 진입과 기존 수정 버튼이 같은 패널을 열도록 유지. desktop anchor flip/clamp, mobile visualViewport·safe area·짧은 viewport fallback, 내부 스크롤·sticky footer, focus trap·복귀, inert 배경, exit 완료 시점 복구, reduced motion을 적용. 320px에서 캘린더 최소 너비가 페이지를 밀던 기존 가로 overflow도 grid item `min-width: 0`으로 수정 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 개발 전용 localStorage 미리보기에서 빈 상태, `activityId` 자동 열기, CTA 열기, textarea 초기 초점, Escape 닫기·초점 복귀, draft 보존, 필수 입력 오류, 기록 저장·수정·삭제를 확인. 1280×720, 390×844, 320×700에서 가로 overflow 없음과 패널 경계를 확인하고 320×240 짧은 visual viewport에서도 panel top 16px / bottom 228px, footer 접근과 내부 스크롤을 확인. 실제 모바일 키보드처럼 visual viewport만 320×160으로 줄어든 조건에서는 `data-compact-height`가 적용되어 footer가 고정되지 않고 textarea와 저장 버튼 모두 내부 스크롤로 접근 가능한지 확인. 닫힘 중 dialog가 남아 있는 동안 shell inert·body lock이 유지되고 완료 뒤 trigger로 초점이 돌아오는지 확인. 콘솔 warning/error 없음. 저장 검증용 기록은 삭제했고, 패널을 바로 볼 수 있도록 개발 미리보기 저장소에만 진행 활동 1개를 유지 |
+| 남은 작업 | 기존 Supabase repository의 daily log write와 AI 합성 상태 무효화가 단일 DB transaction이 아니어서 부분 성공을 실패로 오인할 수 있는 위험을 Track A의 `ISSUE-039`에서 해결. 사용자가 현재 변경 전체를 하나의 Draft PR로 게시하도록 승인했으므로 인증 진입과 dashboard 영역을 리뷰 포인트에서 분리해 확인 |
+| 관련 커밋 메시지 | `feat: add floating daily record panel` |
+
+### 2026-07-14 - 인증 없는 로컬 UI 미리보기 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | Supabase 환경 변수 없이 로그인 이후 대시보드 디자인을 확인할 수 있는 development 전용 미리보기 모드 추가 |
+| 수정한 파일 | `web/src/lib/supabase/env.ts`, `web/src/middleware.ts`, `web/.env.example`, `README.md`, `docs/AUTH_CONTRACT.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `NEXT_PUBLIC_CAMPUSLOG_UI_PREVIEW=1`일 때 development 환경의 보호 페이지 middleware만 통과시키고 Supabase client 대신 localStorage repository를 사용. 보호 API는 계속 차단하며 production build에서는 미리보기 값을 무시하도록 제한 |
+| 검증한 내용 | `NEXT_PUBLIC_CAMPUSLOG_UI_PREVIEW=1` development 서버에서 `/dashboard` 200과 localStorage repository 기반 달력·기록 화면 렌더 확인. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. production build에서는 `NODE_ENV` 조건으로 preview가 비활성화됨을 확인 |
+| 남은 작업 | 디자인 확인이 끝나면 일반 개발 서버는 preview 변수 없이 다시 실행 |
+| 관련 커밋 메시지 | `chore: add local UI preview mode` |
+
+### 2026-07-14 - 이메일·Google 회원가입 프로필 Stepper 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 회원가입을 가입 방식 선택부터 이름·닉네임 저장까지 단계형 흐름으로 재구성하고 Google OAuth 후 온보딩 복귀 추가 |
+| 수정한 파일 | `web/src/components/auth/AuthForm.tsx`, `web/src/components/auth/SignupForm.tsx`, `web/src/components/auth/GoogleIcon.tsx`, `web/src/components/auth/ProfileStepperFields.tsx`, `web/src/components/auth/ProfileSetupForm.tsx`, `web/src/components/ui/stepper.tsx`, `web/src/components/ui/stepper.module.css`, `web/src/app/onboarding/page.tsx`, `web/src/app/auth/callback/route.ts`, `web/src/app/globals.css`, `web/src/components/layout/AppShell.tsx`, `web/src/lib/auth/actions.ts`, `web/src/lib/auth/contract.ts`, `web/src/lib/auth/profile.ts`, `web/src/lib/auth/profile-actions.ts`, `web/src/middleware.ts`, `PRD.md`, `README.md`, `docs/CURRENT_PHASE.md`, `docs/USER_FLOW.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/DESIGN.md`, `docs/AUTH_CONTRACT.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 회원가입 첫 화면에 `이메일로 회원가입`, `Google로 회원가입`만 표시. 이메일은 이메일·비밀번호를 클라이언트 단계 상태에 보존한 뒤 이름 → 닉네임 Stepper 최종 제출에서 Supabase signup과 `campuslog_profile` metadata 저장을 함께 수행하며, 비밀번호는 최종 제출 직전에만 FormData에 넣고 응답 후 제거. Google은 OAuth callback의 실제 완료 metadata를 기준으로 신규·미완료 계정을 `/onboarding`에 보내 provider 이름을 수정 가능한 초기값으로 사용하고 프로필 저장 뒤 안전한 `returnTo`로 이동. `/`, 인증 fallback, 보호 화면은 미완료 세션을 온보딩으로 복귀시키고 기존 계정은 metadata가 없을 때 최초 1회 입력. 온보딩 세션 만료에는 재로그인 CTA 제공. React Bits Stepper의 방향·진행 표시를 TypeScript/CSS module로 옮기고 semantic `ol`, 단계 검증, 입력 보존, 이전 단계 초점 복구, 모바일 시각·키보드 순서 일치, 텍스트 대비, reduced motion을 보강. metadata는 공개 프로필이나 RLS·권한 근거로 사용하지 않음 |
+| 검증한 내용 | 최종 코드에서 `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 임시 공개 설정을 사용한 별도 로컬 포트의 인앱 브라우저에서 가입 방식 선택 → 이메일·비밀번호 → 이름 → 닉네임, 필드별 `aria-invalid` 유지, 이전 단계의 이메일·가입 방식 버튼 초점 복구, 390px 모바일 이전·완료 버튼의 DOM·시각 순서 일치, 390px·320px 가로 overflow 없음, 브라우저 console error 0건 확인. 비로그인 `/onboarding?returnTo=/dashboard` → 안전한 `/signup` 복귀, callback 외부 `returnTo` → `/signup?authError=CALLBACK_FAILED`, 최종 `http://localhost:3000/signup` 200 확인. auth/security, UI/accessibility, integration 관점의 독립 리뷰 후 발견된 온보딩 우회와 접근성 이슈를 보완하고 재검토 요청 |
+| 남은 작업 | 현재 작업 환경에는 실제 Supabase 공개 환경 변수가 없어 실제 이메일 가입 저장, 이메일 확인 callback, Google OAuth callback → `/onboarding` → metadata 저장은 미검증. 기존 Supabase 환경 변수를 복원한 뒤 실제 계정 smoke test 필요 |
+| 관련 커밋 메시지 | `feat: add guided signup onboarding` |
+
+### 2026-07-14 - 인증 전후 브랜드 진입 순서 재구성
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 비로그인 첫 화면을 순환 기록 문구로 바꾸고, 스크롤 인증 후 로그인 사용자에게 기존 3D 책 표지를 보여주는 순서로 재구성 |
+| 수정한 파일 | `web/components.json`, `web/postcss.config.mjs`, `web/package.json`, `web/package-lock.json`, `web/src/app/page.tsx`, `web/src/app/globals.css`, `web/src/components/layout-text-flip-demo.tsx`, `web/src/components/landing/LandingHero.tsx`, `web/src/components/ui/layout-text-flip.tsx`, `web/src/components/ui/scroll-float.tsx`, `web/src/components/ui/input.tsx`, `web/src/components/ui/label.tsx`, `web/src/components/auth/AuthForm.tsx`, `web/src/lib/utils.ts`, `web/src/lib/auth/contract.ts`, `web/src/lib/auth/actions.ts`, `web/src/middleware.ts`, `PRD.md`, `README.md`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/IA.md`, `docs/USER_FLOW.md`, `docs/SCREEN_SPEC.md`, `docs/AUTH_CONTRACT.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `/` 서버 페이지가 세션을 확인해 비로그인에는 좌측 상단 고정 `CampusLog` 워드마크, `대학생활을 / 공모전을 / 해커톤을 / 프로젝트를 / 대회를 기록하다.` 중앙 순환 문구와 스크롤 아웃을, 로그인에는 기존 3D 책을 표시하도록 변경. 명사와 조사를 독립 motion 단위로 분리해 같은 `을` 또는 `를`이 이어지면 조사 DOM을 유지하고, `을 ↔ 를`로 값이 바뀔 때만 더 짧고 약하게 전환. 단어의 실제 렌더링 폭을 측정해 500ms 동안 연속 보간하고 마스크 좌우 여유로 마지막 획 잘림을 방지. `대학생활`은 검정·강한 굵기, 나머지 순환 명사는 웜그레이·가벼운 굵기로 구분하되 조사 `을/를`은 항상 검정·강한 굵기로 고정. 44px `일시정지 / 재생` 컨트롤로 자동 전환을 중지·재개할 수 있고 reduced motion에서는 첫 문구 고정과 `자동 전환 꺼짐` 상태를 제공. 작은 아래 방향 휠 입력 누적으로 인증 viewport까지 자동 이동하되, 인증 화면의 위 방향 휠은 자동 복귀시키지 않고 브라우저 기본 스크롤을 유지. 하단 링크는 `스크롤하여 로그인 또는 회원가입` 한 줄과 2.2초 주기의 3px 화살표 모션만 제공하고 별도 마우스 아이콘·이중 위계는 제거. 첫 viewport와 인증 카드 하단 장식선을 제거하고 로그인 mode의 `Welcome back`·소개 문구를 생략. 인증 viewport는 좌측 소개 문구 없이 Aceternity signup form을 참고한 단일 카드를 중앙 배치. Tailwind CSS v4 theme·utilities, shadcn `components.json`, Input·Label primitive와 `cn` 병합 유틸리티를 구성하되 기존 v1.1 화면 보호를 위해 Preflight는 제외. 실제 Supabase server action·상태·`returnTo` 계약은 유지하고 일반 인증 성공 기본 목적지는 `/`로 변경. 보호 화면의 안전한 `returnTo`와 별도 `/login`, `/signup` fallback은 보존 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 인앱 브라우저 1280×720에서 좌측 상단 `CampusLog` 워드마크, `대학생활을 / 공모전을 / 해커톤을 / 프로젝트를 / 대회를` 조사와 문장별 중앙 정렬, 같은 조사 key 유지와 `을 ↔ 를` 선택 전환을 확인. `대학생활 → 공모전`은 기존 폭 361.8px을 유지한 채 opacity 1 → 0.91 → 0.28로 먼저 퇴장한 뒤 새 단어가 나타나며 폭이 299.4 → 279.3 → 274.5 → 273.9px로 줄어드는 것을 확인. `프로젝트 → 대회`도 기존 폭 361.8px 유지 퇴장 후 236.1 → 195.4 → 187.0 → 185.9px로 줄어들고, 두 전환 모두 새 단어 오른쪽 끝과 조사 시작점의 간격이 0px임을 확인. 전체 순환 590개 샘플 프레임에서 명사 DOM 0건인 프레임은 없고 최소 최대 opacity는 0.389임을 확인. 마스크 좌우 여유는 각 4.95px이며 보조 명사는 rgb(109, 105, 99)·680, 조사는 rgb(31, 30, 28)·820으로 고정됨을 확인. 하단 스크롤 링크는 한 줄 문구, 44px 조작 영역, 화살표 animation 2.2초, 접근성 이름 `아래로 스크롤하여 로그인 또는 회원가입`을 확인. 실제 9px 아래 휠 입력은 scrollY 0 → 700으로 자동 이동하고 인증 화면의 동일한 위 입력은 700 → 691만 자연 이동해 자동 복귀하지 않음을 확인. 첫 화면 경계 0px, 인증 카드 하단 pseudo-element 없음, `Welcome back`·로그인 소개 문구 0건, 중앙 로그인 카드, 로그인→회원가입 mode 전환, heading focus 이동, 오류 code별 `aria-invalid`, 가로 overflow 없음과 44px 이상 링크를 확인. `http://localhost:3000` 개발 서버에서 최종 화면 렌더 확인 |
+| 남은 작업 | 현재 로컬 실행 환경에는 Supabase 공개 환경 변수가 없어 실제 credential/OAuth 인증 성공 후 3D 책 노출은 미검증. 환경 설정이 있는 세션에서 로그인·회원가입·로그아웃과 보호 경로 `returnTo` 회귀 확인 필요. 기존 Next.js 15.5.20의 PostCSS 8.4.31에서 `npm audit --omit=dev` moderate 경고 2건이 남아 있으며 강제 자동 수정은 비호환 변경이라 적용하지 않음 (`ISSUE-036`) |
+| 관련 커밋 메시지 | `feat: refine animated auth landing` |
+
 ### 2026-07-13 - AI 개발 우선순위 재정렬
 
 | 항목 | 내용 |

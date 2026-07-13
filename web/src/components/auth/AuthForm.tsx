@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowRight, Chrome, Loader2, Lock, Mail } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 
+import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import { SignupForm } from "@/components/auth/SignupForm";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   type AuthFeedback,
+  type AuthErrorCode,
   type AuthFormState,
   AUTH_MIN_PASSWORD_LENGTH,
+  AUTH_DEFAULT_RETURN_TO,
   getAuthErrorFeedback,
   getAuthNoticeFeedback,
   initialAuthFormState,
@@ -16,7 +22,6 @@ import {
 import {
   signInWithGoogleAction,
   signInWithPasswordAction,
-  signUpWithPasswordAction,
 } from "@/lib/auth/actions";
 import { cn } from "@/lib/utils";
 
@@ -27,33 +32,22 @@ type AuthFormProps = {
   returnTo: string;
   authError?: string;
   authNotice?: string;
+  headingLevel?: "h1" | "h2" | "h3";
   isSupabaseConfigured: boolean;
+  switchHref?: string;
 };
 
-const authCopy = {
-  login: {
-    eyebrow: "Welcome back",
-    title: "로그인",
-    description: "기록해둔 활동과 AI 추천을 이어서 확인합니다.",
-    submitLabel: "로그인",
-    pendingLabel: "로그인 중",
-    switchText: "아직 계정이 없다면",
-    switchHref: "/signup",
-    switchLabel: "회원가입",
-    passwordAutoComplete: "current-password",
-  },
-  signup: {
-    eyebrow: "Start CampusLog",
-    title: "회원가입",
-    description: "계정 기반 기록 저장을 시작합니다.",
-    submitLabel: "회원가입",
-    pendingLabel: "가입 처리 중",
-    switchText: "이미 계정이 있다면",
-    switchHref: "/login",
-    switchLabel: "로그인",
-    passwordAutoComplete: "new-password",
-  },
-} as const;
+const emailFieldErrorCodes: AuthErrorCode[] = [
+  "INVALID_INPUT",
+  "INVALID_EMAIL",
+  "INVALID_CREDENTIALS",
+];
+
+const passwordFieldErrorCodes: AuthErrorCode[] = [
+  "INVALID_INPUT",
+  "INVALID_PASSWORD",
+  "INVALID_CREDENTIALS",
+];
 
 function getVisibleFeedback(
   state: AuthFormState,
@@ -67,26 +61,21 @@ function getVisibleFeedback(
   return getAuthErrorFeedback(authError) ?? getAuthNoticeFeedback(authNotice);
 }
 
-function SubmitButton({
-  disabled,
-  label,
-  pendingLabel,
-}: {
-  disabled: boolean;
-  label: string;
-  pendingLabel: string;
-}) {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
-  const isDisabled = disabled || pending;
 
   return (
-    <button className="button button-primary auth-submit" disabled={isDisabled}>
+    <button
+      className="button button-primary auth-submit"
+      disabled={disabled || pending}
+      type="submit"
+    >
       {pending ? (
         <Loader2 className="button-icon auth-spinner" aria-hidden="true" />
       ) : (
         <ArrowRight className="button-icon" aria-hidden="true" />
       )}
-      <span>{pending ? pendingLabel : label}</span>
+      <span>{pending ? "로그인 중" : "로그인"}</span>
     </button>
   );
 }
@@ -103,39 +92,50 @@ function GoogleSubmitButton({ disabled }: { disabled: boolean }) {
       {pending ? (
         <Loader2 className="button-icon auth-spinner" aria-hidden="true" />
       ) : (
-        <Chrome className="button-icon" aria-hidden="true" />
+        <GoogleIcon />
       )}
       <span>{pending ? "Google 연결 중" : "Google로 계속하기"}</span>
     </button>
   );
 }
 
-export function AuthForm({
-  mode,
+function LoginForm({
   returnTo,
   authError,
   authNotice,
+  headingLevel = "h1",
   isSupabaseConfigured,
-}: AuthFormProps) {
-  const copy = authCopy[mode];
-  const action =
-    mode === "login" ? signInWithPasswordAction : signUpWithPasswordAction;
-  const [state, formAction] = useActionState(action, initialAuthFormState);
+  switchHref: switchHrefOverride,
+}: Omit<AuthFormProps, "mode">) {
+  const Heading = headingLevel;
+  const [state, formAction] = useActionState(
+    signInWithPasswordAction,
+    initialAuthFormState,
+  );
   const feedback = getVisibleFeedback(state, authError, authNotice);
   const shouldShowFeedback =
     feedback !== null &&
     !(feedback.code === "CONFIGURATION_MISSING" && !isSupabaseConfigured);
   const switchHref =
-    returnTo === "/dashboard"
-      ? copy.switchHref
-      : `${copy.switchHref}?returnTo=${encodeURIComponent(returnTo)}`;
+    switchHrefOverride ??
+    (returnTo === AUTH_DEFAULT_RETURN_TO
+      ? "/signup"
+      : `/signup?returnTo=${encodeURIComponent(returnTo)}`);
+  const feedbackId = "login-feedback";
+  const fieldErrorCode =
+    feedback?.status === "error" ? feedback.code : undefined;
+  const hasEmailError =
+    fieldErrorCode !== undefined && emailFieldErrorCodes.includes(fieldErrorCode);
+  const hasPasswordError =
+    fieldErrorCode !== undefined &&
+    passwordFieldErrorCodes.includes(fieldErrorCode);
 
   return (
-    <section className="auth-panel" aria-labelledby={`${mode}-title`}>
+    <section className="auth-panel" aria-labelledby="login-title">
       <div className="auth-panel-header">
-        <p className="eyebrow">{copy.eyebrow}</p>
-        <h1 id={`${mode}-title`}>{copy.title}</h1>
-        <p>{copy.description}</p>
+        <Heading id="login-title" tabIndex={-1}>
+          로그인
+        </Heading>
       </div>
 
       {!isSupabaseConfigured ? (
@@ -146,6 +146,7 @@ export function AuthForm({
 
       {shouldShowFeedback ? (
         <div
+          id={feedbackId}
           className={cn(
             "auth-feedback",
             feedback.status === "error" ? "is-error" : "is-success",
@@ -159,48 +160,42 @@ export function AuthForm({
       <form action={formAction} className="auth-form">
         <input name="returnTo" type="hidden" value={returnTo} />
 
-        <label className="form-field auth-field">
-          <span>이메일</span>
-          <span className="auth-input-wrap">
-            <Mail aria-hidden="true" />
-            <input
-              autoComplete="email"
-              defaultValue={state.email ?? ""}
-              disabled={!isSupabaseConfigured}
-              inputMode="email"
-              name="email"
-              placeholder="you@example.com"
-              required
-              type="email"
-            />
-          </span>
-        </label>
+        <div className="auth-field">
+          <Label htmlFor="login-email">이메일</Label>
+          <Input
+            id="login-email"
+            aria-describedby={shouldShowFeedback ? feedbackId : undefined}
+            aria-invalid={hasEmailError || undefined}
+            autoComplete="email"
+            className="auth-control"
+            defaultValue={state.email ?? ""}
+            disabled={!isSupabaseConfigured}
+            inputMode="email"
+            name="email"
+            placeholder="you@example.com"
+            required
+            type="email"
+          />
+        </div>
 
-        <label className="form-field auth-field">
-          <span>비밀번호</span>
-          <span className="auth-input-wrap">
-            <Lock aria-hidden="true" />
-            <input
-              autoComplete={copy.passwordAutoComplete}
-              disabled={!isSupabaseConfigured}
-              minLength={AUTH_MIN_PASSWORD_LENGTH}
-              name="password"
-              placeholder={`${AUTH_MIN_PASSWORD_LENGTH}자 이상`}
-              required
-              type="password"
-            />
-          </span>
-        </label>
+        <div className="auth-field">
+          <Label htmlFor="login-password">비밀번호</Label>
+          <Input
+            id="login-password"
+            aria-describedby={shouldShowFeedback ? feedbackId : undefined}
+            aria-invalid={hasPasswordError || undefined}
+            autoComplete="current-password"
+            className="auth-control"
+            disabled={!isSupabaseConfigured}
+            minLength={AUTH_MIN_PASSWORD_LENGTH}
+            name="password"
+            placeholder={`${AUTH_MIN_PASSWORD_LENGTH}자 이상`}
+            required
+            type="password"
+          />
+        </div>
 
-        <p className="auth-help">
-          인증 오류는 계정 존재 여부를 노출하지 않는 공통 문구로 안내합니다.
-        </p>
-
-        <SubmitButton
-          disabled={!isSupabaseConfigured}
-          label={copy.submitLabel}
-          pendingLabel={copy.pendingLabel}
-        />
+        <SubmitButton disabled={!isSupabaseConfigured} />
       </form>
 
       <div className="auth-divider" aria-hidden="true">
@@ -213,11 +208,45 @@ export function AuthForm({
       </form>
 
       <p className="auth-switch">
-        {copy.switchText}{" "}
+        <span>아직 계정이 없다면</span>
         <Link href={switchHref} className="auth-switch-link">
-          {copy.switchLabel}
+          회원가입
         </Link>
       </p>
     </section>
+  );
+}
+
+export function AuthForm({
+  mode,
+  returnTo,
+  authError,
+  authNotice,
+  headingLevel = "h1",
+  isSupabaseConfigured,
+  switchHref,
+}: AuthFormProps) {
+  if (mode === "signup") {
+    return (
+      <SignupForm
+        authError={authError}
+        authNotice={authNotice}
+        headingLevel={headingLevel}
+        isSupabaseConfigured={isSupabaseConfigured}
+        returnTo={returnTo}
+        switchHref={switchHref}
+      />
+    );
+  }
+
+  return (
+    <LoginForm
+      authError={authError}
+      authNotice={authNotice}
+      headingLevel={headingLevel}
+      isSupabaseConfigured={isSupabaseConfigured}
+      returnTo={returnTo}
+      switchHref={switchHref}
+    />
   );
 }

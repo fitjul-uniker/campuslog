@@ -4,11 +4,18 @@ import { createServerClient } from "@supabase/ssr";
 
 import {
   AUTH_ERROR_MESSAGES,
+  AUTH_DEFAULT_RETURN_TO,
+  AUTH_ONBOARDING_PATH,
   createLoginPath,
+  createOnboardingPath,
   isAllowedReturnPath,
   normalizeReturnTo,
 } from "@/lib/auth/contract";
-import { getSupabasePublicConfig } from "@/lib/supabase/env";
+import { hasCompletedCampusLogProfile } from "@/lib/auth/profile";
+import {
+  getSupabasePublicConfig,
+  isDevelopmentUiPreview,
+} from "@/lib/supabase/env";
 
 const protectedPagePrefixes = [
   "/dashboard",
@@ -78,8 +85,19 @@ export async function middleware(request: NextRequest) {
   const shouldProtectPage = isProtectedPage(pathname);
   const shouldProtectApi = isProtectedApi(pathname);
   const isAuthPage = authPagePaths.includes(pathname);
+  const shouldRefreshRootSession =
+    pathname === "/" || pathname === "/onboarding";
 
-  if (!shouldProtectPage && !shouldProtectApi && !isAuthPage) {
+  if (isDevelopmentUiPreview() && shouldProtectPage) {
+    return NextResponse.next();
+  }
+
+  if (
+    !shouldProtectPage &&
+    !shouldProtectApi &&
+    !isAuthPage &&
+    !shouldRefreshRootSession
+  ) {
     return NextResponse.next();
   }
 
@@ -147,12 +165,29 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  if (
+    user &&
+    !shouldProtectApi &&
+    pathname !== AUTH_ONBOARDING_PATH &&
+    !hasCompletedCampusLogProfile(user.user_metadata)
+  ) {
+    const rawReturnTo = isAuthPage
+      ? request.nextUrl.searchParams.get("returnTo")
+      : createReturnTo(request);
+
+    return redirectWithCookies(
+      request,
+      createOnboardingPath(normalizeReturnTo(rawReturnTo)),
+      response,
+    );
+  }
+
   if (isAuthPage && user) {
     const rawReturnTo = request.nextUrl.searchParams.get("returnTo");
     const returnTo = normalizeReturnTo(rawReturnTo);
     const targetPath = isAllowedReturnPath(returnTo)
       ? returnTo
-      : "/dashboard";
+      : AUTH_DEFAULT_RETURN_TO;
 
     return redirectWithCookies(request, targetPath, response);
   }

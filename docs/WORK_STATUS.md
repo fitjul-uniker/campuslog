@@ -14,8 +14,14 @@
 - [x] localStorage 모델과 DB 이전 정책 문서화
 - [x] 주요 화면 데이터 read/write를 Supabase 사용자별 repository로 전환
 - [x] Supabase project migration 적용과 Google 계정 A/B 데이터 분리 수동 smoke test
+- [x] 비로그인 순환 기록 문구 → 중앙 인증 카드 → 인증 후 3D 책 표지 진입 흐름 구현
+- [x] 회원가입 방식 선택 → 이메일 조건부 자격 증명 → 이름·닉네임 Stepper와 Google 온보딩 복귀 구현
+- [x] 오늘의 기록 빠른 작성 폼을 반응형 플로팅 패널로 고도화
+- [x] CampusLog AI 추천 화면 설명과 추천·기록 간 교차 이동 위계 정리
+- [x] 활동 추가 Expandable Screen, 공용 Checkbox·CopyButton과 좌측 하단 프로필 드롭다운 통합
+- [x] 프로필 드롭다운 로그아웃 제출 안정화와 세션 제거·보호 경로 재차단 브라우저 확인
 
-현재 `main`에는 PR #29의 Supabase Auth foundation과 PR #30의 사용자별 데이터 schema, RLS 정책, repository 경계, 주요 화면의 Supabase repository 연결이 반영되어 있습니다. 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, Supabase SQL Editor migration 적용, Table Editor 테이블 생성, 서로 다른 Google 계정의 계정별 데이터 분리 smoke test를 확인했습니다. 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UI / upsert 구현은 Deferred / Optional로 전환했습니다. 다음 개발 초점은 로그인·DB 확장이 아니라 AI API 보호와 AI 분석·추천 품질 고도화입니다.
+현재 `main`에는 PR #29의 Supabase Auth foundation과 PR #30의 사용자별 데이터 schema, RLS 정책, repository 경계, 주요 화면의 Supabase repository 연결이 반영되어 있습니다. 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, Supabase SQL Editor migration 적용, Table Editor 테이블 생성, 서로 다른 Google 계정의 계정별 데이터 분리 smoke test를 확인했습니다. `ux/auth-first-entry-flow`에서는 비로그인 `/` 좌측 상단에 `CampusLog` 워드마크를 고정하고, 중앙 순환 기록 문구와 GSAP 스크롤 아웃을 적용한 뒤 작은 휠 입력으로 다음 viewport의 중앙 인증 카드까지 자동 이동하도록 진입 순서를 재구성했습니다. `대학생활`은 강하게, 나머지 순환 명사는 옅고 가볍게 표시하며 조사 `을/를`은 항상 검정·강한 굵기로 고정합니다. 실제 글자 폭은 연속 보간하고 조사는 값이 실제로 바뀔 때만 전환하며, 44px 일시정지·재생 컨트롤과 reduced motion 정지 상태를 제공합니다. 구분선과 로그인 mode의 `Welcome back`·소개 문구는 제거했습니다. Tailwind CSS v4와 shadcn/ui 설정 및 Input·Label primitive도 추가했습니다. 회원가입은 이메일·Google 방식 선택으로 시작하며, 이메일은 자격 증명 뒤 이름·닉네임 Stepper를 완료하고 Google 신규·미완료 계정은 OAuth 시작 위치와 무관하게 callback 뒤 `/onboarding`에서 같은 단계를 진행합니다. 미완료 세션은 제품 화면에 진입할 수 없고 기존 계정도 완료 metadata가 없으면 최초 1회 입력합니다. 이름·닉네임은 비공개 Supabase user metadata로 저장하고 권한 판단에는 사용하지 않습니다. `/dashboard`의 빠른 기록은 설명 문단 없는 CTA 카드에서 활동·내용을 입력하는 플로팅 패널로 확장되고, 자세한 기록이 AI 분석 정확도에 도움이 된다고 안내하며 빈 상태는 `진행 활동 추가`와 `오늘로 돌아가기`로 원인을 구분합니다. 활동 추가는 누른 버튼에서 가장자리 여백을 둔 near-white 대형 둥근 패널로 확장되고 닫을 때 같은 버튼으로 축소되며, `/activities/new` 직접 진입도 같은 validation을 사용합니다. 좌측 하단은 원형 아바타·닉네임의 구분된 프로필 영역으로 바꾸고 로그아웃을 드롭다운에 통합했으며, 메뉴 제출을 안정화하고 실제 세션을 삭제한 뒤 완료 알림 없이 로그인 영역으로 복귀합니다. Checkbox·CopyButton 상태도 공용 접근성 primitive로 통일했습니다. CampusLog AI 추천 화면은 현재 경로를 반복하는 분할 탭과 제목 위 `CampusLog AI` eyebrow를 제거하고 헤더의 `추천 기록`, 기록 화면의 `새 추천 받기` 액션으로 교차 이동하도록 정리했습니다. 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UI / upsert 구현은 Deferred / Optional로 전환했습니다. 다음 개발 초점은 AI API 보호와 AI 분석·추천 품질 고도화입니다.
 
 ## v1.1 완료 기준선
 
@@ -110,10 +116,13 @@
 - Supabase 기본 email provider signup rate limit 때문에 개발 테스트용 SMTP / confirm email 정책 결정 필요
 - localStorage → DB 마이그레이션 UI와 upsert 구현은 Deferred / Optional. 원본 자동 삭제 금지와 로그인 세션의 계정 DB 우선 정책은 유지
 - 활동 종료 합성 초안 RLS·보존·완료 Experience 멱등 저장은 Supabase repository로 연결됐지만 완료 저장 흐름의 실제 브라우저 검증은 추가 필요
+- DailyLog write 뒤 합성 draft·activity 상태 무효화가 단일 DB transaction이 아니어서 부분 성공을 실패로 오인할 수 있음 (`ISSUE-039`)
 - Google 계정 A/B 데이터 분리 수동 smoke test는 완료했지만 SQL-level 또는 자동화된 RLS 정책 검증은 아직 별도로 수행하지 않음
 - 공개 AI API rate limit과 비용 한도 필요
 - AI 분석 품질과 JD 원문·질문 입력·부족 경험 비교·답변 초안의 평가 기준 필요
 - OCR 이미지 원본 저장 여부와 Supabase Storage 도입 범위 미확정
+- 새 활동 추가 패널과 프로필 메뉴의 실제 390px 기기 시각 smoke test 미완료
+- 로그아웃 실패 안내·재시도, 세션 scope와 미저장 입력 경고 정책 미확정 (`ISSUE-043`)
 - Track 간 공통 파일 충돌과 merge 순서 관리 필요
 
 ## Git 상태 주의

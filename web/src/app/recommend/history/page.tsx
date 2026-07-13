@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, History, RotateCcw } from "lucide-react";
+import { AlertCircle, History, RotateCcw, Sparkles } from "lucide-react";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -11,7 +11,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
-import { CampusLogAiMenu } from "@/components/ai/CampusLogAiMenu";
 import { AnimatedRecommendationList } from "@/components/recommendations/AnimatedRecommendationList";
 import { GooeyInput } from "@/components/ui/GooeyInput";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
@@ -178,7 +177,10 @@ export default function RecommendationHistoryPage() {
       >
         <div className="campuslog-ai-history-header">
           <p className="eyebrow">CampusLog AI</p>
-          <CampusLogAiMenu />
+          <Link href="/recommend" className="recommendation-history-new">
+            <Sparkles aria-hidden="true" />
+            새 추천 받기
+          </Link>
         </div>
 
         <LayoutGroup id="recommendation-history-layout">

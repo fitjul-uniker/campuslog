@@ -108,12 +108,18 @@ CampusLog AI
 ### 2차 MVP 계정 전환
 
 ```text
-회원가입 또는 로그인
-→ 인증 성공
-→ 기존 로컬 기록이 있으면 가져오기 선택
+`대학생활을 기록하다.` 순환 문구 첫 화면
+→ 스크롤하여 회원가입 또는 로그인
+→ 회원가입 방식 선택
+→ 이메일은 자격 증명 입력, Google은 OAuth
+→ 이름·닉네임 입력
+→ 인증·프로필 저장 성공
+→ 3D 책 표지 선택
 → 계정 기반 오늘의 기록
 → 다른 세션에서도 저장된 활동과 AI 결과 확인
 ```
+
+기존 localStorage 기록 가져오기는 현재 기본 진입 흐름에 포함하지 않는 Deferred / Optional 기능입니다.
 
 ## 2차 MVP Scope
 
@@ -121,11 +127,12 @@ CampusLog AI
 
 - 이메일 또는 이에 준하는 아이디 + 비밀번호 회원가입·로그인·로그아웃
 - Google OAuth 로그인
+- 이메일·Google 가입의 이름·닉네임 온보딩
 - Supabase Auth 세션과 보호된 화면
 - 사용자별 활동·일일 기록·완료 경험·AI 결과 저장
 - 미완료 AI 합성 초안과 합성 상태의 사용자별 저장·RLS·보존 정책
 - Row Level Security와 서버 측 데이터 소유권 검증
-- v1.1 localStorage 기록의 선택적·멱등적 마이그레이션
+- v1.1 localStorage 원본의 자동 이전·자동 삭제 금지 정책. 선택적 마이그레이션 UI와 upsert는 실제 보존 요구가 생길 때 별도 승인
 - AI 분석·추천의 구조화된 결과, 품질, 실패 복구 개선
 - JD 원문, 질문 이미지, 답변 초안까지 확장 가능한 AI 입력·출력 contract
 - 기존 완료 경험 합성의 사실성·멱등성·실패 복구 회귀 검증
@@ -185,7 +192,7 @@ CampusLog AI
 
 Apple 스타일의 미니멀함은 정렬·간격·폰트 위계를 다듬는 참고 기준으로 사용합니다. 핵심 CTA와 기록·AI 결과의 가독성을 우선하며, 모바일 안정성, 키보드 접근성, 텍스트 대비, reduced motion을 함께 확인합니다.
 
-`/`의 React Three Fiber 기반 인터랙티브 3D 노트 표지는 브랜드 진입 화면으로 유지합니다. 노트를 선택하면 `/dashboard`의 오늘 기록으로 이동하고, 활동 전체는 `/experiences`에서 확인합니다.
+비로그인 `/`는 좌측 상단에 `CampusLog` 워드마크를 고정 표시하고, `대학생활을 / 공모전을 / 해커톤을 / 프로젝트를 / 대회를 기록하다.` 문구를 중앙에서 순환해 보여줍니다. `대학생활`은 진한 검정·강한 굵기를 유지하고 나머지 순환 명사는 웜그레이·가벼운 굵기로 구분하되 조사 `을/를`은 항상 진한 검정·강한 굵기로 유지합니다. 명사의 실제 렌더링 폭은 부드럽게 보간하며 조사는 실제 값이 `을 ↔ 를`로 바뀔 때만 별도로 전환합니다. 작은 `일시정지 / 재생` 컨트롤로 자동 전환을 멈출 수 있습니다. 첫 화면 하단에는 `스크롤하여 로그인 또는 회원가입` 한 줄과 약한 화살표 모션만 사용하며, 작은 아래 방향 휠 입력만 해도 중앙 로그인·회원가입 카드로 이동합니다. 인증 화면에서 위로 돌아갈 때는 자동 복귀하지 않고 자연스러운 기본 스크롤로 충분히 올려야 합니다. 로그인 mode는 `Welcome back`과 제목 아래 소개 문구를 생략합니다. 회원가입은 이메일·Google 방식 선택으로 시작하고, 이메일만 자격 증명을 입력한 뒤 두 방식 모두 이름 → 닉네임 Stepper를 완료합니다. reduced motion에서는 첫 문구 고정·자동 전환 컨트롤 비활성화·화살표 모션 정지·즉시 아래 방향 섹션 이동과 즉시 Stepper 전환을 사용합니다. 인증과 프로필 저장 성공 후 같은 `/`에서 React Three Fiber 기반 인터랙티브 3D 노트 표지를 보여주며, 노트를 선택하면 `/dashboard`의 오늘 기록으로 이동합니다. 활동 전체는 `/experiences`에서 확인합니다.
 
 ## Security, Privacy, and Cost
 
@@ -222,14 +229,15 @@ campuslog/
 
 ## Getting Started
 
-Next.js 앱과 `package.json`은 `web/`에 있습니다. 로컬 실행은 저장소 루트가 아니라 `web/`에서 진행합니다.
+Next.js 앱과 `package.json`은 `web/`에 있습니다. 현재 Supabase 의존성의 실행 조건에 맞춰 Node.js 22 이상을 사용하고, 로컬 실행은 저장소 루트가 아니라 `web/`에서 진행합니다.
 
 ```bash
 cd web
+npm install
 npm run dev
 ```
 
-현재 v1.1 구현은 Browser localStorage를 사용합니다. 2차 MVP용 Supabase 환경 변수와 실제 DB 전환은 해당 기능 브랜치에서 단계적으로 추가합니다. Vercel 배포 시 Project Settings의 Root Directory를 `web`으로 설정합니다.
+현재 보호 화면은 로그인 세션에 연결된 사용자별 Supabase repository를 기본으로 사용합니다. 기존 Browser localStorage 원본은 자동 이전하거나 삭제하지 않으며, 정식 계정은 계정 DB에서 새로 시작합니다. 인증 환경 없이 보호 화면 디자인만 확인할 때는 로컬 development 서버에 한해 `NEXT_PUBLIC_CAMPUSLOG_UI_PREVIEW=1`을 사용할 수 있으며, 이 모드는 localStorage repository를 사용하되 보호 API와 production 인증을 우회하지 않습니다. Vercel 배포 시 Project Settings의 Root Directory를 `web`으로 설정합니다.
 
 ## Documentation
 

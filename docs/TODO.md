@@ -23,10 +23,11 @@
 
 진행 메모:
 
-- 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback → `/dashboard`, 로그아웃 → `/login?authNotice=SIGNED_OUT` 로컬 흐름을 확인. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요.
+- 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback과 로그아웃 복귀를 확인했습니다. 2026-07-14 UX 결정에 따라 로그아웃 완료 알림은 제거하고 `/` 로그인 영역으로 바로 복귀합니다. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요합니다.
 - 2026-07-13: `feature/database-schema`에서 최신 main 확인 후 사용자별 Supabase schema / RLS migration, localStorage 모델 매핑, repository 경계, localStorage → DB 이전 정책 문서를 추가. 이어서 주요 화면의 read/write를 Supabase repository로 전환해 로그인 계정별 DB 데이터를 사용하도록 변경. 사용자가 Supabase SQL Editor에서 migration 실행 성공과 Table Editor 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료.
 - 2026-07-13: 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UX / upsert 구현은 High 필수 범위에서 제외하고 Deferred / Optional로 전환. localStorage 원본은 자동 이전하거나 자동 삭제하지 않으며, 로그인 세션에서는 계정 DB 데이터를 기본으로 사용.
 - 2026-07-13: 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, 로그인 계정별 DB 분리를 확인. 로그인·DB foundation은 추가 확장보다 안정화 대상으로 두고, 다음 개발 우선순위를 AI API 보호 → AI 분석 품질 개선 → 목적/JD/질문 기반 추천 → 부족 경험 비교와 답변 초안으로 전환.
+- 2026-07-14: 회원가입을 방식 선택 → 이메일 자격 증명(이메일만) → 이름 → 닉네임으로 재구성하고, Google 가입 callback 뒤 `/onboarding` 복귀와 비공개 `user_metadata.campuslog_profile` 저장 계약을 추가. metadata는 온보딩 UI에만 사용하고 RLS·권한 판단에는 사용하지 않음.
 
 ### High
 
@@ -34,6 +35,7 @@
 - [x] 이메일 또는 이에 준하는 아이디 + 비밀번호 로그인·회원가입·로그아웃·세션 복구 구현
 - [x] Google OAuth provider, callback URL, 로그인 후 redirect 구현
 - [x] 보호 라우트와 로그인 후 원래 화면 복귀 구현
+- [x] 이메일·Google 회원가입의 이름·닉네임 Stepper와 OAuth 후 온보딩 복귀 구현 (`ISSUE-037`)
 - [x] 사용자별 DB schema와 RLS 정책 SQL 작성
 - [x] Supabase migration apply와 사용자 A/B 계정별 데이터 분리 smoke test 수행
 - [x] Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 관계 정의
@@ -42,6 +44,7 @@
 - [x] repository 경계를 두고 localStorage adapter 추가
 - [x] 주요 UI의 `storage.ts` 직접 호출을 repository 경계로 전환
 - [x] localStorage → 계정 데이터 마이그레이션 정책 문서화 (`ISSUE-025`)
+- [ ] DailyLog write와 AI 합성 상태 무효화를 transaction 또는 멱등 부분 성공 contract로 정리 (`ISSUE-039`)
 - [ ] 공개 AI API 인증, rate limit, OpenAI spend limit / alert 적용 (`ISSUE-024`)
 - [ ] AI 분석 품질 개선: 경험 요약 / 역량 / 성과 / 근거 구조 개선 (`ISSUE-034`)
 - [ ] AI 추천 고도화: 목적 / JD 원문 / 지원 질문 기반 추천 contract 정의와 구현 (`ISSUE-031`)
@@ -78,15 +81,24 @@
 ### High
 
 - [ ] 검정·차콜 디자인 token과 공통 컴포넌트 상태 정리
-- [ ] Track A 인증 contract 기반 로그인 / 회원가입 route UI와 `components/auth/**` 설계
+- [x] Track A 인증 contract 기반 로그인 / 회원가입 route UI와 `components/auth/**` 설계
+- [x] 좌측 상단 `CampusLog` 워드마크 + 문법에 맞는 순환 기록 문구 → 중앙 인증 카드 → 인증 후 3D 책 표지 진입 흐름 구현 (`ISSUE-035`)
+- [x] Tailwind CSS v4·shadcn/ui 기반 설정과 인증 Input·Label primitive 구성
+- [x] React Bits Stepper 기반 이름·닉네임 회원가입 UX와 모바일·reduced motion 적용 (`ISSUE-037`)
 - [ ] 인증 확인 중 / 세션 만료 / 접근 불가 상태 설계
-- [ ] 오늘의 기록 핵심 작성 흐름 사용성 검토
+- [x] 오늘의 기록 핵심 작성 흐름을 CTA → 플로팅 패널로 고도화하고 입력 보존·모바일·키보드 동작 검증 (`ISSUE-038`)
+- [x] 활동 추가를 접근 가능한 Expandable Screen으로 전환하고 공용 Checkbox·CopyButton·프로필 드롭다운 통합 (`ISSUE-041`)
+- [x] 프로필 드롭다운 로그아웃 제출 안정화와 실제 세션 제거·보호 경로 재차단 확인 (`ISSUE-042`)
 - [ ] 나의 활동 목록·상세 탐색 흐름 개선
 - [ ] CampusLog AI 입력·결과·추천 기록 위계 개선
+  - [x] 추천 화면 반복 탭 제거와 `추천 기록` / `새 추천 받기` 교차 이동 액션 정리 (`ISSUE-040`)
 
 ### Medium
 
 - [ ] Button / Input / Textarea / Badge / Tabs / Dialog / Alert 상태 통일
+- [ ] Next.js / PostCSS moderate advisory를 호환 가능한 버전으로 해소 (`ISSUE-036`)
+- [ ] 활동 추가 Expandable Screen과 프로필 메뉴의 실제 390px 기기 시각 smoke test
+- [ ] 로그아웃 실패 안내·재시도와 현재 기기/전체 기기 scope 정책 확정 (`ISSUE-043`)
 - [ ] 모바일 상단 내비게이션과 safe area 재검증
 - [ ] loading / empty / error / success / reconnecting 상태 통일
 - [ ] 키보드 focus 이동과 Dialog 초점 복귀 검증
