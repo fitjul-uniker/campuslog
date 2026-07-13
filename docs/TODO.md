@@ -2,7 +2,7 @@
 
 ## 문서 상태
 
-- v1.1 고도화: commit / push / Draft PR #27 완료, review / merge 대기
+- v1.1 고도화: commit / push / PR #27 main merge 완료
 - 활성 계획: 2차 MVP
 - 단계 기준: `docs/CURRENT_PHASE.md`
 
@@ -13,7 +13,7 @@
 - [x] v1.1 변경 파일 최종 검토
 - [x] 사용자의 승인 후 논리적 단위로 commit
 - [x] 원격 branch push와 Draft PR #27
-- [ ] 팀 리뷰와 main merge
+- [x] 팀 리뷰와 main merge
 - [ ] 승인된 v1.1 기준 commit에 release tag 생성 여부 결정
 - [ ] 2차 MVP Track별 브랜치를 최신 main에서 생성
 
@@ -24,7 +24,8 @@
 ### High
 
 - [ ] Supabase project / 환경 변수 / 개발·배포 환경 정책 확정
-- [ ] 로그인·회원가입·로그아웃·세션 복구 구현
+- [ ] 이메일 또는 이에 준하는 아이디 + 비밀번호 로그인·회원가입·로그아웃·세션 복구 구현
+- [ ] Google OAuth provider, callback URL, 로그인 후 redirect 구현
 - [ ] 보호 라우트와 로그인 후 원래 화면 복귀 구현
 - [ ] 사용자별 DB schema와 RLS 정책 설계·검증
 - [ ] Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 관계 정의
@@ -41,6 +42,10 @@
 - [ ] AI 분석 결과 schema와 근거 표시 고도화
 - [ ] AI 추천 정확도 평가 기준과 회귀 사례 정의
 - [ ] AI 추천 이유·활용 방향·근거 일치 강화
+- [ ] JD / 직무 요구사항 / 우대사항 원문 입력 구조화와 경험 매칭 contract 정의
+- [ ] 질문 이미지 OCR / vision 입력의 일회성 처리와 개인정보·비용 정책 정의
+- [ ] 추천 경험 기반 답변 초안 생성 schema와 저장 여부 결정
+- [ ] 보유 경험과 부족 경험 비교 기준 정의
 - [ ] AI model / prompt version 기록 여부 결정
 - [ ] 서버 오류 code와 사용자용 message 계약 정리
 
@@ -48,9 +53,9 @@
 
 - [ ] 이메일 인증 포함 여부
 - [ ] 비밀번호 재설정 범위
-- [ ] OAuth provider 도입 여부
+- [ ] Google OAuth provider 설정값과 배포 callback URL
 - [ ] Supabase 비밀번호 validation과 계정 열거 방지 오류 문구 정책
-- [ ] Supabase Storage를 사용할 실제 기능
+- [ ] Supabase Storage를 사용할 실제 기능. OCR용 이미지는 우선 원본 저장 없이 처리
 - [ ] 여러 추천 후보와 비교 기능 범위
 
 ## Track B — 디자인·사용자 경험 고도화

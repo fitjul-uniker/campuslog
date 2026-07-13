@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-13 - 2차 MVP 인증·DB·AI 고도화 우선순위 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-13 |
+| 작업자 | Codex |
+| 작업 요약 | 2차 MVP에서 먼저 진행할 인증·DB 기반 작업과 이후 AI 고도화 방향을 최신 main 기준으로 문서화 |
+| 수정한 파일 | `AGENTS.md`, `PRD.md`, `README.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 이메일 또는 아이디 + 비밀번호 인증과 Google OAuth를 2차 MVP 범위로 명시. 최신 main에서 `feature/auth-foundation`부터 시작하도록 다음 순서를 정리. JD / 직무 요구사항 / 우대사항 원문 입력, 질문 이미지 OCR / vision 입력, 부족 경험 비교, 답변 초안 생성은 인증·DB 전환 이후 AI 고도화 단계로 기록. OCR 이미지는 우선 원본 저장 없는 일회성 입력으로 두고 Storage 도입은 별도 결정 사항으로 분리 |
+| 검증한 내용 | 문서 검색으로 기존 merge 대기 문구, OAuth 보류 문구, AI 고도화 범위 충돌을 확인하고 최신 기준에 맞게 정리. 코드 변경 없음 |
+| 남은 작업 | 최신 main에서 인증 기반 브랜치 생성, Supabase 설정, 인증 contract 구현, 이후 DB schema / RLS / migration / AI 고도화 진행 |
+| 관련 커밋 메시지 | `docs: plan auth database and AI roadmap` |
+
 ### 2026-07-13 - v1.1 commit / push / Draft PR 생성
 
 | 항목 | 내용 |

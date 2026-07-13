@@ -7,10 +7,10 @@
 - [x] v1.1 정적 검사, production build, 데스크톱·모바일 브라우저 검증
 - [x] 2차 MVP 단계와 두 작업 Track 문서화
 - [x] v1.1 commit / push / Draft PR #27
-- [ ] 팀 리뷰와 main merge
+- [x] 팀 리뷰와 main merge
 - [ ] 2차 MVP 기능 브랜치 시작
 
-현재 브랜치는 `feature/progressive-experience-tracking`입니다. v1.1 전체 변경은 `e21a864`로 commit하고 원격 branch에 push했으며, 팀 저장소의 Draft PR #27에서 review / merge를 기다리고 있습니다.
+현재 브랜치는 `main`이며 `origin/main`과 동기화되어 있습니다. v1.1 전체 변경은 PR #27로 main에 병합되었고, 다음 작업은 최신 main에서 2차 MVP 기능 브랜치를 만드는 것입니다.
 
 ## v1.1 완료 기준선
 
@@ -53,9 +53,12 @@
 담당: 다른 팀원
 
 - 로그인 / 회원가입 / 로그아웃 / 세션
+- 이메일 또는 이에 준하는 아이디 + 비밀번호 인증과 Google OAuth
 - Supabase Auth / Postgres와 사용자별 데이터 격리
 - 기존 localStorage 데이터 이전 정책과 repository 구조
 - AI 분석·추천 정확도, 근거, 결과 구조 고도화
+- JD 원문·직무 요구사항·우대사항 기반 경험 추천과 부족 경험 비교
+- 질문 이미지 OCR / vision 입력과 답변 초안 생성
 - 인증된 API, rate limit, 비용 한도, 오류 관측성
 
 ### Track B. 디자인·사용자 경험 고도화
@@ -70,12 +73,14 @@
 
 ## 다음 작업 순서
 
-1. Draft PR #27 팀 리뷰와 필요한 수정 반영
-2. 승인 후 main merge
-3. 최신 main에서 Track별 브랜치 생성
-4. 인증·DB contract와 인증 UX를 먼저 합의
-5. 각 Track 작은 PR로 병렬 진행
-6. 통합 회귀·보안·비용·접근성 검증
+1. 최신 main에서 `feature/auth-foundation` 브랜치 생성
+2. Supabase project, 환경 변수, Auth helper, session contract 확정
+3. 이메일 또는 아이디 + 비밀번호 로그인·회원가입·로그아웃 구현
+4. Google OAuth provider와 callback / redirect 구현
+5. 보호 라우트와 로그인 후 원래 화면 복귀 구현
+6. DB schema, RLS, repository, localStorage migration 순서로 진행
+7. 인증·DB 전환이 안정화된 뒤 JD / OCR / 답변 초안 AI 고도화 진행
+8. 통합 회귀·보안·비용·접근성 검증
 
 ## 활성 기준 문서
 
@@ -94,15 +99,16 @@
 
 ## 남은 위험
 
-- 이메일 확인·비밀번호 재설정·OAuth의 세부 인증 범위 미확정
+- 이메일 확인·비밀번호 재설정, Google OAuth callback과 동일 이메일 계정 연결 정책 미확정
 - 비밀번호 validation과 계정 열거 방지 오류 문구 contract 미확정
 - localStorage → DB 마이그레이션 충돌·중복·삭제 정책 미확정
 - 활동 종료 합성 초안 RLS·보존·완료 Experience 멱등 저장 구현 필요
 - RLS와 다른 사용자 데이터 접근 방지 검증 필요
 - 공개 AI API rate limit과 비용 한도 필요
-- AI 고도화 품질 평가 기준 필요
+- JD 원문·질문 이미지 OCR·부족 경험 비교·답변 초안의 AI 품질 평가 기준 필요
+- OCR 이미지 원본 저장 여부와 Supabase Storage 도입 범위 미확정
 - Track 간 공통 파일 충돌과 merge 순서 관리 필요
 
 ## Git 상태 주의
 
-v1.1 checkpoint는 commit·push·Draft PR까지 완료했습니다. PR #27이 main에 merge되기 전에는 이 브랜치에 2차 MVP 기능을 추가하지 않고 리뷰 수정만 반영합니다. merge와 이후 브랜치 정리는 팀과 사용자의 승인 후 진행합니다.
+v1.1 checkpoint는 main에 병합되었습니다. 2차 MVP 기능은 `main`에 직접 추가하지 않고, 최신 main에서 작은 기능 브랜치로 시작합니다.
