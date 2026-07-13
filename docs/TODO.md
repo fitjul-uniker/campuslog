@@ -15,18 +15,22 @@
 - [x] 원격 branch push와 Draft PR #27
 - [x] 팀 리뷰와 main merge
 - [ ] 승인된 v1.1 기준 commit에 release tag 생성 여부 결정
-- [ ] 2차 MVP Track별 브랜치를 최신 main에서 생성
+- [x] 2차 MVP Track별 브랜치를 최신 main에서 생성
 
 ## Track A — 인증·데이터·AI 고도화
 
 담당: 다른 팀원
 
+진행 메모:
+
+- 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback → `/dashboard`, 로그아웃 → `/login?authNotice=SIGNED_OUT` 로컬 흐름을 확인. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요.
+
 ### High
 
-- [ ] Supabase project / 환경 변수 / 개발·배포 환경 정책 확정
-- [ ] 이메일 또는 이에 준하는 아이디 + 비밀번호 로그인·회원가입·로그아웃·세션 복구 구현
-- [ ] Google OAuth provider, callback URL, 로그인 후 redirect 구현
-- [ ] 보호 라우트와 로그인 후 원래 화면 복귀 구현
+- [x] Supabase project / 환경 변수 / 개발·배포 환경 정책 확정
+- [x] 이메일 또는 이에 준하는 아이디 + 비밀번호 로그인·회원가입·로그아웃·세션 복구 구현
+- [x] Google OAuth provider, callback URL, 로그인 후 redirect 구현
+- [x] 보호 라우트와 로그인 후 원래 화면 복귀 구현
 - [ ] 사용자별 DB schema와 RLS 정책 설계·검증
 - [ ] Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 관계 정의
 - [ ] 합성 초안 RLS·보존·완료 Experience 멱등 저장 contract 구현 (`ISSUE-029`)
