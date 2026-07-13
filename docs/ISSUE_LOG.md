@@ -51,6 +51,8 @@
 | ISSUE-027 | Resolved | High | Decision | 1차 MVP 문서가 v1.1 이후 고도화 개발을 제한함 | 완료된 1차 MVP 기준선을 보존하면서 현재 활성 개발 기준을 전환할 방법 결정 | v1.1을 archive 기준선으로 고정하고 `CURRENT_PHASE.md`를 최우선 문서로 추가. 2차 MVP를 인증·데이터·AI Track과 디자인·UX Track으로 분리 | 사용자 + Codex | 2026-07-13 | 2026-07-13 |
 | ISSUE-028 | Open | High | Risk | 인증 오류 문구가 이메일 계정 존재 여부를 노출할 수 있음 | Supabase 인증 응답 매핑, 비밀번호 validation 공유, 로그인·회원가입 사용자 문구와 계정 열거 방지 정책 결정 | Supabase 원문 오류를 직접 노출하지 않고 Track A가 공통 사용자용 오류 code를 제공하며 Track B는 해당 code의 승인된 문구만 표시하는 것을 기본 원칙으로 설정 | Track A + Track B | 2026-07-13 | - |
 | ISSUE-029 | Open | High | Decision | 활동 종료 AI 합성 초안과 상태의 DB 소유권·보존 계약 필요 | 합성 초안 RLS, 원본 활동·로그 관계, 마이그레이션, 저장 후 삭제, 실패·재시도, 합성 API 제한, 완료 Experience 멱등성 구현 확정 | 미완료 초안과 상태를 사용자 소유 데이터로 취급하고 완료 Experience 저장 검증 후 초안을 제거하는 v1.1 정책을 기본값으로 설정 | Track A | 2026-07-13 | - |
+| ISSUE-030 | Open | High | Decision | 이메일 또는 아이디 + 비밀번호와 Google OAuth를 함께 지원하는 인증 contract 필요 | Supabase provider 설정, callback URL, 로그인 후 redirect, 동일 이메일 계정 연결 정책, 이메일 인증, 비밀번호 재설정, 사용자용 오류 code 결정 | Google OAuth는 2차 MVP 인증 범위에 포함. 로그인·회원가입 UI는 현재 디자인 톤으로 최소 구현하고 이후 프론트엔드 Track에서 고도화 | Track A + Track B | 2026-07-13 | - |
+| ISSUE-031 | Open | High | Decision | JD 원문·질문 이미지 OCR 기반 AI 추천 고도화 범위 확정 필요 | 입력 유형, OCR / vision 처리 방식, 원본 이미지 저장 여부, 요구사항 추출 schema, 보유·부족 경험 비교 기준, 답변 초안 저장 여부, 비용 제한 결정 | 인증·DB 전환 이후 AI 고도화 단계에서 진행. OCR 이미지는 우선 원본 저장 없이 일회성 AI 입력으로 처리하고 Storage 도입은 별도 결정 | Track A + Track B | 2026-07-13 | - |
 
 ## 이슈 추가 템플릿
 

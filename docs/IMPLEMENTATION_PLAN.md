@@ -2,8 +2,8 @@
 
 ## 0. 문서 상태
 
-- v1.1 고도화: 구현·검증 완료, commit / review / merge 예정
-- 현재 활성 계획 단계: 2차 MVP. 기능 구현은 v1.1 merge 후 시작
+- v1.1 고도화: 구현·검증 완료, main merge 완료
+- 현재 활성 계획 단계: 2차 MVP. 기능 구현은 최신 main에서 기능 브랜치를 만들어 시작
 - 단계 기준: `docs/CURRENT_PHASE.md`
 - 제품 기준: `PRD.md`
 - 이 문서는 두 병렬 Track의 개발 순서와 통합 계약을 정합니다.
@@ -11,17 +11,14 @@
 ## 1. 전환 순서
 
 ```text
-v1.1 변경 검증
-→ 논리적 commit
-→ push / Draft PR / 팀 리뷰
-→ main merge와 v1.1 기준선 확인
+최신 main 확인
 → 2차 MVP Track별 브랜치 생성
 → 계약 우선 구현
 → 기능 및 디자인 병렬 고도화
 → 통합·보안·사용자 테스트
 ```
 
-v1.1 브랜치에는 2차 MVP의 인증·DB 기능을 섞지 않습니다. 2차 MVP 기능은 v1.1 merge 이후 최신 `main`에서 분리한 작은 브랜치로 진행합니다.
+2차 MVP 기능은 `main`에 직접 추가하지 않고 최신 `main`에서 분리한 작은 브랜치로 진행합니다.
 
 ## 2. Track A — 인증·데이터·AI
 
@@ -30,11 +27,20 @@ v1.1 브랜치에는 2차 MVP의 인증·DB 기능을 섞지 않습니다. 2차 
 ### A1. 인증 기반
 
 - Supabase project와 환경 변수 정책
-- 회원가입, 로그인, 로그아웃
+- 이메일 또는 이에 준하는 아이디 + 비밀번호 회원가입, 로그인, 로그아웃
+- Google OAuth 로그인
 - 세션 확인과 복구
 - 보호 라우트와 redirect 정책
 - 사용자 식별자 기준 데이터 소유권
 - RLS 정책과 권한 테스트
+
+우선순위:
+
+1. Supabase Auth 환경 변수와 서버 / 클라이언트 인증 helper
+2. 이메일 + 비밀번호 로그인·회원가입·로그아웃
+3. Google OAuth와 auth callback
+4. 보호 라우트와 로그인 후 원래 화면 복귀
+5. 인증 오류 code와 사용자 문구 contract
 
 권장 PR 단위:
 
@@ -92,13 +98,25 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
 - 분석 입력과 결과 schema 검토
 - 추천 후보 선택과 상세 생성의 근거 일치 유지
 - 결과 근거와 사용된 활동 표시 강화
+- JD / 직무 요구사항 / 우대사항 원문 입력을 구조화하는 parser 단계 추가
+- 지원서 화면 이미지 또는 질문 이미지에서 OCR / vision으로 질문을 추출하는 입력 단계 검토
+- 요구사항과 사용자 경험·분석 결과를 비교해 보유 근거와 부족 경험을 분리
+- 추천 경험을 기반으로 자기소개서·면접·지원서용 답변 초안 작성
 - 실패, timeout, 재시도, 저장 실패 계약 통일
 - 사용자별 AI 호출 인증
 - rate limit과 OpenAI spend limit / alert
 - 기존 활동 종료 합성 API의 사용자 소유권 확인, 호출 제한, 초안 보존과 완료 경험 생성 멱등성 회귀 검증
 - 모델명과 prompt version 기록 검토
 
-여러 추천 후보, 비교, feedback 학습 등은 PRD에서 범위를 확정한 뒤 구현합니다.
+AI 고도화는 인증·DB 전환 뒤 진행합니다. 원본 이미지 저장은 기본 범위가 아니며, OCR 입력은 우선 일회성 처리로 설계합니다. 여러 추천 후보 수, 비교 UI, feedback 학습 등은 PRD와 화면 명세에서 범위를 확정한 뒤 구현합니다.
+
+권장 PR 단위:
+
+1. `feature/ai-input-contract`
+2. `feature/ai-jd-recommendation`
+3. `feature/ai-question-ocr`
+4. `feature/ai-answer-draft`
+5. `feature/ai-gap-analysis`
 
 ## 3. Track B — 디자인·사용자 경험
 
@@ -176,8 +194,9 @@ v1.1 라우트는 유지합니다.
 | `/recommend/history` | 추천 기록 | baseline / AI 고도화 |
 | `/login` | 로그인 | 2차 MVP |
 | `/signup` | 회원가입 | 2차 MVP |
+| `/auth/callback` | OAuth callback 처리 | 2차 MVP |
 
-프로필, 계정 설정, 비밀번호 재설정, OAuth route는 실제 2차 MVP 범위가 확정될 때 추가합니다.
+프로필, 계정 설정, 비밀번호 재설정 route는 실제 2차 MVP 범위가 확정될 때 추가합니다. Google OAuth callback은 인증 기반 작업에 포함합니다.
 
 ## 6. 통합 순서
 
@@ -186,9 +205,10 @@ v1.1 라우트는 유지합니다.
 3. 기존 데이터 read 호환
 4. localStorage migration 정책과 UX
 5. 기존 활동·경험 화면을 repository에 연결
-6. AI API 인증과 결과 고도화
-7. 디자인 시스템과 주요 흐름 polish
-8. 통합 회귀·보안·접근성·비용 테스트
+6. AI API 인증, rate limit, 비용 제한
+7. JD / 질문 이미지 입력 contract와 AI 결과 schema 고도화
+8. 디자인 시스템과 주요 흐름 polish
+9. 통합 회귀·보안·접근성·비용 테스트
 
 디자인 Track은 mock contract로 먼저 진행할 수 있지만, API response나 schema를 임의로 확정하지 않습니다. 데이터 Track은 기존 화면을 임의로 단순화하지 않고 상태 계약을 제공합니다.
 
@@ -227,12 +247,13 @@ v1.1 라우트는 유지합니다.
 
 ## 8. 아직 확정하지 않는 항목
 
-- OAuth provider
+- Google OAuth provider 설정 세부값과 callback URL
 - 이메일 인증과 비밀번호 재설정 범위
 - Supabase 설정과 공유할 비밀번호 validation, 계정 열거 방지 오류 문구 정책
 - localStorage 자동 / 수동 마이그레이션 최종 정책
-- Supabase Storage를 사용할 실제 파일 기능
+- Supabase Storage를 사용할 실제 파일 기능. OCR용 일회성 이미지는 원본 저장 없이 먼저 검토
 - 여러 추천 후보 수와 비교 UI
+- JD 요구사항 추출 schema, 부족 경험 비교 기준, 답변 초안 저장 여부
 - AI model 교체와 평가 dataset
 - AI API별 입력 상한, 제한 초과 error code, `retryAfter`, 중복 요청 처리 계약
 - 사용자 feedback 저장과 추천 학습 활용
