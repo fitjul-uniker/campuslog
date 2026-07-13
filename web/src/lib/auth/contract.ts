@@ -1,5 +1,6 @@
-export const AUTH_DEFAULT_RETURN_TO = "/dashboard";
+export const AUTH_DEFAULT_RETURN_TO = "/";
 export const AUTH_MIN_PASSWORD_LENGTH = 8;
+export const AUTH_ONBOARDING_PATH = "/onboarding";
 
 export const AUTH_ERROR_MESSAGES = {
   CONFIGURATION_MISSING:
@@ -7,11 +8,15 @@ export const AUTH_ERROR_MESSAGES = {
   INVALID_INPUT: "입력값을 다시 확인해주세요.",
   INVALID_EMAIL: "이메일 형식을 확인해주세요.",
   INVALID_PASSWORD: `비밀번호는 ${AUTH_MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`,
+  INVALID_NAME: "이름을 확인해주세요.",
+  INVALID_NICKNAME: "닉네임을 확인해주세요.",
   INVALID_CREDENTIALS: "이메일 또는 비밀번호를 확인해주세요.",
   SIGNUP_FAILED:
     "회원가입을 완료하지 못했습니다. 입력값을 확인하거나 잠시 후 다시 시도해주세요.",
   OAUTH_FAILED: "Google 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.",
   CALLBACK_FAILED: "로그인을 완료하지 못했습니다. 다시 시도해주세요.",
+  PROFILE_SAVE_FAILED:
+    "프로필을 저장하지 못했습니다. 입력값을 유지했으니 다시 시도해주세요.",
   SESSION_REQUIRED: "로그인이 필요한 화면입니다.",
   RATE_LIMITED: "요청이 많습니다. 잠시 후 다시 시도해주세요.",
   NETWORK_ERROR: "네트워크 상태를 확인한 뒤 다시 시도해주세요.",
@@ -19,9 +24,8 @@ export const AUTH_ERROR_MESSAGES = {
 } as const;
 
 export const AUTH_NOTICE_MESSAGES = {
-  SIGNED_OUT: "로그아웃되었습니다.",
   EMAIL_CONFIRMATION_REQUIRED:
-    "회원가입 요청을 받았습니다. 이메일 확인이 켜져 있다면 메일함에서 인증을 완료해주세요.",
+    "가입 정보를 저장했습니다. 메일함에서 이메일 인증을 완료해주세요.",
 } as const;
 
 export type AuthErrorCode = keyof typeof AUTH_ERROR_MESSAGES;
@@ -39,23 +43,26 @@ export type AuthFeedback =
       message: string;
     };
 
+export type AuthFormValues = {
+  email?: string;
+  fullName?: string;
+  nickname?: string;
+};
+
 export type AuthFormState =
-  | {
+  | ({
       status: "idle";
-      email?: string;
-    }
-  | {
+    } & AuthFormValues)
+  | ({
       status: "error";
       code: AuthErrorCode;
       message: string;
-      email?: string;
-    }
-  | {
+    } & AuthFormValues)
+  | ({
       status: "success";
       code: AuthNoticeCode;
       message: string;
-      email?: string;
-    };
+    } & AuthFormValues);
 
 export const initialAuthFormState: AuthFormState = {
   status: "idle",
@@ -95,25 +102,31 @@ export function getAuthNoticeFeedback(
 
 export function createAuthErrorState(
   code: AuthErrorCode,
-  email?: string,
+  values?: string | AuthFormValues,
 ): AuthFormState {
+  const formValues =
+    typeof values === "string" ? { email: values } : (values ?? {});
+
   return {
     status: "error",
     code,
     message: AUTH_ERROR_MESSAGES[code],
-    email,
+    ...formValues,
   };
 }
 
 export function createAuthSuccessState(
   code: AuthNoticeCode,
-  email?: string,
+  values?: string | AuthFormValues,
 ): AuthFormState {
+  const formValues =
+    typeof values === "string" ? { email: values } : (values ?? {});
+
   return {
     status: "success",
     code,
     message: AUTH_NOTICE_MESSAGES[code],
-    email,
+    ...formValues,
   };
 }
 
@@ -169,11 +182,15 @@ export function isAllowedReturnPath(pathname: string) {
     return true;
   }
 
-  return (
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/activities") ||
-    pathname.startsWith("/experiences") ||
-    pathname.startsWith("/recommend")
+  const allowedPrefixes = [
+    "/dashboard",
+    "/activities",
+    "/experiences",
+    "/recommend",
+  ];
+
+  return allowedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
@@ -181,16 +198,44 @@ export function createLoginPath(
   returnTo: string,
   errorCode?: AuthErrorCode,
 ) {
-  const loginUrl = new URL("https://campuslog.local/login");
+  return createAuthPagePath("/login", returnTo, errorCode);
+}
+
+export function createSignupPath(
+  returnTo: string,
+  errorCode?: AuthErrorCode,
+) {
+  return createAuthPagePath("/signup", returnTo, errorCode);
+}
+
+function createAuthPagePath(
+  pathname: "/login" | "/signup",
+  returnTo: string,
+  errorCode?: AuthErrorCode,
+) {
+  const authUrl = new URL(`https://campuslog.local${pathname}`);
   const normalizedReturnTo = normalizeReturnTo(returnTo);
 
   if (normalizedReturnTo !== AUTH_DEFAULT_RETURN_TO) {
-    loginUrl.searchParams.set("returnTo", normalizedReturnTo);
+    authUrl.searchParams.set("returnTo", normalizedReturnTo);
   }
 
   if (errorCode) {
-    loginUrl.searchParams.set("authError", errorCode);
+    authUrl.searchParams.set("authError", errorCode);
   }
 
-  return `${loginUrl.pathname}${loginUrl.search}`;
+  return `${authUrl.pathname}${authUrl.search}`;
+}
+
+export function createOnboardingPath(returnTo: string) {
+  const onboardingUrl = new URL(
+    `https://campuslog.local${AUTH_ONBOARDING_PATH}`,
+  );
+  const normalizedReturnTo = normalizeReturnTo(returnTo);
+
+  if (normalizedReturnTo !== AUTH_DEFAULT_RETURN_TO) {
+    onboardingUrl.searchParams.set("returnTo", normalizedReturnTo);
+  }
+
+  return `${onboardingUrl.pathname}${onboardingUrl.search}`;
 }

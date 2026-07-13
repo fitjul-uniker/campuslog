@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 
 import { AuthForm } from "@/components/auth/AuthForm";
-import { normalizeReturnTo } from "@/lib/auth/contract";
+import {
+  createOnboardingPath,
+  normalizeReturnTo,
+} from "@/lib/auth/contract";
+import { hasCompletedCampusLogProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -25,6 +29,10 @@ export default async function LoginPage({
   const user = await getCurrentUser();
 
   if (user) {
+    if (!hasCompletedCampusLogProfile(user.user_metadata)) {
+      redirect(createOnboardingPath(returnTo));
+    }
+
     redirect(returnTo);
   }
 

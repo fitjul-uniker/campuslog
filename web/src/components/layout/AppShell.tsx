@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { SignOutButton } from "@/components/auth/SignOutButton";
 import { Navigation } from "@/components/layout/Navigation";
+import { ProfileMenu } from "@/components/layout/ProfileMenu";
 
 type AppShellProps = {
   children: ReactNode;
@@ -13,7 +13,10 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const isAuthRoute = pathname === "/login" || pathname === "/signup";
+  const isAuthRoute =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/onboarding";
 
   if (pathname === "/") {
     return <main className="cover-main">{children}</main>;
@@ -39,7 +42,7 @@ export function AppShell({ children }: AppShellProps) {
 
       <aside className="app-sidebar" aria-label="CampusLog 주요 메뉴">
         <Navigation />
-        <SignOutButton />
+        <ProfileMenu />
       </aside>
 
       <header className="mobile-header">
@@ -47,7 +50,7 @@ export function AppShell({ children }: AppShellProps) {
           <span className="brand-name">CampusLog</span>
         </Link>
         <Navigation variant="mobile" />
-        <SignOutButton />
+        <ProfileMenu variant="mobile" />
       </header>
 
       <main className="app-main product-main">

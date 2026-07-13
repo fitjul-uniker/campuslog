@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Copy, ExternalLink, X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import { useState } from "react";
 
+import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
 import { formatDateTime } from "@/lib/date";
 import type {
   Experience,
@@ -36,19 +37,6 @@ export function RecommendationResult({
 }: RecommendationResultProps) {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const isEmbedded = variant === "embedded";
-
-  async function handleCopy() {
-    try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard API is not available.");
-      }
-
-      await navigator.clipboard.writeText(result.draftSentence);
-      setCopyStatus("success");
-    } catch {
-      setCopyStatus("failed");
-    }
-  }
 
   return (
     <section
@@ -151,18 +139,14 @@ export function RecommendationResult({
       <div className="detail-section">
         <div className="recommendation-section-heading">
           <h3>참고 문장</h3>
-          <button
+          <CopyButton
             className="button button-secondary"
-            type="button"
-            onClick={handleCopy}
-          >
-            {copyStatus === "success" ? (
-              <Check className="button-icon" aria-hidden="true" />
-            ) : (
-              <Copy className="button-icon" aria-hidden="true" />
-            )}
-            {copyStatus === "success" ? "복사 완료" : "복사"}
-          </button>
+            content={result.draftSentence}
+            onCopiedChange={(copied) =>
+              setCopyStatus(copied ? "success" : "idle")
+            }
+            onCopyError={() => setCopyStatus("failed")}
+          />
         </div>
         <p className="draft-sentence">{result.draftSentence}</p>
         {copyStatus === "success" ? (

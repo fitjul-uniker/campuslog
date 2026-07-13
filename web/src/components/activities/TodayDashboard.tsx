@@ -5,24 +5,33 @@ import {
   ArrowRight,
   CalendarDays,
   Edit3,
+  Loader2,
   Plus,
   Save,
   Sparkles,
   Trash2,
-  X,
 } from "lucide-react";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { AnimatePresence, motion, MotionConfig } from "motion/react";
 
+import { ActivityCreateScreen } from "@/components/activities/ActivityCreateScreen";
 import { ActivityCalendar } from "@/components/activities/ActivityCalendar";
 import {
   ACTIVITY_STATUS_LABELS,
   formatDateKey,
   getLocalDateKey,
 } from "@/components/activities/activityViewUtils";
-import {
-  getCampusLogRepository,
-} from "@/lib/repositories/campuslogRepository";
+import { FloatingPanel } from "@/components/ui/floating-panel";
+import { ExpandableScreen } from "@/components/ui/expandable-screen";
+import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { DailyLog, TrackedActivity } from "@/lib/types";
 
 type EditingLog = {
@@ -86,7 +95,27 @@ export function TodayDashboard() {
   const [loadError, setLoadError] = useState("");
   const [formError, setFormError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const [recordsActionError, setRecordsActionError] = useState("");
+  const [recordsActionMessage, setRecordsActionMessage] = useState("");
+  const [isRecordPanelOpen, setIsRecordPanelOpen] = useState(false);
+  const [recordPanelAnchor, setRecordPanelAnchor] =
+    useState<HTMLElement | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isActivityCreateOpen, setIsActivityCreateOpen] = useState(false);
+  const [isActivityCreateSaving, setIsActivityCreateSaving] = useState(false);
+  const [activityCreateAnchor, setActivityCreateAnchor] =
+    useState<HTMLElement | null>(null);
+  const generatedPanelId = useId().replaceAll(":", "");
+  const recordPanelId = `daily-log-panel-${generatedPanelId}`;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const firstActivityRadioRef = useRef<HTMLInputElement>(null);
+  const recordTriggerRef = useRef<HTMLButtonElement>(null);
+  const recordReturnFocusRef = useRef<HTMLElement | null>(null);
+  const activityCreateReturnFocusRef = useRef<HTMLElement | null>(null);
+  const activityCreateTitleRef = useRef<HTMLInputElement>(null);
+  const overviewActivityCreateTriggerRef = useRef<HTMLButtonElement>(null);
+  const emptyActivityCreateTriggerRef = useRef<HTMLButtonElement>(null);
+  const requestedPanelHandledRef = useRef(false);
 
   const loadDashboardData = useCallback(async () => {
     setLoadError("");
@@ -173,6 +202,38 @@ export function TodayDashboard() {
     [logs, selectedDate],
   );
 
+  useEffect(() => {
+    if (activities === null || requestedPanelHandledRef.current) {
+      return;
+    }
+
+    const requestedActivityId = getRequestedActivityId();
+
+    if (
+      !requestedActivityId ||
+      !recordableActivities.some(
+        (activity) => activity.id === requestedActivityId,
+      )
+    ) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const trigger = recordTriggerRef.current;
+
+      if (!trigger) {
+        return;
+      }
+
+      recordReturnFocusRef.current = trigger;
+      requestedPanelHandledRef.current = true;
+      setRecordPanelAnchor(trigger);
+      setIsRecordPanelOpen(true);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [activities, recordableActivities]);
+
   function resetForm() {
     setEditingLog(null);
     setContent("");
@@ -184,8 +245,47 @@ export function TodayDashboard() {
     );
   }
 
+  function openRecordPanel(anchor = recordTriggerRef.current) {
+    if (!anchor) {
+      return;
+    }
+
+    recordReturnFocusRef.current = anchor;
+    setRecordPanelAnchor(anchor);
+    setFormError("");
+    setStatusMessage("");
+    setIsRecordPanelOpen(true);
+  }
+
+  function openActivityCreateScreen(anchor: HTMLElement) {
+    activityCreateReturnFocusRef.current = anchor;
+    setActivityCreateAnchor(anchor);
+    setIsActivityCreateOpen(true);
+  }
+
+  function closeActivityCreateScreen() {
+    if (!isActivityCreateSaving) {
+      setIsActivityCreateOpen(false);
+    }
+  }
+
+  function closeRecordPanel() {
+    setIsRecordPanelOpen(false);
+    setFormError("");
+  }
+
+  function cancelRecordPanel() {
+    setIsRecordPanelOpen(false);
+    resetForm();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isSaving) {
+      return;
+    }
+
     setFormError("");
     setStatusMessage("");
 
@@ -194,6 +294,7 @@ export function TodayDashboard() {
 
     if (!activity || activity.status !== "active") {
       setFormError("기록을 연결할 진행 중 활동을 선택해 주세요.");
+      firstActivityRadioRef.current?.focus();
       return;
     }
 
@@ -204,6 +305,7 @@ export function TodayDashboard() {
     }
 
     const repository = getCampusLogRepository();
+    setIsSaving(true);
 
     try {
       const savedLog = editingLog
@@ -227,10 +329,16 @@ export function TodayDashboard() {
         return;
       }
 
-      setLogs(sortLogs(await repository.dailyLogs.list()));
+      setLogs((currentLogs) =>
+        sortLogs([
+          ...currentLogs.filter((log) => log.id !== savedLog.id),
+          savedLog,
+        ]),
+      );
       setStatusMessage(
         editingLog ? "기록을 수정했습니다." : "오늘 한 일을 기록했습니다.",
       );
+      setIsRecordPanelOpen(false);
       resetForm();
     } catch {
       setFormError(
@@ -238,10 +346,12 @@ export function TodayDashboard() {
           ? "기록을 수정하지 못했습니다. 잠시 후 다시 시도해 주세요."
           : "기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       );
+    } finally {
+      setIsSaving(false);
     }
   }
 
-  function startEditing(log: DailyLog) {
+  function startEditing(log: DailyLog, anchor: HTMLButtonElement) {
     const activity = activitiesById[log.activityId];
 
     if (!activity || activity.status !== "active") {
@@ -257,7 +367,9 @@ export function TodayDashboard() {
     setContent(log.content);
     setFormError("");
     setStatusMessage("");
-    window.requestAnimationFrame(() => textareaRef.current?.focus());
+    recordReturnFocusRef.current = anchor;
+    setRecordPanelAnchor(anchor);
+    setIsRecordPanelOpen(true);
   }
 
   async function handleDelete(log: DailyLog) {
@@ -281,23 +393,32 @@ export function TodayDashboard() {
     }
 
     if (!didDelete) {
-      setStatusMessage("");
-      setFormError("기록을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      setRecordsActionMessage("");
+      setRecordsActionError(
+        "기록을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
       return;
     }
 
-    setLogs(sortLogs(await repository.dailyLogs.list()));
-    setStatusMessage("기록을 삭제했습니다.");
-    setFormError("");
+    setLogs((currentLogs) =>
+      currentLogs.filter((storedLog) => storedLog.id !== log.id),
+    );
+    setRecordsActionMessage("기록을 삭제했습니다.");
+    setRecordsActionError("");
 
     if (editingLog?.id === log.id) {
+      setIsRecordPanelOpen(false);
       resetForm();
     }
   }
 
   function handleSelectDate(date: string) {
+    setIsRecordPanelOpen(false);
+    setRecordPanelAnchor(null);
     setSelectedDate(date);
     setStatusMessage("");
+    setRecordsActionMessage("");
+    setRecordsActionError("");
     setEditingLog(null);
     setContent("");
     setFormError("");
@@ -310,6 +431,15 @@ export function TodayDashboard() {
         : (nextRecordableActivities[0]?.id ?? ""),
     );
   }
+
+  const hasActivitySelectionError = formError.includes("활동을 선택");
+  const hasContentError = formError.includes("한 문장 이상");
+  const quickRecordMode =
+    recordableActivities.length > 0
+      ? "ready"
+      : activeActivities.length > 0
+        ? "date-unavailable"
+        : "needs-activity";
 
   if (activities === null) {
     return (
@@ -329,8 +459,8 @@ export function TodayDashboard() {
           <p className="activity-section-kicker">{formatDateKey(today, { month: "long", day: "numeric", weekday: "long" })}</p>
           <h1>오늘의 기록</h1>
           <p>
-            예정이 아닌, 실제로 해낸 일을 남겨보세요. 쌓인 기록은 활동을
-            마칠 때 하나의 경험으로 정리됩니다.
+            하루하루 해낸 일을 기록하세요. 쌓인 기록은 하나의 경험이
+            됩니다.
           </p>
         </div>
       </header>
@@ -347,16 +477,26 @@ export function TodayDashboard() {
       <section className="activity-overview" aria-labelledby="activity-overview-title">
         <div className="activity-overview-heading">
           <div>
-            <h2 id="activity-overview-title">진행 중인 활동</h2>
+            <h2 id="activity-overview-title">현재 진행 중인 활동</h2>
           </div>
           <div className="activity-overview-actions">
             <span className="activity-overview-count">
               {activeActivities.length}개
             </span>
-            <Link href="/activities/new" className="activity-primary-button">
+            <button
+              ref={overviewActivityCreateTriggerRef}
+              type="button"
+              className="activity-primary-button"
+              onClick={(event) => openActivityCreateScreen(event.currentTarget)}
+              aria-haspopup="dialog"
+              aria-expanded={
+                isActivityCreateOpen &&
+                activityCreateAnchor === overviewActivityCreateTriggerRef.current
+              }
+            >
               <Plus aria-hidden="true" />
               활동 추가
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -431,90 +571,241 @@ export function TodayDashboard() {
           onSelectDate={handleSelectDate}
         />
 
-        <section className="activity-quick-record" aria-labelledby="quick-record-title">
+        <section
+          className="activity-quick-record activity-quick-record-launcher"
+          aria-labelledby="quick-record-title"
+        >
           <header>
             <div>
               <p className="activity-section-kicker">{formatDateKey(selectedDate, { month: "long", day: "numeric", weekday: "short" })}</p>
-              <h2 id="quick-record-title">
-                {editingLog ? "기록 수정하기" : "오늘 한 일 기록하기"}
-              </h2>
+              <h2 id="quick-record-title">오늘 한 일 기록하기</h2>
             </div>
-            {editingLog ? (
-              <button
-                type="button"
-                className="activity-icon-button"
-                onClick={resetForm}
-                aria-label="기록 수정 취소"
-              >
-                <X aria-hidden="true" />
-              </button>
-            ) : null}
           </header>
 
-          {recordableActivities.length > 0 ? (
-            <form onSubmit={handleSubmit} className="activity-record-form">
-              <fieldset>
-                <legend>무슨 활동에서 한 일인가요?</legend>
-                <div className="activity-tag-options">
-                  {recordableActivities.map((activity) => (
-                    <label key={activity.id}>
-                      <input
-                        type="radio"
-                        name="activityId"
-                        value={activity.id}
-                        checked={selectedActivityId === activity.id}
-                        onChange={() => setSelectedActivityId(activity.id)}
-                      />
-                      <span>{activity.title}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+          <MotionConfig reducedMotion="user">
+            <AnimatePresence mode="wait" initial={false}>
+          {quickRecordMode === "ready" ? (
+            <motion.div
+              key="record-ready"
+              className="activity-record-launcher-copy"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+            >
+                <motion.button
+                  ref={recordTriggerRef}
+                  type="button"
+                  className="activity-record-trigger"
+                  onClick={(event) => openRecordPanel(event.currentTarget)}
+                  aria-haspopup="dialog"
+                  aria-expanded={isRecordPanelOpen}
+                  aria-controls={recordPanelId}
+                  whileTap={{ scale: 0.985 }}
+                >
+                  <span className="activity-record-trigger-icon" aria-hidden="true">
+                    <Plus />
+                  </span>
+                  <span className="activity-record-trigger-copy">
+                    <span className="activity-record-trigger-label">
+                      {editingLog
+                        ? "수정 이어가기"
+                        : content.trim()
+                          ? "작성 이어가기"
+                          : "기록 남기기"}
+                    </span>
+                    <span className="activity-record-trigger-meta">
+                      {editingLog
+                        ? "선택한 기록을 수정 중"
+                        : `${recordableActivities.length}개 활동에 연결 가능`}
+                    </span>
+                  </span>
+                  <ArrowRight
+                    className="activity-record-trigger-arrow"
+                    aria-hidden="true"
+                  />
+                </motion.button>
 
-              <label className="activity-textarea-field">
-                <span>실제로 한 일</span>
-                <textarea
-                  ref={textareaRef}
-                  value={content}
-                  onChange={(event) => setContent(event.target.value)}
-                  rows={5}
-                  maxLength={2000}
-                  placeholder="예: 사용자 인터뷰 3건을 진행하고 반복해서 나온 불편을 정리했다."
-                  aria-describedby="daily-log-help daily-log-error"
-                />
-              </label>
-              <div className="activity-field-help" id="daily-log-help">
-                <span>완료한 행동과 확인된 결과를 구체적으로 남기면 AI가 더 정확히 정리할 수 있어요.</span>
-                <span>{content.length}/2000</span>
-              </div>
-
-              {formError ? (
-                <p className="activity-form-error" id="daily-log-error" role="alert">
-                  {formError}
-                </p>
-              ) : null}
               {statusMessage ? (
-                <p className="activity-form-success" role="status">
+                <p
+                  className="activity-form-success activity-record-feedback"
+                  role="status"
+                >
                   {statusMessage}
                 </p>
               ) : null}
-
-              <button type="submit" className="activity-primary-button">
-                {editingLog ? <Save aria-hidden="true" /> : <Plus aria-hidden="true" />}
-                {editingLog ? "수정 내용 저장" : "기록 저장"}
-              </button>
-            </form>
+            </motion.div>
           ) : (
-            <div className="activity-record-empty">
+            <motion.div
+              key={quickRecordMode}
+              className="activity-record-empty"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+            >
               <CalendarDays aria-hidden="true" />
               <p>
-                {activeActivities.length > 0
+                {quickRecordMode === "date-unavailable"
                   ? "이 날짜에 기록할 수 있는 진행 활동이 없습니다. 활동 시작일 이후 날짜를 선택해 주세요."
                   : "오늘 한 일을 연결하려면 먼저 진행 활동을 등록해 주세요."}
               </p>
-              <Link href="/activities/new">활동 추가</Link>
-            </div>
+              {quickRecordMode === "needs-activity" ? (
+                <button
+                  ref={emptyActivityCreateTriggerRef}
+                  type="button"
+                  className="activity-record-empty-action"
+                  onClick={(event) =>
+                    openActivityCreateScreen(event.currentTarget)
+                  }
+                  aria-haspopup="dialog"
+                  aria-expanded={
+                    isActivityCreateOpen &&
+                    activityCreateAnchor === emptyActivityCreateTriggerRef.current
+                  }
+                >
+                  <Plus aria-hidden="true" />
+                  진행 활동 추가
+                </button>
+              ) : selectedDate !== today ? (
+                <button
+                  type="button"
+                  className="activity-record-empty-action"
+                  onClick={() => handleSelectDate(today)}
+                >
+                  오늘로 돌아가기
+                </button>
+              ) : null}
+            </motion.div>
           )}
+            </AnimatePresence>
+          </MotionConfig>
+
+          <FloatingPanel
+            open={isRecordPanelOpen}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                closeRecordPanel();
+              }
+            }}
+            anchorElement={recordPanelAnchor}
+            returnFocusRef={recordReturnFocusRef}
+            fallbackFocusRef={recordTriggerRef}
+            initialFocusRef={textareaRef}
+            id={recordPanelId}
+            title={editingLog ? "기록 수정하기" : "오늘 한 일 남기기"}
+            closeLabel="오늘 한 일 기록 패널 닫기"
+            dismissible={!isSaving}
+            description={formatDateKey(selectedDate, {
+              month: "long",
+              day: "numeric",
+              weekday: "long",
+            })}
+            className="activity-floating-record-panel"
+          >
+            <form
+              onSubmit={handleSubmit}
+              className="activity-record-form activity-floating-record-form"
+              noValidate
+              aria-busy={isSaving}
+            >
+              <div className="activity-floating-record-fields">
+                <fieldset
+                  aria-invalid={hasActivitySelectionError || undefined}
+                  aria-describedby={
+                    hasActivitySelectionError
+                      ? `${recordPanelId}-error`
+                      : undefined
+                  }
+                >
+                  <legend>무슨 활동에서 한 일인가요?</legend>
+                  <div className="activity-tag-options">
+                    {recordableActivities.map((activity, index) => (
+                      <label key={activity.id}>
+                        <input
+                          ref={index === 0 ? firstActivityRadioRef : undefined}
+                          type="radio"
+                          name="activityId"
+                          value={activity.id}
+                          checked={selectedActivityId === activity.id}
+                          onChange={() => setSelectedActivityId(activity.id)}
+                          disabled={isSaving}
+                        />
+                        <span>{activity.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <label className="activity-textarea-field">
+                  <span>실제로 한 일</span>
+                  <textarea
+                    ref={textareaRef}
+                    value={content}
+                    onChange={(event) => setContent(event.target.value)}
+                    rows={6}
+                    maxLength={2000}
+                    placeholder="예: 사용자 인터뷰 3건을 진행하고 반복해서 나온 불편을 정리했다."
+                    aria-invalid={hasContentError || undefined}
+                    aria-describedby={
+                      hasContentError
+                        ? `${recordPanelId}-help ${recordPanelId}-error`
+                        : `${recordPanelId}-help`
+                    }
+                    disabled={isSaving}
+                  />
+                </label>
+                <div
+                  className="activity-field-help"
+                  id={`${recordPanelId}-help`}
+                >
+                  <span>
+                    한 일을 자세히 적을수록 AI가 더 정확하게 분석할 수 있어요.
+                  </span>
+                  <span>{content.length}/2000</span>
+                </div>
+
+                {formError ? (
+                  <p
+                    className="activity-form-error"
+                    id={`${recordPanelId}-error`}
+                    role="alert"
+                  >
+                    {formError}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="activity-floating-record-footer">
+                <button
+                  type="button"
+                  className="activity-secondary-button"
+                  onClick={cancelRecordPanel}
+                  disabled={isSaving}
+                >
+                  작성 취소
+                </button>
+                <button
+                  type="submit"
+                  className="activity-primary-button"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <Loader2 className="activity-button-spinner" aria-hidden="true" />
+                  ) : editingLog ? (
+                    <Save aria-hidden="true" />
+                  ) : (
+                    <Plus aria-hidden="true" />
+                  )}
+                  {isSaving
+                    ? "저장 중"
+                    : editingLog
+                      ? "수정 내용 저장"
+                      : "기록 저장"}
+                </button>
+              </div>
+            </form>
+          </FloatingPanel>
         </section>
       </div>
 
@@ -528,6 +819,20 @@ export function TodayDashboard() {
           </div>
           <span>{selectedLogs.length}개</span>
         </header>
+
+        {recordsActionError ? (
+          <p className="activity-form-error activity-records-feedback" role="alert">
+            {recordsActionError}
+          </p>
+        ) : null}
+        {recordsActionMessage ? (
+          <p
+            className="activity-form-success activity-records-feedback"
+            role="status"
+          >
+            {recordsActionMessage}
+          </p>
+        ) : null}
 
         {selectedLogs.length > 0 ? (
           <ol className="activity-log-list">
@@ -551,8 +856,15 @@ export function TodayDashboard() {
                     <div className="activity-log-actions">
                       <button
                         type="button"
-                        onClick={() => startEditing(log)}
+                        onClick={(event) =>
+                          startEditing(log, event.currentTarget)
+                        }
                         aria-label={`${activity.title} 기록 수정`}
+                        aria-haspopup="dialog"
+                        aria-controls={recordPanelId}
+                        aria-expanded={
+                          isRecordPanelOpen && editingLog?.id === log.id
+                        }
                       >
                         <Edit3 aria-hidden="true" />
                       </button>
@@ -580,6 +892,28 @@ export function TodayDashboard() {
           </div>
         )}
       </section>
+
+      <ExpandableScreen
+        open={isActivityCreateOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            closeActivityCreateScreen();
+          }
+        }}
+        anchorElement={activityCreateAnchor}
+        returnFocusRef={activityCreateReturnFocusRef}
+        initialFocusRef={activityCreateTitleRef}
+        title="새 활동 추가"
+        description="활동 제목과 내용을 입력하고 시작일과 예상 종료일을 정합니다."
+        closeLabel="활동 추가 화면 닫기"
+        dismissible={!isActivityCreateSaving}
+      >
+        <ActivityCreateScreen
+          onCancel={closeActivityCreateScreen}
+          onSavingChange={setIsActivityCreateSaving}
+          titleInputRef={activityCreateTitleRef}
+        />
+      </ExpandableScreen>
     </div>
   );
 }

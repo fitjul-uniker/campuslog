@@ -5,6 +5,7 @@ import { Plus, Save, Trash2 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
+import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
 import {
   MAX_RELATED_LINK_DESCRIPTION_LENGTH,
@@ -534,12 +535,14 @@ export function ExperienceForm({
           className="checkbox-field"
           htmlFor="experience-period-ongoing"
         >
-          <input
+          <Checkbox
             id="experience-period-ongoing"
             name="periodOngoing"
-            type="checkbox"
+            size="sm"
             checked={periodFields.isOngoing}
-            onChange={(event) => updatePeriodOngoing(event.target.checked)}
+            onCheckedChange={(checked) =>
+              updatePeriodOngoing(checked === true)
+            }
           />
           <span>현재 진행 중</span>
         </label>

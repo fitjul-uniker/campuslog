@@ -4,16 +4,24 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import {
+  AUTH_DEFAULT_RETURN_TO,
   type AuthErrorCode,
   type AuthFormState,
   createAuthErrorState,
   createAuthSuccessState,
+  createSignupPath,
   isValidEmail,
   isValidPassword,
   normalizeEmail,
   normalizePassword,
   normalizeReturnTo,
 } from "@/lib/auth/contract";
+import {
+  createCampusLogProfile,
+  isValidFullName,
+  isValidNickname,
+  normalizeProfileText,
+} from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type AuthIntent = "login" | "signup" | "oauth" | "callback";
@@ -96,9 +104,18 @@ function validateAuthForm(email: string, password: string): AuthFormState | null
   return null;
 }
 
-function createAuthCallbackUrl(origin: string, returnTo: string) {
+function createAuthCallbackUrl(
+  origin: string,
+  returnTo: string,
+  requiresOnboarding = false,
+) {
   const callbackUrl = new URL("/auth/callback", origin);
   callbackUrl.searchParams.set("returnTo", normalizeReturnTo(returnTo));
+
+  if (requiresOnboarding) {
+    callbackUrl.searchParams.set("onboarding", "required");
+  }
+
   return callbackUrl.toString();
 }
 
@@ -110,7 +127,7 @@ function createLoginRedirectPath(
   const loginUrl = new URL("https://campuslog.local/login");
   const normalizedReturnTo = normalizeReturnTo(returnTo);
 
-  if (normalizedReturnTo !== "/dashboard") {
+  if (normalizedReturnTo !== AUTH_DEFAULT_RETURN_TO) {
     loginUrl.searchParams.set("returnTo", normalizedReturnTo);
   }
 
@@ -163,16 +180,31 @@ export async function signUpWithPasswordAction(
   void previousState;
 
   const { email, password, returnTo } = readAuthForm(formData);
+  const fullName = normalizeProfileText(formData.get("fullName"));
+  const nickname = normalizeProfileText(formData.get("nickname"));
+  const formValues = { email, fullName, nickname };
   const validationError = validateAuthForm(email, password);
 
   if (validationError) {
-    return validationError;
+    return {
+      ...validationError,
+      fullName,
+      nickname,
+    };
+  }
+
+  if (!isValidFullName(fullName)) {
+    return createAuthErrorState("INVALID_NAME", formValues);
+  }
+
+  if (!isValidNickname(nickname)) {
+    return createAuthErrorState("INVALID_NICKNAME", formValues);
   }
 
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
-    return createAuthErrorState("CONFIGURATION_MISSING", email);
+    return createAuthErrorState("CONFIGURATION_MISSING", formValues);
   }
 
   const origin = await getRequestOrigin();
@@ -180,19 +212,25 @@ export async function signUpWithPasswordAction(
     email,
     password,
     options: {
-      emailRedirectTo: createAuthCallbackUrl(origin, returnTo),
+      data: {
+        campuslog_profile: createCampusLogProfile(fullName, nickname),
+      },
+      emailRedirectTo: createAuthCallbackUrl(origin, returnTo, true),
     },
   });
 
   if (error) {
-    return createAuthErrorState(mapSupabaseAuthError(error, "signup"), email);
+    return createAuthErrorState(
+      mapSupabaseAuthError(error, "signup"),
+      formValues,
+    );
   }
 
   if (data.session) {
     redirect(returnTo);
   }
 
-  return createAuthSuccessState("EMAIL_CONFIRMATION_REQUIRED", email);
+  return createAuthSuccessState("EMAIL_CONFIRMATION_REQUIRED", formValues);
 }
 
 export async function signInWithGoogleAction(formData: FormData) {
@@ -218,6 +256,31 @@ export async function signInWithGoogleAction(formData: FormData) {
   redirect(data.url);
 }
 
+export async function signUpWithGoogleAction(formData: FormData) {
+  const returnTo = normalizeReturnTo(formData.get("returnTo"));
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    redirect(createSignupPath(returnTo, "CONFIGURATION_MISSING"));
+  }
+
+  const origin = await getRequestOrigin();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: createAuthCallbackUrl(origin, returnTo, true),
+    },
+  });
+
+  if (error || !data.url) {
+    redirect(
+      createSignupPath(returnTo, mapSupabaseAuthError(error, "oauth")),
+    );
+  }
+
+  redirect(data.url);
+}
+
 export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
 
@@ -225,5 +288,5 @@ export async function signOutAction() {
     await supabase.auth.signOut();
   }
 
-  redirect(createLoginRedirectPath("/dashboard", undefined, "SIGNED_OUT"));
+  redirect("/?authMode=login#auth");
 }

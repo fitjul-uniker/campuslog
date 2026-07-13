@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpenText } from "lucide-react";
+import { ArrowLeft, BookOpenText, History } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { RecommendationForm } from "@/components/ai/RecommendationForm";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
-import { CampusLogAiMenu } from "@/components/ai/CampusLogAiMenu";
 import { EmptyState } from "@/components/common/EmptyState";
 import { createIsoTimestamp } from "@/lib/date";
 import { requestRecommendation } from "@/lib/recommendationApi";
@@ -23,6 +22,34 @@ type RecommendationFormInput = {
   purpose: RecommendationPurpose;
   prompt: string;
 };
+
+const RECOMMENDATION_PAGE_DESCRIPTION =
+  "활용 목적과 질문에 맞는 경험을 찾고, 어떻게 풀어낼지 함께 제안합니다.";
+
+function RecommendationPageHeader() {
+  return (
+    <section className="page-header recommendation-page-header">
+      <div className="recommendation-page-header-copy">
+        <h1>AI 기반 활동 추천</h1>
+        <p className="page-description">{RECOMMENDATION_PAGE_DESCRIPTION}</p>
+      </div>
+
+      <div className="header-actions recommendation-header-actions">
+        <Link
+          href="/recommend/history"
+          className="button button-ghost recommendation-header-link"
+        >
+          <History className="button-icon" aria-hidden="true" />
+          추천 기록
+        </Link>
+        <Link href="/experiences" className="button button-secondary">
+          <ArrowLeft className="button-icon" aria-hidden="true" />
+          나의 활동
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 function createRecommendationId(): string {
   if (typeof globalThis.crypto?.randomUUID === "function") {
@@ -166,18 +193,7 @@ export default function RecommendPage() {
   if (experiences === null) {
     return (
       <div className="page-stack page-stack-narrow">
-        <section className="page-header">
-          <div>
-            <p className="eyebrow">CampusLog AI</p>
-            <h1>AI 기반 활동 추천</h1>
-            <p className="page-description">
-              저장된 활동 전체와 분석 결과를 바탕으로 지금 활용할 활동을
-              고릅니다.
-            </p>
-          </div>
-        </section>
-
-        <CampusLogAiMenu />
+        <RecommendationPageHeader />
 
         <section className="placeholder-panel">
           <p className="muted-text">활동 추천 화면을 불러오는 중입니다.</p>
@@ -189,18 +205,7 @@ export default function RecommendPage() {
   if (experiences.length === 0) {
     return (
       <div className="page-stack page-stack-narrow">
-        <section className="page-header">
-          <div>
-            <p className="eyebrow">CampusLog AI</p>
-            <h1>AI 기반 활동 추천</h1>
-            <p className="page-description">
-              저장된 활동 전체와 분석 결과를 바탕으로 지금 활용할 활동을
-              고릅니다.
-            </p>
-          </div>
-        </section>
-
-        <CampusLogAiMenu />
+        <RecommendationPageHeader />
 
         <EmptyState
           title={
@@ -232,25 +237,7 @@ export default function RecommendPage() {
 
   return (
     <div className="page-stack page-stack-narrow">
-      <section className="page-header">
-        <div>
-          <p className="eyebrow">CampusLog AI</p>
-          <h1>AI 기반 활동 추천</h1>
-          <p className="page-description">
-            저장된 활동 전체와 분석 결과를 바탕으로 지금 활용할 활동을
-            고릅니다.
-          </p>
-        </div>
-
-        <div className="header-actions">
-          <Link href="/experiences" className="button button-secondary">
-            <ArrowLeft className="button-icon" aria-hidden="true" />
-            나의 활동
-          </Link>
-        </div>
-      </section>
-
-      <CampusLogAiMenu />
+      <RecommendationPageHeader />
 
       <section className="form-panel" aria-labelledby="recommend-form-title">
         <div className="panel-heading">
