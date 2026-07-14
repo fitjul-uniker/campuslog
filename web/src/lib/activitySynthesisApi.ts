@@ -31,7 +31,11 @@ function isStringArray(
 function isApiErrorCode(value: unknown): value is ApiErrorCode {
   return (
     value === "BAD_REQUEST" ||
+    value === "CONFIGURATION_MISSING" ||
+    value === "SESSION_REQUIRED" ||
     value === "INSUFFICIENT_INPUT" ||
+    value === "PAYLOAD_TOO_LARGE" ||
+    value === "RATE_LIMITED" ||
     value === "OPENAI_API_ERROR" ||
     value === "MISSING_API_KEY" ||
     value === "UNKNOWN_ERROR"

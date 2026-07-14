@@ -1,22 +1,42 @@
 import { NextResponse } from "next/server";
 
-import { parseRelatedLinks } from "@/lib/relatedLinks";
+import {
+  AI_API_REQUEST_LIMITS,
+  consumeAiApiRateLimit,
+  createAiApiErrorResponse as createErrorResponse,
+  rejectTooLargeAiApiRequest,
+  requireAuthenticatedAiApiUser,
+} from "@/lib/aiApiProtection";
+import {
+  MAX_RELATED_LINK_DESCRIPTION_LENGTH,
+  MAX_RELATED_LINKS,
+  MAX_RELATED_LINK_URL_LENGTH,
+  parseRelatedLinks,
+} from "@/lib/relatedLinks";
 import type {
   AnalysisApiResult,
   AnalyzeRequest,
   AnalyzeResponse,
-  ApiErrorCode,
-  ApiErrorResponse,
+  RelatedLink,
   Experience,
 } from "@/lib/types";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const ANALYSIS_MODEL = "gpt-4.1-mini";
+const OPENAI_REQUEST_TIMEOUT_MS =
+  AI_API_REQUEST_LIMITS.analyze.openAiTimeoutMs;
 const INSUFFICIENT_ANALYSIS_MESSAGE =
   "분석할 만한 경험 정보가 부족합니다. 활동 내용, 본인이 한 역할, 결과나 배운 점을 조금 더 구체적으로 작성해주세요.";
 const MIN_ANALYSIS_TOTAL_CHAR_COUNT = 16;
 const MIN_ANALYSIS_ACTION_CHAR_COUNT = 10;
 const MIN_COMPETENCY_ACTION_CHAR_COUNT = 24;
+const MAX_ID_LENGTH = 160;
+const MAX_EXPERIENCE_TITLE_LENGTH = 200;
+const MAX_EXPERIENCE_PERIOD_LENGTH = 120;
+const MAX_EXPERIENCE_ROLE_LENGTH = 200;
+const MAX_EXPERIENCE_DESCRIPTION_LENGTH = 8_000;
+const MAX_EXPERIENCE_ACHIEVEMENTS_LENGTH = 4_000;
+const MAX_TIMESTAMP_LENGTH = 100;
 const PLACEHOLDER_VALUES = new Set([
   "test",
   "tests",
@@ -99,25 +119,24 @@ const analysisResponseSchema = {
   },
 } as const;
 
-function createErrorResponse(
-  code: ApiErrorCode,
-  message: string,
-  status: number,
-) {
-  return NextResponse.json<ApiErrorResponse>(
-    {
-      ok: false,
-      error: {
-        code,
-        message,
-      },
-    },
-    { status },
-  );
-}
-
 function hasText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasTextWithinLimit(value: unknown, maxLength: number): value is string {
+  return hasText(value) && value.length <= maxLength;
+}
+
+function isStringWithinLimit(
+  value: unknown,
+  maxLength: number,
+  allowEmpty = false,
+): value is string {
+  return (
+    typeof value === "string" &&
+    value.length <= maxLength &&
+    (allowEmpty || value.trim().length > 0)
+  );
 }
 
 function isAnalysisStatus(value: unknown): value is Experience["analysisStatus"] {
@@ -125,6 +144,17 @@ function isAnalysisStatus(value: unknown): value is Experience["analysisStatus"]
     value === "unanalyzed" ||
     value === "analyzed" ||
     value === "needs_reanalysis"
+  );
+}
+
+function areRelatedLinksWithinLimit(links: RelatedLink[]): boolean {
+  return (
+    links.length <= MAX_RELATED_LINKS &&
+    links.every(
+      (link) =>
+        link.url.length <= MAX_RELATED_LINK_URL_LENGTH &&
+        link.description.length <= MAX_RELATED_LINK_DESCRIPTION_LENGTH,
+    )
   );
 }
 
@@ -229,15 +259,23 @@ function parseExperienceForAnalysis(value: unknown): Experience | null {
   const relatedLinks = parseRelatedLinks(candidate.relatedLinks);
 
   if (
-    hasText(candidate.id) &&
-    hasText(candidate.title) &&
-    hasText(candidate.period) &&
-    hasText(candidate.role) &&
-    hasText(candidate.description) &&
-    typeof candidate.achievements === "string" &&
+    hasTextWithinLimit(candidate.id, MAX_ID_LENGTH) &&
+    hasTextWithinLimit(candidate.title, MAX_EXPERIENCE_TITLE_LENGTH) &&
+    hasTextWithinLimit(candidate.period, MAX_EXPERIENCE_PERIOD_LENGTH) &&
+    hasTextWithinLimit(candidate.role, MAX_EXPERIENCE_ROLE_LENGTH) &&
+    hasTextWithinLimit(
+      candidate.description,
+      MAX_EXPERIENCE_DESCRIPTION_LENGTH,
+    ) &&
+    isStringWithinLimit(
+      candidate.achievements,
+      MAX_EXPERIENCE_ACHIEVEMENTS_LENGTH,
+      true,
+    ) &&
     relatedLinks !== null &&
-    hasText(candidate.createdAt) &&
-    hasText(candidate.updatedAt) &&
+    areRelatedLinksWithinLimit(relatedLinks) &&
+    hasTextWithinLimit(candidate.createdAt, MAX_TIMESTAMP_LENGTH) &&
+    hasTextWithinLimit(candidate.updatedAt, MAX_TIMESTAMP_LENGTH) &&
     isAnalysisStatus(candidate.analysisStatus)
   ) {
     return {
@@ -415,6 +453,24 @@ async function readRequestBody(request: Request): Promise<AnalyzeRequest | null>
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuthenticatedAiApiUser();
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  const rateLimitResponse = consumeAiApiRateLimit(auth.userId, "analyze");
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const requestSizeResponse = rejectTooLargeAiApiRequest(request, "analyze");
+
+  if (requestSizeResponse) {
+    return requestSizeResponse;
+  }
+
   const body = await readRequestBody(request);
 
   if (!body) {
@@ -443,9 +499,17 @@ export async function POST(request: Request) {
     );
   }
 
+  const openAiAbortController = new AbortController();
+  let didOpenAiRequestTimeOut = false;
+  const openAiTimeoutId = setTimeout(() => {
+    didOpenAiRequestTimeOut = true;
+    openAiAbortController.abort();
+  }, OPENAI_REQUEST_TIMEOUT_MS);
+
   try {
     const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
       method: "POST",
+      signal: openAiAbortController.signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
@@ -529,10 +593,20 @@ export async function POST(request: Request) {
       analysis,
     });
   } catch {
+    if (didOpenAiRequestTimeOut) {
+      return createErrorResponse(
+        "OPENAI_API_ERROR",
+        "AI 분석 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
+        504,
+      );
+    }
+
     return createErrorResponse(
       "UNKNOWN_ERROR",
       "알 수 없는 오류로 AI 분석을 완료하지 못했습니다.",
       500,
     );
+  } finally {
+    clearTimeout(openAiTimeoutId);
   }
 }

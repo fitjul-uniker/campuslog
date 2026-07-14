@@ -118,6 +118,11 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
    - 로그인 사용자만 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`를 호출할 수 있게 서버에서 세션을 확인합니다.
    - 입력 상한, rate limit, 중복 요청 방지, `retryAfter`, OpenAI spend limit / alert, 오류 code를 정리합니다.
    - 실패, timeout, 저장 실패 시 원본 경험과 활동 기록을 보존합니다.
+
+2026-07-14 진행 상태:
+
+- `feature/ai-api-protection`에서 세 AI API Route에 route handler 내부 Supabase 세션 확인, 비로그인 401 JSON error contract, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard, 429 `RATE_LIMITED` + `retryAfter` contract를 추가했습니다.
+- runtime-local rate guard는 foundation이며 Vercel 다중 인스턴스에 견디는 durable rate limit, AI route 자체의 중복 요청 멱등성, OpenAI project spend limit / alert 설정은 후속 hardening으로 남깁니다.
 2. AI 분석 품질 개선
    - 기존 경험 기록을 바탕으로 요약, 역량, 성과, 키워드, 근거 구조를 개선합니다.
    - 분석 결과가 어떤 원본 설명, 성과, 일일 기록에서 도출됐는지 표시할 수 있는 schema를 검토합니다.
@@ -280,7 +285,7 @@ v1.1 라우트는 유지합니다.
 - 여러 추천 후보 수와 비교 UI
 - JD 요구사항 추출 schema, 부족 경험 비교 기준, 답변 초안 저장 여부
 - AI model 교체와 평가 dataset
-- AI API별 입력 상한, 제한 초과 error code, `retryAfter`, 중복 요청 처리 계약
+- AI API durable rate limit 저장소, 중복 요청 멱등성 처리 방식, OpenAI spend alert 운영 체크리스트
 - 사용자 feedback 저장과 추천 학습 활용
 
 이 항목은 담당자가 임의로 결정하지 않고 `ISSUE_LOG.md` 또는 별도 decision record에서 팀 확인 후 구현합니다.

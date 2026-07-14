@@ -36,7 +36,9 @@ NEXT_PUBLIC_CAMPUSLOG_UI_PREVIEW=0
 | `/activities/**` | 로그인 필요 |
 | `/experiences/**` | 로그인 필요 |
 | `/recommend/**` | 로그인 필요 |
-| `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` | 로그인 필요. 비로그인은 JSON error 반환 |
+| `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` | 로그인 필요. middleware와 route handler에서 세션을 확인하며 비로그인은 JSON error 반환 |
+
+AI API 비로그인 요청은 모두 HTTP 401과 `{ ok: false, error: { code: "SESSION_REQUIRED", message } }`로 응답합니다. 세부 입력 상한, timeout, rate guard, `retryAfter` 계약은 `docs/AI_API_CONTRACT.md`를 따릅니다.
 
 ## Redirect
 
@@ -82,6 +84,7 @@ Supabase 원문 오류는 UI에 직접 노출하지 않습니다.
 | `CALLBACK_FAILED` | OAuth callback 처리 실패 |
 | `PROFILE_SAVE_FAILED` | 프로필 입력 보존과 저장 재시도 |
 | `SESSION_REQUIRED` | 로그인 필요 |
+| `PAYLOAD_TOO_LARGE` | 요청 입력 상한 초과 |
 | `RATE_LIMITED` | 요청 제한 |
 | `NETWORK_ERROR` | 네트워크 재시도 |
 | `UNKNOWN_ERROR` | 알 수 없는 오류 |

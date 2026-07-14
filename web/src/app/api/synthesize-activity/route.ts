@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 
 import { ACTIVITY_SYNTHESIS_LIMITS } from "@/lib/activitySynthesisLimits";
+import {
+  AI_API_REQUEST_LIMITS,
+  consumeAiApiRateLimit,
+  createAiApiErrorResponse as createErrorResponse,
+  rejectTooLargeAiApiRequest,
+  requireAuthenticatedAiApiUser,
+} from "@/lib/aiApiProtection";
 import type {
   ActivitySynthesisApiResult,
-  ApiErrorCode,
-  ApiErrorResponse,
   DailyLog,
   SynthesizeActivityRequest,
   SynthesizeActivityResponse,
@@ -14,7 +19,8 @@ import type {
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const ACTIVITY_SYNTHESIS_MODEL = "gpt-4.1-mini";
 const PRODUCT_TIME_ZONE = "Asia/Seoul";
-const OPENAI_REQUEST_TIMEOUT_MS = 50_000;
+const OPENAI_REQUEST_TIMEOUT_MS =
+  AI_API_REQUEST_LIMITS.synthesizeActivity.openAiTimeoutMs;
 const MAX_DAILY_LOG_COUNT = ACTIVITY_SYNTHESIS_LIMITS.maxDailyLogCount;
 const MAX_DAILY_LOG_CONTENT_LENGTH =
   ACTIVITY_SYNTHESIS_LIMITS.maxDailyLogContentLength;
@@ -106,23 +112,6 @@ type RequestValidationResult =
       message: string;
       status: 400 | 422;
     };
-
-function createErrorResponse(
-  code: ApiErrorCode,
-  message: string,
-  status: number,
-) {
-  return NextResponse.json<ApiErrorResponse>(
-    {
-      ok: false,
-      error: {
-        code,
-        message,
-      },
-    },
-    { status },
-  );
-}
 
 function hasTextWithinLimit(value: unknown, maxLength: number): value is string {
   return (
@@ -674,6 +663,30 @@ function parseSynthesisResult(
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuthenticatedAiApiUser();
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  const rateLimitResponse = consumeAiApiRateLimit(
+    auth.userId,
+    "synthesizeActivity",
+  );
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const requestSizeResponse = rejectTooLargeAiApiRequest(
+    request,
+    "synthesizeActivity",
+  );
+
+  if (requestSizeResponse) {
+    return requestSizeResponse;
+  }
+
   const validation = await readAndValidateRequest(request);
 
   if (!validation.ok) {
