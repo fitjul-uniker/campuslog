@@ -1,5 +1,9 @@
 import { createIsoTimestamp } from "@/lib/date";
 import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
+import {
+  mergeAnswerDraftResults,
+  normalizeAnswerDraftResult,
+} from "@/lib/answerDraftResult";
 import { normalizeRecommendationResult } from "@/lib/recommendationResult";
 import {
   normalizeRelatedLinksForStorage,
@@ -10,6 +14,7 @@ import type {
   ActivitySynthesisStatus,
   AnalysisStatus,
   AnalysisApiResult,
+  AnswerDraftResult,
   DailyLog,
   DailyLogInput,
   Experience,
@@ -27,6 +32,7 @@ export const STORAGE_KEYS = {
   experienceMigration: "campuslog:v2:experiences:migrated",
   analyses: "campuslog:v1:analyses",
   recommendations: "campuslog:v1:recommendations",
+  answerDrafts: "campuslog:v1:answer-drafts",
   trackedActivities: "campuslog:v1:tracked-activities",
   dailyLogs: "campuslog:v1:daily-logs",
   synthesisDrafts: "campuslog:v1:synthesis-drafts",
@@ -447,6 +453,18 @@ function readStoredRecommendations(): RecommendationResult[] {
     );
 }
 
+function readStoredAnswerDrafts(): AnswerDraftResult[] {
+  const parsed = readJson(STORAGE_KEYS.answerDrafts);
+
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  return parsed
+    .map(normalizeAnswerDraftResult)
+    .filter((draft): draft is AnswerDraftResult => draft !== null);
+}
+
 function readStoredTrackedActivities(): TrackedActivity[] {
   const parsed = readJson(STORAGE_KEYS.trackedActivities);
 
@@ -789,6 +807,14 @@ export function deleteExperience(id: string): boolean {
       recommendation.recommendedExperienceId !== id &&
       !recommendation.matches.some((match) => match.experienceId === id),
   );
+  const nextRecommendationIds = new Set(
+    nextRecommendations.map((recommendation) => recommendation.id),
+  );
+  const nextAnswerDrafts = readStoredAnswerDrafts().filter(
+    (draft) =>
+      draft.experienceId !== id &&
+      nextRecommendationIds.has(draft.recommendationId),
+  );
   const timestamp = createIsoTimestamp();
   const nextActivities = readStoredTrackedActivities().map((activity) =>
     activity.generatedExperienceId === id
@@ -806,6 +832,7 @@ export function deleteExperience(id: string): boolean {
     [STORAGE_KEYS.experienceMigration, true],
     [STORAGE_KEYS.analyses, analyses],
     [STORAGE_KEYS.recommendations, nextRecommendations],
+    [STORAGE_KEYS.answerDrafts, nextAnswerDrafts],
     [STORAGE_KEYS.trackedActivities, sortActivitiesByUpdatedDesc(nextActivities)],
   ]);
 }
@@ -869,6 +896,67 @@ export function saveRecommendationResult(
     : null;
 }
 
+export function getAnswerDraftResult(
+  recommendationId: string,
+  experienceId: string,
+): AnswerDraftResult | null {
+  return (
+    readStoredAnswerDrafts().find(
+      (draft) =>
+        draft.recommendationId === recommendationId &&
+        draft.experienceId === experienceId,
+    ) ?? null
+  );
+}
+
+export function getAnswerDraftResultsByRecommendationId(
+  recommendationId: string,
+): AnswerDraftResult[] {
+  return readStoredAnswerDrafts().filter(
+    (draft) => draft.recommendationId === recommendationId,
+  );
+}
+
+export function saveAnswerDraftResult(
+  result: AnswerDraftResult,
+): AnswerDraftResult | null {
+  const recommendations = readStoredRecommendations();
+  const recommendation = recommendations.find(
+    (item) => item.id === result.recommendationId,
+  );
+  const experience = readStoredExperiences().find(
+    (item) => item.id === result.experienceId,
+  );
+
+  if (
+    !recommendation ||
+    !experience ||
+    !recommendation.matches.some(
+      (match) => match.experienceId === result.experienceId,
+    )
+  ) {
+    return null;
+  }
+
+  const storedAnswerDrafts = readStoredAnswerDrafts();
+  const existingAnswerDraft =
+    storedAnswerDrafts.find(
+      (draft) =>
+        draft.recommendationId === result.recommendationId &&
+        draft.experienceId === result.experienceId,
+    ) ?? null;
+  const nextAnswerDraft = mergeAnswerDraftResults(existingAnswerDraft, result);
+  const answerDrafts = storedAnswerDrafts.filter(
+    (draft) =>
+      draft.recommendationId !== result.recommendationId ||
+      draft.experienceId !== result.experienceId,
+  );
+
+  return writeJson(STORAGE_KEYS.answerDrafts, [nextAnswerDraft, ...answerDrafts])
+    ? nextAnswerDraft
+    : null;
+}
+
 export function deleteRecommendationsByExperienceId(
   experienceId: string,
 ): void {
@@ -879,8 +967,19 @@ export function deleteRecommendationsByExperienceId(
         (match) => match.experienceId === experienceId,
       ),
   );
+  const recommendationIds = new Set(
+    recommendations.map((recommendation) => recommendation.id),
+  );
+  const answerDrafts = readStoredAnswerDrafts().filter(
+    (draft) =>
+      draft.experienceId !== experienceId &&
+      recommendationIds.has(draft.recommendationId),
+  );
 
-  writeJson(STORAGE_KEYS.recommendations, recommendations);
+  writeJsonTransaction([
+    [STORAGE_KEYS.recommendations, recommendations],
+    [STORAGE_KEYS.answerDrafts, answerDrafts],
+  ]);
 }
 
 export function getTrackedActivities(): TrackedActivity[] {

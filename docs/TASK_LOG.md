@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-14 - AI 답변 초안 생성 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 v2 결과에서 선택한 경험과 초안 버전을 기반으로 답변 초안 1종을 생성·저장·표시하는 흐름 구현 |
+| 수정한 파일 | `web/src/lib/types.ts`, `web/src/lib/answerDraftResult.ts`, `web/src/lib/answerDraftApi.ts`, `web/src/lib/aiApiProtection.ts`, `web/src/app/api/answer-drafts/route.ts`, `web/src/lib/storage.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/globals.css`, `supabase/migrations/20260714000300_ai_answer_drafts.sql`, `docs/AI_API_CONTRACT.md`, `docs/DATA_CONTRACT.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `PRD.md`, `README.md` |
+| 변경 내용 | `/api/answer-drafts`를 추가하고 추천 v2의 selected match, extractedRequirements, 경험 원본, 분석 v2 결과, 사용자가 선택한 draft type을 OpenAI structured output에 전달해 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 초안을 생성. 서버는 추천에 쓰인 원 질문 / 문항 / JD / 면접 질문을 초안의 직접 답변 대상으로 전달하고, 로그인 세션, 입력 상한, timeout, runtime-local rate limit을 적용하며 evidenceOptions에 있는 근거만 `usedEvidence`로 저장. 원본에 없는 성과·수치·역할·협업 규모·기술명은 본문이 아니라 `missingEvidenceNotes` 또는 `cautions`로 분리. 초안은 추천 row를 변경하지 않고 별도 `answer_drafts` table과 `campuslog:v1:answer-drafts` localStorage key에 `(recommendationId, experienceId)` 기준으로 type별 누적 저장. 추천 결과와 추천 기록 상세의 Top 3 카드에 버전 선택 탭, 선택 초안 생성 / 재생성, 본문 / 사용 근거 / 부족 근거 / 과장 주의점 / 복사 버튼을 추가 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | Supabase project에 `20260714000300_ai_answer_drafts.sql` migration 적용 후 로그인 세션에서 실제 OpenAI 초안 생성과 저장 smoke test 필요. 기록 보완 루프와 OCR / 이미지 입력은 후속 작업 |
+| 관련 커밋 메시지 | `feat: add AI answer drafts` |
+
 ### 2026-07-14 - AI 추천 v2 구현
 
 | 항목 | 내용 |
@@ -40,7 +53,7 @@
 | 수정한 파일 | `web/src/lib/types.ts`, `web/src/lib/recommendationResult.ts`, `web/src/app/api/recommend/route.ts`, `web/src/lib/recommendationApi.ts`, `web/src/lib/storage.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/ai/RecommendationForm.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/recommend/history/page.tsx`, `web/src/app/globals.css`, `supabase/migrations/20260714000200_ai_recommendation_v2.sql`, `docs/AI_API_CONTRACT.md`, `docs/DATA_CONTRACT.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `PRD.md` |
 | 변경 내용 | `RecommendationResult`를 `schemaVersion`, `promptVersion`, `model`, `extractedRequirements`, `matches` Top 3로 확장하고 기존 v1 필드를 유지. `/api/recommend` structured output을 `campuslog_experience_recommendation_v2`로 바꿔 문항 / JD 요구사항 추출, 분석 v2의 STAR / evidence / evidenceGaps / coverLetterAngles / competencyEvidence 활용, 매칭 근거 / 부족 근거 / 과장 위험 분리를 수행. 서버는 반환된 경험 id를 입력 경험으로 다시 검증하고 제목을 실제 제목으로 덮어씀. localStorage와 Supabase repository는 기존 v1 추천 기록을 1개 match와 빈 요구사항으로 보정해 읽고, v2 결과는 JSONB 확장 필드에 저장. 추천 결과와 기록 화면은 요구사항 추출 결과와 Top 3 비교 카드, 매칭 근거, 부족 근거, 과장 주의점, 활용 각도를 표시하도록 확장 |
 | 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
-| 남은 작업 | Supabase project에 `20260714000200_ai_recommendation_v2.sql` migration 적용 후 로그인 세션에서 추천 v2 저장 smoke test 필요. 실제 OpenAI 호출은 비용과 환경 의존성이 있어 자동 검증하지 않음. 긴 답변 초안 생성, 기록 보완 루프, OCR / 이미지 입력은 후속 작업 |
+| 남은 작업 | Supabase project에 `20260714000200_ai_recommendation_v2.sql` migration 적용 후 로그인 세션에서 추천 v2 저장 smoke test 필요. 실제 OpenAI 호출은 비용과 환경 의존성이 있어 자동 검증하지 않음. 답변 초안 생성은 후속 `feature/ai-answer-drafts`에서 구현. 기록 보완 루프, OCR / 이미지 입력은 후속 작업 |
 | 관련 커밋 메시지 | `feat: add AI recommendation v2` |
 
 ### 2026-07-14 - AI 경험 분석 v2 구현
@@ -64,7 +77,7 @@
 | 작업자 | Codex |
 | 작업 요약 | 실제 자기소개서·지원서 작성에 쓸 수 있는 AI 고도화 개발 순서를 5단계 로드맵으로 정리 |
 | 수정한 파일 | `README.md`, `PRD.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/AI_API_CONTRACT.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
-| 변경 내용 | AI API 보호 foundation 이후 개발 순서를 `AI 경험 분석 v2 → 추천 v2 → 답변 초안 생성 → 기록 보완 루프 → OCR / JD 이미지 입력`으로 확정. 분석 v2에는 STAR, 원본 근거, 부족 정보, 자소서 소재 각도를 포함하고, 추천 v2는 문항 / JD 요구사항 추출과 경험 Top 3 매칭, 부족 근거 표시를 목표로 정리. 답변 초안은 300자 / 700자 / 면접 / 포트폴리오 버전으로 분리하고, OCR은 텍스트 붙여넣기 흐름 안정화 뒤 원본 저장 없는 일회성 입력으로 후순위 처리. 기록 보완 루프는 `ISSUE-044`로 새로 등록 |
+| 변경 내용 | AI API 보호 foundation 이후 개발 순서를 `AI 경험 분석 v2 → 추천 v2 → 답변 초안 생성 → 기록 보완 루프 → OCR / JD 이미지 입력`으로 확정. 분석 v2에는 STAR, 원본 근거, 부족 정보, 자소서 소재 각도를 포함하고, 추천 v2는 문항 / JD 요구사항 추출과 경험 Top 3 매칭, 부족 근거 표시를 목표로 정리. 답변 초안은 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 버전으로 분리하고, OCR은 텍스트 붙여넣기 흐름 안정화 뒤 원본 저장 없는 일회성 입력으로 후순위 처리. 기록 보완 루프는 `ISSUE-044`로 새로 등록 |
 | 검증한 내용 | 문서 변경만 수행했으며 코드 실행은 하지 않음. `git diff --check`로 공백 오류 없음 확인 |
 | 남은 작업 | 첫 구현 PR은 `feature/ai-analysis-v2`에서 분석 결과 schema, DB 저장 방식, 화면 표시 범위를 확정하는 것부터 시작 |
 | 관련 커밋 메시지 | `docs: define AI enhancement roadmap` |

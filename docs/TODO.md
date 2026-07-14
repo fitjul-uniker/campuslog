@@ -32,6 +32,7 @@
 - 2026-07-14: AI 고도화 실행 순서를 `AI 경험 분석 v2 → 추천 v2 → 답변 초안 생성 → 기록 보완 루프 → OCR / JD 이미지 입력`으로 확정. 먼저 STAR, 원본 근거, 부족 정보, 자소서 소재 각도를 분석에 추가하고, 그 결과를 기반으로 문항 / JD 요구사항 추출과 경험 Top 3 매칭을 구현. OCR은 텍스트 붙여넣기 흐름 안정화 후 원본 저장 없는 일회성 입력으로 검토.
 - 2026-07-14: `feature/ai-analysis-v2`에서 `/api/analyze` structured output과 prompt를 v2로 확장. `summary`, `competencyTags`, `achievements`, `keywords` 하위 호환을 유지하면서 STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 반환·저장·표시. `experience_analyses` 확장 migration을 추가하고 localStorage / Supabase repository 모두 v1 분석 결과를 기본값으로 보정해 읽도록 처리.
 - 2026-07-14: `feature/ai-recommendation-v2`에서 `/api/recommend` structured output과 prompt를 추천 v2로 확장. 문항 / JD 요구사항을 `extractedRequirements`로 구조화하고 분석 v2의 STAR, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 활용해 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 반환·저장·표시. 기존 v1 추천 필드는 유지하고 v1 저장 결과는 기본값으로 보정해 읽도록 처리.
+- 2026-07-14: `feature/ai-answer-drafts`에서 `/api/answer-drafts` structured output과 prompt를 추가. 추천 v2의 선택 match, extractedRequirements, 경험 원본, 분석 v2 결과를 활용해 사용자가 고른 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 초안을 생성·저장·표시. 초안은 추천에 사용된 원 질문 / 문항 / JD / 면접 질문을 직접 답하도록 생성. 원본에 없는 사실은 본문에 넣지 않고 `missingEvidenceNotes` 또는 `cautions`로 분리. 초안은 별도 `answer_drafts` table과 `campuslog:v1:answer-drafts` localStorage key에 type별로 누적 저장해 기존 추천 v1/v2 기록 하위 호환을 유지.
 
 ### High
 
@@ -53,7 +54,7 @@
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [x] AI 경험 분석 v2: STAR, 원본 근거, 부족한 정보, 자소서 소재 각도 schema 정의와 구현 (`ISSUE-034`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
-- [ ] 답변 초안 생성: 300자 / 700자 / 면접 / 포트폴리오 버전 contract와 UI 구현 (`ISSUE-031`)
+- [x] 답변 초안 생성: 500자 / 800자 / 1000자 자기소개서 + 면접 + 포트폴리오 버전 contract와 UI 구현 (`ISSUE-031`)
 - [ ] 기록 보완 루프: AI 보완 질문, 사용자 답변 저장 위치, 분석 재생성 흐름 구현 (`ISSUE-044`)
 
 ### Medium

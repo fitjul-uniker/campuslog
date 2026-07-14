@@ -126,6 +126,7 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
 - runtime-local rate guard는 foundation이며 Vercel 다중 인스턴스에 견디는 durable rate limit, AI route 자체의 중복 요청 멱등성, OpenAI project spend limit / alert 설정은 후속 hardening으로 남깁니다.
 - `feature/ai-analysis-v2`에서 `/api/analyze` structured output과 prompt를 v2로 확장하고, STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 타입 / 저장소 / Supabase migration / 분석 결과 화면에 연결했습니다. 기존 분석 네 필드는 유지하고 v1 저장 결과는 기본값으로 보정해 읽습니다.
 - `feature/ai-recommendation-v2`에서 `/api/recommend` structured output과 prompt를 v2로 확장하고, 문항 / JD 요구사항 추출, 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 타입 / 저장소 / Supabase migration / 추천 결과와 기록 화면에 연결했습니다. 기존 추천 v1 필드는 유지하고 v1 저장 결과는 1개 match와 빈 요구사항으로 보정해 읽습니다.
+- `feature/ai-answer-drafts`에서 `/api/answer-drafts` structured output과 prompt를 추가하고, 추천 v2의 선택 match / extractedRequirements / 경험 원본 / 분석 v2 결과를 활용해 사용자가 선택한 답변 초안 1종을 생성합니다. 초안은 추천에 쓰인 원 질문 / 문항 / JD / 면접 질문을 직접 답하도록 작성합니다. 추천 기록 row를 변경하지 않고 별도 `answer_drafts` table 및 `campuslog:v1:answer-drafts` localStorage key에 `(recommendationId, experienceId)` 기준으로 누적 저장해 기존 추천 v1/v2 하위 호환을 유지합니다.
 
 1. AI 경험 분석 v2 — 구현 완료
    - 기존 `summary`, `competencyTags`, `achievements`, `keywords`를 STAR, 원본 근거, 부족 정보, 자소서 소재 각도까지 확장합니다.
@@ -137,10 +138,10 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
    - 입력에서 요구 역량, 필수 조건, 우대 조건, 답변 의도를 추출하는 parser contract를 정의합니다.
    - 저장된 경험과 분석 v2 결과를 비교해 경험 Top 3, 매칭 이유, 부족 근거, 과장 위험을 반환합니다.
    - 1개만 추천하는 기존 흐름은 fallback으로 유지하고, Top 3 비교 UI는 추천 v2 contract에 맞춰 구현합니다.
-3. 답변 초안 생성
-   - 추천 경험과 요구사항을 기반으로 300자, 700자, 면접 60초, 포트폴리오 설명 버전의 초안을 생성합니다.
-   - 답변 초안은 기록에 없는 사실을 만들지 않고, 부족한 근거가 있으면 해당 문장 대신 보완 방향을 안내합니다.
-   - 초안 저장 여부, 추천 기록 연결 방식, 복사 / 재생성 UX는 contract 확정 후 구현합니다.
+3. 답변 초안 생성 — 구현 완료
+   - 추천 경험과 요구사항을 기반으로 사용자가 선택한 500자, 800자, 1000자 자기소개서, 45~60초 면접 답변, 포트폴리오 설명 중 1개 버전의 초안을 생성합니다.
+   - 답변 초안은 기록에 없는 사실을 만들지 않고, 부족한 근거가 있으면 본문 대신 `missingEvidenceNotes` 또는 `cautions`에 분리합니다.
+   - 초안은 추천 기록과 별도 저장소에 연결하고, 추천 결과 / 추천 기록 화면에서 각 Top 3 경험별 버전 선택, 선택 초안 생성, 탭 전환, 복사, 재생성을 제공합니다.
 4. 기록 보완 루프
    - AI가 부족한 정보를 질문 형태로 제안하고, 사용자가 답하면 원본 경험 또는 보완 답변으로 저장할 위치를 정합니다.
    - 보완 답변이 들어오면 분석 v2를 재생성하고 관련 추천 결과의 stale 상태를 표시합니다.
@@ -247,7 +248,7 @@ v1.1 라우트는 유지합니다.
 4. AI API 인증, rate limit, 비용 제한
 5. AI 경험 분석 v2: STAR, 원본 근거, 부족 정보, 자소서 소재 각도 — 구현 완료
 6. 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거 표시 — 구현 완료
-7. 답변 초안 생성: 300자 / 700자 / 면접 / 포트폴리오 버전
+7. 답변 초안 생성: 500자 / 800자 / 1000자 자기소개서 + 면접 + 포트폴리오 버전 — 구현 완료
 8. 기록 보완 루프: AI 보완 질문, 사용자 답변, 분석 재생성
 9. OCR / JD 이미지 입력: 텍스트 흐름 안정화 후 Optional
 10. 디자인 시스템과 주요 흐름 polish
@@ -297,7 +298,7 @@ v1.1 라우트는 유지합니다.
 - localStorage 자동 / 수동 마이그레이션은 Deferred / Optional. 자동 이전과 자동 삭제는 하지 않음
 - Supabase Storage를 사용할 실제 파일 기능. OCR용 일회성 이미지는 원본 저장 없이 먼저 검토
 - 추천 후보 Top 3의 비교 UI 세부 표현
-- JD 요구사항 추출 schema, 부족 경험 비교 기준, 답변 초안 저장 여부, 보완 답변 저장 위치
+- JD 요구사항 추출 schema, 부족 경험 비교 기준, 보완 답변 저장 위치
 - AI model 교체와 평가 dataset
 - AI API durable rate limit 저장소, 중복 요청 멱등성 처리 방식, OpenAI spend alert 운영 체크리스트
 - 사용자 feedback 저장과 추천 학습 활용

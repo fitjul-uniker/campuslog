@@ -270,3 +270,48 @@ export type RecommendResponse =
       recommendation: RecommendationApiResult;
     }
   | ApiErrorResponse;
+
+export type AnswerDraftSchemaVersion = "v1";
+
+export type AnswerDraftType =
+  | "cover_letter_500"
+  | "cover_letter_800"
+  | "cover_letter_1000"
+  | "interview"
+  | "portfolio";
+
+export type AnswerDraft = {
+  type: AnswerDraftType;
+  title: string;
+  content: string;
+  targetGuide: string;
+  usedEvidence: string[];
+  missingEvidenceNotes: string[];
+  cautions: string[];
+};
+
+export type AnswerDraftResult = {
+  schemaVersion: AnswerDraftSchemaVersion;
+  promptVersion: string;
+  model: string;
+  recommendationId: string;
+  experienceId: string;
+  sourceMatchRank: number;
+  drafts: AnswerDraft[];
+  generatedAt: string;
+};
+
+export type AnswerDraftsRequest = {
+  draftType: AnswerDraftType;
+  recommendation: RecommendationResult;
+  match: RecommendationMatch;
+  experience: Experience;
+  analysis: ExperienceAnalysis | null;
+};
+
+export type AnswerDraftsResponse =
+  | {
+      ok: true;
+      answerDrafts: AnswerDraftResult;
+    }
+  | ApiErrorResponse;
