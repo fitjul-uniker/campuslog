@@ -120,7 +120,11 @@ export type AnalyzeRequest = {
 
 export type ApiErrorCode =
   | "BAD_REQUEST"
+  | "CONFIGURATION_MISSING"
+  | "SESSION_REQUIRED"
   | "INSUFFICIENT_INPUT"
+  | "PAYLOAD_TOO_LARGE"
+  | "RATE_LIMITED"
   | "OPENAI_API_ERROR"
   | "MISSING_API_KEY"
   | "UNKNOWN_ERROR";
@@ -130,6 +134,7 @@ export type ApiErrorResponse = {
   error: {
     code: ApiErrorCode;
     message: string;
+    retryAfter?: number;
   };
 };
 

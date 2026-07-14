@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-14 - AI API 보호 foundation 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 최신 main에서 `feature/ai-api-protection` 브랜치를 만들고 세 AI API Route의 서버 세션 검증과 호출 방어 foundation을 추가 |
+| 수정한 파일 | `web/src/lib/aiApiProtection.ts`, `web/src/app/api/analyze/route.ts`, `web/src/app/api/recommend/route.ts`, `web/src/app/api/synthesize-activity/route.ts`, `web/src/lib/types.ts`, `web/src/lib/activitySynthesisApi.ts`, `docs/AI_API_CONTRACT.md`, `docs/AUTH_CONTRACT.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `git pull`로 최신 main `a603eaa`까지 fast-forward한 뒤 브랜치를 생성. middleware 보호에 더해 route handler 내부에서 Supabase `auth.getUser()`를 확인하고 비로그인 요청을 공통 401 `SESSION_REQUIRED` JSON으로 반환하도록 고정. 공통 AI API error helper, `retryAfter` contract, `PAYLOAD_TOO_LARGE` / `RATE_LIMITED` code, `Content-Length` 기반 요청 크기 상한, route별 필드 길이 상한, OpenAI timeout, 사용자별 runtime-local rate guard를 추가. `service_role` key는 사용하지 않고 서버 cookie 기반 Supabase session만 사용. AI 분석 품질, JD 추천, OCR, 부족 경험 비교, 답변 초안은 시작하지 않음 |
+| 검증한 내용 | `npm install`로 최신 main의 새 의존성을 설치한 뒤 `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. `npm run dev -- --port 3100`에서 쿠키 없는 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` POST가 모두 HTTP 401과 `SESSION_REQUIRED` JSON을 반환하는 것을 확인하고 dev 서버를 종료. `npm install` 중 현재 Node v22.5.1과 `eslint-visitor-keys` 권장 engine 차이 경고, 기존 moderate advisory 2건이 출력됐으며 별도 `ISSUE-036` 범위로 유지 |
+| 남은 작업 | runtime-local rate guard는 Vercel 다중 인스턴스에 durable하지 않으므로 Supabase / 별도 store 기반 rate limit, AI route 자체 중복 요청 멱등성, OpenAI project spend limit / alert 운영 설정이 후속 hardening으로 남음. 실제 Supabase 세션이 있는 브라우저에서 세 AI API 성공 경로 smoke test 필요 |
+| 관련 커밋 메시지 | `feat: protect AI API routes` |
+
 ### 2026-07-14 - 활동 추가·공용 컨트롤·프로필 메뉴 고도화
 
 | 항목 | 내용 |

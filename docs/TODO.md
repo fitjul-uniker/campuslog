@@ -28,6 +28,7 @@
 - 2026-07-13: 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UX / upsert 구현은 High 필수 범위에서 제외하고 Deferred / Optional로 전환. localStorage 원본은 자동 이전하거나 자동 삭제하지 않으며, 로그인 세션에서는 계정 DB 데이터를 기본으로 사용.
 - 2026-07-13: 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, 로그인 계정별 DB 분리를 확인. 로그인·DB foundation은 추가 확장보다 안정화 대상으로 두고, 다음 개발 우선순위를 AI API 보호 → AI 분석 품질 개선 → 목적/JD/질문 기반 추천 → 부족 경험 비교와 답변 초안으로 전환.
 - 2026-07-14: 회원가입을 방식 선택 → 이메일 자격 증명(이메일만) → 이름 → 닉네임으로 재구성하고, Google 가입 callback 뒤 `/onboarding` 복귀와 비공개 `user_metadata.campuslog_profile` 저장 계약을 추가. metadata는 온보딩 UI에만 사용하고 RLS·권한 판단에는 사용하지 않음.
+- 2026-07-14: `feature/ai-api-protection`에서 세 AI API Route에 route-level Supabase 세션 확인, 비로그인 401 JSON error contract, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard와 `retryAfter` contract를 추가. durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert는 후속 hardening으로 분리.
 
 ### High
 
@@ -45,7 +46,8 @@
 - [x] 주요 UI의 `storage.ts` 직접 호출을 repository 경계로 전환
 - [x] localStorage → 계정 데이터 마이그레이션 정책 문서화 (`ISSUE-025`)
 - [ ] DailyLog write와 AI 합성 상태 무효화를 transaction 또는 멱등 부분 성공 contract로 정리 (`ISSUE-039`)
-- [ ] 공개 AI API 인증, rate limit, OpenAI spend limit / alert 적용 (`ISSUE-024`)
+- [x] AI API 보호 foundation: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용 (`ISSUE-024`)
+- [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [ ] AI 분석 품질 개선: 경험 요약 / 역량 / 성과 / 근거 구조 개선 (`ISSUE-034`)
 - [ ] AI 추천 고도화: 목적 / JD 원문 / 지원 질문 기반 추천 contract 정의와 구현 (`ISSUE-031`)
 - [ ] 부족 경험 비교와 추천 경험 기반 답변 초안 생성 (`ISSUE-031`)
@@ -110,7 +112,7 @@
 
 - [ ] 인증 상태 contract를 UI와 공유
 - [ ] repository / API loading·error contract를 UI와 공유
-- [ ] AI 제한 초과 오류 code, `retryAfter`, 입력 보존과 재시도 contract 공유
+- [x] AI 제한 초과 오류 code, `retryAfter`, 입력 상한과 재시도 contract 공유 (`docs/AI_API_CONTRACT.md`)
 - [ ] schema 또는 API response 변경 시 관련 화면 명세 동시 수정
 - [ ] Track 간 공통 파일 담당과 merge 순서 합의
 - [ ] 데스크톱·모바일 핵심 E2E 시나리오 작성
@@ -122,7 +124,7 @@
 - [ ] malformed localStorage JSON과 빈 상태 구분 (`ISSUE-013`)
 - [ ] WebGL 표지 실패 fallback (`ISSUE-017`)
 - [ ] 관련 링크 실제 저장·새로고침 유지 수동 검증 (`ISSUE-021`)
-- [ ] AI API 비용과 호출 빈도 제한 (`ISSUE-024`)
+- [ ] AI API durable 비용과 호출 빈도 제한 (`ISSUE-024`)
 
 ## v1.1 Done summary
 
