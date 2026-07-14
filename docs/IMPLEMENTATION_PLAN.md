@@ -127,6 +127,7 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
 - `feature/ai-analysis-v2`에서 `/api/analyze` structured output과 prompt를 v2로 확장하고, STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 타입 / 저장소 / Supabase migration / 분석 결과 화면에 연결했습니다. 기존 분석 네 필드는 유지하고 v1 저장 결과는 기본값으로 보정해 읽습니다.
 - `feature/ai-recommendation-v2`에서 `/api/recommend` structured output과 prompt를 v2로 확장하고, 문항 / JD 요구사항 추출, 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 타입 / 저장소 / Supabase migration / 추천 결과와 기록 화면에 연결했습니다. 기존 추천 v1 필드는 유지하고 v1 저장 결과는 1개 match와 빈 요구사항으로 보정해 읽습니다.
 - `feature/ai-answer-drafts`에서 `/api/answer-drafts` structured output과 prompt를 추가하고, 추천 v2의 선택 match / extractedRequirements / 경험 원본 / 분석 v2 결과를 활용해 사용자가 선택한 답변 초안 1종을 생성합니다. 초안은 추천에 쓰인 원 질문 / 문항 / JD / 면접 질문을 직접 답하도록 작성합니다. 추천 기록 row를 변경하지 않고 별도 `answer_drafts` table 및 `campuslog:v1:answer-drafts` localStorage key에 `(recommendationId, experienceId)` 기준으로 누적 저장해 기존 추천 v1/v2 하위 호환을 유지합니다.
+- `feature/ai-evidence-followup`에서 `/api/evidence-followups` structured output과 prompt를 추가하고, 분석 v2 / 추천 v2 / 답변 초안에서 드러난 부족 근거를 안전한 보완 질문으로 바꿉니다. 사용자 답변은 원본 경험 필드를 자동 수정하지 않고 별도 `experience_followups` table 및 `campuslog:v1:experience-followups` localStorage key에 저장합니다. answered followup은 `/api/analyze` 재분석 context에 원본 경험과 함께 전달하고, 분석 evidence에는 `followupAnswers` 출처를 남깁니다.
 
 1. AI 경험 분석 v2 — 구현 완료
    - 기존 `summary`, `competencyTags`, `achievements`, `keywords`를 STAR, 원본 근거, 부족 정보, 자소서 소재 각도까지 확장합니다.
@@ -142,10 +143,11 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
    - 추천 경험과 요구사항을 기반으로 사용자가 선택한 500자, 800자, 1000자 자기소개서, 45~60초 면접 답변, 포트폴리오 설명 중 1개 버전의 초안을 생성합니다.
    - 답변 초안은 기록에 없는 사실을 만들지 않고, 부족한 근거가 있으면 본문 대신 `missingEvidenceNotes` 또는 `cautions`에 분리합니다.
    - 초안은 추천 기록과 별도 저장소에 연결하고, 추천 결과 / 추천 기록 화면에서 각 Top 3 경험별 버전 선택, 선택 초안 생성, 탭 전환, 복사, 재생성을 제공합니다.
-4. 기록 보완 루프
-   - AI가 부족한 정보를 질문 형태로 제안하고, 사용자가 답하면 원본 경험 또는 보완 답변으로 저장할 위치를 정합니다.
-   - 보완 답변이 들어오면 분석 v2를 재생성하고 관련 추천 결과의 stale 상태를 표시합니다.
+4. 기록 보완 루프 — 구현 완료
+   - AI가 부족한 정보를 질문 형태로 제안하고, 사용자가 답하면 별도 보완 답변으로 저장합니다.
+   - 보완 답변이 들어오면 기존 분석이 있던 경험을 `needs_reanalysis`로 표시하고, 사용자가 명시적으로 재분석하면 원본 경험 + answered followup으로 분석 v2를 재생성합니다.
    - 질문은 사용자가 실제로 답하기 쉬운 단위로 제한하며, 개인정보나 허위 성과를 요구하지 않습니다.
+   - 추천 / 답변 초안은 부족 근거를 드러내는 `ISSUE-031` 범위이고, 기록 보완 루프는 그 부족 근거를 사용자 답변으로 보완하는 `ISSUE-044` 범위입니다.
 5. OCR / JD 이미지 입력
    - 텍스트 붙여넣기 기반 JD / 문항 추천 흐름이 안정화된 뒤 붙입니다.
    - 질문 이미지나 공고 캡처는 원본 저장 없이 일회성 AI 입력으로 처리하는 것을 기본값으로 합니다.
@@ -249,7 +251,7 @@ v1.1 라우트는 유지합니다.
 5. AI 경험 분석 v2: STAR, 원본 근거, 부족 정보, 자소서 소재 각도 — 구현 완료
 6. 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거 표시 — 구현 완료
 7. 답변 초안 생성: 500자 / 800자 / 1000자 자기소개서 + 면접 + 포트폴리오 버전 — 구현 완료
-8. 기록 보완 루프: AI 보완 질문, 사용자 답변, 분석 재생성
+8. 기록 보완 루프: AI 보완 질문, 사용자 답변, 분석 재생성 — 구현 완료
 9. OCR / JD 이미지 입력: 텍스트 흐름 안정화 후 Optional
 10. 디자인 시스템과 주요 흐름 polish
 11. Vercel + Supabase preview 환경 통합 확인
@@ -298,7 +300,7 @@ v1.1 라우트는 유지합니다.
 - localStorage 자동 / 수동 마이그레이션은 Deferred / Optional. 자동 이전과 자동 삭제는 하지 않음
 - Supabase Storage를 사용할 실제 파일 기능. OCR용 일회성 이미지는 원본 저장 없이 먼저 검토
 - 추천 후보 Top 3의 비교 UI 세부 표현
-- JD 요구사항 추출 schema, 부족 경험 비교 기준, 보완 답변 저장 위치
+- JD 요구사항 추출 schema, 부족 경험 비교 기준. 보완 답변 저장 위치는 별도 `ExperienceFollowup` 저장소로 결정 완료
 - AI model 교체와 평가 dataset
 - AI API durable rate limit 저장소, 중복 요청 멱등성 처리 방식, OpenAI spend alert 운영 체크리스트
 - 사용자 feedback 저장과 추천 학습 활용

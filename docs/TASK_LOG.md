@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-14 - AI 기록 보완 루프 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 분석 v2, 추천 v2, 답변 초안에서 드러난 부족 근거를 사용자가 별도 보완 답변으로 저장하고 명시적으로 재분석할 수 있는 기록 보완 루프 구현 |
+| 수정한 파일 | `web/src/lib/types.ts`, `web/src/lib/experienceFollowupResult.ts`, `web/src/lib/evidenceFollowupApi.ts`, `web/src/lib/analysisResult.ts`, `web/src/lib/analysisApi.ts`, `web/src/lib/aiApiProtection.ts`, `web/src/app/api/evidence-followups/route.ts`, `web/src/app/api/analyze/route.ts`, `web/src/app/api/recommend/route.ts`, `web/src/app/api/answer-drafts/route.ts`, `web/src/lib/storage.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/ai/ExperienceFollowupPanel.tsx`, `web/src/components/ai/AnalysisResult.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/globals.css`, `supabase/migrations/20260714000400_experience_followups.sql`, `docs/AI_API_CONTRACT.md`, `docs/DATA_CONTRACT.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `PRD.md` |
+| 변경 내용 | `ExperienceFollowup` schema와 정규화 유틸을 추가하고, localStorage `campuslog:v1:experience-followups` 및 Supabase `experience_followups` table / RLS migration을 구현. `/api/evidence-followups`는 세션 확인, 요청 상한, timeout, runtime-local rate limit, OpenAI structured output으로 안전한 보완 질문을 생성. 분석 화면에는 질문 생성, 답변 저장 / 수정, dismiss, 보완 답변 기반 재분석 CTA를 추가. 보완 답변은 원본 `Experience.description` / `achievements`를 자동 수정하지 않고 answered followup으로 저장하며, 답변 저장 후 기존 분석이 있던 경험은 `needs_reanalysis`로 표시. `/api/analyze`는 원본 경험 + answered followup을 함께 받아 분석 v2를 재생성하고, 보완 답변 기반 evidence는 `followupAnswers` 출처로 구분. 추천 / 답변 초안 화면에는 부족 근거 보완 액션과 stale 가능성 안내를 추가 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. UI preview dev server에서 `/api/evidence-followups` route가 보호 응답을 반환하는 것과 `/experiences/test-analysis/analysis`가 200으로 렌더되는 것을 확인 |
+| 남은 작업 | Supabase project에 `20260714000400_experience_followups.sql` migration 적용 후 로그인 세션에서 실제 OpenAI 질문 생성, 답변 저장, 보완 답변 포함 재분석 성공 경로 smoke test 필요. OCR / 이미지 입력은 후속 작업 |
+| 관련 커밋 메시지 | `feat: add AI evidence followup loop` |
+
 ### 2026-07-14 - AI 답변 초안 생성 구현
 
 | 항목 | 내용 |

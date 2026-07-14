@@ -20,6 +20,7 @@ const EVIDENCE_SOURCE_LABELS: Record<ExperienceAnalysisEvidenceSource, string> =
   description: "활동 내용",
   achievements: "성과",
   relatedLinks: "관련 링크",
+  followupAnswers: "보완 답변",
 };
 
 export function AnalysisResult({ experience, analysis }: AnalysisResultProps) {
@@ -48,8 +49,8 @@ export function AnalysisResult({ experience, analysis }: AnalysisResultProps) {
         <div className="analysis-notice" role="status">
           <AlertTriangle aria-hidden="true" />
           <p>
-            경험이 분석 이후 수정되었습니다. 최신 내용 기준으로 다시 분석할 수
-            있습니다.
+            경험 또는 보완 답변이 분석 이후 바뀌었습니다. 최신 내용 기준으로
+            다시 분석할 수 있습니다.
           </p>
         </div>
       ) : null}

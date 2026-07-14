@@ -387,7 +387,9 @@ function createExperiencePromptContext(
           evidenceGaps: analysis.evidenceGaps.slice(0, 6),
           coverLetterAngles: analysis.coverLetterAngles.slice(0, 4),
           competencyEvidence: analysis.competencyEvidence.slice(0, 6),
-          isStale: analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
+          isStale:
+            analysis.sourceExperienceUpdatedAt !== experience.updatedAt ||
+            experience.analysisStatus === "needs_reanalysis",
         }
       : null,
   };

@@ -19,6 +19,10 @@ import {
   requireAuthenticatedAiApiUser,
 } from "@/lib/aiApiProtection";
 import {
+  hasAnsweredFollowup,
+  normalizeExperienceFollowup,
+} from "@/lib/experienceFollowupResult";
+import {
   MAX_RELATED_LINK_DESCRIPTION_LENGTH,
   MAX_RELATED_LINKS,
   MAX_RELATED_LINK_URL_LENGTH,
@@ -30,6 +34,7 @@ import type {
   AnalyzeResponse,
   RelatedLink,
   Experience,
+  ExperienceFollowup,
 } from "@/lib/types";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
@@ -48,6 +53,10 @@ const MAX_EXPERIENCE_ROLE_LENGTH = 200;
 const MAX_EXPERIENCE_DESCRIPTION_LENGTH = 8_000;
 const MAX_EXPERIENCE_ACHIEVEMENTS_LENGTH = 4_000;
 const MAX_TIMESTAMP_LENGTH = 100;
+const MAX_ANALYSIS_FOLLOWUP_COUNT = 12;
+const MAX_ANALYSIS_FOLLOWUP_ANSWER_COUNT = 24;
+const MAX_ANALYSIS_FOLLOWUP_ANSWER_LENGTH = 1_600;
+const MAX_SERIALIZED_FOLLOWUPS_LENGTH = 32_000;
 const PLACEHOLDER_VALUES = new Set([
   "test",
   "tests",
@@ -389,12 +398,53 @@ function countMeaningfulCharacters(values: string[]): number {
   }, 0);
 }
 
-function hasSufficientAnalysisInput(experience: Experience): boolean {
+type FollowupAnswerContext = {
+  followupId: string;
+  questionId: string;
+  question: string;
+  answer: string;
+};
+
+function getFollowupAnswerContexts(
+  followups: ExperienceFollowup[],
+): FollowupAnswerContext[] {
+  return followups.flatMap((followup) => {
+    const questionsById = new Map(
+      followup.questions.map((question) => [question.id, question]),
+    );
+
+    return followup.answers.flatMap((answer) => {
+      const question = questionsById.get(answer.questionId);
+
+      if (!question || !answer.answer.trim()) {
+        return [];
+      }
+
+      return [
+        {
+          followupId: followup.id,
+          questionId: answer.questionId,
+          question: question.question,
+          answer: answer.answer,
+        },
+      ];
+    });
+  });
+}
+
+function hasSufficientAnalysisInput(
+  experience: Experience,
+  followups: ExperienceFollowup[],
+): boolean {
+  const followupAnswers = getFollowupAnswerContexts(followups).map(
+    (item) => item.answer,
+  );
   const meaningfulFieldCount = [
     experience.title,
     experience.role,
     experience.description,
     experience.achievements,
+    ...followupAnswers,
   ].filter((value) => compactMeaningfulText(getMeaningfulFieldText(value)).length >= 2)
     .length;
   const totalCharCount = countMeaningfulCharacters([
@@ -402,10 +452,12 @@ function hasSufficientAnalysisInput(experience: Experience): boolean {
     experience.role,
     experience.description,
     experience.achievements,
+    ...followupAnswers,
   ]);
   const actionCharCount = countMeaningfulCharacters([
     experience.description,
     experience.achievements,
+    ...followupAnswers,
   ]);
 
   return (
@@ -415,11 +467,15 @@ function hasSufficientAnalysisInput(experience: Experience): boolean {
   );
 }
 
-function hasSufficientCompetencyEvidence(experience: Experience): boolean {
+function hasSufficientCompetencyEvidence(
+  experience: Experience,
+  followups: ExperienceFollowup[],
+): boolean {
   return (
     countMeaningfulCharacters([
       experience.description,
       experience.achievements,
+      ...getFollowupAnswerContexts(followups).map((item) => item.answer),
     ]) >= MIN_COMPETENCY_ACTION_CHAR_COUNT
   );
 }
@@ -469,11 +525,59 @@ function parseExperienceForAnalysis(value: unknown): Experience | null {
   return null;
 }
 
-function createPrompt(experience: Experience): string {
+function parseFollowupsForAnalysis(
+  value: unknown,
+  experienceId: string,
+): ExperienceFollowup[] {
+  if (typeof value === "undefined" || value === null) {
+    return [];
+  }
+
+  if (!Array.isArray(value) || value.length > MAX_ANALYSIS_FOLLOWUP_COUNT) {
+    return [];
+  }
+
+  const serializedValue = JSON.stringify(value);
+
+  if (serializedValue.length > MAX_SERIALIZED_FOLLOWUPS_LENGTH) {
+    return [];
+  }
+
+  const answerCount = value.reduce((count, item) => {
+    const candidate = normalizeExperienceFollowup(item);
+
+    return count + (candidate?.answers.length ?? 0);
+  }, 0);
+
+  if (answerCount > MAX_ANALYSIS_FOLLOWUP_ANSWER_COUNT) {
+    return [];
+  }
+
+  return value
+    .map(normalizeExperienceFollowup)
+    .filter(
+      (followup): followup is ExperienceFollowup =>
+        followup !== null &&
+        followup.experienceId === experienceId &&
+        followup.status !== "dismissed" &&
+        hasAnsweredFollowup(followup) &&
+        followup.answers.every(
+          (answer) => answer.answer.length <= MAX_ANALYSIS_FOLLOWUP_ANSWER_LENGTH,
+        ),
+    )
+    .slice(0, MAX_ANALYSIS_FOLLOWUP_COUNT);
+}
+
+function createPrompt(
+  experience: Experience,
+  followups: ExperienceFollowup[],
+): string {
+  const followupAnswers = getFollowupAnswerContexts(followups);
+
   return JSON.stringify(
     {
       instruction:
-        "아래 대학생 활동 경험을 분석해 자기소개서, 포트폴리오, 면접 준비에 다시 활용하기 좋은 v2 구조로 정리해주세요. 입력되지 않은 성과, 수치, 역할, 협업 여부를 과장하거나 꾸며내지 말고, 사용자가 기록한 내용에서 확인되는 범위만 사용하세요.",
+        "아래 대학생 활동 경험과 사용자가 별도로 답한 보완 답변을 분석해 자기소개서, 포트폴리오, 면접 준비에 다시 활용하기 좋은 v2 구조로 정리해주세요. 입력되지 않은 성과, 수치, 역할, 협업 여부를 과장하거나 꾸며내지 말고, 사용자가 기록한 내용에서 확인되는 범위만 사용하세요.",
       qualityRules: [
         "핵심 역량 태그는 사용자의 실제 행동, 문제 해결, 협업, 성과가 원문에 드러날 때만 생성합니다.",
         "활동명, 기간, 역할명만으로 역량 태그를 추정하지 않습니다.",
@@ -481,6 +585,8 @@ function createPrompt(experience: Experience): string {
         "원문에 없는 성과, 수치, 협업 여부, 리더십을 사실처럼 만들지 않습니다.",
         "STAR 항목 중 원본에서 구분하기 어려운 부분은 빈 문자열로 두고 evidenceGaps에 무엇이 부족한지 적습니다.",
         "evidence.quote, coverLetterAngles.supportingEvidence, competencyEvidence.evidence는 원본 입력에 있는 짧은 문구를 사용합니다.",
+        "보완 답변을 근거로 사용했다면 evidence.source는 followupAnswers를 사용하고, quote는 보완 답변 안에 실제로 있는 문구만 사용합니다.",
+        "원본 경험과 보완 답변은 출처가 다릅니다. 보완 답변을 원본 description이나 achievements에 원래 있던 내용처럼 표현하지 않습니다.",
         "근거가 약한 성과나 자소서 소재는 확정 사실처럼 쓰지 말고 caution 또는 evidenceGaps로 분리합니다.",
         "자기소개서 소재 각도는 제안으로 작성하되, 원문에 없는 결과를 달성한 것처럼 표현하지 않습니다.",
         "관련 링크의 설명은 사용자가 적은 참고 정보이며, 링크 내용을 직접 열람하거나 검증했다고 가정하지 않습니다.",
@@ -511,6 +617,12 @@ function createPrompt(experience: Experience): string {
         achievements: experience.achievements,
         relatedLinks: experience.relatedLinks,
       },
+      followupAnswers: followupAnswers.map((item) => ({
+        followupId: item.followupId,
+        questionId: item.questionId,
+        question: item.question,
+        answer: item.answer,
+      })),
     },
     null,
     2,
@@ -570,6 +682,7 @@ function stripJsonFence(value: string): string {
 function getEvidenceSourceText(
   experience: Experience,
   source: (typeof ANALYSIS_EVIDENCE_SOURCES)[number],
+  followups: ExperienceFollowup[],
 ): string {
   switch (source) {
     case "title":
@@ -586,6 +699,10 @@ function getEvidenceSourceText(
       return experience.relatedLinks
         .map((link) => `${link.url} ${link.description}`)
         .join("\n");
+    case "followupAnswers":
+      return getFollowupAnswerContexts(followups)
+        .map((item) => item.answer)
+        .join("\n");
   }
 }
 
@@ -599,11 +716,12 @@ function isGroundedInSource(quote: string, sourceText: string): boolean {
 function normalizeGroundedEvidence(
   value: unknown,
   experience: Experience,
+  followups: ExperienceFollowup[],
 ) {
   return normalizeAnalysisEvidence(value, 8).filter((item) =>
     isGroundedInSource(
       item.quote,
-      getEvidenceSourceText(experience, item.source),
+      getEvidenceSourceText(experience, item.source, followups),
     ),
   );
 }
@@ -611,6 +729,7 @@ function normalizeGroundedEvidence(
 function isGroundedEvidenceReference(
   value: string,
   experience: Experience,
+  followups: ExperienceFollowup[],
   evidence: ReturnType<typeof normalizeGroundedEvidence>,
 ): boolean {
   const compactValue = compactMeaningfulText(value);
@@ -637,17 +756,18 @@ function isGroundedEvidenceReference(
   }
 
   return ANALYSIS_EVIDENCE_SOURCES.some((source) =>
-    isGroundedInSource(value, getEvidenceSourceText(experience, source)),
+    isGroundedInSource(value, getEvidenceSourceText(experience, source, followups)),
   );
 }
 
 function normalizeGroundedReferences(
   values: string[],
   experience: Experience,
+  followups: ExperienceFollowup[],
   evidence: ReturnType<typeof normalizeGroundedEvidence>,
 ): string[] {
   return values.filter((value) =>
-    isGroundedEvidenceReference(value, experience, evidence),
+    isGroundedEvidenceReference(value, experience, followups, evidence),
   );
 }
 
@@ -658,6 +778,7 @@ function hasStarContent(star: ReturnType<typeof normalizeAnalysisStar>): boolean
 function parseAnalysisResult(
   rawOutput: string,
   experience: Experience,
+  followups: ExperienceFollowup[],
 ): AnalysisApiResult | null {
   try {
     const parsed = JSON.parse(stripJsonFence(rawOutput)) as Record<
@@ -667,21 +788,32 @@ function parseAnalysisResult(
 
     const summary =
       typeof parsed.summary === "string" ? parsed.summary.trim() : "";
-    const evidence = normalizeGroundedEvidence(parsed.evidence, experience);
+    const evidence = normalizeGroundedEvidence(
+      parsed.evidence,
+      experience,
+      followups,
+    );
     const star = normalizeAnalysisStar(parsed.star);
-    const competencyEvidence = hasSufficientCompetencyEvidence(experience)
+    const competencyEvidence = hasSufficientCompetencyEvidence(
+      experience,
+      followups,
+    )
       ? normalizeCompetencyEvidence(parsed.competencyEvidence, 5)
           .map((item) => ({
             ...item,
             evidence: normalizeGroundedReferences(
               item.evidence,
               experience,
+              followups,
               evidence,
             ),
           }))
           .filter((item) => item.evidence.length > 0)
       : [];
-    const rawCompetencyTags = hasSufficientCompetencyEvidence(experience)
+    const rawCompetencyTags = hasSufficientCompetencyEvidence(
+      experience,
+      followups,
+    )
       ? normalizeStringList(parsed.competencyTags, 5)
       : [];
     const competencyTags =
@@ -702,6 +834,7 @@ function parseAnalysisResult(
       supportingEvidence: normalizeGroundedReferences(
         item.supportingEvidence,
         experience,
+        followups,
         evidence,
       ),
     }));
@@ -756,7 +889,12 @@ async function readRequestBody(request: Request): Promise<AnalyzeRequest | null>
       return null;
     }
 
-    return { experience };
+    const followups = parseFollowupsForAnalysis(
+      (body as { followups?: unknown }).followups,
+      experience.id,
+    );
+
+    return { experience, followups };
   } catch {
     return null;
   }
@@ -791,7 +929,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!hasSufficientAnalysisInput(body.experience)) {
+  const followups = body.followups ?? [];
+
+  if (!hasSufficientAnalysisInput(body.experience, followups)) {
     return createErrorResponse(
       "INSUFFICIENT_INPUT",
       INSUFFICIENT_ANALYSIS_MESSAGE,
@@ -834,7 +974,7 @@ export async function POST(request: Request) {
           },
           {
             role: "user",
-            content: createPrompt(body.experience),
+            content: createPrompt(body.experience, followups),
           },
         ],
         text: {
@@ -888,7 +1028,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const analysis = parseAnalysisResult(outputText, body.experience);
+    const analysis = parseAnalysisResult(
+      outputText,
+      body.experience,
+      followups,
+    );
 
     if (!analysis) {
       return createErrorResponse(

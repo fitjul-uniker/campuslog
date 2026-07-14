@@ -1,4 +1,9 @@
-import type { AnalysisApiResult, AnalyzeResponse, Experience } from "@/lib/types";
+import type {
+  AnalysisApiResult,
+  AnalyzeResponse,
+  Experience,
+  ExperienceFollowup,
+} from "@/lib/types";
 import {
   ANALYSIS_SCHEMA_VERSION,
   normalizeAnalysisEvidence,
@@ -88,6 +93,7 @@ function isAnalyzeResponse(value: unknown): value is AnalyzeResponse {
 
 export async function requestExperienceAnalysis(
   experience: Experience,
+  followups: ExperienceFollowup[] = [],
 ): Promise<AnalyzeResponse> {
   try {
     const response = await fetch("/api/analyze", {
@@ -95,7 +101,7 @@ export async function requestExperienceAnalysis(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ experience }),
+      body: JSON.stringify({ experience, followups }),
     });
 
     const payload = (await response.json()) as unknown;

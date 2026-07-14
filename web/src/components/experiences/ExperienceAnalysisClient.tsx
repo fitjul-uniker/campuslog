@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpenText, RefreshCcw, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
+import { ExperienceFollowupPanel } from "@/components/ai/ExperienceFollowupPanel";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
@@ -53,6 +54,15 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     };
   }, [id]);
 
+  async function refreshExperience() {
+    const repository = getCampusLogRepository();
+    const updatedExperience = await repository.experiences.getById(id);
+
+    if (updatedExperience) {
+      setExperience(updatedExperience);
+    }
+  }
+
   async function handleAnalyze() {
     if (!experience) {
       return;
@@ -61,7 +71,10 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     setIsAnalyzing(true);
     setAnalysisError("");
 
-    const response = await requestExperienceAnalysis(experience);
+    const repository = getCampusLogRepository();
+    const followups =
+      await repository.experienceFollowups.listByExperienceId(experience.id);
+    const response = await requestExperienceAnalysis(experience, followups);
 
     if (!response.ok) {
       setAnalysisError(response.error.message);
@@ -69,7 +82,6 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       return;
     }
 
-    const repository = getCampusLogRepository();
     const savedAnalysis = await repository.analyses.save(response.analysis);
 
     if (!savedAnalysis) {
@@ -80,11 +92,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       return;
     }
 
-    const updatedExperience = await repository.experiences.getById(id);
-
-    if (updatedExperience) {
-      setExperience(updatedExperience);
-    }
+    await refreshExperience();
 
     setAnalysis(savedAnalysis);
     setIsAnalyzing(false);
@@ -132,6 +140,13 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       {analysis ? (
         <>
           <AnalysisResult experience={experience} analysis={analysis} />
+          <ExperienceFollowupPanel
+            experience={experience}
+            analysis={analysis}
+            isAnalyzing={isAnalyzing}
+            onReanalyze={handleAnalyze}
+            onFollowupsChanged={refreshExperience}
+          />
           {analysisError ? (
             <p className="form-error" role="alert">
               {analysisError}
@@ -164,50 +179,59 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
           </div>
         </>
       ) : (
-        <section className="detail-panel" aria-labelledby="analysis-title">
-          <div className="detail-header">
-            <div>
-              <p className="experience-meta">{experience.title}</p>
-              <h2 id="analysis-title">아직 분석 결과가 없습니다</h2>
+        <>
+          <section className="detail-panel" aria-labelledby="analysis-title">
+            <div className="detail-header">
+              <div>
+                <p className="experience-meta">{experience.title}</p>
+                <h2 id="analysis-title">아직 분석 결과가 없습니다</h2>
+              </div>
+              <StatusBadge status={experience.analysisStatus} />
             </div>
-            <StatusBadge status={experience.analysisStatus} />
-          </div>
 
-          <div className="analysis-empty">
-            <p>
-              이 경험에 저장된 AI 분석 결과가 없습니다. 상세 화면으로 돌아가거나
-              여기에서 바로 분석을 요청할 수 있습니다.
-            </p>
-          </div>
+            <div className="analysis-empty">
+              <p>
+                이 경험에 저장된 AI 분석 결과가 없습니다. 상세 화면으로
+                돌아가거나 여기에서 바로 분석을 요청할 수 있습니다.
+              </p>
+            </div>
 
-          {analysisError ? (
-            <p className="form-error" role="alert">
-              {analysisError}
-            </p>
-          ) : null}
+            {analysisError ? (
+              <p className="form-error" role="alert">
+                {analysisError}
+              </p>
+            ) : null}
 
-          <div className="panel-actions">
-            <button
-              className="button button-primary"
-              type="button"
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
-            >
-              <Sparkles className="button-icon" aria-hidden="true" />
-              {isAnalyzing ? "분석 중..." : "AI 분석 요청"}
-            </button>
-            <Link
-              href={`/experiences/${experience.id}`}
-              className="button button-secondary"
-            >
-              <ArrowLeft className="button-icon" aria-hidden="true" />
-              활동 경험 상세로 돌아가기
-            </Link>
-            <Link href="/experiences" className="button button-ghost">
-              나의 활동으로 돌아가기
-            </Link>
-          </div>
-        </section>
+            <div className="panel-actions">
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={handleAnalyze}
+                disabled={isAnalyzing}
+              >
+                <Sparkles className="button-icon" aria-hidden="true" />
+                {isAnalyzing ? "분석 중..." : "AI 분석 요청"}
+              </button>
+              <Link
+                href={`/experiences/${experience.id}`}
+                className="button button-secondary"
+              >
+                <ArrowLeft className="button-icon" aria-hidden="true" />
+                활동 경험 상세로 돌아가기
+              </Link>
+              <Link href="/experiences" className="button button-ghost">
+                나의 활동으로 돌아가기
+              </Link>
+            </div>
+          </section>
+          <ExperienceFollowupPanel
+            experience={experience}
+            analysis={analysis}
+            isAnalyzing={isAnalyzing}
+            onReanalyze={handleAnalyze}
+            onFollowupsChanged={refreshExperience}
+          />
+        </>
       )}
     </div>
   );

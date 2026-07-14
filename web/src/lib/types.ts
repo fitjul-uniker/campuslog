@@ -113,7 +113,8 @@ export type ExperienceAnalysisEvidenceSource =
   | "role"
   | "description"
   | "achievements"
-  | "relatedLinks";
+  | "relatedLinks"
+  | "followupAnswers";
 
 export type ExperienceAnalysisEvidence = {
   source: ExperienceAnalysisEvidenceSource;
@@ -166,6 +167,7 @@ export type AnalysisApiResult = Omit<
 
 export type AnalyzeRequest = {
   experience: Experience;
+  followups?: ExperienceFollowup[];
 };
 
 export type ApiErrorCode =
@@ -313,5 +315,72 @@ export type AnswerDraftsResponse =
   | {
       ok: true;
       answerDrafts: AnswerDraftResult;
+    }
+  | ApiErrorResponse;
+
+export type ExperienceFollowupSchemaVersion = "v1";
+
+export type ExperienceFollowupSource =
+  | "analysis_gap"
+  | "recommendation_missing_evidence"
+  | "recommendation_overclaim_risk"
+  | "answer_draft_missing_evidence"
+  | "answer_draft_caution"
+  | "manual";
+
+export type ExperienceFollowupTargetEvidenceType =
+  | "result_metric"
+  | "role_scope"
+  | "collaboration_scope"
+  | "technical_detail"
+  | "process_detail"
+  | "decision_reason"
+  | "learning"
+  | "other";
+
+export type ExperienceFollowupStatus = "open" | "answered" | "dismissed";
+
+export type ExperienceFollowupQuestion = {
+  id: string;
+  question: string;
+  reason: string;
+  targetEvidenceType: ExperienceFollowupTargetEvidenceType;
+  caution: string;
+};
+
+export type ExperienceFollowupAnswer = {
+  questionId: string;
+  answer: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExperienceFollowup = {
+  id: string;
+  schemaVersion: ExperienceFollowupSchemaVersion;
+  experienceId: string;
+  source: ExperienceFollowupSource;
+  sourceRecommendationId?: string;
+  sourceAnswerDraftType?: AnswerDraftType;
+  questions: ExperienceFollowupQuestion[];
+  answers: ExperienceFollowupAnswer[];
+  status: ExperienceFollowupStatus;
+  generatedAt: string;
+  updatedAt: string;
+};
+
+export type EvidenceFollowupsRequest = {
+  experience: Experience;
+  source: ExperienceFollowupSource;
+  analysis?: ExperienceAnalysis | null;
+  recommendation?: RecommendationResult | null;
+  match?: RecommendationMatch | null;
+  answerDraft?: AnswerDraft | null;
+};
+
+export type EvidenceFollowupsResponse =
+  | {
+      ok: true;
+      followup: ExperienceFollowup;
     }
   | ApiErrorResponse;

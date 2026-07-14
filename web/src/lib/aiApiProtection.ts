@@ -29,6 +29,14 @@ export const AI_API_REQUEST_LIMITS = {
       windowMs: 10 * 60 * 1_000,
     },
   },
+  evidenceFollowups: {
+    maxRequestBytes: 96_000,
+    openAiTimeoutMs: 50_000,
+    rateLimit: {
+      maxRequests: 12,
+      windowMs: 10 * 60 * 1_000,
+    },
+  },
   synthesizeActivity: {
     maxRequestBytes: 512_000,
     openAiTimeoutMs: 50_000,
