@@ -29,6 +29,7 @@
 - 2026-07-13: 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, 로그인 계정별 DB 분리를 확인. 로그인·DB foundation은 추가 확장보다 안정화 대상으로 두고, 다음 개발 우선순위를 AI API 보호 → AI 분석 품질 개선 → 목적/JD/질문 기반 추천 → 부족 경험 비교와 답변 초안으로 전환.
 - 2026-07-14: 회원가입을 방식 선택 → 이메일 자격 증명(이메일만) → 이름 → 닉네임으로 재구성하고, Google 가입 callback 뒤 `/onboarding` 복귀와 비공개 `user_metadata.campuslog_profile` 저장 계약을 추가. metadata는 온보딩 UI에만 사용하고 RLS·권한 판단에는 사용하지 않음.
 - 2026-07-14: `feature/ai-api-protection`에서 세 AI API Route에 route-level Supabase 세션 확인, 비로그인 401 JSON error contract, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard와 `retryAfter` contract를 추가. durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert는 후속 hardening으로 분리.
+- 2026-07-14: AI 고도화 실행 순서를 `AI 경험 분석 v2 → 추천 v2 → 답변 초안 생성 → 기록 보완 루프 → OCR / JD 이미지 입력`으로 확정. 먼저 STAR, 원본 근거, 부족 정보, 자소서 소재 각도를 분석에 추가하고, 그 결과를 기반으로 문항 / JD 요구사항 추출과 경험 Top 3 매칭을 구현. OCR은 텍스트 붙여넣기 흐름 안정화 후 원본 저장 없는 일회성 입력으로 검토.
 
 ### High
 
@@ -48,15 +49,16 @@
 - [ ] DailyLog write와 AI 합성 상태 무효화를 transaction 또는 멱등 부분 성공 contract로 정리 (`ISSUE-039`)
 - [x] AI API 보호 foundation: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용 (`ISSUE-024`)
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
-- [ ] AI 분석 품질 개선: 경험 요약 / 역량 / 성과 / 근거 구조 개선 (`ISSUE-034`)
-- [ ] AI 추천 고도화: 목적 / JD 원문 / 지원 질문 기반 추천 contract 정의와 구현 (`ISSUE-031`)
-- [ ] 부족 경험 비교와 추천 경험 기반 답변 초안 생성 (`ISSUE-031`)
+- [ ] AI 경험 분석 v2: STAR, 원본 근거, 부족한 정보, 자소서 소재 각도 schema 정의와 구현 (`ISSUE-034`)
+- [ ] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
+- [ ] 답변 초안 생성: 300자 / 700자 / 면접 / 포트폴리오 버전 contract와 UI 구현 (`ISSUE-031`)
+- [ ] 기록 보완 루프: AI 보완 질문, 사용자 답변 저장 위치, 분석 재생성 흐름 구현 (`ISSUE-044`)
 
 ### Medium
 
 - [ ] AI 추천 정확도 평가 기준과 회귀 사례 정의
 - [ ] AI 추천 이유·활용 방향·근거 일치 강화
-- [ ] 질문 이미지 OCR / vision 입력의 일회성 처리와 개인정보·비용 정책 정의
+- [ ] OCR / JD 이미지 입력의 일회성 처리와 개인정보·비용 정책 정의. 텍스트 붙여넣기 흐름 안정화 전까지 Optional (`ISSUE-031`)
 - [ ] AI model / prompt version 기록 여부 결정
 - [ ] 서버 오류 code와 사용자용 message 계약 정리
 
@@ -67,7 +69,8 @@
 - [ ] Google OAuth provider 설정값과 배포 callback URL
 - [ ] Supabase 비밀번호 validation과 계정 열거 방지 오류 문구 정책
 - [ ] Supabase Storage를 사용할 실제 기능. OCR용 이미지는 우선 원본 저장 없이 처리
-- [ ] 여러 추천 후보와 비교 기능 범위
+- [ ] 추천 후보 Top 3 비교 UI 세부 표현
+- [ ] 보완 질문에 대한 사용자 답변을 원본 경험 필드, 별도 보완 필드, 또는 분석 입력 전용 데이터 중 어디에 저장할지 결정
 
 ### Deferred / Optional
 

@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-14 - AI 고도화 개발 순서 문서화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 실제 자기소개서·지원서 작성에 쓸 수 있는 AI 고도화 개발 순서를 5단계 로드맵으로 정리 |
+| 수정한 파일 | `README.md`, `PRD.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/AI_API_CONTRACT.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | AI API 보호 foundation 이후 개발 순서를 `AI 경험 분석 v2 → 추천 v2 → 답변 초안 생성 → 기록 보완 루프 → OCR / JD 이미지 입력`으로 확정. 분석 v2에는 STAR, 원본 근거, 부족 정보, 자소서 소재 각도를 포함하고, 추천 v2는 문항 / JD 요구사항 추출과 경험 Top 3 매칭, 부족 근거 표시를 목표로 정리. 답변 초안은 300자 / 700자 / 면접 / 포트폴리오 버전으로 분리하고, OCR은 텍스트 붙여넣기 흐름 안정화 뒤 원본 저장 없는 일회성 입력으로 후순위 처리. 기록 보완 루프는 `ISSUE-044`로 새로 등록 |
+| 검증한 내용 | 문서 변경만 수행했으며 코드 실행은 하지 않음. `git diff --check`로 공백 오류 없음 확인 |
+| 남은 작업 | 첫 구현 PR은 `feature/ai-analysis-v2`에서 분석 결과 schema, DB 저장 방식, 화면 표시 범위를 확정하는 것부터 시작 |
+| 관련 커밋 메시지 | `docs: define AI enhancement roadmap` |
+
 ### 2026-07-14 - AI API 보호 foundation 추가
 
 | 항목 | 내용 |
