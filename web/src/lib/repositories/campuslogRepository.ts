@@ -29,6 +29,7 @@ import {
   updateTrackedActivity,
 } from "@/lib/storage";
 import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
+import { normalizeRecommendationResult } from "@/lib/recommendationResult";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
   ActivityStatus,
@@ -111,6 +112,11 @@ type RecommendationRow = {
   id: string;
   purpose: RecommendationResult["purpose"];
   prompt: string;
+  schema_version?: RecommendationResult["schemaVersion"];
+  prompt_version?: string | null;
+  model?: string | null;
+  extracted_requirements?: unknown;
+  matches?: unknown;
   recommended_experience_id: string;
   recommended_experience_title: string;
   reason: string;
@@ -279,10 +285,15 @@ function toAnalysis(row: ExperienceAnalysisRow): ExperienceAnalysis {
 }
 
 function toRecommendation(row: RecommendationRow): RecommendationResult {
-  return {
+  const recommendation = normalizeRecommendationResult({
     id: row.id,
     purpose: row.purpose,
     prompt: row.prompt,
+    schemaVersion: row.schema_version,
+    promptVersion: row.prompt_version ?? "",
+    model: row.model ?? "",
+    extractedRequirements: row.extracted_requirements,
+    matches: row.matches,
     recommendedExperienceId: row.recommended_experience_id,
     recommendedExperienceTitle: row.recommended_experience_title,
     reason: row.reason,
@@ -291,7 +302,13 @@ function toRecommendation(row: RecommendationRow): RecommendationResult {
     usageDirection: row.usage_direction,
     draftSentence: row.draft_sentence,
     generatedAt: row.generated_at,
-  };
+  });
+
+  if (!recommendation) {
+    throw new Error("CampusLog recommendation row is invalid.");
+  }
+
+  return recommendation;
 }
 
 function toSynthesisDraft(row: SynthesisDraftRow): ExperienceSynthesisDraft {
@@ -592,6 +609,11 @@ function createSupabaseCampusLogRepository(
             id: result.id,
             purpose: result.purpose,
             prompt: result.prompt,
+            schema_version: result.schemaVersion,
+            prompt_version: result.promptVersion,
+            model: result.model,
+            extracted_requirements: result.extractedRequirements,
+            matches: result.matches,
             recommended_experience_id: result.recommendedExperienceId,
             recommended_experience_title: result.recommendedExperienceTitle,
             reason: result.reason,

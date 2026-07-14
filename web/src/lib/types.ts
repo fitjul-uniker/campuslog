@@ -207,10 +207,41 @@ export type SynthesizeActivityResponse =
     }
   | ApiErrorResponse;
 
+export type RecommendationSchemaVersion = "v1" | "v2";
+
+export type RecommendationFitLevel = "high" | "medium" | "low";
+
+export type RecommendationExtractedRequirements = {
+  requiredCompetencies: string[];
+  preferredCompetencies: string[];
+  keywords: string[];
+  intent: string;
+  constraints: string[];
+};
+
+export type RecommendationMatch = {
+  experienceId: string;
+  experienceTitle: string;
+  rank: number;
+  score: number;
+  fitLevel: RecommendationFitLevel;
+  matchReason: string;
+  matchedEvidence: string[];
+  missingEvidence: string[];
+  overclaimRisks: string[];
+  suggestedAngle: string;
+  relatedCompetencies: string[];
+};
+
 export type RecommendationResult = {
   id: string;
   purpose: RecommendationPurpose;
   prompt: string;
+  schemaVersion: RecommendationSchemaVersion;
+  promptVersion: string;
+  model: string;
+  extractedRequirements: RecommendationExtractedRequirements;
+  matches: RecommendationMatch[];
   recommendedExperienceId: string;
   recommendedExperienceTitle: string;
   reason: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, X } from "lucide-react";
+import { AlertTriangle, ExternalLink, X } from "lucide-react";
 import { useState } from "react";
 
 import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
@@ -15,6 +15,7 @@ import type {
 type RecommendationResultProps = {
   result: Result;
   experience?: Experience | null;
+  experiences?: Experience[];
   variant?: "default" | "embedded";
   onClose?: () => void;
 };
@@ -29,14 +30,54 @@ const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
   other: "기타",
 };
 
+const FIT_LEVEL_LABELS = {
+  high: "높음",
+  medium: "보통",
+  low: "낮음",
+} as const;
+
+function hasListContent(values: string[]): boolean {
+  return values.some((value) => value.trim().length > 0);
+}
+
 export function RecommendationResult({
   result,
   experience,
+  experiences = experience ? [experience] : [],
   variant = "default",
   onClose,
 }: RecommendationResultProps) {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const isEmbedded = variant === "embedded";
+  const requirements = result.extractedRequirements;
+  const hasRequirements =
+    hasListContent(requirements.requiredCompetencies) ||
+    hasListContent(requirements.preferredCompetencies) ||
+    hasListContent(requirements.keywords) ||
+    hasListContent(requirements.constraints) ||
+    requirements.intent.trim().length > 0;
+  const matches = result.matches.length > 0
+    ? result.matches
+    : [
+        {
+          experienceId: result.recommendedExperienceId,
+          experienceTitle: result.recommendedExperienceTitle,
+          rank: 1,
+          score: 100,
+          fitLevel: "high" as const,
+          matchReason: result.reason,
+          matchedEvidence: result.highlightedAchievement
+            ? [result.highlightedAchievement]
+            : [],
+          missingEvidence: [],
+          overclaimRisks: [],
+          suggestedAngle: result.usageDirection,
+          relatedCompetencies: result.relatedTags,
+        },
+      ];
+  const experiencesById = new Map(
+    experiences.map((item) => [item.id, item]),
+  );
 
   return (
     <section
@@ -112,27 +153,179 @@ export function RecommendationResult({
         <p>{result.prompt}</p>
       </div>
 
-      <div className="detail-section">
-        <h3>추천 이유</h3>
-        <p>{result.reason}</p>
-      </div>
+      {hasRequirements ? (
+        <div className="detail-section recommendation-requirements-section">
+          <h3>추출한 요구사항</h3>
+          {requirements.intent ? (
+            <p className="recommendation-requirements-intent">
+              {requirements.intent}
+            </p>
+          ) : null}
+          <div className="recommendation-requirements-grid">
+            {hasListContent(requirements.requiredCompetencies) ? (
+              <div>
+                <h4>필수 역량</h4>
+                <div className="experience-tags">
+                  {requirements.requiredCompetencies.map((item, index) => (
+                    <span key={`required-${item}-${index}`}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {hasListContent(requirements.preferredCompetencies) ? (
+              <div>
+                <h4>우대 역량</h4>
+                <div className="experience-tags">
+                  {requirements.preferredCompetencies.map((item, index) => (
+                    <span key={`preferred-${item}-${index}`}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {hasListContent(requirements.keywords) ? (
+              <div>
+                <h4>키워드</h4>
+                <div className="experience-tags">
+                  {requirements.keywords.map((item, index) => (
+                    <span key={`keyword-${item}-${index}`}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {hasListContent(requirements.constraints) ? (
+              <div>
+                <h4>제약</h4>
+                <ul className="recommendation-compact-list">
+                  {requirements.constraints.map((item, index) => (
+                    <li key={`constraint-${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
-      <div className="detail-section">
-        <h3>관련 태그</h3>
-        <div className="experience-tags">
-          {result.relatedTags.map((tag, index) => (
-            <span key={`${tag}-${index}`}>{tag}</span>
-          ))}
+      <div className="detail-section recommendation-matches-section">
+        <h3>추천 경험 Top {matches.length}</h3>
+        <div className="recommendation-match-list">
+          {matches.map((match) => {
+            const matchedExperience = experiencesById.get(match.experienceId);
+
+            return (
+              <article
+                className="recommendation-match-card"
+                key={`${match.rank}-${match.experienceId}`}
+              >
+                <div className="recommendation-match-header">
+                  <div>
+                    <span className="recommendation-match-rank">
+                      {match.rank}순위
+                    </span>
+                    <h4>{match.experienceTitle}</h4>
+                  </div>
+                  <span
+                    className="recommendation-fit-badge"
+                    data-fit-level={match.fitLevel}
+                  >
+                    {FIT_LEVEL_LABELS[match.fitLevel]} · {match.score}
+                  </span>
+                </div>
+
+                <p>{match.matchReason}</p>
+
+                {hasListContent(match.relatedCompetencies) ? (
+                  <div className="experience-tags">
+                    {match.relatedCompetencies.map((tag, index) => (
+                      <span key={`${match.experienceId}-tag-${tag}-${index}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="recommendation-match-details">
+                  <div>
+                    <h5>매칭 근거</h5>
+                    {hasListContent(match.matchedEvidence) ? (
+                      <ul className="recommendation-compact-list">
+                        {match.matchedEvidence.map((item, index) => (
+                          <li
+                            key={`${match.experienceId}-evidence-${index}`}
+                          >
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="muted-text">
+                        확인된 근거가 적어 원본 경험을 함께 검토해 주세요.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <h5>부족한 근거</h5>
+                    {hasListContent(match.missingEvidence) ? (
+                      <ul className="recommendation-compact-list">
+                        {match.missingEvidence.map((item, index) => (
+                          <li key={`${match.experienceId}-missing-${index}`}>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="muted-text">뚜렷한 부족 근거 없음</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <h5>과장 주의점</h5>
+                    {hasListContent(match.overclaimRisks) ? (
+                      <ul className="recommendation-compact-list is-risk">
+                        {match.overclaimRisks.map((item, index) => (
+                          <li key={`${match.experienceId}-risk-${index}`}>
+                            <AlertTriangle aria-hidden="true" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="muted-text">기록 밖 사실 추가만 피하면 됩니다.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="recommendation-match-angle">
+                  <h5>활용 각도</h5>
+                  <p>{match.suggestedAngle}</p>
+                </div>
+
+                {matchedExperience ? (
+                  <Link
+                    href={`/experiences/${matchedExperience.id}`}
+                    className="recommendation-match-link"
+                  >
+                    활동 보기
+                  </Link>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       </div>
 
-      <div className="detail-section">
-        <h3>강조할 성과</h3>
+      <div className="detail-section recommendation-legacy-summary">
+        <h3>1순위 요약</h3>
+        <p>{result.reason}</p>
+        {hasListContent(result.relatedTags) ? (
+          <div className="experience-tags">
+            {result.relatedTags.map((tag, index) => (
+              <span key={`${tag}-${index}`}>{tag}</span>
+            ))}
+          </div>
+        ) : null}
         <p>{result.highlightedAchievement}</p>
-      </div>
-
-      <div className="detail-section">
-        <h3>활용 방향</h3>
         <p>{result.usageDirection}</p>
       </div>
 

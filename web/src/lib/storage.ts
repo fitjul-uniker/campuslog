@@ -1,5 +1,6 @@
 import { createIsoTimestamp } from "@/lib/date";
 import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
+import { normalizeRecommendationResult } from "@/lib/recommendationResult";
 import {
   normalizeRelatedLinksForStorage,
   parseRelatedLinks,
@@ -153,18 +154,6 @@ function isAnalysisStatus(value: unknown): value is AnalysisStatus {
   );
 }
 
-function isRecommendationPurpose(
-  value: unknown,
-): value is RecommendationResult["purpose"] {
-  return (
-    value === "cover_letter" ||
-    value === "portfolio" ||
-    value === "interview" ||
-    value === "activity_application" ||
-    value === "other"
-  );
-}
-
 function isActivityStatus(value: unknown): value is ActivityStatus {
   return value === "planned" || value === "active" || value === "completed";
 }
@@ -277,28 +266,6 @@ function parseExperience(value: unknown): Experience | null {
   }
 
   return null;
-}
-
-function isRecommendationResult(value: unknown): value is RecommendationResult {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Record<string, unknown>;
-
-  return (
-    typeof candidate.id === "string" &&
-    isRecommendationPurpose(candidate.purpose) &&
-    typeof candidate.prompt === "string" &&
-    typeof candidate.recommendedExperienceId === "string" &&
-    typeof candidate.recommendedExperienceTitle === "string" &&
-    typeof candidate.reason === "string" &&
-    isStringArray(candidate.relatedTags) &&
-    typeof candidate.highlightedAchievement === "string" &&
-    typeof candidate.usageDirection === "string" &&
-    typeof candidate.draftSentence === "string" &&
-    typeof candidate.generatedAt === "string"
-  );
 }
 
 function parseTrackedActivity(value: unknown): TrackedActivity | null {
@@ -472,7 +439,12 @@ function readStoredRecommendations(): RecommendationResult[] {
     return [];
   }
 
-  return parsed.filter(isRecommendationResult);
+  return parsed
+    .map(normalizeRecommendationResult)
+    .filter(
+      (recommendation): recommendation is RecommendationResult =>
+        recommendation !== null,
+    );
 }
 
 function readStoredTrackedActivities(): TrackedActivity[] {
@@ -813,7 +785,9 @@ export function deleteExperience(id: string): boolean {
   const analyses = readStoredAnalyses();
   delete analyses[id];
   const nextRecommendations = readStoredRecommendations().filter(
-    (recommendation) => recommendation.recommendedExperienceId !== id,
+    (recommendation) =>
+      recommendation.recommendedExperienceId !== id &&
+      !recommendation.matches.some((match) => match.experienceId === id),
   );
   const timestamp = createIsoTimestamp();
   const nextActivities = readStoredTrackedActivities().map((activity) =>
@@ -900,7 +874,10 @@ export function deleteRecommendationsByExperienceId(
 ): void {
   const recommendations = readStoredRecommendations().filter(
     (recommendation) =>
-      recommendation.recommendedExperienceId !== experienceId,
+      recommendation.recommendedExperienceId !== experienceId &&
+      !recommendation.matches.some(
+        (match) => match.experienceId === experienceId,
+      ),
   );
 
   writeJson(STORAGE_KEYS.recommendations, recommendations);

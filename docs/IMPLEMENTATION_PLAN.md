@@ -125,13 +125,14 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
 - `feature/ai-api-protection`에서 세 AI API Route에 route handler 내부 Supabase 세션 확인, 비로그인 401 JSON error contract, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard, 429 `RATE_LIMITED` + `retryAfter` contract를 추가했습니다.
 - runtime-local rate guard는 foundation이며 Vercel 다중 인스턴스에 견디는 durable rate limit, AI route 자체의 중복 요청 멱등성, OpenAI project spend limit / alert 설정은 후속 hardening으로 남깁니다.
 - `feature/ai-analysis-v2`에서 `/api/analyze` structured output과 prompt를 v2로 확장하고, STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 타입 / 저장소 / Supabase migration / 분석 결과 화면에 연결했습니다. 기존 분석 네 필드는 유지하고 v1 저장 결과는 기본값으로 보정해 읽습니다.
+- `feature/ai-recommendation-v2`에서 `/api/recommend` structured output과 prompt를 v2로 확장하고, 문항 / JD 요구사항 추출, 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 타입 / 저장소 / Supabase migration / 추천 결과와 기록 화면에 연결했습니다. 기존 추천 v1 필드는 유지하고 v1 저장 결과는 1개 match와 빈 요구사항으로 보정해 읽습니다.
 
 1. AI 경험 분석 v2 — 구현 완료
    - 기존 `summary`, `competencyTags`, `achievements`, `keywords`를 STAR, 원본 근거, 부족 정보, 자소서 소재 각도까지 확장합니다.
    - 분석 결과가 어떤 원본 설명, 성과, 일일 기록에서 도출됐는지 표시할 수 있는 schema를 정의합니다.
    - 역량 태그는 근거 문장과 함께 반환하고, 근거가 약하면 `evidenceGaps` 또는 보완 질문으로 분리합니다.
    - 재분석 필요 상태는 기존 `needs_reanalysis`를 유지하고, 분석 결과에는 모델명, prompt version, 결과 schema version을 저장합니다.
-2. 추천 v2
+2. 추천 v2 — 구현 완료
    - 자기소개서 문항, 면접 질문, JD 원문, 직무 요구사항, 우대사항을 입력으로 받습니다.
    - 입력에서 요구 역량, 필수 조건, 우대 조건, 답변 의도를 추출하는 parser contract를 정의합니다.
    - 저장된 경험과 분석 v2 결과를 비교해 경험 Top 3, 매칭 이유, 부족 근거, 과장 위험을 반환합니다.
@@ -244,8 +245,8 @@ v1.1 라우트는 유지합니다.
 2. DB schema, RLS, repository
 3. 기존 활동·경험 화면을 repository에 연결
 4. AI API 인증, rate limit, 비용 제한
-5. AI 경험 분석 v2: STAR, 원본 근거, 부족 정보, 자소서 소재 각도
-6. 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거 표시
+5. AI 경험 분석 v2: STAR, 원본 근거, 부족 정보, 자소서 소재 각도 — 구현 완료
+6. 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거 표시 — 구현 완료
 7. 답변 초안 생성: 300자 / 700자 / 면접 / 포트폴리오 버전
 8. 기록 보완 루프: AI 보완 질문, 사용자 답변, 분석 재생성
 9. OCR / JD 이미지 입력: 텍스트 흐름 안정화 후 Optional

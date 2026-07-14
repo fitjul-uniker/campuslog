@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-14 - AI 추천 v2 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 분석 v2 결과를 활용해 문항 / JD 요구사항을 구조화하고 경험 Top 3를 추천하는 추천 v2 구현 |
+| 수정한 파일 | `web/src/lib/types.ts`, `web/src/lib/recommendationResult.ts`, `web/src/app/api/recommend/route.ts`, `web/src/lib/recommendationApi.ts`, `web/src/lib/storage.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/ai/RecommendationForm.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/recommend/history/page.tsx`, `web/src/app/globals.css`, `supabase/migrations/20260714000200_ai_recommendation_v2.sql`, `docs/AI_API_CONTRACT.md`, `docs/DATA_CONTRACT.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `PRD.md` |
+| 변경 내용 | `RecommendationResult`를 `schemaVersion`, `promptVersion`, `model`, `extractedRequirements`, `matches` Top 3로 확장하고 기존 v1 필드를 유지. `/api/recommend` structured output을 `campuslog_experience_recommendation_v2`로 바꿔 문항 / JD 요구사항 추출, 분석 v2의 STAR / evidence / evidenceGaps / coverLetterAngles / competencyEvidence 활용, 매칭 근거 / 부족 근거 / 과장 위험 분리를 수행. 서버는 반환된 경험 id를 입력 경험으로 다시 검증하고 제목을 실제 제목으로 덮어씀. localStorage와 Supabase repository는 기존 v1 추천 기록을 1개 match와 빈 요구사항으로 보정해 읽고, v2 결과는 JSONB 확장 필드에 저장. 추천 결과와 기록 화면은 요구사항 추출 결과와 Top 3 비교 카드, 매칭 근거, 부족 근거, 과장 주의점, 활용 각도를 표시하도록 확장 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | Supabase project에 `20260714000200_ai_recommendation_v2.sql` migration 적용 후 로그인 세션에서 추천 v2 저장 smoke test 필요. 실제 OpenAI 호출은 비용과 환경 의존성이 있어 자동 검증하지 않음. 긴 답변 초안 생성, 기록 보완 루프, OCR / 이미지 입력은 후속 작업 |
+| 관련 커밋 메시지 | `feat: add AI recommendation v2` |
+
 ### 2026-07-14 - AI 경험 분석 v2 구현
 
 | 항목 | 내용 |
