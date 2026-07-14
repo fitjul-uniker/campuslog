@@ -8,6 +8,8 @@ import {
   deleteRecommendationsByExperienceId,
   deleteSynthesisDraft,
   deleteTrackedActivity,
+  getAnswerDraftResult,
+  getAnswerDraftResultsByRecommendationId,
   getAnalysisByExperienceId,
   getDailyLogs,
   getDailyLogsByActivityId,
@@ -20,6 +22,7 @@ import {
   getTrackedActivityById,
   linkGeneratedExperience,
   saveAnalysisResult,
+  saveAnswerDraftResult,
   saveRecommendationResult,
   saveSynthesisDraft,
   setActivitySynthesisStatus,
@@ -28,6 +31,10 @@ import {
   updateExperience,
   updateTrackedActivity,
 } from "@/lib/storage";
+import {
+  mergeAnswerDraftResults,
+  normalizeAnswerDraftResult,
+} from "@/lib/answerDraftResult";
 import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
 import { normalizeRecommendationResult } from "@/lib/recommendationResult";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -35,6 +42,7 @@ import type {
   ActivityStatus,
   ActivitySynthesisStatus,
   AnalysisApiResult,
+  AnswerDraftResult,
   DailyLog,
   DailyLogInput,
   Experience,
@@ -127,6 +135,17 @@ type RecommendationRow = {
   generated_at: string;
 };
 
+type AnswerDraftRow = {
+  recommendation_id: string;
+  experience_id: string;
+  schema_version?: AnswerDraftResult["schemaVersion"];
+  prompt_version?: string | null;
+  model?: string | null;
+  source_match_rank: number;
+  drafts: unknown;
+  generated_at: string;
+};
+
 type SynthesisDraftRow = {
   activity_id: string;
   description: string;
@@ -160,6 +179,16 @@ export type CampusLogRepository = {
     list(): Promise<RecommendationResult[]>;
     save(result: RecommendationResult): Promise<RecommendationResult | null>;
     deleteByExperienceId(experienceId: string): Promise<void>;
+  };
+  answerDrafts: {
+    getByRecommendationAndExperience(
+      recommendationId: string,
+      experienceId: string,
+    ): Promise<AnswerDraftResult | null>;
+    listByRecommendationId(
+      recommendationId: string,
+    ): Promise<AnswerDraftResult[]>;
+    save(result: AnswerDraftResult): Promise<AnswerDraftResult | null>;
   };
   trackedActivities: {
     list(): Promise<TrackedActivity[]>;
@@ -309,6 +338,25 @@ function toRecommendation(row: RecommendationRow): RecommendationResult {
   }
 
   return recommendation;
+}
+
+function toAnswerDraft(row: AnswerDraftRow): AnswerDraftResult {
+  const answerDraft = normalizeAnswerDraftResult({
+    schemaVersion: row.schema_version,
+    promptVersion: row.prompt_version ?? "",
+    model: row.model ?? "",
+    recommendationId: row.recommendation_id,
+    experienceId: row.experience_id,
+    sourceMatchRank: row.source_match_rank,
+    drafts: row.drafts,
+    generatedAt: row.generated_at,
+  });
+
+  if (!answerDraft) {
+    throw new Error("CampusLog answer draft row is invalid.");
+  }
+
+  return answerDraft;
 }
 
 function toSynthesisDraft(row: SynthesisDraftRow): ExperienceSynthesisDraft {
@@ -634,6 +682,54 @@ function createSupabaseCampusLogRepository(
           .delete()
           .eq("recommended_experience_id", experienceId);
         throwIfError(error);
+      },
+    },
+    answerDrafts: {
+      async getByRecommendationAndExperience(recommendationId, experienceId) {
+        const { data, error } = await supabase
+          .from("answer_drafts")
+          .select("*")
+          .eq("recommendation_id", recommendationId)
+          .eq("experience_id", experienceId)
+          .maybeSingle();
+        throwIfError(error);
+        return data ? toAnswerDraft(data as AnswerDraftRow) : null;
+      },
+      async listByRecommendationId(recommendationId) {
+        const { data, error } = await supabase
+          .from("answer_drafts")
+          .select("*")
+          .eq("recommendation_id", recommendationId)
+          .order("generated_at", { ascending: false });
+        throwIfError(error);
+        return ((data ?? []) as AnswerDraftRow[]).map(toAnswerDraft);
+      },
+      async save(result) {
+        const existingAnswerDraft =
+          await this.getByRecommendationAndExperience(
+            result.recommendationId,
+            result.experienceId,
+          );
+        const nextAnswerDraft = mergeAnswerDraftResults(
+          existingAnswerDraft,
+          result,
+        );
+        const { data, error } = await supabase
+          .from("answer_drafts")
+          .upsert({
+            recommendation_id: nextAnswerDraft.recommendationId,
+            experience_id: nextAnswerDraft.experienceId,
+            schema_version: nextAnswerDraft.schemaVersion,
+            prompt_version: nextAnswerDraft.promptVersion,
+            model: nextAnswerDraft.model,
+            source_match_rank: nextAnswerDraft.sourceMatchRank,
+            drafts: nextAnswerDraft.drafts,
+            generated_at: nextAnswerDraft.generatedAt,
+          })
+          .select("*")
+          .single();
+        throwIfError(error);
+        return toAnswerDraft(data as AnswerDraftRow);
       },
     },
     trackedActivities: {
@@ -1011,6 +1107,15 @@ export function createLocalCampusLogRepository(): CampusLogRepository {
       deleteByExperienceId: async (experienceId) => {
         deleteRecommendationsByExperienceId(experienceId);
       },
+    },
+    answerDrafts: {
+      getByRecommendationAndExperience: async (
+        recommendationId,
+        experienceId,
+      ) => getAnswerDraftResult(recommendationId, experienceId),
+      listByRecommendationId: async (recommendationId) =>
+        getAnswerDraftResultsByRecommendationId(recommendationId),
+      save: async (result) => saveAnswerDraftResult(result),
     },
     trackedActivities: {
       list: async () => getTrackedActivities(),
