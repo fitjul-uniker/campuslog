@@ -112,40 +112,50 @@ v1.1 브라우저 모델을 기준으로 아래 데이터를 사용자 계정에
 
 ### A4. AI 분석·추천 고도화
 
-로그인·DB foundation은 main에 반영되었고 사용자가 기본 인증과 계정별 데이터 분리를 확인했습니다. 다음 AI 개발은 아래 순서로 진행합니다.
+로그인·DB foundation은 main에 반영되었고 사용자가 기본 인증과 계정별 데이터 분리를 확인했습니다. AI API 보호 foundation 이후 실제 AI 품질 고도화는 자소서·지원서 작성에 바로 쓰는 것을 목표로 아래 순서로 진행합니다.
 
-1. AI API 보호
-   - 로그인 사용자만 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`를 호출할 수 있게 서버에서 세션을 확인합니다.
-   - 입력 상한, rate limit, 중복 요청 방지, `retryAfter`, OpenAI spend limit / alert, 오류 code를 정리합니다.
-   - 실패, timeout, 저장 실패 시 원본 경험과 활동 기록을 보존합니다.
+운영 hardening 전제:
+
+- 로그인 사용자만 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`를 호출할 수 있게 서버에서 세션을 확인합니다.
+- 입력 상한, rate limit, 중복 요청 방지, `retryAfter`, OpenAI spend limit / alert, 오류 code를 정리합니다.
+- 실패, timeout, 저장 실패 시 원본 경험과 활동 기록을 보존합니다.
 
 2026-07-14 진행 상태:
 
 - `feature/ai-api-protection`에서 세 AI API Route에 route handler 내부 Supabase 세션 확인, 비로그인 401 JSON error contract, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard, 429 `RATE_LIMITED` + `retryAfter` contract를 추가했습니다.
 - runtime-local rate guard는 foundation이며 Vercel 다중 인스턴스에 견디는 durable rate limit, AI route 자체의 중복 요청 멱등성, OpenAI project spend limit / alert 설정은 후속 hardening으로 남깁니다.
-2. AI 분석 품질 개선
-   - 기존 경험 기록을 바탕으로 요약, 역량, 성과, 키워드, 근거 구조를 개선합니다.
-   - 분석 결과가 어떤 원본 설명, 성과, 일일 기록에서 도출됐는지 표시할 수 있는 schema를 검토합니다.
-   - 재분석 필요 상태, 모델명, prompt version, 결과 schema version 기록 여부를 결정합니다.
-3. AI 추천 고도화
-   - 기존 목적 기반 추천을 유지하면서 JD 원문, 직무 요구사항, 우대사항, 지원 질문을 입력으로 확장합니다.
-   - 요구사항 parser, 경험 매칭 기준, 추천 이유와 원본 근거의 일치 계약을 정의합니다.
-   - 여러 후보 추천과 비교 UI는 범위가 확정된 뒤 추가합니다.
-4. 부족 경험 비교와 답변 초안
-   - 요구사항과 사용자 경험·분석 결과를 비교해 보유 근거와 부족 경험을 분리합니다.
-   - 추천 경험을 기반으로 자기소개서·면접·지원서용 답변 초안을 작성합니다.
-   - 답변 초안은 기록에 없는 사실을 만들지 않고, 부족한 근거가 있으면 보완 방향을 안내합니다.
-   - 저장 여부와 추천 기록 연결 방식은 contract 확정 후 구현합니다.
 
-OCR / vision 입력은 질문 이미지가 실제로 필요해질 때 일회성 입력으로 설계합니다. 원본 이미지 저장은 기본 범위가 아니며, Storage 도입은 별도 결정 사항입니다.
+1. AI 경험 분석 v2
+   - 기존 `summary`, `competencyTags`, `achievements`, `keywords`를 STAR, 원본 근거, 부족 정보, 자소서 소재 각도까지 확장합니다.
+   - 분석 결과가 어떤 원본 설명, 성과, 일일 기록에서 도출됐는지 표시할 수 있는 schema를 정의합니다.
+   - 역량 태그는 근거 문장과 함께 반환하고, 근거가 약하면 `evidenceGaps` 또는 보완 질문으로 분리합니다.
+   - 재분석 필요 상태, 모델명, prompt version, 결과 schema version 기록 여부를 결정합니다.
+2. 추천 v2
+   - 자기소개서 문항, 면접 질문, JD 원문, 직무 요구사항, 우대사항을 입력으로 받습니다.
+   - 입력에서 요구 역량, 필수 조건, 우대 조건, 답변 의도를 추출하는 parser contract를 정의합니다.
+   - 저장된 경험과 분석 v2 결과를 비교해 경험 Top 3, 매칭 이유, 부족 근거, 과장 위험을 반환합니다.
+   - 1개만 추천하는 기존 흐름은 fallback으로 유지하고, Top 3 비교 UI는 추천 v2 contract에 맞춰 구현합니다.
+3. 답변 초안 생성
+   - 추천 경험과 요구사항을 기반으로 300자, 700자, 면접 60초, 포트폴리오 설명 버전의 초안을 생성합니다.
+   - 답변 초안은 기록에 없는 사실을 만들지 않고, 부족한 근거가 있으면 해당 문장 대신 보완 방향을 안내합니다.
+   - 초안 저장 여부, 추천 기록 연결 방식, 복사 / 재생성 UX는 contract 확정 후 구현합니다.
+4. 기록 보완 루프
+   - AI가 부족한 정보를 질문 형태로 제안하고, 사용자가 답하면 원본 경험 또는 보완 답변으로 저장할 위치를 정합니다.
+   - 보완 답변이 들어오면 분석 v2를 재생성하고 관련 추천 결과의 stale 상태를 표시합니다.
+   - 질문은 사용자가 실제로 답하기 쉬운 단위로 제한하며, 개인정보나 허위 성과를 요구하지 않습니다.
+5. OCR / JD 이미지 입력
+   - 텍스트 붙여넣기 기반 JD / 문항 추천 흐름이 안정화된 뒤 붙입니다.
+   - 질문 이미지나 공고 캡처는 원본 저장 없이 일회성 AI 입력으로 처리하는 것을 기본값으로 합니다.
+   - Storage 도입, 원본 보존, OCR 비용 정책은 별도 결정 없이는 구현하지 않습니다.
 
 권장 PR 단위:
 
 1. `feature/ai-api-protection`
-2. `feature/ai-analysis-quality`
-3. `feature/ai-recommendation-inputs`
-4. `feature/ai-gap-and-draft`
-5. `feature/ai-question-ocr` (Optional)
+2. `feature/ai-analysis-v2`
+3. `feature/ai-recommendation-v2`
+4. `feature/ai-answer-drafts`
+5. `feature/ai-evidence-followup`
+6. `feature/ai-question-ocr` (Optional)
 
 ## 3. Track B — 디자인·사용자 경험
 
@@ -233,12 +243,14 @@ v1.1 라우트는 유지합니다.
 2. DB schema, RLS, repository
 3. 기존 활동·경험 화면을 repository에 연결
 4. AI API 인증, rate limit, 비용 제한
-5. AI 분석 품질 개선: 요약, 역량, 성과, 근거 구조
-6. AI 추천 고도화: 목적, JD 원문, 지원 질문 기반 추천
-7. 부족 경험 비교와 답변 초안
-8. 디자인 시스템과 주요 흐름 polish
-9. Vercel + Supabase preview 환경 통합 확인
-10. 통합 회귀·보안·접근성·비용 테스트
+5. AI 경험 분석 v2: STAR, 원본 근거, 부족 정보, 자소서 소재 각도
+6. 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거 표시
+7. 답변 초안 생성: 300자 / 700자 / 면접 / 포트폴리오 버전
+8. 기록 보완 루프: AI 보완 질문, 사용자 답변, 분석 재생성
+9. OCR / JD 이미지 입력: 텍스트 흐름 안정화 후 Optional
+10. 디자인 시스템과 주요 흐름 polish
+11. Vercel + Supabase preview 환경 통합 확인
+12. 통합 회귀·보안·접근성·비용 테스트
 
 디자인 Track은 mock contract로 먼저 진행할 수 있지만, API response나 schema를 임의로 확정하지 않습니다. 데이터 Track은 기존 화면을 임의로 단순화하지 않고 상태 계약을 제공합니다.
 
@@ -282,8 +294,8 @@ v1.1 라우트는 유지합니다.
 - Supabase 설정과 공유할 비밀번호 validation, 계정 열거 방지 오류 문구 정책
 - localStorage 자동 / 수동 마이그레이션은 Deferred / Optional. 자동 이전과 자동 삭제는 하지 않음
 - Supabase Storage를 사용할 실제 파일 기능. OCR용 일회성 이미지는 원본 저장 없이 먼저 검토
-- 여러 추천 후보 수와 비교 UI
-- JD 요구사항 추출 schema, 부족 경험 비교 기준, 답변 초안 저장 여부
+- 추천 후보 Top 3의 비교 UI 세부 표현
+- JD 요구사항 추출 schema, 부족 경험 비교 기준, 답변 초안 저장 여부, 보완 답변 저장 위치
 - AI model 교체와 평가 dataset
 - AI API durable rate limit 저장소, 중복 요청 멱등성 처리 방식, OpenAI spend alert 운영 체크리스트
 - 사용자 feedback 저장과 추천 학습 활용
