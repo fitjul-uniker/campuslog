@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-14 - AI 경험 분석 v2 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-14 |
+| 작업자 | Codex |
+| 작업 요약 | 기존 AI 경험 분석을 자기소개서·지원서 작성에 재사용할 수 있도록 v2 구조로 확장 |
+| 수정한 파일 | `web/src/lib/types.ts`, `web/src/lib/analysisResult.ts`, `web/src/app/api/analyze/route.ts`, `web/src/lib/analysisApi.ts`, `web/src/lib/storage.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/ai/AnalysisResult.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/app/globals.css`, `supabase/migrations/20260714000100_ai_analysis_v2.sql`, `docs/AI_API_CONTRACT.md`, `docs/DATA_CONTRACT.md`, `docs/CURRENT_PHASE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `ExperienceAnalysis`와 `/api/analyze` structured output에 `schemaVersion`, `promptVersion`, `model`, STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 추가. OpenAI prompt는 기록에 없는 성과·수치·역할을 만들지 않고 근거가 약한 내용은 `evidenceGaps` 또는 `caution`으로 분리하도록 수정. 서버 파서는 원본 필드에 없는 근거 인용을 제외하고, localStorage / Supabase repository는 기존 v1 분석 결과를 빈 v2 구조로 보정해 읽도록 처리. Supabase `experience_analyses` 확장 migration을 추가하고 분석 결과 화면에 v2 섹션을 표시 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 Supabase project에 새 migration 적용 후 로그인 세션에서 `/api/analyze` 성공 저장 smoke test 필요. 실제 OpenAI 호출은 비용과 환경 의존성이 있어 자동 검증하지 않음. 추천 v2, 답변 초안, 기록 보완 루프는 후속 작업 |
+| 관련 커밋 메시지 | `feat: add AI experience analysis v2` |
+
 ### 2026-07-14 - AI 고도화 개발 순서 문서화
 
 | 항목 | 내용 |

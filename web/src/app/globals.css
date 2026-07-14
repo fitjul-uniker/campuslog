@@ -2117,6 +2117,113 @@ h2 {
   font-weight: 750;
 }
 
+.analysis-star-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.analysis-star-grid div {
+  min-width: 0;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.analysis-star-grid dt {
+  margin-bottom: 6px;
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.analysis-star-grid dd {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.analysis-evidence-list,
+.analysis-structured-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.analysis-evidence-list > li,
+.analysis-structured-list > li {
+  min-width: 0;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.analysis-evidence-list > li:first-child,
+.analysis-structured-list > li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.analysis-evidence-list span {
+  display: inline-flex;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: rgba(36, 34, 31, 0.08);
+  color: var(--color-text-soft);
+  padding: 4px 8px;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.analysis-evidence-list q {
+  display: block;
+  color: var(--color-brand-strong);
+  font-weight: 760;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  quotes: none;
+  white-space: pre-wrap;
+}
+
+.analysis-evidence-list p,
+.analysis-structured-list p {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.analysis-structured-list strong {
+  display: block;
+  color: var(--color-brand-strong);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.analysis-structured-list ul {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.analysis-follow-up {
+  color: var(--color-brand-strong) !important;
+  font-weight: 760;
+}
+
+.analysis-caution {
+  color: var(--color-warning-text) !important;
+  font-weight: 730;
+}
+
 .analysis-notice {
   display: flex;
   gap: 10px;
@@ -2483,6 +2590,10 @@ h2 {
   }
 
   .meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-star-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -28,6 +28,7 @@ import {
   updateExperience,
   updateTrackedActivity,
 } from "@/lib/storage";
+import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
   ActivityStatus,
@@ -90,10 +91,18 @@ type DailyLogRow = {
 type ExperienceAnalysisRow = {
   id: string;
   experience_id: string;
+  schema_version?: ExperienceAnalysis["schemaVersion"];
+  prompt_version?: string | null;
+  model?: string | null;
   summary: string;
   competency_tags: string[];
   achievements: string[];
   keywords: string[];
+  star?: unknown;
+  evidence?: unknown;
+  evidence_gaps?: unknown;
+  cover_letter_angles?: unknown;
+  competency_evidence?: unknown;
   generated_at: string;
   source_experience_updated_at: string;
 };
@@ -243,16 +252,30 @@ function toDailyLog(row: DailyLogRow): DailyLog {
 }
 
 function toAnalysis(row: ExperienceAnalysisRow): ExperienceAnalysis {
-  return {
+  const analysis = normalizeExperienceAnalysis({
     id: row.id,
     experienceId: row.experience_id,
+    schemaVersion: row.schema_version,
+    promptVersion: row.prompt_version ?? "",
+    model: row.model ?? "",
     summary: row.summary,
     competencyTags: row.competency_tags,
     achievements: row.achievements,
     keywords: row.keywords,
+    star: row.star,
+    evidence: row.evidence,
+    evidenceGaps: row.evidence_gaps,
+    coverLetterAngles: row.cover_letter_angles,
+    competencyEvidence: row.competency_evidence,
     generatedAt: row.generated_at,
     sourceExperienceUpdatedAt: row.source_experience_updated_at,
-  };
+  });
+
+  if (!analysis) {
+    throw new Error("CampusLog analysis row is invalid.");
+  }
+
+  return analysis;
 }
 
 function toRecommendation(row: RecommendationRow): RecommendationResult {
@@ -526,10 +549,18 @@ function createSupabaseCampusLogRepository(
         const analysisPayload = {
           id: existingAnalysis?.id ?? createId("analysis"),
           experience_id: result.experienceId,
+          schema_version: result.schemaVersion,
+          prompt_version: result.promptVersion,
+          model: result.model,
           summary: result.summary,
           competency_tags: result.competencyTags,
           achievements: result.achievements,
           keywords: result.keywords,
+          star: result.star,
+          evidence: result.evidence,
+          evidence_gaps: result.evidenceGaps,
+          cover_letter_angles: result.coverLetterAngles,
+          competency_evidence: result.competencyEvidence,
           generated_at: new Date().toISOString(),
           source_experience_updated_at: updatedExperience.updatedAt,
         };
