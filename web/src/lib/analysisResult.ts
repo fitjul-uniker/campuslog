@@ -18,6 +18,7 @@ export const ANALYSIS_EVIDENCE_SOURCES = [
   "description",
   "achievements",
   "relatedLinks",
+  "followupAnswers",
 ] as const satisfies readonly ExperienceAnalysisEvidenceSource[];
 
 export const DEFAULT_ANALYSIS_STAR: ExperienceAnalysisStar = {

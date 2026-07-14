@@ -2,9 +2,9 @@
 
 ## 상태
 
-- 브랜치: `feature/ai-answer-drafts`
-- 범위: `/api/analyze` AI 경험 분석 v2 schema 유지, `/api/recommend` 추천 v2 schema / prompt / Top 3 매칭 / 저장 호환성, `/api/answer-drafts` 답변 초안 v1 schema / prompt / 저장 호환성, `/api/synthesize-activity` 보호 foundation 유지
-- 제외: 기록 보완 루프, OCR
+- 브랜치: `feature/ai-evidence-followup`
+- 범위: `/api/analyze` AI 경험 분석 v2 schema 유지와 보완 답변 입력 확장, `/api/recommend` 추천 v2 schema / prompt / Top 3 매칭 / 저장 호환성, `/api/answer-drafts` 답변 초안 v1 schema / prompt / 저장 호환성, `/api/evidence-followups` 보완 질문 생성 v1, `/api/synthesize-activity` 보호 foundation 유지
+- 제외: OCR / 이미지 입력
 
 ## 후속 AI 고도화 순서
 
@@ -19,8 +19,9 @@
 3. 답변 초안 생성 — 구현 완료
    - 사용자가 선택한 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 버전
    - 기록에 없는 사실은 생성하지 않고 부족 근거를 `missingEvidenceNotes` 또는 `cautions`로 분리
-4. 기록 보완 루프
-   - AI 보완 질문, 사용자 답변 저장 위치, 분석 재생성 contract 결정
+4. 기록 보완 루프 — 구현 완료
+   - AI 보완 질문, 사용자 답변 별도 저장, 보완 답변 포함 분석 재생성
+   - 원본 경험 자동 수정 없이 기존 분석 / 추천 / 답변 초안 stale 가능성 표시
 5. OCR / JD 이미지 입력
    - 텍스트 붙여넣기 흐름 안정화 후 Optional
    - 원본 이미지 저장 없이 일회성 입력을 기본값으로 검토
@@ -74,13 +75,16 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
 | `/api/analyze` | 32 KB | 45초 | 사용자당 10분 20회 | 설명 8,000자, 성과 4,000자, 관련 링크 10개 |
 | `/api/recommend` | 96 KB | 60초 | 사용자당 10분 12회 | prompt 4,000자, 경험 50개, 분석 50개 |
 | `/api/answer-drafts` | 96 KB | 70초 | 사용자당 10분 10회 | draftType 1개, 추천 1개, 선택 match 1개, 경험 1개, 분석 1개 |
+| `/api/evidence-followups` | 96 KB | 50초 | 사용자당 10분 12회 | 경험 1개, source 1개, 분석 / 추천 / match / 초안 optional, 질문 최대 5개 |
 | `/api/synthesize-activity` | 512 KB | 50초 | 사용자당 10분 8회 | 일일 기록 1,000개, 기록당 2,000자, 총 400,000자 |
 
 `Content-Length`가 없는 요청은 본문 크기 guard를 통과할 수 있으므로 route별 필드 상한을 함께 적용합니다.
 
 ## `/api/analyze` v2 응답 계약
 
-`/api/analyze`는 OpenAI Responses API structured output의 schema name `campuslog_experience_analysis_v2`를 사용합니다. 서버는 응답을 다시 파싱하며, `evidence.quote`, `coverLetterAngles.supportingEvidence`, `competencyEvidence.evidence`가 입력 필드의 원본 문구에 근거하지 않으면 저장 결과에서 제외합니다.
+`/api/analyze`는 OpenAI Responses API structured output의 schema name `campuslog_experience_analysis_v2`를 사용합니다. 서버는 응답을 다시 파싱하며, `evidence.quote`, `coverLetterAngles.supportingEvidence`, `competencyEvidence.evidence`가 입력 필드의 원본 문구 또는 별도 보완 답변에 근거하지 않으면 저장 결과에서 제외합니다.
+
+요청은 기존 `experience`만 보내는 형태를 유지하며, 선택적으로 `followups`를 함께 보낼 수 있습니다. 서버는 같은 `experienceId`의 dismiss되지 않은 보완 답변만 사용하고, 보완 답변을 근거로 쓴 evidence는 `source: "followupAnswers"`로 구분합니다.
 
 성공 응답은 기존 네 필드와 v2 필드를 함께 반환합니다.
 
@@ -107,6 +111,11 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
         "source": "description",
         "quote": "원본 문구",
         "note": "분석과 연결되는 이유"
+      },
+      {
+        "source": "followupAnswers",
+        "quote": "사용자 보완 답변 문구",
+        "note": "보완 답변에서 확인된 근거"
       }
     ],
     "evidenceGaps": [
@@ -141,6 +150,7 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
 - 기존 저장 결과는 `schemaVersion: "v1"`로 보정해 읽으며 v2 전용 배열은 빈 값으로 표시합니다.
 - STAR에서 확인되지 않는 항목은 빈 문자열로 두고, 억지로 채우지 않습니다.
 - 원본에 없는 성과, 수치, 역할, 협업 여부, 리더십은 사실처럼 생성하지 않고 `evidenceGaps` 또는 `caution`으로 분리합니다.
+- 보완 답변은 원본 경험을 자동 수정하지 않으며, 분석 evidence에서 `followupAnswers` 출처로만 드러납니다.
 
 ## `/api/recommend` v2 응답 계약
 
@@ -247,7 +257,56 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
 - 같은 추천 / 경험에서 여러 type을 순차 생성하면 저장소의 `drafts` 배열에 생성된 버전들이 누적됩니다.
 - 추천 v1 기록도 정규화된 1개 match와 원본 경험이 있으면 초안 생성 대상이 될 수 있습니다. 원본 경험이 삭제된 경우 생성 버튼 대신 기존 추천 기록 화면만 유지합니다.
 - 분석 v2가 있으면 STAR, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 우선 활용하고, 없으면 원본 experience 필드와 추천 match 근거를 사용합니다.
-- 기록 보완 질문과 사용자 답변 저장은 `ISSUE-044`의 후속 보완 루프 범위로 남깁니다.
+- 보완 답변 때문에 선택 경험의 분석 상태가 `needs_reanalysis`이면 추천 / 답변 초안 화면에서 stale 가능성을 표시합니다.
+
+## `/api/evidence-followups` v1 응답 계약
+
+`/api/evidence-followups`는 OpenAI Responses API structured output의 schema name `campuslog_evidence_followups_v1`를 사용합니다. 입력은 보완 대상 `Experience`, `source`, 그리고 source에 따라 `analysis`, `recommendation`, `match`, `answerDraft` 중 필요한 context입니다. route는 질문 생성만 담당하고 저장은 repository의 `experienceFollowups` 저장소가 담당합니다.
+
+`source` 값은 아래 중 하나입니다.
+
+| source | 의미 |
+| --- | --- |
+| `analysis_gap` | 분석 v2의 `evidenceGaps`에서 온 부족 정보 |
+| `recommendation_missing_evidence` | 추천 v2 `matches[].missingEvidence` |
+| `recommendation_overclaim_risk` | 추천 v2 `matches[].overclaimRisks` |
+| `answer_draft_missing_evidence` | 답변 초안 `missingEvidenceNotes` |
+| `answer_draft_caution` | 답변 초안 `cautions` |
+| `manual` | 사용자가 직접 보완 질문 생성을 요청한 경우 |
+
+성공 응답은 저장 가능한 followup row 1개를 반환합니다.
+
+```json
+{
+  "ok": true,
+  "followup": {
+    "id": "followup-id",
+    "schemaVersion": "v1",
+    "experienceId": "experience-id",
+    "source": "analysis_gap",
+    "questions": [
+      {
+        "id": "question-1",
+        "question": "실제로 측정한 결과 지표나 비교 기준이 있었나요?",
+        "reason": "현재 기록에는 결과를 뒷받침할 기준이 부족합니다.",
+        "targetEvidenceType": "result_metric",
+        "caution": "기억나지 않는 수치나 확인되지 않은 성과는 만들지 않아도 됩니다."
+      }
+    ],
+    "answers": [],
+    "status": "open",
+    "generatedAt": "2026-07-14T00:00:00.000Z",
+    "updatedAt": "2026-07-14T00:00:00.000Z"
+  }
+}
+```
+
+질문 안전 원칙:
+
+- 사용자가 실제로 기억하거나 기록에서 확인할 수 있는 질문만 생성합니다.
+- 성과 수치를 만들라고 요구하지 않고, 실제 측정한 지표나 비교 기준이 있는지 묻습니다.
+- 개인정보, 민감 정보, 허위 성과, 확인되지 않은 역할 / 협업 규모 / 기술명 입력을 유도하지 않습니다.
+- 한 질문에는 한 가지 근거만 묻고, 답변이 없으면 비워둘 수 있음을 `caution`에 분리합니다.
 
 ## 남은 운영 방어
 

@@ -75,7 +75,10 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
     setIsAnalyzing(true);
     setAnalysisError("");
 
-    const response = await requestExperienceAnalysis(experience);
+    const repository = getCampusLogRepository();
+    const followups =
+      await repository.experienceFollowups.listByExperienceId(experience.id);
+    const response = await requestExperienceAnalysis(experience, followups);
 
     if (!response.ok) {
       setAnalysisError(response.error.message);
@@ -83,7 +86,6 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
       return;
     }
 
-    const repository = getCampusLogRepository();
     const savedAnalysis = await repository.analyses.save(response.analysis);
 
     if (!savedAnalysis) {

@@ -6,6 +6,8 @@ import {
   deleteDailyLog,
   deleteExperience,
   deleteRecommendationsByExperienceId,
+  dismissExperienceFollowup,
+  answerExperienceFollowupQuestion,
   deleteSynthesisDraft,
   deleteTrackedActivity,
   getAnswerDraftResult,
@@ -14,6 +16,7 @@ import {
   getDailyLogs,
   getDailyLogsByActivityId,
   getDailyLogsByDate,
+  getExperienceFollowups,
   getExperienceById,
   getExperiences,
   getRecommendationResults,
@@ -23,6 +26,7 @@ import {
   linkGeneratedExperience,
   saveAnalysisResult,
   saveAnswerDraftResult,
+  saveExperienceFollowup,
   saveRecommendationResult,
   saveSynthesisDraft,
   setActivitySynthesisStatus,
@@ -36,6 +40,10 @@ import {
   normalizeAnswerDraftResult,
 } from "@/lib/answerDraftResult";
 import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
+import {
+  getFollowupStatus,
+  normalizeExperienceFollowup,
+} from "@/lib/experienceFollowupResult";
 import { normalizeRecommendationResult } from "@/lib/recommendationResult";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
@@ -47,6 +55,7 @@ import type {
   DailyLogInput,
   Experience,
   ExperienceAnalysis,
+  ExperienceFollowup,
   ExperienceFormInput,
   ExperienceSynthesisDraft,
   RecommendationResult,
@@ -58,6 +67,9 @@ export type CampusLogRepositorySource = "localStorage" | "supabase";
 type SupabaseClient = NonNullable<ReturnType<typeof createSupabaseBrowserClient>>;
 
 type RepositoryError = {
+  code?: string;
+  details?: string;
+  hint?: string;
   message?: string;
 };
 
@@ -146,6 +158,20 @@ type AnswerDraftRow = {
   generated_at: string;
 };
 
+type ExperienceFollowupRow = {
+  id: string;
+  experience_id: string;
+  schema_version?: ExperienceFollowup["schemaVersion"];
+  source: ExperienceFollowup["source"];
+  source_recommendation_id?: string | null;
+  source_answer_draft_type?: ExperienceFollowup["sourceAnswerDraftType"] | null;
+  questions: unknown;
+  answers: unknown;
+  status: ExperienceFollowup["status"];
+  generated_at: string;
+  updated_at: string;
+};
+
 type SynthesisDraftRow = {
   activity_id: string;
   description: string;
@@ -189,6 +215,16 @@ export type CampusLogRepository = {
       recommendationId: string,
     ): Promise<AnswerDraftResult[]>;
     save(result: AnswerDraftResult): Promise<AnswerDraftResult | null>;
+  };
+  experienceFollowups: {
+    listByExperienceId(experienceId: string): Promise<ExperienceFollowup[]>;
+    save(followup: ExperienceFollowup): Promise<ExperienceFollowup | null>;
+    answerQuestion(
+      followupId: string,
+      questionId: string,
+      answer: string,
+    ): Promise<ExperienceFollowup | null>;
+    dismiss(followupId: string): Promise<ExperienceFollowup | null>;
   };
   trackedActivities: {
     list(): Promise<TrackedActivity[]>;
@@ -240,7 +276,11 @@ function createId(prefix: string): string {
 
 function throwIfError(error: RepositoryError | null) {
   if (error) {
-    throw new Error(error.message ?? "CampusLog repository request failed.");
+    const details = [error.message, error.details, error.hint, error.code]
+      .filter(Boolean)
+      .join(" ");
+
+    throw new Error(details || "CampusLog repository request failed.");
   }
 }
 
@@ -357,6 +397,28 @@ function toAnswerDraft(row: AnswerDraftRow): AnswerDraftResult {
   }
 
   return answerDraft;
+}
+
+function toExperienceFollowup(row: ExperienceFollowupRow): ExperienceFollowup {
+  const followup = normalizeExperienceFollowup({
+    id: row.id,
+    schemaVersion: row.schema_version,
+    experienceId: row.experience_id,
+    source: row.source,
+    sourceRecommendationId: row.source_recommendation_id ?? undefined,
+    sourceAnswerDraftType: row.source_answer_draft_type ?? undefined,
+    questions: row.questions,
+    answers: row.answers,
+    status: row.status,
+    generatedAt: row.generated_at,
+    updatedAt: row.updated_at,
+  });
+
+  if (!followup) {
+    throw new Error("CampusLog experience followup row is invalid.");
+  }
+
+  return followup;
 }
 
 function toSynthesisDraft(row: SynthesisDraftRow): ExperienceSynthesisDraft {
@@ -730,6 +792,149 @@ function createSupabaseCampusLogRepository(
           .single();
         throwIfError(error);
         return toAnswerDraft(data as AnswerDraftRow);
+      },
+    },
+    experienceFollowups: {
+      async listByExperienceId(experienceId) {
+        const { data, error } = await supabase
+          .from("experience_followups")
+          .select("*")
+          .eq("experience_id", experienceId)
+          .order("updated_at", { ascending: false });
+        throwIfError(error);
+        return ((data ?? []) as ExperienceFollowupRow[]).map(
+          toExperienceFollowup,
+        );
+      },
+      async save(followup) {
+        const normalizedFollowup = normalizeExperienceFollowup(followup);
+
+        if (!normalizedFollowup) {
+          return null;
+        }
+
+        const repository = createSupabaseCampusLogRepository(supabase);
+        const experience = await repository.experiences.getById(
+          normalizedFollowup.experienceId,
+        );
+
+        if (!experience) {
+          return null;
+        }
+
+        const { data, error } = await supabase
+          .from("experience_followups")
+          .upsert({
+            id: normalizedFollowup.id,
+            experience_id: normalizedFollowup.experienceId,
+            schema_version: normalizedFollowup.schemaVersion,
+            source: normalizedFollowup.source,
+            source_recommendation_id:
+              normalizedFollowup.sourceRecommendationId ?? null,
+            source_answer_draft_type:
+              normalizedFollowup.sourceAnswerDraftType ?? null,
+            questions: normalizedFollowup.questions,
+            answers: normalizedFollowup.answers,
+            status: normalizedFollowup.status,
+            generated_at: normalizedFollowup.generatedAt,
+          })
+          .select("*")
+          .single();
+        throwIfError(error);
+        return toExperienceFollowup(data as ExperienceFollowupRow);
+      },
+      async answerQuestion(followupId, questionId, answer) {
+        const normalizedAnswer = answer.trim();
+
+        if (!normalizedAnswer) {
+          return null;
+        }
+
+        const { data: currentData, error: currentError } = await supabase
+          .from("experience_followups")
+          .select("*")
+          .eq("id", followupId)
+          .maybeSingle();
+        throwIfError(currentError);
+
+        if (!currentData) {
+          return null;
+        }
+
+        const currentFollowup = toExperienceFollowup(
+          currentData as ExperienceFollowupRow,
+        );
+
+        if (
+          currentFollowup.status === "dismissed" ||
+          !currentFollowup.questions.some(
+            (question) => question.id === questionId,
+          )
+        ) {
+          return null;
+        }
+
+        const timestamp = new Date().toISOString();
+        const existingAnswer = currentFollowup.answers.find(
+          (item) => item.questionId === questionId,
+        );
+        const nextAnswers = [
+          ...currentFollowup.answers.filter(
+            (item) => item.questionId !== questionId,
+          ),
+          {
+            questionId,
+            answer: normalizedAnswer,
+            createdAt: existingAnswer?.createdAt ?? timestamp,
+            updatedAt: timestamp,
+          },
+        ];
+        const status = getFollowupStatus(
+          currentFollowup.questions,
+          nextAnswers,
+          "open",
+        );
+        const { data, error } = await supabase
+          .from("experience_followups")
+          .update({
+            answers: nextAnswers,
+            status,
+          })
+          .eq("id", currentFollowup.id)
+          .select("*")
+          .single();
+        throwIfError(error);
+
+        const repository = createSupabaseCampusLogRepository(supabase);
+        const [experience, analysis] = await Promise.all([
+          repository.experiences.getById(currentFollowup.experienceId),
+          repository.analyses.getByExperienceId(currentFollowup.experienceId),
+        ]);
+
+        if (
+          experience &&
+          (analysis ||
+            experience.analysisStatus === "analyzed" ||
+            experience.analysisStatus === "needs_reanalysis")
+        ) {
+          const { error: experienceError } = await supabase
+            .from("experiences")
+            .update({ analysis_status: "needs_reanalysis" })
+            .eq("id", currentFollowup.experienceId);
+          throwIfError(experienceError);
+        }
+
+        return toExperienceFollowup(data as ExperienceFollowupRow);
+      },
+      async dismiss(followupId) {
+        const { data, error } = await supabase
+          .from("experience_followups")
+          .update({ status: "dismissed" })
+          .eq("id", followupId)
+          .select("*")
+          .single();
+        throwIfError(error);
+        return toExperienceFollowup(data as ExperienceFollowupRow);
       },
     },
     trackedActivities: {
@@ -1116,6 +1321,14 @@ export function createLocalCampusLogRepository(): CampusLogRepository {
       listByRecommendationId: async (recommendationId) =>
         getAnswerDraftResultsByRecommendationId(recommendationId),
       save: async (result) => saveAnswerDraftResult(result),
+    },
+    experienceFollowups: {
+      listByExperienceId: async (experienceId) =>
+        getExperienceFollowups(experienceId),
+      save: async (followup) => saveExperienceFollowup(followup),
+      answerQuestion: async (followupId, questionId, answer) =>
+        answerExperienceFollowupQuestion(followupId, questionId, answer),
+      dismiss: async (followupId) => dismissExperienceFollowup(followupId),
     },
     trackedActivities: {
       list: async () => getTrackedActivities(),

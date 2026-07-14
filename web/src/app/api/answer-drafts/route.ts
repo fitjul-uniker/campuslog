@@ -457,7 +457,8 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
           competencyEvidence: body.analysis.competencyEvidence.slice(0, 6),
           isStale:
             body.analysis.sourceExperienceUpdatedAt !==
-            body.experience.updatedAt,
+              body.experience.updatedAt ||
+            body.experience.analysisStatus === "needs_reanalysis",
         }
       : null,
     sourceRules: [

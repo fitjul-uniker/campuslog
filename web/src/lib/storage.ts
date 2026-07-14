@@ -4,6 +4,10 @@ import {
   mergeAnswerDraftResults,
   normalizeAnswerDraftResult,
 } from "@/lib/answerDraftResult";
+import {
+  getFollowupStatus,
+  normalizeExperienceFollowup,
+} from "@/lib/experienceFollowupResult";
 import { normalizeRecommendationResult } from "@/lib/recommendationResult";
 import {
   normalizeRelatedLinksForStorage,
@@ -19,6 +23,7 @@ import type {
   DailyLogInput,
   Experience,
   ExperienceAnalysis,
+  ExperienceFollowup,
   ExperienceFormInput,
   ExperienceSynthesisDraft,
   RecommendationResult,
@@ -33,6 +38,7 @@ export const STORAGE_KEYS = {
   analyses: "campuslog:v1:analyses",
   recommendations: "campuslog:v1:recommendations",
   answerDrafts: "campuslog:v1:answer-drafts",
+  experienceFollowups: "campuslog:v1:experience-followups",
   trackedActivities: "campuslog:v1:tracked-activities",
   dailyLogs: "campuslog:v1:daily-logs",
   synthesisDrafts: "campuslog:v1:synthesis-drafts",
@@ -465,6 +471,25 @@ function readStoredAnswerDrafts(): AnswerDraftResult[] {
     .filter((draft): draft is AnswerDraftResult => draft !== null);
 }
 
+function readStoredExperienceFollowups(): ExperienceFollowup[] {
+  const parsed = readJson(STORAGE_KEYS.experienceFollowups);
+
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  const experienceIds = new Set(
+    readStoredExperiences().map((experience) => experience.id),
+  );
+
+  return parsed
+    .map(normalizeExperienceFollowup)
+    .filter(
+      (followup): followup is ExperienceFollowup =>
+        followup !== null && experienceIds.has(followup.experienceId),
+    );
+}
+
 function readStoredTrackedActivities(): TrackedActivity[] {
   const parsed = readJson(STORAGE_KEYS.trackedActivities);
 
@@ -815,6 +840,9 @@ export function deleteExperience(id: string): boolean {
       draft.experienceId !== id &&
       nextRecommendationIds.has(draft.recommendationId),
   );
+  const nextFollowups = readStoredExperienceFollowups().filter(
+    (followup) => followup.experienceId !== id,
+  );
   const timestamp = createIsoTimestamp();
   const nextActivities = readStoredTrackedActivities().map((activity) =>
     activity.generatedExperienceId === id
@@ -833,6 +861,7 @@ export function deleteExperience(id: string): boolean {
     [STORAGE_KEYS.analyses, analyses],
     [STORAGE_KEYS.recommendations, nextRecommendations],
     [STORAGE_KEYS.answerDrafts, nextAnswerDrafts],
+    [STORAGE_KEYS.experienceFollowups, nextFollowups],
     [STORAGE_KEYS.trackedActivities, sortActivitiesByUpdatedDesc(nextActivities)],
   ]);
 }
@@ -980,6 +1009,142 @@ export function deleteRecommendationsByExperienceId(
     [STORAGE_KEYS.recommendations, recommendations],
     [STORAGE_KEYS.answerDrafts, answerDrafts],
   ]);
+}
+
+export function getExperienceFollowups(
+  experienceId: string,
+): ExperienceFollowup[] {
+  return readStoredExperienceFollowups()
+    .filter((followup) => followup.experienceId === experienceId)
+    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+}
+
+export function saveExperienceFollowup(
+  followup: ExperienceFollowup,
+): ExperienceFollowup | null {
+  const normalizedFollowup = normalizeExperienceFollowup(followup);
+
+  if (!normalizedFollowup) {
+    return null;
+  }
+
+  const experience = readStoredExperiences().find(
+    (item) => item.id === normalizedFollowup.experienceId,
+  );
+
+  if (!experience) {
+    return null;
+  }
+
+  const followups = readStoredExperienceFollowups().filter(
+    (item) => item.id !== normalizedFollowup.id,
+  );
+
+  return writeJson(STORAGE_KEYS.experienceFollowups, [
+    normalizedFollowup,
+    ...followups,
+  ])
+    ? normalizedFollowup
+    : null;
+}
+
+export function answerExperienceFollowupQuestion(
+  followupId: string,
+  questionId: string,
+  answer: string,
+): ExperienceFollowup | null {
+  const normalizedAnswer = answer.trim();
+
+  if (!normalizedAnswer) {
+    return null;
+  }
+
+  const followups = readStoredExperienceFollowups();
+  const currentFollowup = followups.find((followup) => followup.id === followupId);
+
+  if (
+    !currentFollowup ||
+    currentFollowup.status === "dismissed" ||
+    !currentFollowup.questions.some((question) => question.id === questionId)
+  ) {
+    return null;
+  }
+
+  const timestamp = createIsoTimestamp();
+  const existingAnswer = currentFollowup.answers.find(
+    (item) => item.questionId === questionId,
+  );
+  const nextAnswers = [
+    ...currentFollowup.answers.filter((item) => item.questionId !== questionId),
+    {
+      questionId,
+      answer: normalizedAnswer,
+      createdAt: existingAnswer?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+    },
+  ];
+  const updatedFollowup: ExperienceFollowup = {
+    ...currentFollowup,
+    answers: nextAnswers,
+    status: getFollowupStatus(currentFollowup.questions, nextAnswers, "open"),
+    updatedAt: timestamp,
+  };
+  const experiences = readStoredExperiences();
+  const analyses = readStoredAnalyses();
+  const nextExperiences = experiences.map((experience) => {
+    if (experience.id !== currentFollowup.experienceId) {
+      return experience;
+    }
+
+    const hasExistingAnalysis =
+      Boolean(analyses[experience.id]) ||
+      experience.analysisStatus === "analyzed" ||
+      experience.analysisStatus === "needs_reanalysis";
+
+    return hasExistingAnalysis
+      ? {
+          ...experience,
+          analysisStatus: "needs_reanalysis" as const,
+        }
+      : experience;
+  });
+  const nextFollowups = followups.map((followup) =>
+    followup.id === currentFollowup.id ? updatedFollowup : followup,
+  );
+
+  return writeJsonTransaction([
+    [STORAGE_KEYS.experienceFollowups, nextFollowups],
+    [STORAGE_KEYS.experiences, sortByUpdatedDesc(nextExperiences)],
+    [STORAGE_KEYS.experienceMigration, true],
+  ])
+    ? updatedFollowup
+    : null;
+}
+
+export function dismissExperienceFollowup(
+  followupId: string,
+): ExperienceFollowup | null {
+  const followups = readStoredExperienceFollowups();
+  const currentFollowup = followups.find((followup) => followup.id === followupId);
+
+  if (!currentFollowup) {
+    return null;
+  }
+
+  const updatedFollowup: ExperienceFollowup = {
+    ...currentFollowup,
+    status: "dismissed",
+    updatedAt: createIsoTimestamp(),
+  };
+
+  return writeJson(
+    STORAGE_KEYS.experienceFollowups,
+    followups.map((followup) =>
+      followup.id === followupId ? updatedFollowup : followup,
+    ),
+  )
+    ? updatedFollowup
+    : null;
 }
 
 export function getTrackedActivities(): TrackedActivity[] {

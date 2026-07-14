@@ -234,7 +234,10 @@ export function ExperienceDashboard() {
       [experienceId]: { isLoading: true, error: "" },
     }));
 
-    const response = await requestExperienceAnalysis(experience);
+    const repository = getCampusLogRepository();
+    const followups =
+      await repository.experienceFollowups.listByExperienceId(experience.id);
+    const response = await requestExperienceAnalysis(experience, followups);
 
     if (!response.ok) {
       setAnalysisRequestByExperienceId((current) => ({
@@ -247,7 +250,6 @@ export function ExperienceDashboard() {
       return;
     }
 
-    const repository = getCampusLogRepository();
     const savedAnalysis = await repository.analyses.save(response.analysis);
 
     if (!savedAnalysis) {
