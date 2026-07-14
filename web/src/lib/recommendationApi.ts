@@ -1,10 +1,10 @@
 import type {
   Experience,
   ExperienceAnalysis,
-  RecommendationApiResult,
   RecommendationPurpose,
   RecommendResponse,
 } from "@/lib/types";
+import { normalizeRecommendationApiResult } from "@/lib/recommendationResult";
 
 type RequestRecommendationInput = {
   purpose: RecommendationPurpose;
@@ -12,30 +12,6 @@ type RequestRecommendationInput = {
   experiences: Experience[];
   analyses: ExperienceAnalysis[];
 };
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
-function isRecommendationApiResult(
-  value: unknown,
-): value is RecommendationApiResult {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Record<string, unknown>;
-
-  return (
-    typeof candidate.recommendedExperienceId === "string" &&
-    typeof candidate.recommendedExperienceTitle === "string" &&
-    typeof candidate.reason === "string" &&
-    isStringArray(candidate.relatedTags) &&
-    typeof candidate.highlightedAchievement === "string" &&
-    typeof candidate.usageDirection === "string" &&
-    typeof candidate.draftSentence === "string"
-  );
-}
 
 function isRecommendResponse(value: unknown): value is RecommendResponse {
   if (!value || typeof value !== "object") {
@@ -45,7 +21,7 @@ function isRecommendResponse(value: unknown): value is RecommendResponse {
   const candidate = value as Record<string, unknown>;
 
   if (candidate.ok === true) {
-    return isRecommendationApiResult(candidate.recommendation);
+    return normalizeRecommendationApiResult(candidate.recommendation) !== null;
   }
 
   if (candidate.ok === false) {
@@ -85,6 +61,19 @@ export async function requestRecommendation({
     const payload = (await response.json()) as unknown;
 
     if (isRecommendResponse(payload)) {
+      if (payload.ok) {
+        const recommendation = normalizeRecommendationApiResult(
+          payload.recommendation,
+        );
+
+        if (recommendation) {
+          return {
+            ok: true,
+            recommendation,
+          };
+        }
+      }
+
       return payload;
     }
   } catch {

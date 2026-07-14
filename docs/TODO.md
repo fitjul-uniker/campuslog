@@ -31,6 +31,7 @@
 - 2026-07-14: `feature/ai-api-protection`에서 세 AI API Route에 route-level Supabase 세션 확인, 비로그인 401 JSON error contract, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard와 `retryAfter` contract를 추가. durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert는 후속 hardening으로 분리.
 - 2026-07-14: AI 고도화 실행 순서를 `AI 경험 분석 v2 → 추천 v2 → 답변 초안 생성 → 기록 보완 루프 → OCR / JD 이미지 입력`으로 확정. 먼저 STAR, 원본 근거, 부족 정보, 자소서 소재 각도를 분석에 추가하고, 그 결과를 기반으로 문항 / JD 요구사항 추출과 경험 Top 3 매칭을 구현. OCR은 텍스트 붙여넣기 흐름 안정화 후 원본 저장 없는 일회성 입력으로 검토.
 - 2026-07-14: `feature/ai-analysis-v2`에서 `/api/analyze` structured output과 prompt를 v2로 확장. `summary`, `competencyTags`, `achievements`, `keywords` 하위 호환을 유지하면서 STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 반환·저장·표시. `experience_analyses` 확장 migration을 추가하고 localStorage / Supabase repository 모두 v1 분석 결과를 기본값으로 보정해 읽도록 처리.
+- 2026-07-14: `feature/ai-recommendation-v2`에서 `/api/recommend` structured output과 prompt를 추천 v2로 확장. 문항 / JD 요구사항을 `extractedRequirements`로 구조화하고 분석 v2의 STAR, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 활용해 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 반환·저장·표시. 기존 v1 추천 필드는 유지하고 v1 저장 결과는 기본값으로 보정해 읽도록 처리.
 
 ### High
 
@@ -51,17 +52,18 @@
 - [x] AI API 보호 foundation: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용 (`ISSUE-024`)
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [x] AI 경험 분석 v2: STAR, 원본 근거, 부족한 정보, 자소서 소재 각도 schema 정의와 구현 (`ISSUE-034`)
-- [ ] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
+- [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
 - [ ] 답변 초안 생성: 300자 / 700자 / 면접 / 포트폴리오 버전 contract와 UI 구현 (`ISSUE-031`)
 - [ ] 기록 보완 루프: AI 보완 질문, 사용자 답변 저장 위치, 분석 재생성 흐름 구현 (`ISSUE-044`)
 
 ### Medium
 
 - [ ] AI 추천 정확도 평가 기준과 회귀 사례 정의
-- [ ] AI 추천 이유·활용 방향·근거 일치 강화
+- [x] AI 추천 이유·활용 방향·근거 일치 강화
 - [ ] OCR / JD 이미지 입력의 일회성 처리와 개인정보·비용 정책 정의. 텍스트 붙여넣기 흐름 안정화 전까지 Optional (`ISSUE-031`)
 - [x] AI 분석 v2 model / prompt / schema version 저장 결정 및 구현
-- [ ] 추천 / 합성 API의 model / prompt version 기록 여부 결정
+- [x] 추천 API의 model / prompt / schema version 저장 결정 및 구현
+- [ ] 합성 API의 model / prompt version 기록 여부 결정
 - [ ] 서버 오류 code와 사용자용 message 계약 정리
 
 ### Decision required
@@ -71,7 +73,7 @@
 - [ ] Google OAuth provider 설정값과 배포 callback URL
 - [ ] Supabase 비밀번호 validation과 계정 열거 방지 오류 문구 정책
 - [ ] Supabase Storage를 사용할 실제 기능. OCR용 이미지는 우선 원본 저장 없이 처리
-- [ ] 추천 후보 Top 3 비교 UI 세부 표현
+- [x] 추천 후보 Top 3 비교 UI 세부 표현
 - [ ] 보완 질문에 대한 사용자 답변을 원본 경험 필드, 별도 보완 필드, 또는 분석 입력 전용 데이터 중 어디에 저장할지 결정
 
 ### Deferred / Optional
@@ -119,6 +121,7 @@
 - [ ] repository / API loading·error contract를 UI와 공유
 - [x] AI 제한 초과 오류 code, `retryAfter`, 입력 상한과 재시도 contract 공유 (`docs/AI_API_CONTRACT.md`)
 - [x] AI 분석 v2 schema와 API response 변경에 맞춰 관련 계약 문서와 결과 화면 수정
+- [x] 추천 v2 schema와 API response 변경에 맞춰 관련 계약 문서와 결과 / 기록 화면 수정
 - [ ] Track 간 공통 파일 담당과 merge 순서 합의
 - [ ] 데스크톱·모바일 핵심 E2E 시나리오 작성
 - [x] 다른 사용자 데이터 접근 방지 UI smoke test

@@ -90,6 +90,11 @@ export default function RecommendationHistoryPage() {
         PURPOSE_LABELS[recommendation.purpose],
         recommendation.recommendedExperienceTitle,
         recommendation.prompt,
+        recommendation.extractedRequirements.intent,
+        ...recommendation.extractedRequirements.requiredCompetencies,
+        ...recommendation.extractedRequirements.preferredCompetencies,
+        ...recommendation.extractedRequirements.keywords,
+        ...recommendation.matches.map((match) => match.experienceTitle),
       ]
         .map(normalizeSearchValue)
         .join(" ");
@@ -283,6 +288,7 @@ export default function RecommendationHistoryPage() {
                     key={selectedRecommendation.id}
                     result={selectedRecommendation}
                     experience={recommendedExperience}
+                    experiences={experiences}
                     variant="embedded"
                     onClose={handleCloseDetail}
                   />

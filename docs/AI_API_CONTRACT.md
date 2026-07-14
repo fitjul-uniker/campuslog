@@ -2,18 +2,18 @@
 
 ## 상태
 
-- 브랜치: `feature/ai-analysis-v2`
-- 범위: `/api/analyze` AI 경험 분석 v2 schema, prompt, 저장 호환성, 결과 표시 / `/api/recommend`, `/api/synthesize-activity` 보호 foundation 유지
-- 제외: 추천 v2 Top 3, JD / 질문 요구사항 추출, 답변 초안 생성, 기록 보완 루프, OCR
+- 브랜치: `feature/ai-recommendation-v2`
+- 범위: `/api/analyze` AI 경험 분석 v2 schema 유지, `/api/recommend` 추천 v2 schema / prompt / Top 3 매칭 / 저장 호환성, `/api/synthesize-activity` 보호 foundation 유지
+- 제외: 300자 / 700자 / 면접 / 포트폴리오 답변 초안 생성, 기록 보완 루프, OCR
 
 ## 후속 AI 고도화 순서
 
-현재 문서는 AI API 보호 foundation과 AI 경험 분석 v2의 계약입니다. 후속 AI 결과 구조 고도화는 아래 순서로 별도 작은 PR에서 진행합니다.
+현재 문서는 AI API 보호 foundation, AI 경험 분석 v2, 추천 v2의 계약입니다. 후속 AI 결과 구조 고도화는 아래 순서로 별도 작은 PR에서 진행합니다.
 
 1. AI 경험 분석 v2 — 구현 완료
    - STAR, 원본 근거, 부족한 정보, 자소서 소재 각도 추가
    - 기존 분석 결과와 새 분석 결과를 `schemaVersion`으로 구분
-2. 추천 v2
+2. 추천 v2 — 구현 완료
    - 자기소개서 문항 / JD 요구사항 추출
    - 경험 Top 3 매칭, 부족 근거, 과장 위험 표시
 3. 답변 초안 생성
@@ -140,6 +140,61 @@
 - 기존 저장 결과는 `schemaVersion: "v1"`로 보정해 읽으며 v2 전용 배열은 빈 값으로 표시합니다.
 - STAR에서 확인되지 않는 항목은 빈 문자열로 두고, 억지로 채우지 않습니다.
 - 원본에 없는 성과, 수치, 역할, 협업 여부, 리더십은 사실처럼 생성하지 않고 `evidenceGaps` 또는 `caution`으로 분리합니다.
+
+## `/api/recommend` v2 응답 계약
+
+`/api/recommend`는 OpenAI Responses API structured output의 schema name `campuslog_experience_recommendation_v2`를 사용합니다. 서버는 응답을 다시 파싱하며, `matches[].experienceId`가 입력으로 받은 경험에 없으면 제외하고, `experienceTitle`은 서버가 가진 실제 경험 제목으로 덮어씁니다.
+
+성공 응답은 v2 필드와 기존 v1 필드를 함께 반환합니다.
+
+```json
+{
+  "ok": true,
+  "recommendation": {
+    "schemaVersion": "v2",
+    "promptVersion": "recommendation-v2.0",
+    "model": "gpt-4.1-mini",
+    "extractedRequirements": {
+      "requiredCompetencies": ["문제 해결력"],
+      "preferredCompetencies": ["협업 경험"],
+      "keywords": ["백오피스", "자동화"],
+      "intent": "문제 상황을 구조화하고 실행으로 개선한 경험을 증명",
+      "constraints": ["자기소개서 문항"]
+    },
+    "matches": [
+      {
+        "experienceId": "experience-id",
+        "experienceTitle": "활동 제목",
+        "rank": 1,
+        "score": 88,
+        "fitLevel": "high",
+        "matchReason": "요구 역량과 원본 근거가 연결되는 이유",
+        "matchedEvidence": ["원본 또는 분석 v2에서 확인되는 근거"],
+        "missingEvidence": ["보완하면 좋은 부족 근거"],
+        "overclaimRisks": ["기록에 없는 수치나 역할을 추가하지 않기"],
+        "suggestedAngle": "지원서에서 풀어낼 관점",
+        "relatedCompetencies": ["문제 해결력"]
+      }
+    ],
+    "recommendedExperienceId": "experience-id",
+    "recommendedExperienceTitle": "활동 제목",
+    "reason": "1순위 추천 이유",
+    "relatedTags": ["문제 해결력"],
+    "highlightedAchievement": "1순위에서 강조할 근거",
+    "usageDirection": "1순위 활용 방향",
+    "draftSentence": "짧은 참고 문장"
+  }
+}
+```
+
+하위 호환:
+
+- 기존 v1 필드 `recommendedExperienceId`, `recommendedExperienceTitle`, `reason`, `relatedTags`, `highlightedAchievement`, `usageDirection`, `draftSentence`는 계속 반환하고 저장합니다.
+- 기존 저장 결과는 `schemaVersion: "v1"`로 보정해 읽으며 `matches`는 1순위 1개로 변환합니다.
+- `draftSentence`는 하위 호환용 짧은 참고 문장만 유지합니다. 300자 / 700자 / 면접 / 포트폴리오 답변 초안 생성은 후속 작업입니다.
+- 분석 v2가 있으면 STAR, 원본 evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 우선 사용합니다. 분석이 없거나 오래되었으면 원본 경험 내용을 fallback으로 사용합니다.
+- 근거가 약한 내용은 `missingEvidence`, 기록 밖으로 과장하기 쉬운 내용은 `overclaimRisks`로 분리합니다.
+- 원본에 없는 성과, 수치, 역할, 협업 규모, 사용 기술은 사실처럼 생성하지 않습니다.
 
 ## 남은 운영 방어
 

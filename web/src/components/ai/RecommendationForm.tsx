@@ -83,12 +83,12 @@ export function RecommendationForm({
           onChange={(event) => setPrompt(event.target.value)}
           aria-invalid={Boolean(errorMessage && !prompt.trim())}
           disabled={isLoading}
-          placeholder="예: 문제 해결 역량을 보여줄 수 있는 사례를 추천해줘"
+          placeholder="예: 문제 해결 역량을 보여주는 자기소개서 문항이나 JD 원문을 붙여넣어 주세요"
           required
         />
         <p className="period-help">
-          자기소개서 문항, 포트폴리오 작성 목적, 면접 질문처럼 지금 쓸
-          상황을 입력해 주세요.
+          자기소개서 문항, 면접 질문, JD, 지원서 원문을 입력하면 요구사항과
+          적합한 경험 Top 3를 함께 정리합니다.
         </p>
       </div>
 

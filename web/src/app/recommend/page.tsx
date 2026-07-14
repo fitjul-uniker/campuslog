@@ -24,7 +24,7 @@ type RecommendationFormInput = {
 };
 
 const RECOMMENDATION_PAGE_DESCRIPTION =
-  "활용 목적과 질문에 맞는 경험을 찾고, 어떻게 풀어낼지 함께 제안합니다.";
+  "문항과 JD의 요구사항을 정리하고, 적합한 경험 Top 3를 근거와 함께 비교합니다.";
 
 function RecommendationPageHeader() {
   return (
@@ -273,7 +273,7 @@ export default function RecommendPage() {
           <div className="detail-header">
             <div>
               <p className="experience-meta">활동 추천 생성 중</p>
-              <h2>추천할 활동을 찾는 중입니다</h2>
+              <h2>요구사항과 추천 후보를 비교하는 중입니다</h2>
             </div>
           </div>
           <div className="recommendation-preview" aria-hidden="true">
@@ -290,14 +290,15 @@ export default function RecommendPage() {
           <RecommendationResult
             result={recommendation}
             experience={recommendedExperience}
+            experiences={experiences}
           />
         </div>
       ) : (
         <section className="placeholder-panel" aria-labelledby="ready-title">
           <h2 id="ready-title">AI 기반 활동 추천 결과 대기 중</h2>
           <p className="muted-text">
-            활용 목적과 질문을 입력하면 가장 적합한 활동 1개와 참고 문장을
-            표시합니다.
+            활용 목적과 질문을 입력하면 요구사항을 정리하고 적합한 활동 Top
+            3를 비교해 표시합니다.
           </p>
         </section>
       )}
