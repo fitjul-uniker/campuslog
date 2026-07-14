@@ -98,20 +98,70 @@ export type ExperienceSynthesisDraft = ActivitySynthesisApiResult & {
   generatedAt: string;
 };
 
+export type ExperienceAnalysisSchemaVersion = "v1" | "v2";
+
+export type ExperienceAnalysisStar = {
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+};
+
+export type ExperienceAnalysisEvidenceSource =
+  | "title"
+  | "period"
+  | "role"
+  | "description"
+  | "achievements"
+  | "relatedLinks";
+
+export type ExperienceAnalysisEvidence = {
+  source: ExperienceAnalysisEvidenceSource;
+  quote: string;
+  note: string;
+};
+
+export type ExperienceAnalysisEvidenceGap = {
+  topic: string;
+  reason: string;
+  question: string;
+};
+
+export type ExperienceAnalysisCoverLetterAngle = {
+  title: string;
+  angle: string;
+  supportingEvidence: string[];
+  caution: string;
+};
+
+export type ExperienceAnalysisCompetencyEvidence = {
+  competency: string;
+  evidence: string[];
+  explanation: string;
+};
+
 export type ExperienceAnalysis = {
   id: string;
   experienceId: string;
+  schemaVersion: ExperienceAnalysisSchemaVersion;
+  promptVersion: string;
+  model: string;
   summary: string;
   competencyTags: string[];
   achievements: string[];
   keywords: string[];
+  star: ExperienceAnalysisStar;
+  evidence: ExperienceAnalysisEvidence[];
+  evidenceGaps: ExperienceAnalysisEvidenceGap[];
+  coverLetterAngles: ExperienceAnalysisCoverLetterAngle[];
+  competencyEvidence: ExperienceAnalysisCompetencyEvidence[];
   generatedAt: string;
   sourceExperienceUpdatedAt: string;
 };
 
-export type AnalysisApiResult = Pick<
+export type AnalysisApiResult = Omit<
   ExperienceAnalysis,
-  "experienceId" | "summary" | "competencyTags" | "achievements" | "keywords"
+  "id" | "generatedAt" | "sourceExperienceUpdatedAt"
 >;
 
 export type AnalyzeRequest = {

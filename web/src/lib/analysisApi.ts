@@ -1,23 +1,64 @@
 import type { AnalysisApiResult, AnalyzeResponse, Experience } from "@/lib/types";
+import {
+  ANALYSIS_SCHEMA_VERSION,
+  normalizeAnalysisEvidence,
+  normalizeAnalysisEvidenceGaps,
+  normalizeAnalysisStar,
+  normalizeCompetencyEvidence,
+  normalizeCoverLetterAngles,
+  normalizeStringList,
+} from "@/lib/analysisResult";
 
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
-function isAnalysisApiResult(value: unknown): value is AnalysisApiResult {
+function parseAnalysisApiResult(value: unknown): AnalysisApiResult | null {
   if (!value || typeof value !== "object") {
-    return false;
+    return null;
   }
 
   const candidate = value as Record<string, unknown>;
+  const experienceId =
+    typeof candidate.experienceId === "string"
+      ? candidate.experienceId.trim()
+      : "";
+  const summary =
+    typeof candidate.summary === "string" ? candidate.summary.trim() : "";
+  const promptVersion =
+    typeof candidate.promptVersion === "string"
+      ? candidate.promptVersion.trim()
+      : "";
+  const model =
+    typeof candidate.model === "string" ? candidate.model.trim() : "";
 
-  return (
-    typeof candidate.experienceId === "string" &&
-    typeof candidate.summary === "string" &&
-    isStringArray(candidate.competencyTags) &&
-    isStringArray(candidate.achievements) &&
-    isStringArray(candidate.keywords)
-  );
+  if (
+    !experienceId ||
+    !summary ||
+    candidate.schemaVersion !== ANALYSIS_SCHEMA_VERSION ||
+    !promptVersion ||
+    !model
+  ) {
+    return null;
+  }
+
+  return {
+    experienceId,
+    schemaVersion: ANALYSIS_SCHEMA_VERSION,
+    promptVersion,
+    model,
+    summary,
+    competencyTags: normalizeStringList(candidate.competencyTags, 12),
+    achievements: normalizeStringList(candidate.achievements, 12),
+    keywords: normalizeStringList(candidate.keywords, 20),
+    star: normalizeAnalysisStar(candidate.star),
+    evidence: normalizeAnalysisEvidence(candidate.evidence, 12),
+    evidenceGaps: normalizeAnalysisEvidenceGaps(candidate.evidenceGaps, 8),
+    coverLetterAngles: normalizeCoverLetterAngles(
+      candidate.coverLetterAngles,
+      6,
+    ),
+    competencyEvidence: normalizeCompetencyEvidence(
+      candidate.competencyEvidence,
+      8,
+    ),
+  };
 }
 
 function isAnalyzeResponse(value: unknown): value is AnalyzeResponse {
@@ -28,7 +69,7 @@ function isAnalyzeResponse(value: unknown): value is AnalyzeResponse {
   const candidate = value as Record<string, unknown>;
 
   if (candidate.ok === true) {
-    return isAnalysisApiResult(candidate.analysis);
+    return parseAnalysisApiResult(candidate.analysis) !== null;
   }
 
   if (candidate.ok === false) {
@@ -60,6 +101,17 @@ export async function requestExperienceAnalysis(
     const payload = (await response.json()) as unknown;
 
     if (isAnalyzeResponse(payload)) {
+      if (payload.ok) {
+        const analysis = parseAnalysisApiResult(payload.analysis);
+
+        if (analysis) {
+          return {
+            ok: true,
+            analysis,
+          };
+        }
+      }
+
       return payload;
     }
   } catch {

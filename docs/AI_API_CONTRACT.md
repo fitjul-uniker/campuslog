@@ -2,17 +2,17 @@
 
 ## 상태
 
-- 브랜치: `feature/ai-api-protection`
-- 범위: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 보호 foundation
-- 제외: AI 분석 품질 개선, JD / 질문 기반 추천, OCR, 부족 경험 비교, 답변 초안 생성
+- 브랜치: `feature/ai-analysis-v2`
+- 범위: `/api/analyze` AI 경험 분석 v2 schema, prompt, 저장 호환성, 결과 표시 / `/api/recommend`, `/api/synthesize-activity` 보호 foundation 유지
+- 제외: 추천 v2 Top 3, JD / 질문 요구사항 추출, 답변 초안 생성, 기록 보완 루프, OCR
 
 ## 후속 AI 고도화 순서
 
-현재 문서는 AI API 보호 foundation의 계약입니다. 실제 AI 결과 구조 고도화는 아래 순서로 별도 작은 PR에서 진행합니다.
+현재 문서는 AI API 보호 foundation과 AI 경험 분석 v2의 계약입니다. 후속 AI 결과 구조 고도화는 아래 순서로 별도 작은 PR에서 진행합니다.
 
-1. AI 경험 분석 v2
+1. AI 경험 분석 v2 — 구현 완료
    - STAR, 원본 근거, 부족한 정보, 자소서 소재 각도 추가
-   - 기존 분석 결과와 새 분석 결과의 schema version 구분 필요
+   - 기존 분석 결과와 새 분석 결과를 `schemaVersion`으로 구분
 2. 추천 v2
    - 자기소개서 문항 / JD 요구사항 추출
    - 경험 Top 3 매칭, 부족 근거, 과장 위험 표시
@@ -76,6 +76,70 @@
 | `/api/synthesize-activity` | 512 KB | 50초 | 사용자당 10분 8회 | 일일 기록 1,000개, 기록당 2,000자, 총 400,000자 |
 
 `Content-Length`가 없는 요청은 본문 크기 guard를 통과할 수 있으므로 route별 필드 상한을 함께 적용합니다.
+
+## `/api/analyze` v2 응답 계약
+
+`/api/analyze`는 OpenAI Responses API structured output의 schema name `campuslog_experience_analysis_v2`를 사용합니다. 서버는 응답을 다시 파싱하며, `evidence.quote`, `coverLetterAngles.supportingEvidence`, `competencyEvidence.evidence`가 입력 필드의 원본 문구에 근거하지 않으면 저장 결과에서 제외합니다.
+
+성공 응답은 기존 네 필드와 v2 필드를 함께 반환합니다.
+
+```json
+{
+  "ok": true,
+  "analysis": {
+    "experienceId": "experience-id",
+    "schemaVersion": "v2",
+    "promptVersion": "analysis-v2.0",
+    "model": "gpt-4.1-mini",
+    "summary": "2~3문장 요약",
+    "competencyTags": ["문제 해결력"],
+    "achievements": ["원본에서 확인된 성과"],
+    "keywords": ["키워드"],
+    "star": {
+      "situation": "상황",
+      "task": "과제",
+      "action": "행동",
+      "result": "결과"
+    },
+    "evidence": [
+      {
+        "source": "description",
+        "quote": "원본 문구",
+        "note": "분석과 연결되는 이유"
+      }
+    ],
+    "evidenceGaps": [
+      {
+        "topic": "성과 수치",
+        "reason": "현재 기록에 정량 결과가 없음",
+        "question": "결과를 숫자나 비교 기준으로 설명할 수 있나요?"
+      }
+    ],
+    "coverLetterAngles": [
+      {
+        "title": "문제 해결 경험",
+        "angle": "지원서에서 풀어낼 관점",
+        "supportingEvidence": ["원본 문구"],
+        "caution": "없는 수치를 추가하지 않기"
+      }
+    ],
+    "competencyEvidence": [
+      {
+        "competency": "문제 해결력",
+        "evidence": ["원본 문구"],
+        "explanation": "역량과 연결되는 이유"
+      }
+    ]
+  }
+}
+```
+
+하위 호환:
+
+- 기존 `summary`, `competencyTags`, `achievements`, `keywords`는 계속 반환하고 저장합니다.
+- 기존 저장 결과는 `schemaVersion: "v1"`로 보정해 읽으며 v2 전용 배열은 빈 값으로 표시합니다.
+- STAR에서 확인되지 않는 항목은 빈 문자열로 두고, 억지로 채우지 않습니다.
+- 원본에 없는 성과, 수치, 역할, 협업 여부, 리더십은 사실처럼 생성하지 않고 `evidenceGaps` 또는 `caution`으로 분리합니다.
 
 ## 남은 운영 방어
 

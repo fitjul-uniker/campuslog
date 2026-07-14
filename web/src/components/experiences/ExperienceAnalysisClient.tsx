@@ -123,7 +123,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
           <p className="eyebrow">AI 경험 분석 결과</p>
           <h1>분석 결과</h1>
           <p className="page-description">
-            특정 활동 경험에 연결된 요약, 역량 태그, 키워드를 확인합니다.
+            특정 활동 경험에 연결된 요약, STAR, 근거, 보완할 정보를
+            확인합니다.
           </p>
         </div>
       </section>

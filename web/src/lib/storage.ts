@@ -1,4 +1,5 @@
 import { createIsoTimestamp } from "@/lib/date";
+import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
 import {
   normalizeRelatedLinksForStorage,
   parseRelatedLinks,
@@ -278,25 +279,6 @@ function parseExperience(value: unknown): Experience | null {
   return null;
 }
 
-function isExperienceAnalysis(value: unknown): value is ExperienceAnalysis {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Record<string, unknown>;
-
-  return (
-    typeof candidate.id === "string" &&
-    typeof candidate.experienceId === "string" &&
-    typeof candidate.summary === "string" &&
-    isStringArray(candidate.competencyTags) &&
-    isStringArray(candidate.achievements) &&
-    isStringArray(candidate.keywords) &&
-    typeof candidate.generatedAt === "string" &&
-    typeof candidate.sourceExperienceUpdatedAt === "string"
-  );
-}
-
 function isRecommendationResult(value: unknown): value is RecommendationResult {
   if (!value || typeof value !== "object") {
     return false;
@@ -473,8 +455,10 @@ function readStoredAnalyses(): StoredAnalyses {
   }
 
   return Object.values(parsed).reduce<StoredAnalyses>((analyses, value) => {
-    if (isExperienceAnalysis(value)) {
-      analyses[value.experienceId] = value;
+    const analysis = normalizeExperienceAnalysis(value);
+
+    if (analysis) {
+      analyses[analysis.experienceId] = analysis;
     }
 
     return analyses;
