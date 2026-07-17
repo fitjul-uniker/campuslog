@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-17 - 팀 테스트 계정 시드 스크립트 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-17 |
+| 작업자 | Codex |
+| 작업 요약 | Google 공유 계정 차단을 피하기 위해 Supabase Auth 이메일/비밀번호 방식의 팀 테스트 계정 9개를 생성하는 서버 전용 시드 스크립트 추가 |
+| 수정한 파일 | `web/scripts/seed-test-users.mjs`, `web/package.json`, `web/.env.example`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | `npm run seed:test-users` 명령을 추가하고, `SUPABASE_SERVICE_ROLE_KEY`가 있는 로컬/서버 환경에서 `test1@campuslog.test` ~ `test9@campuslog.test` 계정을 `test1111` ~ `test9999` 비밀번호로 생성 또는 갱신하도록 구현. 계정 metadata에는 `campuslog_profile`을 넣어 온보딩을 완료한 테스트 사용자처럼 사용할 수 있게 함. `.env.example`에는 서버 전용 관리자 키 주의 문구를 추가 |
+| 검증한 내용 | `node --check scripts/seed-test-users.mjs`, `npm run lint` 통과. 사용자가 `npm run seed:test-users`를 실행해 9개 계정이 모두 `created`로 생성된 터미널 출력을 확인 |
+| 남은 작업 | 테스트 계정별 더미 데이터 주입은 수행하지 않음. 필요 시 별도 seed 작업으로 경험·활동·기록 데이터를 추가해야 함. `SUPABASE_SERVICE_ROLE_KEY`는 팀원 일반 로컬 env에 공유하지 않고 계정 생성/초기화 담당자만 사용 |
+| 관련 커밋 메시지 | `chore: add test user seed script` |
+
 ### 2026-07-17 - PR 미반영 UI/UX 변경 재적용
 
 | 항목 | 내용 |

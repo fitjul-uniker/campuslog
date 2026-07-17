@@ -85,6 +85,7 @@
 | ISSUE-061 | Resolved | Low | Decision | checkbox 선택 피드백을 Animate UI 레퍼런스와 맞출 필요 | 실제 checkbox만 변경하고 radio·상태 아이콘을 보존할지 결정 | 실제 checkbox primitive에 check path, variant·size, hover·press와 reduced motion을 적용하고 Radix form·키보드 의미는 유지 | Codex | 2026-07-17 | 2026-07-17 |
 | ISSUE-062 | Resolved | Low | Decision | 추천 기록 상단 eyebrow가 메뉴와 중복되고 복사 버튼 텍스트가 과함 | 시각 텍스트 제거 후 접근성 상태 보존 방식 결정 | eyebrow를 제거하고 복사 버튼을 44px 아이콘 전용으로 변경. aria-label, 성공 status, 실패 alert는 유지 | Codex | 2026-07-17 | 2026-07-17 |
 | ISSUE-063 | Resolved | Medium | Decision | 여러 핵심 CTA의 눌림 피드백을 일관화할 필요 | Ripple 적용·제외 범위와 reduced motion 기준 결정 | 결과가 발생하는 CTA에 공용 RippleButton을 적용하고 인증·캘린더·탭·목록·메뉴·링크·닫기·삭제·숨기기는 제외. 키보드 중앙 ripple과 reduced motion 비활성화를 구현 | Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-064 | Resolved | Medium | Decision | 여러 지역의 팀원이 Google 공유 계정으로 테스트하면 보안 차단이 발생함 | 공유 Google 계정 대신 사용할 테스트 인증 방식, 계정 수, 관리자 키 사용 범위 결정 | Supabase Auth 이메일/비밀번호 기반 `test1@campuslog.test` ~ `test9@campuslog.test` 계정을 사용하기로 결정. `web/scripts/seed-test-users.mjs`와 `npm run seed:test-users`를 추가해 서버 전용 `SUPABASE_SERVICE_ROLE_KEY`가 있는 환경에서 계정을 생성/갱신하게 했고, 사용자가 실제 project에서 9개 계정이 모두 `created`된 것을 확인. 관리자 키는 앱/브라우저/일반 팀원 env에 공유하지 않으며, 더미 데이터 주입은 별도 작업으로 남김 | 사용자 + Codex | 2026-07-17 | 2026-07-17 |
 
 ## 이슈 추가 템플릿
 

@@ -27,8 +27,11 @@
 - [x] 기록 보완 루프: AI 보완 질문 생성, 사용자 보완 답변 별도 저장, 보완 답변 기반 분석 재생성 흐름 구현
 - [x] QA 버그 안정화: 보완 질문 draft 보존·복원, 답변 초안 분량 보정, 활동 복원·삭제·날짜 상태, 추천 점수 등급, 오늘 한 일 팝업 스크롤 수정
 - [x] 최신 main 기준 미반영 UI 재적용: 랜딩·인증 입력, 중앙 빠른 기록 패널, AI Border Beam, JD 목적, Checkbox, 추천 기록 복사, RippleButton
+- [x] 팀 테스트용 Supabase Auth 이메일/비밀번호 계정 9개 생성
 
 2026-07-17 `codex/reapply-unpr-ui-polish`에서는 최신 `origin/main`의 QA 안정화 변경을 보존한 채 PR에 포함되지 않았던 UI/UX 변경을 다시 구현했습니다. 랜딩 수동 재생 컨트롤을 제거하고 명사·조사 사이 2~5px 여유와 평면 인증 입력을 적용했습니다. 빠른 기록 패널은 화면 정중앙에 배치하고, AI 실행 CTA는 colorful Border Beam과 `AI 분석` 문구를 사용합니다. 실제 checkbox는 경로 모션을 갖는 공용 Radix Checkbox로 정리했으며 추천 기록의 중복 eyebrow와 복사 텍스트를 제거했습니다. 결과가 발생하는 핵심 CTA에는 공용 RippleButton을 적용하되 인증·탐색·삭제 컨트롤은 제외했습니다. 추천 목적 `JD`는 코드와 additive migration까지 작성했으며 실제 Supabase migration 적용과 로그인 세션 OpenAI·DB 저장 smoke test는 완료하지 않았습니다.
+
+2026-07-17 팀 테스트 계정 준비를 위해 Supabase Auth 관리자 API를 사용하는 `npm run seed:test-users` 스크립트를 추가했습니다. 기본 계정은 `test1@campuslog.test`부터 `test9@campuslog.test`까지이며 비밀번호는 `test1111`부터 `test9999`까지입니다. 스크립트는 `campuslog_profile` metadata를 함께 설정해 온보딩 완료 계정처럼 사용할 수 있게 하며, 기존 계정이 있으면 비밀번호와 metadata를 갱신합니다. 사용자가 실제 Supabase project에서 9개 계정이 모두 `created`로 생성된 것을 확인했습니다. `SUPABASE_SERVICE_ROLE_KEY`는 계정 생성/초기화 담당자만 사용하는 서버 전용 관리자 키이며 앱 코드, 브라우저, 일반 팀원 env에는 공유하지 않습니다. 더미 경험·활동·기록 데이터 주입은 아직 수행하지 않았습니다.
 
 ## 구현 이력
 
@@ -98,13 +101,14 @@
 ## 다음 작업 순서
 
 1. 2026-07-17 QA 수정 범위의 실제 로그인 세션 브라우저 회귀 확인
-2. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
-3. 기록 보완 루프의 실제 로그인 세션 smoke test와 평가 기준 정리
-4. AI API 보호 foundation 실제 세션 환경 smoke test와 durable rate limit / OpenAI spend alert 운영 결정
-5. 추천 v2 / 답변 초안 migration 적용 후 로그인 세션 저장 smoke test
-6. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증
-7. Vercel + Supabase preview 환경 통합 확인
-8. 통합 회귀·보안·비용·접근성 검증
+2. 테스트 계정별 더미 경험·활동·기록 데이터 seed 필요 여부 결정
+3. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
+4. 기록 보완 루프의 실제 로그인 세션 smoke test와 평가 기준 정리
+5. AI API 보호 foundation 실제 세션 환경 smoke test와 durable rate limit / OpenAI spend alert 운영 결정
+6. 추천 v2 / 답변 초안 migration 적용 후 로그인 세션 저장 smoke test
+7. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증
+8. Vercel + Supabase preview 환경 통합 확인
+9. 통합 회귀·보안·비용·접근성 검증
 
 ## 활성 기준 문서
 
@@ -138,6 +142,7 @@
 - 추천 v2의 실제 OpenAI 성공 경로와 Supabase migration 적용 후 저장 smoke test 필요
 - 답변 초안의 실제 OpenAI 성공 경로와 Supabase migration 적용 후 저장 smoke test 필요
 - 기록 보완 루프의 실제 OpenAI 성공 경로, Supabase migration 적용 후 저장 smoke test, 평가 기준과 회귀 사례 필요
+- 팀 테스트용 Supabase Auth 계정 9개는 생성됐지만, 각 계정에 넣을 더미 경험·활동·기록 데이터 seed는 아직 없음
 - 2026-07-17 QA 수정은 `npm run lint`, `npm run build`를 통과했지만 실제 로그인 세션에서 보완 질문 복원, 활동 삭제 cascade, 완료 활동 복원, 날짜별 기록 제한, 답변 초안 실제 OpenAI 분량 보정, 작은 화면 팝업 스크롤 회귀 확인이 아직 필요
 - OCR 이미지 원본 저장 여부와 Supabase Storage 도입 범위 미확정
 - 새 활동 추가 패널과 프로필 메뉴의 실제 390px 기기 시각 smoke test 미완료
