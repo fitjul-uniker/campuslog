@@ -53,6 +53,7 @@ const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
   cover_letter: "자기소개서",
   portfolio: "포트폴리오",
   interview: "면접",
+  jd: "JD",
   activity_application: "대외활동/지원서",
   other: "기타",
 };
@@ -237,6 +238,7 @@ function isRecommendationPurpose(
     value === "cover_letter" ||
     value === "portfolio" ||
     value === "interview" ||
+    value === "jd" ||
     value === "activity_application" ||
     value === "other"
   );

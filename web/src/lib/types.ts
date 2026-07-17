@@ -4,6 +4,7 @@ export type RecommendationPurpose =
   | "cover_letter"
   | "portfolio"
   | "interview"
+  | "jd"
   | "activity_application"
   | "other";
 

@@ -19,6 +19,10 @@ import {
   DashboardExperienceDetail,
 } from "@/components/experiences/DashboardExperienceDetail";
 import { DashboardTrackedActivityDetail } from "@/components/experiences/DashboardTrackedActivityDetail";
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
@@ -420,10 +424,11 @@ export function ExperienceDashboard() {
                   <AlertCircle aria-hidden="true" />
                   <h2>나의 활동을 불러오지 못했습니다</h2>
                   <p>{loadError}</p>
-                  <button type="button" onClick={loadDashboardData}>
+                  <RippleButton type="button" onClick={loadDashboardData}>
                     <RotateCcw aria-hidden="true" />
                     다시 시도
-                  </button>
+                    <RippleButtonRipples />
+                  </RippleButton>
                 </div>
               ) : activityItems === null ? (
                 <div

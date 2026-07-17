@@ -55,6 +55,7 @@
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [x] AI 경험 분석 v2: STAR, 원본 근거, 부족한 정보, 자소서 소재 각도 schema 정의와 구현 (`ISSUE-034`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
+- [ ] Supabase project에 `20260714000500_recommendation_jd_purpose.sql` 적용 후 로그인 세션에서 JD 추천 저장·재조회 smoke test (`ISSUE-060`)
 - [x] 답변 초안 생성: 500자 / 800자 / 1000자 자기소개서 + 면접 + 포트폴리오 버전 contract와 UI 구현 (`ISSUE-031`)
 - [x] 기록 보완 루프: AI 보완 질문, 사용자 답변 저장 위치, 분석 재생성 흐름 구현 (`ISSUE-044`)
 
@@ -95,10 +96,17 @@
 - [x] Track A 인증 contract 기반 로그인 / 회원가입 route UI와 `components/auth/**` 설계
 - [x] 좌측 상단 `CampusLog` 워드마크 + 문법에 맞는 순환 기록 문구 → 중앙 인증 카드 → 인증 후 3D 책 표지 진입 흐름 구현 (`ISSUE-035`)
 - [x] Tailwind CSS v4·shadcn/ui 기반 설정과 인증 Input·Label primitive 구성
+- [x] 랜딩 재생 컨트롤 제거, 명사·조사 간격 보정과 인증 입력 평면화 (`ISSUE-057`)
 - [x] React Bits Stepper 기반 이름·닉네임 회원가입 UX와 모바일·reduced motion 적용 (`ISSUE-037`)
 - [ ] 인증 확인 중 / 세션 만료 / 접근 불가 상태 설계
 - [x] 오늘의 기록 핵심 작성 흐름을 CTA → 플로팅 패널로 고도화하고 입력 보존·모바일·키보드 동작 검증 (`ISSUE-038`)
+- [x] 빠른 기록 작성 패널을 visual viewport·safe area 기준 화면 정중앙에 배치 (`ISSUE-058`)
+- [x] 경험 분석·추천 AI 실행 CTA에 colorful Border Beam 적용 (`ISSUE-059`)
+- [x] 추천 활용 목적에 `JD`를 추가하고 실행 CTA를 `AI 분석`으로 정리 (`ISSUE-060`)
 - [x] 활동 추가를 접근 가능한 Expandable Screen으로 전환하고 공용 Checkbox·CopyButton·프로필 드롭다운 통합 (`ISSUE-041`)
+- [x] 실제 checkbox 입력에 Animate UI식 check path·상태 변형·reduced motion 적용 (`ISSUE-061`)
+- [x] 추천 기록의 중복 eyebrow 제거와 참고 문장 복사 버튼 아이콘화 (`ISSUE-062`)
+- [x] 핵심 실행 CTA에 접근 가능한 ripple 눌림 피드백 적용 (`ISSUE-063`)
 - [x] 프로필 드롭다운 로그아웃 제출 안정화와 실제 세션 제거·보호 경로 재차단 확인 (`ISSUE-042`)
 - [ ] 나의 활동 목록·상세 탐색 흐름 개선
 - [ ] CampusLog AI 입력·결과·추천 기록 위계 개선
@@ -115,6 +123,7 @@
 - [ ] 키보드 focus 이동과 Dialog 초점 복귀 검증
 - [ ] 200% 확대와 긴 한글·URL 줄바꿈 검증
 - [ ] reduced motion과 애니메이션 fallback 검증
+- [ ] 랜딩·Checkbox·Ripple·Border Beam의 실제 모바일 기기와 reduced motion 시각 검증 (`ISSUE-057`, `ISSUE-061`, `ISSUE-063`)
 - [ ] AI 원본·생성 결과·근거의 시각적 구분 개선
 
 ## Shared integration

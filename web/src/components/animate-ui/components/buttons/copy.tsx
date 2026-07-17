@@ -5,6 +5,11 @@ import { Check, Copy } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import * as React from "react";
 
+import {
+  RippleButton,
+  RippleButtonRipples,
+  type RippleButtonProps,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { cn } from "@/lib/utils";
 
 const copyButtonVariants = cva(
@@ -34,7 +39,7 @@ const copyButtonVariants = cva(
 );
 
 export type CopyButtonProps = Omit<
-  React.ComponentPropsWithoutRef<typeof motion.button>,
+  RippleButtonProps,
   "children" | "content"
 > &
   VariantProps<typeof copyButtonVariants> & {
@@ -121,17 +126,17 @@ export function CopyButton({
   }
 
   return (
-    <motion.button
+    <RippleButton
+      {...props}
       type={type}
       className={cn(copyButtonVariants({ variant, size }), className)}
       disabled={disabled}
       data-copied={isCopied ? "true" : "false"}
       aria-label={isCopied ? copiedLabel : label}
       onClick={handleClick}
-      whileHover={shouldReduceMotion || disabled ? undefined : { scale: 1.025 }}
-      whileTap={shouldReduceMotion || disabled ? undefined : { scale: 0.975 }}
+      hoverScale={1.025}
+      tapScale={0.975}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      {...props}
     >
       <span className="relative size-4 shrink-0" aria-hidden="true">
         <AnimatePresence initial={false} mode="popLayout">
@@ -180,6 +185,7 @@ export function CopyButton({
           </span>
         </span>
       )}
-    </motion.button>
+      <RippleButtonRipples />
+    </RippleButton>
   );
 }

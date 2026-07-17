@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-17 - PR 미반영 UI/UX 변경 재적용
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-17 |
+| 작업자 | Codex |
+| 작업 요약 | 최신 `origin/main`을 기준으로 기존 작업 트리에만 남았던 랜딩·빠른 기록·AI CTA·JD 목적·Checkbox·추천 기록·RippleButton 변경을 새 브랜치에 재구현 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/landing/LandingHero.tsx`, `web/src/components/ui/floating-panel.tsx`, `web/src/components/ui/BorderBeamButton.tsx`, `web/src/components/animate-ui/components/buttons/ripple.tsx`, `web/src/components/animate-ui/components/buttons/copy.tsx`, `web/src/components/animate-ui/components/radix/checkbox.tsx`, 활동·경험·AI 화면 컴포넌트, 추천 타입·정규화·API·기록 화면, `supabase/migrations/20260714000500_recommendation_jd_purpose.sql`, 관련 활성 문서 |
+| 변경 내용 | 랜딩 수동 모션 컨트롤 제거, 명사·조사 간격과 평면 인증 입력 적용. 빠른 기록 중앙 패널, colorful AI Border Beam, JD 추천 목적과 additive migration, Radix Checkbox check path, 추천 기록 eyebrow 제거·아이콘 복사, 핵심 실행 CTA RippleButton 적용. 최신 main의 활동 복원·삭제·날짜 제한·팝업 스크롤 QA 변경은 보존 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 소스 계약으로 랜딩 컨트롤 제거, JD 전 계층 label, 중앙 패널·Border Beam·Ripple 적용 위치를 재확인. 새 브랜치 개발 서버를 `http://localhost:3000`에서 기동하고 HTTP `200 OK`를 확인. 이 세션에는 인앱 브라우저 제어 기능이 노출되지 않아 자동 시각 검증은 수행하지 못함 |
+| 남은 작업 | 로컬 로그인 브라우저 시각 회귀 확인, 실제 Supabase project에 migration 적용, 로그인 세션 OpenAI 호출·DB 저장·재조회 smoke test, 실제 모바일·reduced motion 시각 검증 |
+| 관련 커밋 메시지 | `feat: reapply unmerged UI polish` |
+
 ### 2026-07-17 - QA 버그 안정화
 
 | 항목 | 내용 |

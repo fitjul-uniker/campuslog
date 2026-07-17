@@ -30,6 +30,10 @@ import {
   getLocalDateKey,
   isActivityRecordableOnDate,
 } from "@/components/activities/activityViewUtils";
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { FloatingPanel } from "@/components/ui/floating-panel";
 import { ExpandableScreen } from "@/components/ui/expandable-screen";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
@@ -544,9 +548,10 @@ export function TodayDashboard() {
       {loadError ? (
         <div className="activity-inline-alert" role="alert">
           <p>{loadError}</p>
-          <button type="button" onClick={loadDashboardData}>
+          <RippleButton type="button" onClick={loadDashboardData}>
             다시 불러오기
-          </button>
+            <RippleButtonRipples />
+          </RippleButton>
         </div>
       ) : null}
 
@@ -559,7 +564,7 @@ export function TodayDashboard() {
             <span className="activity-overview-count">
               {activeActivities.length}개
             </span>
-            <button
+            <RippleButton
               ref={overviewActivityCreateTriggerRef}
               type="button"
               className="activity-primary-button"
@@ -572,7 +577,8 @@ export function TodayDashboard() {
             >
               <Plus aria-hidden="true" />
               활동 추가
-            </button>
+              <RippleButtonRipples />
+            </RippleButton>
           </div>
         </div>
 
@@ -710,7 +716,7 @@ export function TodayDashboard() {
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.16, ease: "easeOut" }}
             >
-                <motion.button
+                <RippleButton
                   ref={recordTriggerRef}
                   type="button"
                   className="activity-record-trigger"
@@ -718,7 +724,7 @@ export function TodayDashboard() {
                   aria-haspopup="dialog"
                   aria-expanded={isRecordPanelOpen}
                   aria-controls={recordPanelId}
-                  whileTap={{ scale: 0.985 }}
+                  tapScale={0.985}
                 >
                   <span className="activity-record-trigger-icon" aria-hidden="true">
                     <Plus />
@@ -741,7 +747,8 @@ export function TodayDashboard() {
                     className="activity-record-trigger-arrow"
                     aria-hidden="true"
                   />
-                </motion.button>
+                  <RippleButtonRipples />
+                </RippleButton>
 
               {statusMessage ? (
                 <p
@@ -768,7 +775,7 @@ export function TodayDashboard() {
                   : "오늘 한 일을 연결하려면 먼저 진행 활동을 등록해 주세요."}
               </p>
               {quickRecordMode === "needs-activity" ? (
-                <button
+                <RippleButton
                   ref={emptyActivityCreateTriggerRef}
                   type="button"
                   className="activity-record-empty-action"
@@ -783,15 +790,17 @@ export function TodayDashboard() {
                 >
                   <Plus aria-hidden="true" />
                   진행 활동 추가
-                </button>
+                  <RippleButtonRipples />
+                </RippleButton>
               ) : selectedDate !== today ? (
-                <button
+                <RippleButton
                   type="button"
                   className="activity-record-empty-action"
                   onClick={() => handleSelectDate(today)}
                 >
                   오늘로 돌아가기
-                </button>
+                  <RippleButtonRipples />
+                </RippleButton>
               ) : null}
             </motion.div>
           )}
@@ -819,6 +828,7 @@ export function TodayDashboard() {
               weekday: "long",
             })}
             className="activity-floating-record-panel"
+            positioning="viewport-center"
           >
             <form
               onSubmit={handleSubmit}
@@ -894,15 +904,16 @@ export function TodayDashboard() {
               </div>
 
               <div className="activity-floating-record-footer">
-                <button
+                <RippleButton
                   type="button"
                   className="activity-secondary-button"
                   onClick={cancelRecordPanel}
                   disabled={isSaving}
                 >
                   작성 취소
-                </button>
-                <button
+                  <RippleButtonRipples />
+                </RippleButton>
+                <RippleButton
                   type="submit"
                   className="activity-primary-button"
                   disabled={isSaving}
@@ -919,7 +930,8 @@ export function TodayDashboard() {
                     : editingLog
                       ? "수정 내용 저장"
                       : "기록 저장"}
-                </button>
+                  <RippleButtonRipples />
+                </RippleButton>
               </div>
             </form>
           </FloatingPanel>
@@ -1002,9 +1014,10 @@ export function TodayDashboard() {
           <div className="activity-day-empty">
             <p>이 날짜에 남긴 기록이 없습니다.</p>
             {selectedDate !== today ? (
-              <button type="button" onClick={() => handleSelectDate(today)}>
+              <RippleButton type="button" onClick={() => handleSelectDate(today)}>
                 오늘로 돌아가기
-              </button>
+                <RippleButtonRipples />
+              </RippleButton>
             ) : null}
           </div>
         )}

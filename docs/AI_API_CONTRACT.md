@@ -156,6 +156,8 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
 
 `/api/recommend`는 OpenAI Responses API structured output의 schema name `campuslog_experience_recommendation_v2`를 사용합니다. 서버는 응답을 다시 파싱하며, `matches[].experienceId`가 입력으로 받은 경험에 없으면 제외하고, `experienceTitle`은 서버가 가진 실제 경험 제목으로 덮어씁니다.
 
+요청의 `purpose`는 `cover_letter`, `portfolio`, `interview`, `jd`, `activity_application`, `other`만 허용합니다. `jd`는 별도 활용 목적으로 검증·저장하며 모델에는 `JD` label로 전달합니다.
+
 성공 응답은 v2 필드와 기존 v1 필드를 함께 반환합니다.
 
 ```json

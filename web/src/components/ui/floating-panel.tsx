@@ -19,8 +19,10 @@ type FloatingPanelPosition = {
   top: number;
   width: number;
   maxHeight: number;
-  placement: "top" | "bottom";
+  placement: "top" | "bottom" | "center";
 };
+
+type FloatingPanelPositioning = "anchored" | "viewport-center";
 
 type FloatingPanelProps = {
   open: boolean;
@@ -37,6 +39,7 @@ type FloatingPanelProps = {
   id?: string;
   layoutId?: string;
   className?: string;
+  positioning?: FloatingPanelPositioning;
 };
 
 const FOCUSABLE_SELECTOR = [
@@ -80,6 +83,7 @@ export function FloatingPanel({
   id: idOverride,
   layoutId,
   className,
+  positioning = "anchored",
 }: FloatingPanelProps) {
   const generatedId = useId();
   const panelId = idOverride ?? `floating-panel-${generatedId}`;
@@ -150,13 +154,29 @@ export function FloatingPanel({
         maxHeight,
       );
       const anchorRect =
-        anchorElement?.isConnected === true
+        positioning === "anchored" && anchorElement?.isConnected === true
           ? anchorElement.getBoundingClientRect()
           : null;
 
       let nextPosition: FloatingPanelPosition;
 
-      if (viewportWidth <= 640 || !anchorRect) {
+      if (positioning === "viewport-center") {
+        const panelHeight = Math.min(measuredHeight, maxHeight);
+
+        nextPosition = {
+          left:
+            viewportLeft +
+            leftInset +
+            Math.max(0, viewportWidth - leftInset - rightInset - width) / 2,
+          top:
+            viewportTop +
+            topInset +
+            Math.max(0, maxHeight - panelHeight) / 2,
+          width,
+          maxHeight,
+          placement: "center",
+        };
+      } else if (viewportWidth <= 640 || !anchorRect) {
         nextPosition = {
           left: viewportLeft + leftInset,
           top:
@@ -247,7 +267,7 @@ export function FloatingPanel({
       window.visualViewport?.removeEventListener("resize", updatePosition);
       window.visualViewport?.removeEventListener("scroll", updatePosition);
     };
-  }, [anchorElement, open]);
+  }, [anchorElement, open, positioning]);
 
   useEffect(() => {
     if (!open) {
@@ -417,7 +437,9 @@ export function FloatingPanel({
                       width: position.width,
                       maxHeight: position.maxHeight,
                       transformOrigin:
-                        position.placement === "top"
+                        position.placement === "center"
+                          ? "center center"
+                          : position.placement === "top"
                           ? "bottom left"
                           : "top left",
                     }

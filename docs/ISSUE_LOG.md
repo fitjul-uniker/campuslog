@@ -78,6 +78,13 @@
 | ISSUE-054 | Resolved | High | Bug | 활동 종료 버튼을 누르면 사용자가 입력한 예상 종료일이 실제 버튼 클릭 날짜로 변경됨 | 활동 종료 시 기존 예상 종료일을 보존할지, 사용자가 수정하도록 할지 결정 | 활동 종료 액션은 사용자가 입력한 예상 종료일이 있으면 그 날짜를 completedAt으로 사용하고, 종료일이 없을 때만 현재 날짜를 사용하도록 수정 | Codex | 2026-07-17 | 2026-07-17 |
 | ISSUE-055 | Resolved | Medium | Bug | 동일한 추천 점수에 서로 다른 평가 등급이 표시됨 | 점수별 등급 기준을 모델 반환값이 아니라 deterministic rule로 고정할지 결정 | 추천 API와 정규화 로직에서 `fitLevel`을 score 기준으로만 계산하도록 변경해 같은 점수는 항상 같은 등급을 표시하도록 수정 | Codex | 2026-07-17 | 2026-07-17 |
 | ISSUE-056 | Resolved | High | Bug | 오늘 한 일 남기기 팝업에서 스크롤이 되지 않아 저장 버튼에 접근할 수 없음 | 팝업 내용이 화면 높이를 초과할 때 내부 스크롤과 하단 저장 버튼 접근성을 보장해야 함 | 오늘 한 일 남기기 플로팅 패널의 입력 영역을 내부 스크롤 영역으로 분리하고, 저장 / 취소 footer를 하단에 고정해 작은 화면에서도 저장 버튼에 접근할 수 있도록 CSS를 수정 | Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-057 | Resolved | Medium | Bug | 랜딩 재생 컨트롤이 불필요하고 순환 명사와 조사가 간헐적으로 겹치며 인증 입력이 과도하게 입체적으로 보임 | 컨트롤 제거, 전환 중 최소 간격, 인증 입력 표면 기준 결정 | 수동 재생 컨트롤을 제거하고 reduced motion 정지만 유지. 명사·조사 사이 2~5px 여유를 적용하고 인증 입력을 흰색·1px border·shadow 없음으로 평면화 | Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-058 | Resolved | Medium | Bug | 빠른 기록 패널이 실행 CTA 주변에 떠 화면 정중앙 요구와 다름 | visual viewport·safe area를 고려한 중앙 배치 필요 | 공용 FloatingPanel에 선택형 `viewport-center` 모드를 추가하고 빠른 기록 패널에만 적용. 기존 내부 스크롤과 고정 footer는 유지 | Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-059 | Resolved | Low | Decision | AI 실행 CTA의 시각적 구분이 약함 | Border Beam 적용 범위와 reduced motion 기준 결정 | 공용 BorderBeamButton에 colorful variant를 추가하고 경험 분석·추천 실행 CTA에만 적용. disabled·focus-visible·reduced motion 상태를 유지 | Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-060 | In Progress | High | Decision | 추천 활용 목적에 JD가 없고 DB constraint가 새 값을 허용하지 않음 | 타입·API·UI·기록 label과 실제 Supabase migration 적용 순서 결정 | 코드 전 계층에 `jd`를 추가하고 additive migration을 작성. 실제 project migration 적용과 로그인 세션 OpenAI·DB 저장·재조회 smoke test는 남음 | Track A + Track B | 2026-07-17 | - |
+| ISSUE-061 | Resolved | Low | Decision | checkbox 선택 피드백을 Animate UI 레퍼런스와 맞출 필요 | 실제 checkbox만 변경하고 radio·상태 아이콘을 보존할지 결정 | 실제 checkbox primitive에 check path, variant·size, hover·press와 reduced motion을 적용하고 Radix form·키보드 의미는 유지 | Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-062 | Resolved | Low | Decision | 추천 기록 상단 eyebrow가 메뉴와 중복되고 복사 버튼 텍스트가 과함 | 시각 텍스트 제거 후 접근성 상태 보존 방식 결정 | eyebrow를 제거하고 복사 버튼을 44px 아이콘 전용으로 변경. aria-label, 성공 status, 실패 alert는 유지 | Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-063 | Resolved | Medium | Decision | 여러 핵심 CTA의 눌림 피드백을 일관화할 필요 | Ripple 적용·제외 범위와 reduced motion 기준 결정 | 결과가 발생하는 CTA에 공용 RippleButton을 적용하고 인증·캘린더·탭·목록·메뉴·링크·닫기·삭제·숨기기는 제외. 키보드 중앙 ripple과 reduced motion 비활성화를 구현 | Codex | 2026-07-17 | 2026-07-17 |
 
 ## 이슈 추가 템플릿
 

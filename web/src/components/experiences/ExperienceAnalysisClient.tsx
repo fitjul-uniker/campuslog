@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
 import { ExperienceFollowupPanel } from "@/components/ai/ExperienceFollowupPanel";
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
@@ -153,7 +157,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
             </p>
           ) : null}
           <div className="panel-actions">
-            <button
+            <RippleButton
               className="button button-primary"
               type="button"
               onClick={handleAnalyze}
@@ -161,7 +165,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
             >
               <RefreshCcw className="button-icon" aria-hidden="true" />
               {isAnalyzing ? "분석 중..." : "다시 분석하기"}
-            </button>
+              <RippleButtonRipples />
+            </RippleButton>
             <Link
               href={`/experiences/${experience.id}`}
               className="button button-secondary"
@@ -203,7 +208,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
             ) : null}
 
             <div className="panel-actions">
-              <button
+              <RippleButton
                 className="button button-primary"
                 type="button"
                 onClick={handleAnalyze}
@@ -211,7 +216,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
               >
                 <Sparkles className="button-icon" aria-hidden="true" />
                 {isAnalyzing ? "분석 중..." : "AI 분석 요청"}
-              </button>
+                <RippleButtonRipples />
+              </RippleButton>
               <Link
                 href={`/experiences/${experience.id}`}
                 className="button button-secondary"

@@ -12,6 +12,10 @@ import { useEffect, useState } from "react";
 
 import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
 import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
+import {
   ANSWER_DRAFT_TYPE_LABELS,
   ANSWER_DRAFT_TYPES,
   countAnswerDraftCharacters,
@@ -46,6 +50,7 @@ const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
   cover_letter: "자기소개서",
   portfolio: "포트폴리오",
   interview: "면접",
+  jd: "JD",
   activity_application: "대외활동/지원서",
   other: "기타",
 };
@@ -209,7 +214,7 @@ function AnswerDraftViewer({
           </p>
         )}
 
-        <button
+        <RippleButton
           className="button button-secondary answer-draft-generate-button"
           type="button"
           disabled={isGenerating}
@@ -221,7 +226,8 @@ function AnswerDraftViewer({
             <FileText className="button-icon" aria-hidden="true" />
           )}
           {activeDraft ? `${activeLabel} 다시 생성` : `${activeLabel} 생성`}
-        </button>
+          <RippleButtonRipples />
+        </RippleButton>
 
         {copyStatus === "success" ? (
           <p className="copy-status" role="status">
@@ -265,7 +271,7 @@ function AnswerDraftViewer({
         (hasListContent(activeDraft.missingEvidenceNotes) ||
           hasListContent(activeDraft.cautions)) ? (
           <div className="answer-draft-followup-actions">
-            <button
+            <RippleButton
               className="button button-secondary"
               type="button"
               disabled={isGeneratingFollowup}
@@ -274,7 +280,8 @@ function AnswerDraftViewer({
               {isGeneratingFollowup
                 ? "질문 생성 중..."
                 : "초안 근거로 질문 만들기"}
-            </button>
+              <RippleButtonRipples />
+            </RippleButton>
             <Link
               href={`/experiences/${experienceId}/analysis`}
               className="recommendation-match-link answer-draft-followup-link"
@@ -912,7 +919,7 @@ export function RecommendationResult({
                 {matchedExperience && hasFollowupSignal ? (
                   <div className="recommendation-followup-actions">
                     {hasListContent(match.missingEvidence) ? (
-                      <button
+                      <RippleButton
                         className="button button-secondary"
                         type="button"
                         disabled={
@@ -930,10 +937,11 @@ export function RecommendationResult({
                         `${match.experienceId}:recommendation_missing_evidence:${match.rank}`
                           ? "질문 생성 중..."
                           : "부족 근거 질문 만들기"}
-                      </button>
+                        <RippleButtonRipples />
+                      </RippleButton>
                     ) : null}
                     {hasListContent(match.overclaimRisks) ? (
-                      <button
+                      <RippleButton
                         className="button button-secondary"
                         type="button"
                         disabled={
@@ -951,7 +959,8 @@ export function RecommendationResult({
                         `${match.experienceId}:recommendation_overclaim_risk:${match.rank}`
                           ? "질문 생성 중..."
                           : "과장 주의 질문 만들기"}
-                      </button>
+                        <RippleButtonRipples />
+                      </RippleButton>
                     ) : null}
                   </div>
                 ) : null}
@@ -1028,8 +1037,9 @@ export function RecommendationResult({
         <div className="recommendation-section-heading">
           <h3>참고 문장</h3>
           <CopyButton
-            className="button button-secondary"
+            className="button button-secondary recommendation-copy-button"
             content={result.draftSentence}
+            size="icon"
             onCopiedChange={(copied) =>
               setCopyStatus(copied ? "success" : "idle")
             }

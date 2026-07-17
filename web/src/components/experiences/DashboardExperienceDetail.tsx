@@ -86,6 +86,7 @@ export function DashboardExperienceDetail({
     <BorderBeamButton
       className="dashboard-detail-action dashboard-analysis-request"
       wrapperClassName="dashboard-analysis-request-wrap"
+      colorVariant="colorful"
       type="button"
       onClick={onAnalyze}
       disabled={isAnalyzing}
