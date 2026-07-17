@@ -32,6 +32,36 @@ export const ANSWER_DRAFT_TARGET_GUIDES: Record<AnswerDraftType, string> = {
   portfolio: "프로젝트/활동 설명용 포트폴리오 문단",
 };
 
+export const ANSWER_DRAFT_CHARACTER_LIMITS: Partial<
+  Record<AnswerDraftType, { min: number; max: number }>
+> = {
+  cover_letter_500: { min: 430, max: 500 },
+  cover_letter_800: { min: 700, max: 800 },
+  cover_letter_1000: { min: 900, max: 1000 },
+};
+
+export function countAnswerDraftCharacters(value: string): number {
+  return Array.from(value).length;
+}
+
+export function getAnswerDraftCharacterLimit(
+  type: AnswerDraftType,
+): { min: number; max: number } | null {
+  return ANSWER_DRAFT_CHARACTER_LIMITS[type] ?? null;
+}
+
+export function isAnswerDraftWithinCharacterLimit(draft: AnswerDraft): boolean {
+  const limit = getAnswerDraftCharacterLimit(draft.type);
+
+  if (!limit) {
+    return true;
+  }
+
+  const characterCount = countAnswerDraftCharacters(draft.content);
+
+  return characterCount >= limit.min && characterCount <= limit.max;
+}
+
 function normalizeText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }

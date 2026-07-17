@@ -24,6 +24,7 @@ import {
   getTrackedActivities,
   getTrackedActivityById,
   linkGeneratedExperience,
+  restoreExperienceFollowup,
   saveAnalysisResult,
   saveAnswerDraftResult,
   saveExperienceFollowup,
@@ -225,6 +226,7 @@ export type CampusLogRepository = {
       answer: string,
     ): Promise<ExperienceFollowup | null>;
     dismiss(followupId: string): Promise<ExperienceFollowup | null>;
+    restore(followupId: string): Promise<ExperienceFollowup | null>;
   };
   trackedActivities: {
     list(): Promise<TrackedActivity[]>;
@@ -480,6 +482,37 @@ function normalizeDailyLogInput(input: DailyLogInput) {
     date: input.date.trim(),
     content: input.content.trim(),
   };
+}
+
+function isDateKey(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function canWriteDailyLogForActivity(
+  activity: TrackedActivity,
+  date: string,
+): boolean {
+  if (!isDateKey(date) || date < activity.startDate || date > getLocalDateString()) {
+    return false;
+  }
+
+  if (activity.status === "planned") {
+    return false;
+  }
+
+  if (activity.status === "completed") {
+    if (date >= getLocalDateString()) {
+      return false;
+    }
+
+    const completedDate = activity.completedAt
+      ? normalizeDate(activity.completedAt)
+      : activity.expectedEndDate;
+
+    return completedDate !== null && completedDate !== "" && date <= completedDate;
+  }
+
+  return !activity.expectedEndDate || date <= activity.expectedEndDate;
 }
 
 async function refreshActivitySynthesisAfterLogChange(
@@ -936,6 +969,35 @@ function createSupabaseCampusLogRepository(
         throwIfError(error);
         return toExperienceFollowup(data as ExperienceFollowupRow);
       },
+      async restore(followupId) {
+        const { data: currentData, error: currentError } = await supabase
+          .from("experience_followups")
+          .select("*")
+          .eq("id", followupId)
+          .maybeSingle();
+        throwIfError(currentError);
+
+        if (!currentData) {
+          return null;
+        }
+
+        const currentFollowup = toExperienceFollowup(
+          currentData as ExperienceFollowupRow,
+        );
+        const status = getFollowupStatus(
+          currentFollowup.questions,
+          currentFollowup.answers,
+          "open",
+        );
+        const { data, error } = await supabase
+          .from("experience_followups")
+          .update({ status })
+          .eq("id", followupId)
+          .select("*")
+          .single();
+        throwIfError(error);
+        return toExperienceFollowup(data as ExperienceFollowupRow);
+      },
     },
     trackedActivities: {
       async list() {
@@ -969,13 +1031,21 @@ function createSupabaseCampusLogRepository(
         }
 
         const today = getLocalDateString();
+        const expectedEndDate = normalizedInput.expected_end_date;
+        const isPastEndedActivity =
+          expectedEndDate !== null && expectedEndDate < today;
+        const status: TrackedActivity["status"] = isPastEndedActivity
+          ? "completed"
+          : normalizedInput.start_date > today
+            ? "planned"
+            : "active";
         const { data, error } = await supabase
           .from("tracked_activities")
           .insert({
             id: createId("activity"),
             ...normalizedInput,
-            status: normalizedInput.start_date > today ? "planned" : "active",
-            completed_at: null,
+            status,
+            completed_at: isPastEndedActivity ? expectedEndDate : null,
             generated_experience_id: null,
             synthesis_status: "idle",
           })
@@ -1025,14 +1095,6 @@ function createSupabaseCampusLogRepository(
           return currentActivity;
         }
 
-        if (
-          currentActivity.status === "completed" &&
-          status === "active" &&
-          currentActivity.generatedExperienceId
-        ) {
-          return null;
-        }
-
         const completedDate =
           status === "completed"
             ? normalizeDate(completedAt?.trim() || getLocalDateString())
@@ -1050,6 +1112,10 @@ function createSupabaseCampusLogRepository(
           .update({
             status,
             completed_at: completedDate,
+            generated_experience_id:
+              currentActivity.status === "completed" && status === "active"
+                ? null
+                : currentActivity.generatedExperienceId || null,
             synthesis_status:
               currentActivity.status === "completed" && status === "active"
                 ? "idle"
@@ -1102,11 +1168,26 @@ function createSupabaseCampusLogRepository(
         return toTrackedActivity(data as TrackedActivityRow);
       },
       async delete(id) {
+        const activity = await this.getById(id);
+
+        if (!activity) {
+          return false;
+        }
+
         const { error } = await supabase
           .from("tracked_activities")
           .delete()
           .eq("id", id);
         throwIfError(error);
+
+        if (activity.generatedExperienceId) {
+          const { error: experienceError } = await supabase
+            .from("experiences")
+            .delete()
+            .eq("id", activity.generatedExperienceId);
+          throwIfError(experienceError);
+        }
+
         return true;
       },
     },
@@ -1150,6 +1231,17 @@ function createSupabaseCampusLogRepository(
           return null;
         }
 
+        const activity = await createSupabaseCampusLogRepository(
+          supabase,
+        ).trackedActivities.getById(normalizedInput.activity_id);
+
+        if (
+          !activity ||
+          !canWriteDailyLogForActivity(activity, normalizedInput.date)
+        ) {
+          return null;
+        }
+
         const { data, error } = await supabase
           .from("daily_logs")
           .insert({
@@ -1187,6 +1279,21 @@ function createSupabaseCampusLogRepository(
         }
 
         const currentLog = toDailyLog(currentData as DailyLogRow);
+        const repository = createSupabaseCampusLogRepository(supabase);
+        const [sourceActivity, targetActivity] = await Promise.all([
+          repository.trackedActivities.getById(currentLog.activityId),
+          repository.trackedActivities.getById(normalizedInput.activity_id),
+        ]);
+
+        if (
+          !sourceActivity ||
+          !canWriteDailyLogForActivity(sourceActivity, currentLog.date) ||
+          !targetActivity ||
+          !canWriteDailyLogForActivity(targetActivity, normalizedInput.date)
+        ) {
+          return null;
+        }
+
         const { data, error } = await supabase
           .from("daily_logs")
           .update(normalizedInput)
@@ -1213,6 +1320,14 @@ function createSupabaseCampusLogRepository(
         }
 
         const currentLog = toDailyLog(currentData as DailyLogRow);
+        const activity = await createSupabaseCampusLogRepository(
+          supabase,
+        ).trackedActivities.getById(currentLog.activityId);
+
+        if (!activity || !canWriteDailyLogForActivity(activity, currentLog.date)) {
+          return false;
+        }
+
         const { error } = await supabase.from("daily_logs").delete().eq("id", id);
         throwIfError(error);
         await refreshActivitySynthesisAfterLogChange(supabase, [
@@ -1329,6 +1444,7 @@ export function createLocalCampusLogRepository(): CampusLogRepository {
       answerQuestion: async (followupId, questionId, answer) =>
         answerExperienceFollowupQuestion(followupId, questionId, answer),
       dismiss: async (followupId) => dismissExperienceFollowup(followupId),
+      restore: async (followupId) => restoreExperienceFollowup(followupId),
     },
     trackedActivities: {
       list: async () => getTrackedActivities(),

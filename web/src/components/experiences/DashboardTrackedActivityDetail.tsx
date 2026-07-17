@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CalendarDays, NotebookPen, X } from "lucide-react";
+import { ArrowRight, CalendarDays, NotebookPen, Trash2, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import {
@@ -17,12 +17,14 @@ type DashboardTrackedActivityDetailProps = {
   activity: TrackedActivity;
   logs: DailyLog[];
   onClose: () => void;
+  onDelete: (activity: TrackedActivity, logCount: number) => void;
 };
 
 export function DashboardTrackedActivityDetail({
   activity,
   logs,
   onClose,
+  onDelete,
 }: DashboardTrackedActivityDetailProps) {
   const shouldReduceMotion = useReducedMotion();
   const titleId = `${DASHBOARD_EXPERIENCE_DETAIL_ID}-title`;
@@ -118,6 +120,14 @@ export function DashboardTrackedActivityDetail({
       </div>
 
       <div className="dashboard-detail-actions">
+        <button
+          type="button"
+          className="dashboard-detail-action"
+          onClick={() => onDelete(activity, logs.length)}
+        >
+          활동 삭제
+          <Trash2 aria-hidden="true" />
+        </button>
         <Link
           href={`/activities/${activity.id}`}
           className="dashboard-detail-action dashboard-detail-action-primary"
