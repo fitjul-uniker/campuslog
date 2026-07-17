@@ -34,11 +34,13 @@
 - 2026-07-14: `feature/ai-recommendation-v2`에서 `/api/recommend` structured output과 prompt를 추천 v2로 확장. 문항 / JD 요구사항을 `extractedRequirements`로 구조화하고 분석 v2의 STAR, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 활용해 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 반환·저장·표시. 기존 v1 추천 필드는 유지하고 v1 저장 결과는 기본값으로 보정해 읽도록 처리.
 - 2026-07-14: `feature/ai-answer-drafts`에서 `/api/answer-drafts` structured output과 prompt를 추가. 추천 v2의 선택 match, extractedRequirements, 경험 원본, 분석 v2 결과를 활용해 사용자가 고른 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 초안을 생성·저장·표시. 초안은 추천에 사용된 원 질문 / 문항 / JD / 면접 질문을 직접 답하도록 생성. 원본에 없는 사실은 본문에 넣지 않고 `missingEvidenceNotes` 또는 `cautions`로 분리. 초안은 별도 `answer_drafts` table과 `campuslog:v1:answer-drafts` localStorage key에 type별로 누적 저장해 기존 추천 v1/v2 기록 하위 호환을 유지.
 - 2026-07-14: `feature/ai-evidence-followup`에서 `/api/evidence-followups` 보완 질문 생성, `experience_followups` table / `campuslog:v1:experience-followups` 저장소, 분석 화면의 질문 생성 / 답변 저장 / 수정 / dismiss / 보완 답변 기반 재분석 CTA를 구현. 보완 답변은 원본 경험을 자동 수정하지 않고 answered followup을 `/api/analyze` 재분석 context로만 전달하며, 분석 evidence에는 `followupAnswers` 출처로 구분. 답변 저장 후 기존 분석이 있던 경험은 `needs_reanalysis`로 표시하고 추천 / 답변 초안 화면은 stale 가능성을 안내.
+- 2026-07-17: 팀 테스트를 위해 Supabase Auth 관리자 API 기반 `npm run seed:test-users` 스크립트를 추가. 기본 계정은 `test1@campuslog.test` ~ `test9@campuslog.test`, 비밀번호는 `test1111` ~ `test9999`이며 `campuslog_profile` metadata를 함께 설정. 사용자가 실제 Supabase project에 9개 계정이 모두 `created`로 생성된 것을 확인. 더미 경험·활동 데이터 주입은 아직 수행하지 않음.
 
 ### High
 
 - [x] Supabase project / 환경 변수 / 개발·배포 환경 정책 확정
 - [x] 이메일 또는 이에 준하는 아이디 + 비밀번호 로그인·회원가입·로그아웃·세션 복구 구현
+- [x] 팀 테스트용 이메일/비밀번호 계정 9개 생성 스크립트와 실제 Supabase Auth 계정 생성 (`ISSUE-064`)
 - [x] Google OAuth provider, callback URL, 로그인 후 redirect 구현
 - [x] 보호 라우트와 로그인 후 원래 화면 복귀 구현
 - [x] 이메일·Google 회원가입의 이름·닉네임 Stepper와 OAuth 후 온보딩 복귀 구현 (`ISSUE-037`)
@@ -143,6 +145,7 @@
 - [ ] 데스크톱·모바일 핵심 E2E 시나리오 작성
 - [x] 다른 사용자 데이터 접근 방지 UI smoke test
 - [ ] Vercel + Supabase preview 환경 통합 확인
+- [ ] 테스트 계정별 더미 경험·활동·기록 데이터 seed 필요 여부 결정
 
 ## Existing open risks
 
