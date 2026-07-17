@@ -980,18 +980,29 @@ export async function POST(request: Request) {
         evidenceOptions,
       );
 
-      if (
-        !repairedAnswerDrafts ||
-        getAnswerDraftLengthIssue(repairedAnswerDrafts, body.draftType)
-      ) {
+      if (!repairedAnswerDrafts) {
         return createErrorResponse(
           "OPENAI_API_ERROR",
-          "답변 초안 분량이 선택한 글자 수 범위에 맞지 않습니다. 다시 시도해주세요.",
+          "답변 초안 분량을 맞추지 못했습니다. 다시 시도해주세요.",
           502,
         );
       }
 
       answerDrafts = repairedAnswerDrafts;
+
+      const repairedLengthIssue = getAnswerDraftLengthIssue(
+        repairedAnswerDrafts,
+        body.draftType,
+      );
+
+      if (repairedLengthIssue) {
+        console.warn("CampusLog answer draft length repair out of range", {
+          draftType: body.draftType,
+          characterCount: repairedLengthIssue.count,
+          minimum: repairedLengthIssue.min,
+          maximum: repairedLengthIssue.max,
+        });
+      }
     }
 
     return NextResponse.json<AnswerDraftsResponse>({
