@@ -63,6 +63,34 @@ function normalizeCompletedDateKey(completedAt: string): string {
     : getLocalDateKey(completedTimestamp);
 }
 
+export function isActivityRecordableOnDate(
+  activity: TrackedActivity,
+  dateKey: string,
+  todayKey = getLocalDateKey(),
+): boolean {
+  if (!parseLocalDate(dateKey) || dateKey > todayKey || dateKey < activity.startDate) {
+    return false;
+  }
+
+  if (activity.status === "planned") {
+    return false;
+  }
+
+  if (activity.status === "completed") {
+    if (dateKey >= todayKey) {
+      return false;
+    }
+
+    const completedDate = activity.completedAt
+      ? normalizeCompletedDateKey(activity.completedAt)
+      : activity.expectedEndDate;
+
+    return Boolean(completedDate) && dateKey <= completedDate;
+  }
+
+  return !activity.expectedEndDate || dateKey <= activity.expectedEndDate;
+}
+
 export function getActivityDateRange(activity: TrackedActivity): string {
   const start = formatDateKey(activity.startDate);
 
@@ -72,7 +100,11 @@ export function getActivityDateRange(activity: TrackedActivity): string {
   }
 
   if (activity.expectedEndDate) {
-    return `${start} – ${formatDateKey(activity.expectedEndDate)} 예정`;
+    const suffix =
+      activity.status === "planned" || activity.expectedEndDate >= getLocalDateKey()
+        ? " 예정"
+        : "";
+    return `${start} – ${formatDateKey(activity.expectedEndDate)}${suffix}`;
   }
 
   return `${start}부터`;

@@ -2376,22 +2376,35 @@ h2 {
 .followup-question {
   display: grid;
   min-width: 0;
-  gap: 12px;
+  gap: 10px;
   margin-top: 16px;
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
+}
+
+.followup-question-prompt {
+  min-width: 0;
 }
 
 .followup-question h4 {
   font-size: 0.98rem;
 }
 
-.followup-question p {
+.followup-question-support {
+  border-left: 3px solid rgba(36, 34, 31, 0.14);
+  padding-left: 10px;
+}
+
+.followup-question-support p {
   margin: 8px 0 0;
   color: var(--color-text-muted);
   line-height: 1.7;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.followup-question-support p:first-child {
+  margin-top: 0;
 }
 
 .followup-answer-input {
@@ -2442,7 +2455,8 @@ h2 {
   white-space: pre-wrap;
 }
 
-.followup-dismiss-button {
+.followup-dismiss-button,
+.followup-restore-button {
   width: fit-content;
   margin-top: 14px;
 }
@@ -2807,7 +2821,8 @@ h2 {
     flex-direction: column;
   }
 
-  .followup-dismiss-button {
+  .followup-dismiss-button,
+  .followup-restore-button {
     width: 100%;
   }
 }
@@ -4877,6 +4892,14 @@ h2 {
   line-height: 1.45;
 }
 
+.answer-draft-heading .answer-draft-character-count {
+  color: #4f4f49;
+}
+
+.answer-draft-heading .answer-draft-character-count.is-out-of-range {
+  color: #8f352f;
+}
+
 .answer-draft-content {
   margin: 0;
   color: #272724;
@@ -5480,7 +5503,11 @@ h2 {
 }
 
 .activity-summary-list li {
+  display: grid;
   min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
 }
 
 .activity-summary-list a {
@@ -5512,6 +5539,35 @@ h2 {
 .activity-active-list a {
   min-height: 62px;
   grid-template-columns: minmax(0, 1fr);
+}
+
+.activity-summary-delete-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--activity-muted);
+  cursor: pointer;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.activity-summary-delete-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.activity-summary-delete-button:hover,
+.activity-summary-delete-button:focus-visible {
+  border-color: rgba(143, 53, 47, 0.18);
+  background: rgba(143, 53, 47, 0.08);
+  color: #8f352f;
+  outline: none;
 }
 
 .activity-summary-title {
@@ -5630,6 +5686,13 @@ h2 {
   list-style: none;
 }
 
+.activity-planned-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .activity-planned-list a {
   display: flex;
   min-height: 44px;
@@ -5652,6 +5715,35 @@ h2 {
 .activity-planned-list a span:last-child {
   color: var(--activity-muted);
   font-size: 0.8rem;
+}
+
+.activity-planned-delete-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--activity-muted);
+  cursor: pointer;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.activity-planned-delete-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.activity-planned-delete-button:hover,
+.activity-planned-delete-button:focus-visible {
+  border-color: rgba(143, 53, 47, 0.18);
+  background: rgba(143, 53, 47, 0.08);
+  color: #8f352f;
+  outline: none;
 }
 
 .activity-dashboard-grid {
@@ -6038,17 +6130,29 @@ h2 {
   --activity-focus: var(--color-focus);
 }
 
+.activity-floating-record-panel .floating-panel-body {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .activity-floating-record-form {
   display: flex;
   min-height: 0;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0;
 }
 
 .activity-floating-record-fields {
   display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
   gap: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 19px 20px 16px;
+  scrollbar-gutter: stable;
 }
 
 .activity-floating-record-form .activity-textarea-field textarea {
@@ -6066,6 +6170,8 @@ h2 {
   position: sticky;
   bottom: 0;
   display: flex;
+  z-index: 1;
+  flex: 0 0 auto;
   justify-content: flex-end;
   gap: 9px;
   border-top: 1px solid #ece9e4;
@@ -7232,11 +7338,29 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .activity-summary-list li {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-summary-delete-button {
+    width: 100%;
+    min-height: 44px;
+  }
+
   .activity-overview-empty,
   .activity-planned-list a,
   .activity-day-empty {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .activity-planned-list li {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-planned-delete-button {
+    width: 100%;
+    min-height: 44px;
   }
 
   .activity-calendar-header,

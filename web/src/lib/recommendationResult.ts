@@ -39,14 +39,9 @@ function normalizeScore(value: unknown): number {
   return Math.min(100, Math.max(0, Math.round(numericValue)));
 }
 
-function normalizeFitLevel(
-  value: unknown,
+export function getRecommendationFitLevelFromScore(
   score: number,
 ): RecommendationFitLevel {
-  if (value === "high" || value === "medium" || value === "low") {
-    return value;
-  }
-
   if (score >= 75) {
     return "high";
   }
@@ -133,7 +128,7 @@ export function normalizeRecommendationMatch(
     experienceTitle,
     rank,
     score,
-    fitLevel: normalizeFitLevel(candidate.fitLevel, score),
+    fitLevel: getRecommendationFitLevelFromScore(score),
     matchReason,
     matchedEvidence: normalizeStringList(candidate.matchedEvidence, 6),
     missingEvidence: normalizeStringList(candidate.missingEvidence, 6),

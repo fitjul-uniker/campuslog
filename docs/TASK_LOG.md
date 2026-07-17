@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-17 - QA 버그 안정화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-17 |
+| 작업자 | Codex |
+| 작업 요약 | 기록 보완 질문, 답변 초안 분량, 활동 상태·삭제·복원·기록 가능 날짜, 추천 점수 등급, 오늘 한 일 팝업 스크롤 관련 QA 버그 수정 |
+| 수정한 파일 | `web/src/components/ai/ExperienceFollowupPanel.tsx`, `web/src/lib/storage.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/lib/answerDraftResult.ts`, `web/src/app/api/answer-drafts/route.ts`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/lib/recommendationResult.ts`, `web/src/app/api/recommend/route.ts`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/activities/activityViewUtils.ts`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/DashboardTrackedActivityDetail.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 보완 질문 답변 저장 후 다른 질문의 미저장 draft가 유지되도록 병합 로직을 추가하고, 질문 바로 아래에 답변 입력·저장 영역을 배치. 숨긴 보완 질문 복원 repository 메서드와 `질문 복원` 버튼을 추가. 자기소개서 초안 type별 글자 수 범위를 정의하고 API에서 범위 밖 초안을 교정 요청으로 보정하며 화면에 실제 글자 수를 표시. 완료 활동 복원 액션과 활동 상태별 삭제 액션을 추가하고, 삭제 시 연결된 날짜별 기록·합성 초안·완료 경험·AI 결과 삭제 범위를 확인 문구에 포함. 과거 종료일 활동은 생성 시 완료 상태로 저장하고 기간 label의 잘못된 `예정` 표시를 제거. 오늘의 기록은 선택 날짜 기준으로 실제 활동 기간 안의 활동만 선택·저장할 수 있게 제한. 활동 타임라인 날짜에 연도·월·일·요일을 표시하고, 활동 종료 시 사용자가 입력한 예상 종료일을 보존. 추천 등급은 모델 반환값 대신 score 기준으로 계산. 오늘 한 일 남기기 플로팅 패널은 입력 영역 내부 스크롤과 하단 저장 버튼 고정으로 작은 화면에서도 저장 버튼에 접근할 수 있게 수정 |
+| 검증한 내용 | `npm run lint`, `npm run build` 통과 |
+| 남은 작업 | 실제 로그인 세션과 Supabase 저장소에서 보완 질문 복원, 활동 삭제 cascade, 완료 활동 복원, 날짜별 기록 제한, 답변 초안 실제 OpenAI 생성 분량 보정, 작은 화면 팝업 스크롤을 브라우저로 회귀 확인 필요 |
+| 관련 커밋 메시지 | `fix: stabilize QA bug flows` |
+
 ### 2026-07-14 - AI 기록 보완 루프 구현
 
 | 항목 | 내용 |

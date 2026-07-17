@@ -14,6 +14,8 @@ import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
 import {
   ANSWER_DRAFT_TYPE_LABELS,
   ANSWER_DRAFT_TYPES,
+  countAnswerDraftCharacters,
+  getAnswerDraftCharacterLimit,
 } from "@/lib/answerDraftResult";
 import { requestAnswerDrafts } from "@/lib/answerDraftApi";
 import { formatDateTime } from "@/lib/date";
@@ -120,6 +122,15 @@ function AnswerDraftViewer({
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const activeDraft = findDraftByType(draftResult, selectedType);
   const activeLabel = ANSWER_DRAFT_TYPE_LABELS[selectedType];
+  const activeCharacterLimit = getAnswerDraftCharacterLimit(selectedType);
+  const activeCharacterCount = activeDraft
+    ? countAnswerDraftCharacters(activeDraft.content)
+    : 0;
+  const isActiveDraftWithinCharacterLimit =
+    !activeDraft ||
+    !activeCharacterLimit ||
+    (activeCharacterCount >= activeCharacterLimit.min &&
+      activeCharacterCount <= activeCharacterLimit.max);
 
   useEffect(() => {
     setCopyStatus("idle");
@@ -164,6 +175,17 @@ function AnswerDraftViewer({
               {activeDraft?.targetGuide ??
                 `아직 생성하지 않은 ${activeLabel} 초안`}
             </p>
+            {activeDraft && activeCharacterLimit ? (
+              <p
+                className={
+                  isActiveDraftWithinCharacterLimit
+                    ? "answer-draft-character-count"
+                    : "answer-draft-character-count is-out-of-range"
+                }
+              >
+                공백 포함 {activeCharacterCount}자
+              </p>
+            ) : null}
           </div>
           {activeDraft ? (
             <CopyButton

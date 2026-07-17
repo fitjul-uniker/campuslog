@@ -147,7 +147,8 @@ const recommendationV2ResponseSchema = {
           fitLevel: {
             type: "string",
             enum: ["high", "medium", "low"],
-            description: "적합도 수준",
+            description:
+              "점수 기준 적합도 수준. score >= 75는 high, score >= 45는 medium, 그 미만은 low",
           },
           matchReason: {
             type: "string",
@@ -418,6 +419,7 @@ function createRecommendationPrompt(body: RecommendRequest): string {
       matchingGuidelines: [
         `matches는 정확히 ${topMatchCount}개를 반환합니다. 경험이 3개 이상이면 반드시 3개입니다.`,
         "rank는 1부터 시작하며 중복하지 않습니다.",
+        "fitLevel은 score 기준으로만 정합니다. score >= 75는 high, score >= 45는 medium, 그 미만은 low입니다.",
         "제목 유사도만 보지 말고 목적, 질문, 역할, 성과, 분석 태그, 키워드, STAR, 원본 evidence를 함께 판단합니다.",
         "분석 v2가 있으면 star, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 우선 활용합니다.",
         "분석이 없거나 오래되었으면 원본 description, achievements, role, relatedLinks 설명을 fallback 근거로 사용합니다.",

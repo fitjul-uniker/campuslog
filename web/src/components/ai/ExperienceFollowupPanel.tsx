@@ -68,6 +68,32 @@ function createDraftAnswers(
   }, {});
 }
 
+function mergeSavedAnswersIntoDrafts(
+  currentDrafts: Record<string, string>,
+  followups: ExperienceFollowup[],
+  overwriteKeys: string[] = [],
+): Record<string, string> {
+  const savedDrafts = createDraftAnswers(followups);
+  const keysToOverwrite = new Set(overwriteKeys);
+
+  return Object.entries(savedDrafts).reduce(
+    (nextDrafts, [answerKey, savedAnswer]) => {
+      if (
+        keysToOverwrite.has(answerKey) ||
+        currentDrafts[answerKey] === undefined
+      ) {
+        return {
+          ...nextDrafts,
+          [answerKey]: savedAnswer,
+        };
+      }
+
+      return nextDrafts;
+    },
+    { ...currentDrafts },
+  );
+}
+
 export function ExperienceFollowupPanel({
   experience,
   analysis,
@@ -81,6 +107,7 @@ export function ExperienceFollowupPanel({
   const [isGenerating, setIsGenerating] = useState(false);
   const [savingAnswerKey, setSavingAnswerKey] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const hasAnalysisGaps = Boolean(analysis?.evidenceGaps.length);
@@ -169,7 +196,9 @@ export function ExperienceFollowupPanel({
         ...followups.filter((followup) => followup.id !== savedFollowup.id),
       ];
       setFollowups(nextFollowups);
-      setDraftAnswers(createDraftAnswers(nextFollowups));
+      setDraftAnswers((currentDrafts) =>
+        mergeSavedAnswersIntoDrafts(currentDrafts, nextFollowups),
+      );
       setMessage("보완 질문을 생성했습니다.");
     } catch (error) {
       console.error("CampusLog followup save failed", error);
@@ -210,7 +239,9 @@ export function ExperienceFollowupPanel({
         followup.id === savedFollowup.id ? savedFollowup : followup,
       );
       setFollowups(nextFollowups);
-      setDraftAnswers(createDraftAnswers(nextFollowups));
+      setDraftAnswers((currentDrafts) =>
+        mergeSavedAnswersIntoDrafts(currentDrafts, nextFollowups, [answerKey]),
+      );
       setMessage("보완 답변을 저장했습니다.");
       onFollowupsChanged();
     } catch (error) {
@@ -247,6 +278,38 @@ export function ExperienceFollowupPanel({
       setError(getErrorMessage(error, "보완 질문 처리 중 문제가 발생했습니다."));
     } finally {
       setDismissingId(null);
+    }
+  }
+
+  async function handleRestore(followupId: string) {
+    setRestoringId(followupId);
+    setError("");
+    setMessage("");
+
+    try {
+      const repository = getCampusLogRepository();
+      const restoredFollowup =
+        await repository.experienceFollowups.restore(followupId);
+
+      if (!restoredFollowup) {
+        setError("숨긴 보완 질문을 복원하지 못했습니다.");
+        return;
+      }
+
+      setFollowups((currentFollowups) =>
+        currentFollowups.map((followup) =>
+          followup.id === restoredFollowup.id ? restoredFollowup : followup,
+        ),
+      );
+      setDraftAnswers((currentDrafts) =>
+        mergeSavedAnswersIntoDrafts(currentDrafts, [restoredFollowup]),
+      );
+      setMessage("숨긴 보완 질문을 복원했습니다.");
+    } catch (error) {
+      console.error("CampusLog followup restore failed", error);
+      setError(getErrorMessage(error, "보완 질문 복원 중 문제가 발생했습니다."));
+    } finally {
+      setRestoringId(null);
     }
   }
 
@@ -348,15 +411,11 @@ export function ExperienceFollowupPanel({
 
                 return (
                   <div className="followup-question" key={question.id}>
-                    <div>
+                    <div className="followup-question-prompt">
                       <span>
                         {TARGET_EVIDENCE_LABELS[question.targetEvidenceType]}
                       </span>
                       <h4>{question.question}</h4>
-                      <p>{question.reason}</p>
-                      {question.caution ? (
-                        <p className="analysis-caution">{question.caution}</p>
-                      ) : null}
                     </div>
 
                     {followup.status === "dismissed" ? (
@@ -403,11 +462,28 @@ export function ExperienceFollowupPanel({
                         </div>
                       </>
                     )}
+
+                    <div className="followup-question-support">
+                      <p>{question.reason}</p>
+                      {question.caution ? (
+                        <p className="analysis-caution">{question.caution}</p>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}
 
-              {followup.status !== "dismissed" ? (
+              {followup.status === "dismissed" ? (
+                <button
+                  className="button button-secondary followup-restore-button"
+                  type="button"
+                  onClick={() => handleRestore(followup.id)}
+                  disabled={restoringId === followup.id}
+                >
+                  <RefreshCcw className="button-icon" aria-hidden="true" />
+                  {restoringId === followup.id ? "복원 중..." : "질문 복원"}
+                </button>
+              ) : (
                 <button
                   className="button button-ghost followup-dismiss-button"
                   type="button"
@@ -417,7 +493,7 @@ export function ExperienceFollowupPanel({
                   <X className="button-icon" aria-hidden="true" />
                   {dismissingId === followup.id ? "처리 중..." : "질문 숨기기"}
                 </button>
-              ) : null}
+              )}
             </article>
           ))}
         </div>

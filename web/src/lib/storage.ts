@@ -690,11 +690,27 @@ function canWriteDailyLogForActivity(
   activity: TrackedActivity,
   date: string,
 ): boolean {
-  return (
-    activity.status === "active" &&
-    date >= activity.startDate &&
-    date <= getLocalDateString()
-  );
+  if (date < activity.startDate || date > getLocalDateString()) {
+    return false;
+  }
+
+  if (activity.status === "planned") {
+    return false;
+  }
+
+  if (activity.status === "completed") {
+    if (date >= getLocalDateString()) {
+      return false;
+    }
+
+    const completedDate = activity.completedAt
+      ? normalizeCompletedDate(activity.completedAt)
+      : activity.expectedEndDate;
+
+    return completedDate !== null && completedDate !== "" && date <= completedDate;
+  }
+
+  return !activity.expectedEndDate || date <= activity.expectedEndDate;
 }
 
 function getLocalDateString(date = new Date()): string {
@@ -1147,6 +1163,36 @@ export function dismissExperienceFollowup(
     : null;
 }
 
+export function restoreExperienceFollowup(
+  followupId: string,
+): ExperienceFollowup | null {
+  const followups = readStoredExperienceFollowups();
+  const currentFollowup = followups.find((followup) => followup.id === followupId);
+
+  if (!currentFollowup) {
+    return null;
+  }
+
+  const updatedFollowup: ExperienceFollowup = {
+    ...currentFollowup,
+    status: getFollowupStatus(
+      currentFollowup.questions,
+      currentFollowup.answers,
+      "open",
+    ),
+    updatedAt: createIsoTimestamp(),
+  };
+
+  return writeJson(
+    STORAGE_KEYS.experienceFollowups,
+    followups.map((followup) =>
+      followup.id === followupId ? updatedFollowup : followup,
+    ),
+  )
+    ? updatedFollowup
+    : null;
+}
+
 export function getTrackedActivities(): TrackedActivity[] {
   return sortActivitiesByUpdatedDesc(readStoredTrackedActivities());
 }
@@ -1167,12 +1213,19 @@ export function createTrackedActivity(
   }
 
   const timestamp = createIsoTimestamp();
+  const today = getLocalDateString();
+  const isPastEndedActivity =
+    normalizedInput.expectedEndDate !== "" && normalizedInput.expectedEndDate < today;
+  const status: ActivityStatus = isPastEndedActivity
+    ? "completed"
+    : normalizedInput.startDate > today
+      ? "planned"
+      : "active";
   const activity: TrackedActivity = {
     id: createId("activity"),
     ...normalizedInput,
-    status:
-      normalizedInput.startDate > getLocalDateString() ? "planned" : "active",
-    completedAt: "",
+    status,
+    completedAt: isPastEndedActivity ? normalizedInput.expectedEndDate : "",
     generatedExperienceId: "",
     synthesisStatus: "idle",
     createdAt: timestamp,
@@ -1300,14 +1353,6 @@ export function setTrackedActivityStatus(
     return null;
   }
 
-  if (
-    currentActivity.status === "completed" &&
-    status === "active" &&
-    currentActivity.generatedExperienceId
-  ) {
-    return null;
-  }
-
   const timestamp = createIsoTimestamp();
   const normalizedCompletedAt =
     status === "completed"
@@ -1317,8 +1362,7 @@ export function setTrackedActivityStatus(
   if (
     status === "completed" &&
     (!normalizedCompletedAt ||
-      normalizedCompletedAt < currentActivity.startDate ||
-      normalizedCompletedAt > getLocalDateString())
+      normalizedCompletedAt < currentActivity.startDate)
   ) {
     return null;
   }
@@ -1327,6 +1371,10 @@ export function setTrackedActivityStatus(
     ...currentActivity,
     status,
     completedAt: normalizedCompletedAt ?? "",
+    generatedExperienceId:
+      currentActivity.status === "completed" && status === "active"
+        ? ""
+        : currentActivity.generatedExperienceId,
     synthesisStatus:
       currentActivity.status === "completed" && status === "active"
         ? "idle"
@@ -1495,17 +1543,57 @@ export function createExperienceFromActivity(
 
 export function deleteTrackedActivity(id: string): boolean {
   const activities = readStoredTrackedActivities();
+  const activityToDelete = activities.find((activity) => activity.id === id);
 
-  if (!activities.some((activity) => activity.id === id)) {
+  if (!activityToDelete) {
     return false;
   }
 
   const nextActivities = activities.filter((activity) => activity.id !== id);
   const nextLogs = readStoredDailyLogs().filter((log) => log.activityId !== id);
   const nextDrafts = readStoredSynthesisDrafts();
+  const generatedExperienceId = activityToDelete.generatedExperienceId;
   delete nextDrafts[id];
 
+  if (!generatedExperienceId) {
+    return writeJsonTransaction([
+      [STORAGE_KEYS.trackedActivities, sortActivitiesByUpdatedDesc(nextActivities)],
+      [STORAGE_KEYS.dailyLogs, sortDailyLogs(nextLogs)],
+      [STORAGE_KEYS.synthesisDrafts, nextDrafts],
+    ]);
+  }
+
+  const analyses = readStoredAnalyses();
+  delete analyses[generatedExperienceId];
+  const nextExperiences = readStoredExperiences().filter(
+    (experience) => experience.id !== generatedExperienceId,
+  );
+  const nextRecommendations = readStoredRecommendations().filter(
+    (recommendation) =>
+      recommendation.recommendedExperienceId !== generatedExperienceId &&
+      !recommendation.matches.some(
+        (match) => match.experienceId === generatedExperienceId,
+      ),
+  );
+  const nextRecommendationIds = new Set(
+    nextRecommendations.map((recommendation) => recommendation.id),
+  );
+  const nextAnswerDrafts = readStoredAnswerDrafts().filter(
+    (draft) =>
+      draft.experienceId !== generatedExperienceId &&
+      nextRecommendationIds.has(draft.recommendationId),
+  );
+  const nextFollowups = readStoredExperienceFollowups().filter(
+    (followup) => followup.experienceId !== generatedExperienceId,
+  );
+
   return writeJsonTransaction([
+    [STORAGE_KEYS.experiences, sortByUpdatedDesc(nextExperiences)],
+    [STORAGE_KEYS.experienceMigration, true],
+    [STORAGE_KEYS.analyses, analyses],
+    [STORAGE_KEYS.recommendations, nextRecommendations],
+    [STORAGE_KEYS.answerDrafts, nextAnswerDrafts],
+    [STORAGE_KEYS.experienceFollowups, nextFollowups],
     [STORAGE_KEYS.trackedActivities, sortActivitiesByUpdatedDesc(nextActivities)],
     [STORAGE_KEYS.dailyLogs, sortDailyLogs(nextLogs)],
     [STORAGE_KEYS.synthesisDrafts, nextDrafts],
@@ -1600,7 +1688,7 @@ export function updateDailyLog(
 
   if (
     !sourceActivity ||
-    sourceActivity.status !== "active" ||
+    !canWriteDailyLogForActivity(sourceActivity, currentLog.date) ||
     !targetActivity ||
     !canWriteDailyLogForActivity(targetActivity, normalizedInput.date)
   ) {
@@ -1655,7 +1743,7 @@ export function deleteDailyLog(id: string): boolean {
     (candidate) => candidate.id === currentLog.activityId,
   );
 
-  if (!activity || activity.status !== "active") {
+  if (!activity || !canWriteDailyLogForActivity(activity, currentLog.date)) {
     return false;
   }
 

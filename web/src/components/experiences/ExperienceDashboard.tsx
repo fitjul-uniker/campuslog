@@ -47,6 +47,26 @@ function normalizeSearchValue(value: string): string {
   return value.normalize("NFKC").trim().toLocaleLowerCase("ko-KR");
 }
 
+function createTrackedActivityDeleteConfirmMessage(
+  activity: TrackedActivity,
+  logCount: number,
+): string {
+  const deleteTargets = [
+    `활동 "${activity.title}"`,
+    logCount > 0 ? `연결된 날짜별 기록 ${logCount}개` : "",
+    activity.synthesisStatus === "draft_ready" ||
+    activity.synthesisStatus === "processing" ||
+    activity.synthesisStatus === "failed"
+      ? "AI 정리 결과"
+      : "",
+    activity.generatedExperienceId
+      ? "이 활동에서 저장한 나의 활동과 연결된 AI 분석/추천/초안/보완 답변"
+      : "",
+  ].filter(Boolean);
+
+  return `${deleteTargets.join(", ")}을 함께 삭제할까요? 삭제한 데이터는 복구할 수 없습니다.`;
+}
+
 export function ExperienceDashboard() {
   const [experiences, setExperiences] = useState<Experience[] | null>(null);
   const [trackedActivities, setTrackedActivities] = useState<
@@ -275,6 +295,48 @@ export function ExperienceDashboard() {
     }));
   };
 
+  const handleDeleteTrackedActivity = async (
+    activity: TrackedActivity,
+    logCount: number,
+  ) => {
+    if (
+      !window.confirm(
+        createTrackedActivityDeleteConfirmMessage(activity, logCount),
+      )
+    ) {
+      return;
+    }
+
+    const repository = getCampusLogRepository();
+    let didDelete = false;
+
+    try {
+      didDelete = await repository.trackedActivities.delete(activity.id);
+    } catch {
+      didDelete = false;
+    }
+
+    if (!didDelete) {
+      setLoadError("활동을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    setTrackedActivities((currentActivities) =>
+      currentActivities
+        ? currentActivities.filter(
+            (storedActivity) => storedActivity.id !== activity.id,
+          )
+        : currentActivities,
+    );
+    setDailyLogs((currentLogs) =>
+      currentLogs.filter((log) => log.activityId !== activity.id),
+    );
+    setSelectedItemKey((currentKey) =>
+      currentKey === `tracked:${activity.id}` ? null : currentKey,
+    );
+    setLoadError("");
+  };
+
   useEffect(() => {
     if (!selectedItem) {
       return;
@@ -432,6 +494,7 @@ export function ExperienceDashboard() {
                       activity={selectedTrackedActivity}
                       logs={selectedTrackedActivityLogs}
                       onClose={handleCloseDetail}
+                      onDelete={handleDeleteTrackedActivity}
                     />
                   ) : null}
                 </motion.div>

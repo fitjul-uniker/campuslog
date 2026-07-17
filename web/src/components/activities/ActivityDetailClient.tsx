@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Save,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -67,6 +68,23 @@ function getSynthesisStatusLabel(activity: TrackedActivity): string {
     default:
       return "AI 정리 전";
   }
+}
+
+function createActivityDeleteConfirmMessage(
+  activity: TrackedActivity,
+  logCount: number,
+  hasDraft: boolean,
+): string {
+  const deleteTargets = [
+    `활동 "${activity.title}"`,
+    logCount > 0 ? `연결된 날짜별 기록 ${logCount}개` : "",
+    hasDraft ? "AI 정리 초안" : "",
+    activity.generatedExperienceId
+      ? "이 활동에서 저장한 나의 활동과 연결된 AI 분석/추천/초안/보완 답변"
+      : "",
+  ].filter(Boolean);
+
+  return `${deleteTargets.join(", ")}을 함께 삭제할까요? 삭제한 데이터는 복구할 수 없습니다.`;
 }
 
 export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
@@ -260,10 +278,11 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     }
 
     const repository = getCampusLogRepository();
+    const completedAt = activity.expectedEndDate || new Date().toISOString();
     const completedActivity = await repository.trackedActivities.setStatus(
       activity.id,
       "completed",
-      new Date().toISOString(),
+      completedAt,
     );
 
     if (!completedActivity) {
@@ -274,6 +293,13 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
 
     setActivity(completedActivity);
     setShowEndConfirmation(false);
+    if (completedActivity.completedAt > getLocalDateKey()) {
+      setError(
+        "활동 종료일을 유지했습니다. AI 정리는 종료일 이후 다시 시도할 수 있습니다.",
+      );
+      return;
+    }
+
     await runSynthesis(completedActivity);
   }
 
@@ -308,6 +334,37 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     }
 
     setActivity(reopenedActivity);
+    setDraft(null);
+    setDraftDescription("");
+    setDraftAchievements("");
+  }
+
+  async function handleDeleteActivity() {
+    if (
+      !activity ||
+      !window.confirm(
+        createActivityDeleteConfirmMessage(activity, logs.length, Boolean(draft)),
+      )
+    ) {
+      return;
+    }
+
+    setError("");
+    const repository = getCampusLogRepository();
+    let didDelete = false;
+
+    try {
+      didDelete = await repository.trackedActivities.delete(activity.id);
+    } catch {
+      didDelete = false;
+    }
+
+    if (!didDelete) {
+      setError("활동을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    router.push("/dashboard");
   }
 
   async function handleSaveExperience() {
@@ -440,26 +497,35 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
         </div>
 
         <div className="activity-detail-primary-actions">
+          <button
+            type="button"
+            onClick={handleDeleteActivity}
+            className="activity-secondary-button"
+            disabled={isSynthesizing || isSavingExperience}
+          >
+            <Trash2 aria-hidden="true" />
+            활동 삭제
+          </button>
           {activity.status === "planned" ? (
-            <button
-              type="button"
-              onClick={handleActivate}
-              className="activity-primary-button"
-              disabled={!canActivate}
-              title={
-                canActivate
-                  ? undefined
-                  : `${formatDateKey(activity.startDate)}부터 시작할 수 있습니다.`
-              }
-            >
-              <Play aria-hidden="true" />
-              {canActivate
-                ? "활동 시작"
-                : `${formatDateKey(activity.startDate, {
-                    month: "long",
-                    day: "numeric",
+              <button
+                type="button"
+                onClick={handleActivate}
+                className="activity-primary-button"
+                disabled={!canActivate}
+                title={
+                  canActivate
+                    ? undefined
+                    : `${formatDateKey(activity.startDate)}부터 시작할 수 있습니다.`
+                }
+              >
+                <Play aria-hidden="true" />
+                {canActivate
+                  ? "활동 시작"
+                  : `${formatDateKey(activity.startDate, {
+                      month: "long",
+                      day: "numeric",
                   })}부터 시작`}
-            </button>
+              </button>
           ) : null}
           {activity.status === "active" ? (
             <>
@@ -482,6 +548,17 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
                 활동 종료
               </button>
             </>
+          ) : null}
+          {activity.status === "completed" ? (
+            <button
+              type="button"
+              onClick={handleReopenActivity}
+              className="activity-primary-button"
+              disabled={isSynthesizing || isSavingExperience}
+            >
+              <Play aria-hidden="true" />
+              활동 다시 시작
+            </button>
           ) : null}
           {activity.generatedExperienceId ? (
             <Link
@@ -589,14 +666,6 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
             </div>
           </div>
           <div className="activity-synthesis-retry-actions">
-            <button
-              type="button"
-              onClick={handleReopenActivity}
-              className="activity-secondary-button"
-            >
-              <Play aria-hidden="true" />
-              활동 다시 열고 기록 보완
-            </button>
             <button
               type="button"
               onClick={handleRetrySynthesis}
@@ -726,7 +795,12 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
                 <div className="activity-timeline-date">
                   <CalendarClock aria-hidden="true" />
                   <time dateTime={log.date}>
-                    {formatDateKey(log.date, { month: "long", day: "numeric", weekday: "short" })}
+                    {formatDateKey(log.date, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      weekday: "short",
+                    })}
                   </time>
                 </div>
                 <p>{log.content}</p>

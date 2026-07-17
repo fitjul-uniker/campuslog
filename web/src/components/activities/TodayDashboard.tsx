@@ -28,6 +28,7 @@ import {
   ACTIVITY_STATUS_LABELS,
   formatDateKey,
   getLocalDateKey,
+  isActivityRecordableOnDate,
 } from "@/components/activities/activityViewUtils";
 import { FloatingPanel } from "@/components/ui/floating-panel";
 import { ExpandableScreen } from "@/components/ui/expandable-screen";
@@ -74,6 +75,26 @@ function getCompletionActionLabel(activity: TrackedActivity): string {
   }
 }
 
+function createActivityDeleteConfirmMessage(
+  activity: TrackedActivity,
+  logCount: number,
+): string {
+  const deleteTargets = [
+    `활동 "${activity.title}"`,
+    logCount > 0 ? `연결된 날짜별 기록 ${logCount}개` : "",
+    activity.synthesisStatus === "draft_ready" ||
+    activity.synthesisStatus === "processing" ||
+    activity.synthesisStatus === "failed"
+      ? "AI 정리 결과"
+      : "",
+    activity.generatedExperienceId
+      ? "이 활동에서 저장한 나의 활동과 연결된 AI 분석/추천/초안/보완 답변"
+      : "",
+  ].filter(Boolean);
+
+  return `${deleteTargets.join(", ")}을 함께 삭제할까요? 삭제한 데이터는 복구할 수 없습니다.`;
+}
+
 function getRequestedActivityId(): string {
   if (typeof window === "undefined") {
     return "";
@@ -97,6 +118,8 @@ export function TodayDashboard() {
   const [statusMessage, setStatusMessage] = useState("");
   const [recordsActionError, setRecordsActionError] = useState("");
   const [recordsActionMessage, setRecordsActionMessage] = useState("");
+  const [activityActionError, setActivityActionError] = useState("");
+  const [activityActionMessage, setActivityActionMessage] = useState("");
   const [isRecordPanelOpen, setIsRecordPanelOpen] = useState(false);
   const [recordPanelAnchor, setRecordPanelAnchor] =
     useState<HTMLElement | null>(null);
@@ -130,24 +153,22 @@ export function TodayDashboard() {
       setActivities(sortedActivities);
       setLogs(sortLogs(storedLogs));
 
-      const activeActivities = sortedActivities.filter(
-        (activity) => activity.status === "active",
+      const recordableTodayActivities = sortedActivities.filter((activity) =>
+        isActivityRecordableOnDate(activity, today, today),
       );
       const requestedActivityId = getRequestedActivityId();
       setSelectedActivityId((current) => {
         if (
-          activeActivities.some(
-            (activity) =>
-              activity.id === requestedActivityId &&
-              activity.startDate <= today,
+          recordableTodayActivities.some(
+            (activity) => activity.id === requestedActivityId,
           )
         ) {
           return requestedActivityId;
         }
 
-        return activeActivities.some((activity) => activity.id === current)
+        return recordableTodayActivities.some((activity) => activity.id === current)
           ? current
-          : (activeActivities[0]?.id ?? "");
+          : (recordableTodayActivities[0]?.id ?? "");
       });
     } catch {
       setActivities([]);
@@ -163,15 +184,18 @@ export function TodayDashboard() {
   }, [loadDashboardData]);
 
   const activeActivities = useMemo(
-    () => activities?.filter((activity) => activity.status === "active") ?? [],
-    [activities],
+    () =>
+      activities?.filter((activity) =>
+        isActivityRecordableOnDate(activity, today, today),
+      ) ?? [],
+    [activities, today],
   );
   const recordableActivities = useMemo(
     () =>
-      activeActivities.filter(
-        (activity) => activity.startDate <= selectedDate,
-      ),
-    [activeActivities, selectedDate],
+      activities?.filter((activity) =>
+        isActivityRecordableOnDate(activity, selectedDate, today),
+      ) ?? [],
+    [activities, selectedDate, today],
   );
   const plannedActivities = useMemo(
     () => activities?.filter((activity) => activity.status === "planned") ?? [],
@@ -292,7 +316,7 @@ export function TodayDashboard() {
     const normalizedContent = content.trim();
     const activity = activitiesById[selectedActivityId];
 
-    if (!activity || activity.status !== "active") {
+    if (!activity || !isActivityRecordableOnDate(activity, selectedDate, today)) {
       setFormError("기록을 연결할 진행 중 활동을 선택해 주세요.");
       firstActivityRadioRef.current?.focus();
       return;
@@ -354,7 +378,7 @@ export function TodayDashboard() {
   function startEditing(log: DailyLog, anchor: HTMLButtonElement) {
     const activity = activitiesById[log.activityId];
 
-    if (!activity || activity.status !== "active") {
+    if (!activity || !isActivityRecordableOnDate(activity, log.date, today)) {
       return;
     }
 
@@ -377,7 +401,7 @@ export function TodayDashboard() {
 
     if (
       !activity ||
-      activity.status !== "active" ||
+      !isActivityRecordableOnDate(activity, log.date, today) ||
       !window.confirm("이 기록을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.")
     ) {
       return;
@@ -412,6 +436,57 @@ export function TodayDashboard() {
     }
   }
 
+  async function handleDeleteActivity(activity: TrackedActivity) {
+    const activityLogCount = logs.filter(
+      (log) => log.activityId === activity.id,
+    ).length;
+
+    if (
+      !window.confirm(createActivityDeleteConfirmMessage(activity, activityLogCount))
+    ) {
+      return;
+    }
+
+    const repository = getCampusLogRepository();
+    let didDelete = false;
+
+    try {
+      didDelete = await repository.trackedActivities.delete(activity.id);
+    } catch {
+      didDelete = false;
+    }
+
+    if (!didDelete) {
+      setActivityActionMessage("");
+      setActivityActionError(
+        "활동을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+      return;
+    }
+
+    setActivities((currentActivities) =>
+      currentActivities
+        ? sortActivities(
+            currentActivities.filter(
+              (storedActivity) => storedActivity.id !== activity.id,
+            ),
+          )
+        : currentActivities,
+    );
+    setLogs((currentLogs) =>
+      currentLogs.filter((log) => log.activityId !== activity.id),
+    );
+    setSelectedActivityId((current) =>
+      current === activity.id
+        ? (recordableActivities.find(
+            (recordableActivity) => recordableActivity.id !== activity.id,
+          )?.id ?? "")
+        : current,
+    );
+    setActivityActionError("");
+    setActivityActionMessage("활동을 삭제했습니다.");
+  }
+
   function handleSelectDate(date: string) {
     setIsRecordPanelOpen(false);
     setRecordPanelAnchor(null);
@@ -422,9 +497,10 @@ export function TodayDashboard() {
     setEditingLog(null);
     setContent("");
     setFormError("");
-    const nextRecordableActivities = activeActivities.filter(
-      (activity) => activity.startDate <= date,
-    );
+    const nextRecordableActivities =
+      activities?.filter((activity) =>
+        isActivityRecordableOnDate(activity, date, today),
+      ) ?? [];
     setSelectedActivityId((current) =>
       nextRecordableActivities.some((activity) => activity.id === current)
         ? current
@@ -509,6 +585,15 @@ export function TodayDashboard() {
                     {activity.title}
                   </strong>
                 </Link>
+                <button
+                  type="button"
+                  className="activity-summary-delete-button"
+                  onClick={() => handleDeleteActivity(activity)}
+                  aria-label={`${activity.title} 활동 삭제`}
+                >
+                  <Trash2 aria-hidden="true" />
+                  삭제
+                </button>
               </li>
             ))}
           </ul>
@@ -517,6 +602,20 @@ export function TodayDashboard() {
             <p>진행 중인 활동이 아직 없습니다.</p>
           </div>
         )}
+
+        {activityActionError ? (
+          <p className="activity-form-error activity-overview-feedback" role="alert">
+            {activityActionError}
+          </p>
+        ) : null}
+        {activityActionMessage ? (
+          <p
+            className="activity-form-success activity-overview-feedback"
+            role="status"
+          >
+            {activityActionMessage}
+          </p>
+        ) : null}
 
         {activitiesRequiringCompletion.length > 0 ? (
           <div className="activity-finishing-section">
@@ -540,6 +639,15 @@ export function TodayDashboard() {
                     </span>
                     <ArrowRight aria-hidden="true" />
                   </Link>
+                  <button
+                    type="button"
+                    className="activity-summary-delete-button"
+                    onClick={() => handleDeleteActivity(activity)}
+                    aria-label={`${activity.title} 활동 삭제`}
+                  >
+                    <Trash2 aria-hidden="true" />
+                    삭제
+                  </button>
                 </li>
               ))}
             </ul>
@@ -556,6 +664,15 @@ export function TodayDashboard() {
                     <span>{activity.title}</span>
                     <span>{formatDateKey(activity.startDate)} 시작</span>
                   </Link>
+                  <button
+                    type="button"
+                    className="activity-planned-delete-button"
+                    onClick={() => handleDeleteActivity(activity)}
+                    aria-label={`${activity.title} 예정 활동 삭제`}
+                  >
+                    <Trash2 aria-hidden="true" />
+                    삭제
+                  </button>
                 </li>
               ))}
             </ul>

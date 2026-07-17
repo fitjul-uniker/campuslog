@@ -14,6 +14,9 @@ import {
   ANSWER_DRAFT_TARGET_GUIDES,
   ANSWER_DRAFT_TYPE_LABELS,
   ANSWER_DRAFT_TYPES,
+  countAnswerDraftCharacters,
+  getAnswerDraftCharacterLimit,
+  isAnswerDraftWithinCharacterLimit,
   normalizeAnswerDraft,
   normalizeAnswerDraftResult,
 } from "@/lib/answerDraftResult";
@@ -412,10 +415,12 @@ function mergeNotes(primary: string[], secondary: string[]): string[] {
 }
 
 function createDraftPromptContext(body: AnswerDraftsRequest) {
+  const characterLimit = getAnswerDraftCharacterLimit(body.draftType);
   const selectedDraftType = {
     type: body.draftType,
     label: ANSWER_DRAFT_TYPE_LABELS[body.draftType],
     targetGuide: ANSWER_DRAFT_TARGET_GUIDES[body.draftType],
+    characterLimit,
   };
 
   return {
@@ -476,6 +481,10 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
       `draft.type은 반드시 ${body.draftType}입니다.`,
       `draft.title은 ${selectedDraftType.label} 목적에 맞춥니다.`,
       `draft.targetGuide는 반드시 "${selectedDraftType.targetGuide}"입니다.`,
+      characterLimit
+        ? `draft.content는 공백, 문장부호, 줄바꿈을 포함해 ${characterLimit.min}자 이상 ${characterLimit.max}자 이하로 작성합니다.`
+        : "draft.content는 targetGuide에 맞는 분량으로 작성합니다.",
+      "글자 수는 JavaScript Array.from(draft.content).length 기준입니다.",
       "자기소개서 초안은 selectedRecommendation.prompt의 문항에 직접 답하는 글로 작성합니다.",
       "면접 답변은 selectedRecommendation.prompt가 면접 질문이라고 보고 45~60초 안에 말할 수 있는 구어체 한국어로 작성합니다.",
       "포트폴리오 설명은 selectedRecommendation.prompt의 목적/JD 요구사항을 고려해 프로젝트/활동 설명용으로 간결하게 작성합니다.",
@@ -725,6 +734,64 @@ function parseAnswerDraftsResult(
   }
 }
 
+type AnswerDraftLengthIssue = {
+  count: number;
+  min: number;
+  max: number;
+};
+
+function getAnswerDraftLengthIssue(
+  answerDrafts: AnswerDraftResult,
+  draftType: AnswerDraftType,
+): AnswerDraftLengthIssue | null {
+  const draft = answerDrafts.drafts.find((draft) => draft.type === draftType);
+  const limit = getAnswerDraftCharacterLimit(draftType);
+
+  if (!draft || !limit || isAnswerDraftWithinCharacterLimit(draft)) {
+    return null;
+  }
+
+  return {
+    count: countAnswerDraftCharacters(draft.content),
+    min: limit.min,
+    max: limit.max,
+  };
+}
+
+function createAnswerDraftRepairPrompt(
+  body: AnswerDraftsRequest,
+  answerDrafts: AnswerDraftResult,
+  lengthIssue: AnswerDraftLengthIssue,
+): string {
+  const draft = answerDrafts.drafts.find((draft) => draft.type === body.draftType);
+
+  return JSON.stringify(
+    {
+      instruction:
+        "아래 초안은 글자 수 조건을 만족하지 못했습니다. 원본 근거와 안전 규칙은 유지하고, draft.content만 분량 기준에 맞게 다시 작성해주세요.",
+      originalContext: createDraftPromptContext(body),
+      lengthIssue: {
+        currentCharacterCount: lengthIssue.count,
+        requiredMinimum: lengthIssue.min,
+        requiredMaximum: lengthIssue.max,
+        countingRule:
+          "공백, 문장부호, 줄바꿈을 포함한 JavaScript Array.from(draft.content).length",
+      },
+      previousDraft: draft,
+      repairRules: [
+        `draft.type은 반드시 ${body.draftType}입니다.`,
+        `draft.targetGuide는 반드시 "${ANSWER_DRAFT_TARGET_GUIDES[body.draftType]}"입니다.`,
+        `draft.content는 공백 포함 ${lengthIssue.min}자 이상 ${lengthIssue.max}자 이하로 맞춥니다.`,
+        "원본에 없는 성과, 수치, 역할, 협업 규모, 기술명은 새로 만들지 않습니다.",
+        "usedEvidence는 originalContext.evidenceOptions 중 실제 사용한 문장을 그대로 복사합니다.",
+        "부족한 근거와 과장 위험은 본문에 사실처럼 넣지 말고 missingEvidenceNotes와 cautions에 유지합니다.",
+      ],
+    },
+    null,
+    2,
+  );
+}
+
 async function readRequestBody(
   request: Request,
 ): Promise<AnswerDraftsRequest | null> {
@@ -866,7 +933,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const answerDrafts = parseAnswerDraftsResult(
+    let answerDrafts = parseAnswerDraftsResult(
       draftOutput.outputText,
       body,
       evidenceOptions,
@@ -878,6 +945,53 @@ export async function POST(request: Request) {
         "답변 초안 생성 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
         502,
       );
+    }
+
+    const lengthIssue = getAnswerDraftLengthIssue(answerDrafts, body.draftType);
+
+    if (lengthIssue) {
+      const repairedDraftOutput = await requestOpenAiStructuredOutput({
+        apiKey,
+        systemContent:
+          "당신은 CampusLog의 답변 초안 분량 교정 도우미입니다. 원본 근거만 사용하면서 자기소개서 초안의 공백 포함 글자 수를 사용자가 선택한 범위 안으로 정확히 맞춥니다.",
+        userContent: createAnswerDraftRepairPrompt(
+          body,
+          answerDrafts,
+          lengthIssue,
+        ),
+        schemaName: "campuslog_answer_drafts_length_repair_v1",
+        schema: answerDraftsResponseSchema,
+        maxOutputTokens: 3200,
+        logLabel: "answer-drafts-length-repair-v1",
+        signal: openAiAbortController.signal,
+      });
+
+      if (!repairedDraftOutput.ok) {
+        return createErrorResponse(
+          "OPENAI_API_ERROR",
+          "답변 초안 분량을 맞추지 못했습니다. 다시 시도해주세요.",
+          502,
+        );
+      }
+
+      const repairedAnswerDrafts = parseAnswerDraftsResult(
+        repairedDraftOutput.outputText,
+        body,
+        evidenceOptions,
+      );
+
+      if (
+        !repairedAnswerDrafts ||
+        getAnswerDraftLengthIssue(repairedAnswerDrafts, body.draftType)
+      ) {
+        return createErrorResponse(
+          "OPENAI_API_ERROR",
+          "답변 초안 분량이 선택한 글자 수 범위에 맞지 않습니다. 다시 시도해주세요.",
+          502,
+        );
+      }
+
+      answerDrafts = repairedAnswerDrafts;
     }
 
     return NextResponse.json<AnswerDraftsResponse>({
