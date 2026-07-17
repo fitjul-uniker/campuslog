@@ -81,6 +81,7 @@ Migrations:
 ## 추천 v2 저장 계약
 
 - `RecommendationResult`는 기존 v1 필드 `recommendedExperienceId`, `recommendedExperienceTitle`, `reason`, `relatedTags`, `highlightedAchievement`, `usageDirection`, `draftSentence`를 유지합니다.
+- `purpose`는 `cover_letter`, `portfolio`, `interview`, `jd`, `activity_application`, `other` 중 하나입니다. 기존 row는 변경하지 않고 `20260714000500_recommendation_jd_purpose.sql`에서 Supabase check constraint에 `jd`만 추가하며 실제 project 적용 전에는 JD 저장 smoke test를 완료로 간주하지 않습니다.
 - v2 추천은 `schemaVersion`, `promptVersion`, `model`, `extractedRequirements`, `matches`를 추가로 저장합니다.
 - `extractedRequirements`는 문항 / 면접 질문 / JD / 지원서 원문에서 추출한 필수 역량, 우대 역량, 키워드, 답변 의도, 제약 조건입니다.
 - `matches`는 최대 3개 추천 경험의 `rank`, `score`, `fitLevel`, `matchReason`, `matchedEvidence`, `missingEvidence`, `overclaimRisks`, `suggestedAngle`, `relatedCompetencies`를 포함합니다.

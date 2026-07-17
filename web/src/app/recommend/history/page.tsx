@@ -11,6 +11,10 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { AnimatedRecommendationList } from "@/components/recommendations/AnimatedRecommendationList";
 import { GooeyInput } from "@/components/ui/GooeyInput";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
@@ -29,6 +33,7 @@ const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
   cover_letter: "자기소개서",
   portfolio: "포트폴리오",
   interview: "면접",
+  jd: "JD",
   activity_application: "대외활동/지원서",
   other: "기타",
 };
@@ -181,7 +186,6 @@ export default function RecommendationHistoryPage() {
         className={`recommendation-history-page${hasSelection ? " has-selection" : ""}`}
       >
         <div className="campuslog-ai-history-header">
-          <p className="eyebrow">CampusLog AI</p>
           <Link href="/recommend" className="recommendation-history-new">
             <Sparkles aria-hidden="true" />
             새 추천 받기
@@ -231,10 +235,11 @@ export default function RecommendationHistoryPage() {
                   <AlertCircle aria-hidden="true" />
                   <h2>추천 기록을 불러오지 못했습니다</h2>
                   <p>{loadError}</p>
-                  <button type="button" onClick={loadHistory}>
+                  <RippleButton type="button" onClick={loadHistory}>
                     <RotateCcw aria-hidden="true" />
                     다시 시도
-                  </button>
+                    <RippleButtonRipples />
+                  </RippleButton>
                 </div>
               ) : recommendations === null ? (
                 <div

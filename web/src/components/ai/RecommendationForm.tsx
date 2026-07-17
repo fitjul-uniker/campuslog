@@ -4,6 +4,7 @@ import { Sparkles } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
 
+import { BorderBeamButton } from "@/components/ui/BorderBeamButton";
 import type { RecommendationPurpose } from "@/lib/types";
 
 type RecommendationFormInput = {
@@ -23,6 +24,7 @@ const PURPOSE_OPTIONS: Array<{
   { value: "cover_letter", label: "자기소개서" },
   { value: "portfolio", label: "포트폴리오" },
   { value: "interview", label: "면접" },
+  { value: "jd", label: "JD" },
   { value: "activity_application", label: "대외활동/지원서" },
   { value: "other", label: "기타" },
 ];
@@ -99,14 +101,17 @@ export function RecommendationForm({
       ) : null}
 
       <div className="panel-actions">
-        <button
+        <BorderBeamButton
           className="button button-primary"
+          wrapperClassName="recommendation-analysis-request-wrap"
+          colorVariant="colorful"
           type="submit"
           disabled={isLoading}
+          aria-busy={isLoading}
         >
           <Sparkles className="button-icon" aria-hidden="true" />
-          {isLoading ? "추천할 활동을 찾는 중..." : "AI 기반 활동 추천"}
-        </button>
+          {isLoading ? "AI 분석 중..." : "AI 분석"}
+        </BorderBeamButton>
       </div>
     </form>
   );

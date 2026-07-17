@@ -6,6 +6,10 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
 import {
   MAX_RELATED_LINK_DESCRIPTION_LENGTH,
@@ -696,14 +700,15 @@ export function ExperienceForm({
       ) : null}
 
       <div className="panel-actions">
-        <button
+        <RippleButton
           className="button button-primary"
           type="submit"
           disabled={isSubmitting}
         >
           <Save className="button-icon" aria-hidden="true" />
           {isSubmitting ? "저장 중..." : mode === "create" ? "저장" : "수정 완료"}
-        </button>
+          <RippleButtonRipples />
+        </RippleButton>
         <Link href={cancelHref} className="button button-secondary">
           취소
         </Link>

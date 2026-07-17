@@ -28,6 +28,10 @@ import {
   getActivityDateRange,
   getLocalDateKey,
 } from "@/components/activities/activityViewUtils";
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { requestActivitySynthesis } from "@/lib/activitySynthesisApi";
 import { ACTIVITY_SYNTHESIS_LIMITS } from "@/lib/activitySynthesisLimits";
 import {
@@ -456,9 +460,14 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           <AlertCircle aria-hidden="true" />
           <h1>활동을 찾을 수 없습니다</h1>
           <p>{error || "삭제되었거나 올바르지 않은 활동 주소입니다."}</p>
-          <button type="button" onClick={loadActivity} className="activity-secondary-button">
+          <RippleButton
+            type="button"
+            onClick={loadActivity}
+            className="activity-secondary-button"
+          >
             다시 불러오기
-          </button>
+            <RippleButtonRipples />
+          </RippleButton>
         </section>
       </div>
     );
@@ -507,7 +516,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
             활동 삭제
           </button>
           {activity.status === "planned" ? (
-              <button
+              <RippleButton
                 type="button"
                 onClick={handleActivate}
                 className="activity-primary-button"
@@ -525,7 +534,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
                       month: "long",
                       day: "numeric",
                   })}부터 시작`}
-              </button>
+                <RippleButtonRipples />
+              </RippleButton>
           ) : null}
           {activity.status === "active" ? (
             <>
@@ -535,7 +545,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               >
                 오늘 한 일 기록하기
               </Link>
-              <button
+              <RippleButton
                 ref={endActivityButtonRef}
                 type="button"
                 onClick={() => {
@@ -546,11 +556,12 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               >
                 <FileCheck2 aria-hidden="true" />
                 활동 종료
-              </button>
+                <RippleButtonRipples />
+              </RippleButton>
             </>
           ) : null}
           {activity.status === "completed" ? (
-            <button
+            <RippleButton
               type="button"
               onClick={handleReopenActivity}
               className="activity-primary-button"
@@ -558,7 +569,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
             >
               <Play aria-hidden="true" />
               활동 다시 시작
-            </button>
+              <RippleButtonRipples />
+            </RippleButton>
           ) : null}
           {activity.generatedExperienceId ? (
             <Link
@@ -621,13 +633,14 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               >
                 계속 기록하기
               </button>
-              <button
+              <RippleButton
                 type="button"
                 onClick={handleConfirmEnd}
                 className="activity-primary-button"
               >
                 종료하고 AI 초안 만들기
-              </button>
+                <RippleButtonRipples />
+              </RippleButton>
             </div>
           </div>
         </section>
@@ -666,14 +679,15 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
             </div>
           </div>
           <div className="activity-synthesis-retry-actions">
-            <button
+            <RippleButton
               type="button"
               onClick={handleRetrySynthesis}
               className="activity-primary-button"
             >
               <RotateCcw aria-hidden="true" />
               AI 정리 다시 시도
-            </button>
+              <RippleButtonRipples />
+            </RippleButton>
           </div>
         </section>
       ) : null}
@@ -692,7 +706,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
                 </h2>
               </div>
             </div>
-            <button
+            <RippleButton
               type="button"
               onClick={handleRetrySynthesis}
               className="activity-text-button"
@@ -700,7 +714,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
             >
               <RotateCcw aria-hidden="true" />
               다시 생성
-            </button>
+              <RippleButtonRipples />
+            </RippleButton>
           </header>
 
           <div className="activity-draft-fixed-meta">
@@ -764,7 +779,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           </div>
 
           <div className="activity-draft-actions">
-            <button
+            <RippleButton
               type="button"
               onClick={handleSaveExperience}
               className="activity-primary-button"
@@ -774,7 +789,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               {isSavingExperience
                 ? "활동 정리 저장 중…"
                 : "확인하고 나의 활동에 저장"}
-            </button>
+              <RippleButtonRipples />
+            </RippleButton>
           </div>
         </section>
       ) : null}

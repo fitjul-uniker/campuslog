@@ -60,6 +60,7 @@ function isRecommendationPurpose(
     value === "cover_letter" ||
     value === "portfolio" ||
     value === "interview" ||
+    value === "jd" ||
     value === "activity_application" ||
     value === "other"
   );

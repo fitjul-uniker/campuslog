@@ -211,52 +211,6 @@ select:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-}
-
-.landing-motion-control {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 1px solid rgba(31, 30, 28, 0.13);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.42);
-  color: #68645e;
-  cursor: pointer;
-  padding: 0 13px;
-  font-size: 0.75rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  line-height: 1;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease;
-}
-
-.landing-motion-control svg {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 14px;
-  stroke-width: 1.8;
-}
-
-.landing-motion-control:hover:not(:disabled) {
-  border-color: rgba(31, 30, 28, 0.22);
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--color-brand-strong);
-}
-
-.landing-motion-control:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 3px;
-}
-
-.landing-motion-control:disabled {
-  cursor: default;
-  opacity: 0.72;
 }
 
 .layout-text-flip {
@@ -282,6 +236,7 @@ select:disabled {
   display: inline-flex;
   align-items: baseline;
   align-self: baseline;
+  column-gap: calc(0.045em + clamp(2px, 0.04em, 5px));
   white-space: nowrap;
 }
 
@@ -838,33 +793,29 @@ select:disabled {
 
 .auth-control[data-slot="input"] {
   height: 50px;
-  border-color: #dededb;
+  border-color: #d8d8d3;
   border-radius: 10px;
-  background: #f8f8f6;
+  background: #ffffff;
   color: #171717;
-  box-shadow:
-    inset 0 1px 1px rgba(24, 24, 22, 0.035),
-    0 1px 2px rgba(24, 24, 22, 0.025);
+  box-shadow: none;
   padding: 0 14px;
   font-size: 1rem;
   transition:
     border-color 160ms ease,
-    background-color 160ms ease,
-    box-shadow 160ms ease;
+    background-color 160ms ease;
 }
 
 .auth-control[data-slot="input"]:hover:not(:disabled) {
-  border-color: #c8c8c3;
-  background: #fbfbfa;
+  border-color: #bdbdb7;
+  background: #ffffff;
 }
 
 .auth-control[data-slot="input"]:focus-visible {
-  border-color: #8c8c86;
+  border-color: #565651;
   background: #ffffff;
-  box-shadow:
-    0 0 0 3px rgba(23, 23, 23, 0.11),
-    0 8px 24px rgba(24, 24, 22, 0.055);
-  outline: none;
+  box-shadow: none;
+  outline: 3px solid rgba(23, 23, 23, 0.11);
+  outline-offset: 1px;
 }
 
 .auth-control[data-slot="input"][aria-invalid="true"] {
@@ -2473,6 +2424,12 @@ h2 {
   margin-bottom: 0;
 }
 
+.recommendation-copy-button {
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
+}
+
 .draft-sentence {
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -2982,10 +2939,6 @@ h2 {
 
   .landing-scroll-link svg {
     animation: none;
-  }
-
-  .landing-motion-control {
-    transition: none;
   }
 
   .auth-spinner {
@@ -4206,6 +4159,14 @@ h2 {
 
 /* Border beam analysis control */
 .border-beam-control {
+  --border-beam-gradient: conic-gradient(
+    from 0deg,
+    transparent 0deg 280deg,
+    #1d1d1f 315deg,
+    #a9a9a4 340deg,
+    transparent 360deg
+  );
+
   position: relative;
   display: inline-flex;
   min-width: 0;
@@ -4219,15 +4180,23 @@ h2 {
 .border-beam-control::before {
   position: absolute;
   inset: -180%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg 280deg,
-    #1d1d1f 315deg,
-    #a9a9a4 340deg,
-    transparent 360deg
-  );
+  background: var(--border-beam-gradient);
   content: "";
   opacity: 0;
+}
+
+.border-beam-control[data-color-variant="colorful"] {
+  --border-beam-gradient: conic-gradient(
+    from 0deg,
+    transparent 0deg 232deg,
+    #22d3ee 250deg,
+    #3b82f6 272deg,
+    #8b5cf6 296deg,
+    #ec4899 320deg,
+    #f59e0b 342deg,
+    #84cc16 356deg,
+    transparent 360deg
+  );
 }
 
 .border-beam-control[data-active="true"]::before {
@@ -4242,6 +4211,15 @@ h2 {
   border: 0;
   border-radius: 12px;
   cursor: pointer;
+}
+
+.border-beam-control:has(.border-beam-button:focus-visible) {
+  outline: 3px solid rgba(29, 29, 31, 0.24);
+  outline-offset: 3px;
+}
+
+.border-beam-control .border-beam-button:focus-visible {
+  outline: none;
 }
 
 .border-beam-control[data-disabled="true"] {
@@ -4316,17 +4294,13 @@ h2 {
   display: flex;
   width: min(100%, 600px);
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .recommendation-history-page.has-selection .campuslog-ai-history-header {
   width: min(100%, 1160px);
-}
-
-.campuslog-ai-history-header .eyebrow {
-  margin: 0;
 }
 
 .recommendation-history-workspace {

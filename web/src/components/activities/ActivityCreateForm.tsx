@@ -7,6 +7,10 @@ import type { FormEvent, RefObject } from "react";
 import { useId, useRef, useState } from "react";
 
 import { getLocalDateKey } from "@/components/activities/activityViewUtils";
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 
@@ -288,20 +292,21 @@ export function ActivityCreateForm({
 
       <div className="activity-form-actions">
         {onCancel ? (
-          <button
+          <RippleButton
             type="button"
             className="activity-secondary-button"
             onClick={onCancel}
             disabled={isSaving}
           >
             취소
-          </button>
+            <RippleButtonRipples />
+          </RippleButton>
         ) : (
           <Link href="/dashboard" className="activity-secondary-button">
             취소
           </Link>
         )}
-        <button
+        <RippleButton
           type="submit"
           className="activity-primary-button"
           disabled={isSaving}
@@ -312,7 +317,8 @@ export function ActivityCreateForm({
             : variant === "expanded"
               ? "저장"
               : "활동 저장"}
-        </button>
+          <RippleButtonRipples />
+        </RippleButton>
       </div>
     </form>
   );

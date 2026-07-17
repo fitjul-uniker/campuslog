@@ -3,6 +3,10 @@
 import { AlertTriangle, CheckCircle2, HelpCircle, RefreshCcw, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  RippleButton,
+  RippleButtonRipples,
+} from "@/components/animate-ui/components/buttons/ripple";
 import { requestEvidenceFollowupQuestions } from "@/lib/evidenceFollowupApi";
 import { hasAnsweredFollowup } from "@/lib/experienceFollowupResult";
 import { formatDateTime } from "@/lib/date";
@@ -332,7 +336,7 @@ export function ExperienceFollowupPanel({
       </div>
 
       <div className="followup-actions">
-        <button
+        <RippleButton
           className="button button-primary"
           type="button"
           onClick={handleGenerateFollowup}
@@ -340,9 +344,10 @@ export function ExperienceFollowupPanel({
         >
           <Sparkles className="button-icon" aria-hidden="true" />
           {isGenerating ? "질문 생성 중..." : "부족한 정보로 질문 만들기"}
-        </button>
+          <RippleButtonRipples />
+        </RippleButton>
         {answeredFollowupCount > 0 ? (
-          <button
+          <RippleButton
             className="button button-secondary"
             type="button"
             onClick={onReanalyze}
@@ -350,7 +355,8 @@ export function ExperienceFollowupPanel({
           >
             <RefreshCcw className="button-icon" aria-hidden="true" />
             {isAnalyzing ? "분석 중..." : "보완 답변으로 다시 분석"}
-          </button>
+            <RippleButtonRipples />
+          </RippleButton>
         ) : null}
       </div>
 
@@ -449,7 +455,7 @@ export function ExperienceFollowupPanel({
                               마지막 저장 {formatDateTime(savedAnswer.updatedAt)}
                             </span>
                           ) : null}
-                          <button
+                          <RippleButton
                             className="button button-secondary"
                             type="button"
                             onClick={() =>
@@ -458,7 +464,8 @@ export function ExperienceFollowupPanel({
                             disabled={isSaving}
                           >
                             {isSaving ? "저장 중..." : "답변 저장"}
-                          </button>
+                            <RippleButtonRipples />
+                          </RippleButton>
                         </div>
                       </>
                     )}

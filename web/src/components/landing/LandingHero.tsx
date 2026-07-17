@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Pause, Play } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 
 import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
@@ -16,20 +14,7 @@ const RECORDING_SUBJECTS = [
 ] as const;
 
 export function LandingHero() {
-  const [isPaused, setIsPaused] = useState(false);
   const prefersReducedMotion = useReducedMotion();
-  const isMotionDisabled = prefersReducedMotion === true;
-  const isRotationPaused = isPaused || isMotionDisabled;
-  const controlLabel = isMotionDisabled
-    ? "문구 자동 전환 꺼짐. 동작 줄이기 설정이 적용되었습니다."
-    : isPaused
-      ? "문구 자동 전환 재생. 현재 일시정지됨."
-      : "문구 자동 전환 일시정지. 현재 재생 중.";
-  const statusMessage = isMotionDisabled
-    ? "동작 줄이기 설정에 따라 문구 자동 전환이 꺼져 있습니다."
-    : isPaused
-      ? "문구 자동 전환이 일시정지되었습니다."
-      : "문구 자동 전환이 재생 중입니다.";
 
   return (
     <ScrollFloat
@@ -44,32 +29,11 @@ export function LandingHero() {
         className="landing-statement"
       >
         <LayoutTextFlip
-          isPaused={isRotationPaused}
+          isPaused={prefersReducedMotion === true}
           words={RECORDING_SUBJECTS}
           suffix="기록하다."
         />
       </h1>
-
-      <button
-        aria-label={controlLabel}
-        className="landing-motion-control"
-        disabled={isMotionDisabled}
-        onClick={() => setIsPaused((previousValue) => !previousValue)}
-        type="button"
-      >
-        {isMotionDisabled || !isPaused ? (
-          <Pause aria-hidden="true" />
-        ) : (
-          <Play aria-hidden="true" />
-        )}
-        <span>
-          {isMotionDisabled ? "자동 전환 꺼짐" : isPaused ? "재생" : "일시정지"}
-        </span>
-      </button>
-
-      <span className="sr-only" aria-live="polite">
-        {statusMessage}
-      </span>
     </ScrollFloat>
   );
 }
