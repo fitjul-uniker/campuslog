@@ -4273,8 +4273,32 @@ h2 {
 .dashboard-experience-heading-row {
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   row-gap: 14px;
+}
+
+.dashboard-experience-heading-row .dashboard-experience-title-group {
+  flex: 1 1 auto;
+}
+
+.dashboard-experience-search {
+  width: min(250px, 45%);
+  min-width: 96px;
+  flex: 0 1 250px;
+}
+
+.dashboard-experience-search .gooey-input-filter-wrap {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.dashboard-experience-search .gooey-input-surface {
+  max-width: 100%;
+}
+
+.dashboard-experience-search[data-expanded="true"] .gooey-input-surface {
+  max-width: calc(100% - 42px);
 }
 
 /* Recommendation history master-detail */
@@ -5118,6 +5142,10 @@ h2 {
     justify-content: flex-start;
   }
 
+  .dashboard-experience-search {
+    max-width: 100%;
+  }
+
   .gooey-input[data-expanded="true"] .gooey-input-surface {
     width: min(250px, calc(100vw - 74px)) !important;
   }
@@ -5422,7 +5450,6 @@ h2 {
 .activity-overview-heading,
 .activity-day-records > header,
 .activity-timeline > header,
-.activity-quick-record > header,
 .activity-calendar-header,
 .activity-synthesis-draft > header {
   display: flex;
@@ -5443,7 +5470,6 @@ h2 {
 
 .activity-overview-heading h2,
 .activity-calendar-header h2,
-.activity-quick-record h2,
 .activity-day-records h2,
 .activity-timeline h2,
 .activity-synthesis-draft h2 {
@@ -5733,7 +5759,6 @@ h2 {
 }
 
 .activity-calendar,
-.activity-quick-record,
 .activity-day-records,
 .activity-form-surface,
 .activity-timeline,
@@ -5745,7 +5770,6 @@ h2 {
 }
 
 .activity-calendar,
-.activity-quick-record,
 .activity-day-records,
 .activity-timeline,
 .activity-synthesis-draft {
@@ -5759,8 +5783,7 @@ h2 {
 }
 
 .activity-calendar-navigation button,
-.activity-icon-button,
-.activity-log-actions button {
+.activity-icon-button {
   display: inline-grid;
   min-width: 44px;
   min-height: 44px;
@@ -5780,16 +5803,14 @@ h2 {
 }
 
 .activity-calendar-navigation button:hover,
-.activity-icon-button:hover,
-.activity-log-actions button:hover {
+.activity-icon-button:hover {
   border-color: var(--color-border);
   background: var(--activity-mint);
   color: var(--activity-green);
 }
 
 .activity-calendar-navigation svg,
-.activity-icon-button svg,
-.activity-log-actions svg {
+.activity-icon-button svg {
   width: 17px;
   height: 17px;
 }
@@ -5822,9 +5843,9 @@ h2 {
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
   transition:
-    background-color 140ms ease,
-    border-color 140ms ease,
-    transform 140ms ease;
+    background-color 160ms ease-out,
+    border-color 160ms ease-out,
+    color 160ms ease-out;
 }
 
 .activity-calendar-day:hover:not(:disabled) {
@@ -5977,117 +5998,6 @@ h2 {
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-
-.activity-quick-record > header {
-  margin-bottom: 20px;
-}
-
-.activity-quick-record-launcher {
-  display: flex;
-  min-height: 272px;
-  flex-direction: column;
-}
-
-.activity-quick-record-launcher > header {
-  margin-bottom: 14px;
-}
-
-.activity-record-launcher-copy {
-  display: flex;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
-}
-
-.activity-record-launcher-copy > p {
-  margin: 0 0 20px;
-  color: var(--activity-muted);
-  font-size: 0.88rem;
-  line-height: 1.65;
-}
-
-.activity-record-trigger {
-  display: grid;
-  width: 100%;
-  min-height: 76px;
-  grid-template-columns: 42px minmax(0, 1fr) 20px;
-  align-items: center;
-  gap: 12px;
-  margin-top: auto;
-  border: 1px solid var(--color-brand-strong);
-  border-radius: 17px;
-  background: var(--color-brand);
-  box-shadow: 0 8px 22px rgba(31, 30, 28, 0.12);
-  color: #ffffff;
-  padding: 13px 15px;
-  text-align: left;
-  transition:
-    background-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
-}
-
-.activity-record-trigger:hover {
-  background: var(--color-brand-strong);
-  box-shadow: 0 12px 28px rgba(31, 30, 28, 0.16);
-}
-
-.activity-record-trigger:focus-visible {
-  border-radius: 17px;
-  outline: 3px solid var(--activity-focus);
-  outline-offset: 3px;
-}
-
-.activity-record-trigger-icon {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.activity-record-trigger-icon svg,
-.activity-record-trigger-arrow {
-  width: 18px;
-  height: 18px;
-}
-
-.activity-record-trigger-copy {
-  display: grid;
-  min-width: 0;
-  gap: 3px;
-}
-
-.activity-record-trigger-label {
-  font-size: 0.91rem;
-  font-weight: 740;
-  letter-spacing: -0.01em;
-}
-
-.activity-record-trigger-meta {
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.66);
-  font-size: 0.72rem;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.activity-record-trigger-arrow {
-  justify-self: end;
-  opacity: 0.72;
-  transition: transform 160ms ease;
-}
-
-.activity-record-trigger:hover .activity-record-trigger-arrow {
-  transform: translateX(2px);
-}
-
-.activity-record-feedback {
-  margin-top: 12px;
 }
 
 .activity-records-feedback {
@@ -6392,7 +6302,6 @@ h2 {
   margin-bottom: 20px;
 }
 
-.activity-log-list,
 .activity-timeline > ol {
   display: grid;
   gap: 0;
@@ -6401,95 +6310,225 @@ h2 {
   list-style: none;
 }
 
-.activity-log-list > li {
+.activity-calendar-event-panel {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+}
+
+.activity-calendar-event-panel > .activity-calendar-event-header {
+  align-items: center;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--activity-line);
+  padding-bottom: 14px;
+}
+
+.activity-add-record-button {
+  display: inline-grid;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--activity-ink);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.activity-add-record-button:hover:not(:disabled) {
+  background: var(--activity-soft);
+  color: var(--activity-green-strong);
+}
+
+.activity-add-record-button:focus-visible {
+  outline: 3px solid var(--activity-focus);
+  outline-offset: 2px;
+}
+
+.activity-add-record-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.36;
+}
+
+.activity-add-record-button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.activity-event-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-event-list > li {
+  position: relative;
   display: grid;
   min-width: 0;
-  grid-template-columns: 14px minmax(0, 1fr) auto;
-  gap: 14px;
-  border-top: 1px solid #ebe9e5;
-  padding: 18px 0;
-}
-
-.activity-log-list > li[data-editing="true"] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
   border-radius: 12px;
+  background: var(--activity-soft);
+  padding: 12px 10px 12px 24px;
+}
+
+.activity-event-list > li[data-editing="true"] {
+  box-shadow: inset 0 0 0 1px var(--activity-green);
   background: var(--activity-mint);
-  padding: 18px 12px;
 }
 
-.activity-log-marker {
-  width: 10px;
-  height: 10px;
-  margin-top: 7px;
-  border: 2px solid var(--activity-green);
+.activity-event-accent {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 9px;
+  width: 4px;
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--activity-ink);
 }
 
-.activity-log-content {
+.activity-event-content {
   min-width: 0;
 }
 
-.activity-log-meta {
+.activity-event-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
-.activity-log-meta a {
+.activity-event-meta a {
   color: var(--activity-green-strong);
   font-size: 0.8rem;
   font-weight: 730;
 }
 
-.activity-log-meta > span {
-  border-radius: 999px;
-  background: var(--activity-soft);
-  color: var(--color-text-muted);
-  padding: 4px 8px;
-  font-size: 0.68rem;
-  font-weight: 680;
-}
-
-.activity-log-content p {
-  margin: 0;
-  color: var(--color-text);
-  line-height: 1.7;
+.activity-event-preview {
+  display: -webkit-box;
+  max-height: 1.55em;
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: var(--activity-muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  opacity: 0.82;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  transition:
+    max-height 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease;
+  will-change: max-height, opacity;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
-.activity-log-actions {
+.activity-event-list > li:hover .activity-event-preview,
+.activity-event-list > li:focus-within .activity-event-preview {
+  max-height: 4.65em;
+  opacity: 1;
+}
+
+.activity-event-actions {
   display: flex;
+  align-self: center;
   gap: 5px;
 }
 
-.activity-log-actions button {
+.activity-event-actions button {
+  display: inline-grid;
+  width: 40px;
   min-width: 40px;
-  min-height: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--activity-muted);
+  cursor: pointer;
 }
 
-.activity-day-empty {
+.activity-event-actions button:hover {
+  background: #ffffff;
+  color: var(--activity-ink);
+}
+
+.activity-event-actions button:focus-visible {
+  outline: 3px solid var(--activity-focus);
+  outline-offset: 1px;
+}
+
+.activity-event-actions svg {
+  width: 16px;
+  height: 16px;
+}
+
+.activity-event-empty {
   display: flex;
-  min-height: 110px;
+  min-height: 118px;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
   gap: 14px;
-  border-top: 1px solid var(--activity-line);
   color: var(--activity-muted);
+  padding: 24px 12px;
+  text-align: center;
 }
 
-.activity-day-empty p {
+.activity-calendar-event-panel .activity-records-feedback {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 0.76rem;
+}
+
+.activity-event-empty p {
+  max-width: 320px;
   margin: 0;
+  line-height: 1.65;
 }
 
-.activity-day-empty button {
-  min-height: 44px;
-  border: 0;
-  background: transparent;
-  color: var(--activity-green);
-  font-weight: 720;
+.activity-event-empty .activity-record-empty-action {
+  margin-top: 2px;
+}
+
+.activity-required-notice-panel {
+  --activity-green: var(--color-brand);
+  --activity-green-strong: var(--color-brand-strong);
+  --activity-mint: var(--color-brand-soft);
+  --activity-line: #e4e1dc;
+  --activity-ink: var(--color-text);
+  --activity-muted: var(--color-text-muted);
+  --activity-focus: var(--color-focus);
+}
+
+.activity-required-notice {
+  display: grid;
+  gap: 22px;
+  padding: 22px 20px 20px;
+}
+
+.activity-required-notice > p {
+  margin: 0;
+  color: var(--activity-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.activity-required-notice-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.activity-required-notice-actions > button {
+  min-width: 104px;
 }
 
 .activity-form-header {
@@ -7177,9 +7216,6 @@ h2 {
     transform: translateY(-1px);
   }
 
-  .activity-calendar-day:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
 }
 
 @media (max-width: 1080px) {
@@ -7217,10 +7253,6 @@ h2 {
 
   .activity-dashboard-grid {
     grid-template-columns: 1fr;
-  }
-
-  .activity-quick-record {
-    order: -1;
   }
 
   .activity-summary-list {
@@ -7294,16 +7326,11 @@ h2 {
 
   .activity-overview,
   .activity-calendar,
-  .activity-quick-record,
   .activity-day-records,
   .activity-timeline,
   .activity-synthesis-draft {
     border-radius: 18px;
     padding: 18px;
-  }
-
-  .activity-quick-record-launcher {
-    min-height: 250px;
   }
 
   .activity-summary-list,
@@ -7322,8 +7349,7 @@ h2 {
   }
 
   .activity-overview-empty,
-  .activity-planned-list a,
-  .activity-day-empty {
+  .activity-planned-list a {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -7377,12 +7403,13 @@ h2 {
     max-width: 100%;
   }
 
-  .activity-log-list > li {
-    grid-template-columns: 12px minmax(0, 1fr);
+  .activity-required-notice-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
   }
 
-  .activity-log-actions {
-    grid-column: 2;
+  .activity-required-notice-actions > button {
+    width: 100%;
   }
 
   .activity-form-heading {
@@ -7455,19 +7482,14 @@ h2 {
     transform: none;
   }
 
+  .activity-event-preview {
+    transition: none;
+  }
+
   .activity-synthesis-loading > span svg,
   .activity-page-loading > div,
   .activity-button-spinner {
     animation: none;
-  }
-
-  .activity-record-trigger,
-  .activity-record-trigger-arrow {
-    transition-duration: 80ms;
-  }
-
-  .activity-record-trigger:hover .activity-record-trigger-arrow {
-    transform: none;
   }
 
   .floating-panel-backdrop,

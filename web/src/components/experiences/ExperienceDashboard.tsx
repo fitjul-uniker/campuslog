@@ -402,6 +402,7 @@ export function ExperienceDashboard() {
                   </div>
                   {activityItems && activityItems.length > 0 ? (
                     <GooeyInput
+                      className="dashboard-experience-search"
                       placeholder="검색"
                       value={searchQuery}
                       onValueChange={setSearchQuery}

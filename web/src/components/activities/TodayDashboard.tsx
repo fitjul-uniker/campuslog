@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  CalendarDays,
   Edit3,
   Loader2,
   Plus,
@@ -20,12 +19,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { AnimatePresence, motion, MotionConfig } from "motion/react";
 
 import { ActivityCreateScreen } from "@/components/activities/ActivityCreateScreen";
 import { ActivityCalendar } from "@/components/activities/ActivityCalendar";
 import {
-  ACTIVITY_STATUS_LABELS,
   formatDateKey,
   getLocalDateKey,
   isActivityRecordableOnDate,
@@ -125,6 +122,8 @@ export function TodayDashboard() {
   const [activityActionError, setActivityActionError] = useState("");
   const [activityActionMessage, setActivityActionMessage] = useState("");
   const [isRecordPanelOpen, setIsRecordPanelOpen] = useState(false);
+  const [isActivityRequiredNoticeOpen, setIsActivityRequiredNoticeOpen] =
+    useState(false);
   const [recordPanelAnchor, setRecordPanelAnchor] =
     useState<HTMLElement | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -134,9 +133,11 @@ export function TodayDashboard() {
     useState<HTMLElement | null>(null);
   const generatedPanelId = useId().replaceAll(":", "");
   const recordPanelId = `daily-log-panel-${generatedPanelId}`;
+  const activityRequiredPanelId = `activity-required-panel-${generatedPanelId}`;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const firstActivityRadioRef = useRef<HTMLInputElement>(null);
   const recordTriggerRef = useRef<HTMLButtonElement>(null);
+  const activityRequiredActionRef = useRef<HTMLButtonElement>(null);
   const recordReturnFocusRef = useRef<HTMLElement | null>(null);
   const activityCreateReturnFocusRef = useRef<HTMLElement | null>(null);
   const activityCreateTitleRef = useRef<HTMLInputElement>(null);
@@ -302,6 +303,16 @@ export function TodayDashboard() {
     setFormError("");
   }
 
+  function openActivityRequiredNotice(anchor: HTMLButtonElement) {
+    recordReturnFocusRef.current = anchor;
+    setRecordPanelAnchor(anchor);
+    setIsActivityRequiredNoticeOpen(true);
+  }
+
+  function closeActivityRequiredNotice() {
+    setIsActivityRequiredNoticeOpen(false);
+  }
+
   function cancelRecordPanel() {
     setIsRecordPanelOpen(false);
     resetForm();
@@ -363,6 +374,8 @@ export function TodayDashboard() {
           savedLog,
         ]),
       );
+      setRecordsActionMessage("");
+      setRecordsActionError("");
       setStatusMessage(
         editingLog ? "기록을 수정했습니다." : "오늘 한 일을 기록했습니다.",
       );
@@ -395,6 +408,8 @@ export function TodayDashboard() {
     setContent(log.content);
     setFormError("");
     setStatusMessage("");
+    setRecordsActionMessage("");
+    setRecordsActionError("");
     recordReturnFocusRef.current = anchor;
     setRecordPanelAnchor(anchor);
     setIsRecordPanelOpen(true);
@@ -431,6 +446,7 @@ export function TodayDashboard() {
     setLogs((currentLogs) =>
       currentLogs.filter((storedLog) => storedLog.id !== log.id),
     );
+    setStatusMessage("");
     setRecordsActionMessage("기록을 삭제했습니다.");
     setRecordsActionError("");
 
@@ -493,6 +509,7 @@ export function TodayDashboard() {
 
   function handleSelectDate(date: string) {
     setIsRecordPanelOpen(false);
+    setIsActivityRequiredNoticeOpen(false);
     setRecordPanelAnchor(null);
     setSelectedDate(date);
     setStatusMessage("");
@@ -695,84 +712,147 @@ export function TodayDashboard() {
         />
 
         <section
-          className="activity-quick-record activity-quick-record-launcher"
-          aria-labelledby="quick-record-title"
+          className="activity-day-records activity-calendar-event-panel"
+          aria-labelledby="day-records-title"
         >
-          <header>
+          <header className="activity-calendar-event-header">
             <div>
-              <p className="activity-section-kicker">{formatDateKey(selectedDate, { month: "long", day: "numeric", weekday: "short" })}</p>
-              <h2 id="quick-record-title">오늘 한 일 기록하기</h2>
+              <p className="activity-section-kicker">
+                {formatDateKey(selectedDate, {
+                  month: "long",
+                  day: "numeric",
+                  weekday: "short",
+                })}
+              </p>
+              <h2 id="day-records-title">날짜별 기록</h2>
             </div>
+            <RippleButton
+              ref={recordTriggerRef}
+              type="button"
+              className="activity-add-record-button"
+              onClick={(event) => {
+                if (quickRecordMode === "needs-activity") {
+                  openActivityRequiredNotice(event.currentTarget);
+                  return;
+                }
+
+                openRecordPanel(event.currentTarget);
+              }}
+              disabled={quickRecordMode === "date-unavailable"}
+              aria-label={
+                quickRecordMode === "needs-activity"
+                  ? "기록할 진행 활동 추가"
+                  : `${formatDateKey(selectedDate, {
+                      month: "long",
+                      day: "numeric",
+                    })} 기록 추가`
+              }
+              aria-haspopup="dialog"
+              aria-expanded={
+                quickRecordMode === "needs-activity"
+                  ? isActivityRequiredNoticeOpen
+                  : isRecordPanelOpen && !editingLog
+              }
+              aria-controls={
+                quickRecordMode === "needs-activity"
+                  ? activityRequiredPanelId
+                  : recordPanelId
+              }
+              title={
+                quickRecordMode === "date-unavailable"
+                  ? "이 날짜에는 기록할 수 있는 진행 활동이 없습니다."
+                  : quickRecordMode === "needs-activity"
+                    ? "진행 활동 추가"
+                    : "기록 추가"
+              }
+            >
+              <Plus aria-hidden="true" />
+              <RippleButtonRipples />
+            </RippleButton>
           </header>
 
-          <MotionConfig reducedMotion="user">
-            <AnimatePresence mode="wait" initial={false}>
-          {quickRecordMode === "ready" ? (
-            <motion.div
-              key="record-ready"
-              className="activity-record-launcher-copy"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
+          {statusMessage ? (
+            <p
+              className="activity-form-success activity-records-feedback"
+              role="status"
             >
-                <RippleButton
-                  ref={recordTriggerRef}
-                  type="button"
-                  className="activity-record-trigger"
-                  onClick={(event) => openRecordPanel(event.currentTarget)}
-                  aria-haspopup="dialog"
-                  aria-expanded={isRecordPanelOpen}
-                  aria-controls={recordPanelId}
-                  tapScale={0.985}
-                >
-                  <span className="activity-record-trigger-icon" aria-hidden="true">
-                    <Plus />
-                  </span>
-                  <span className="activity-record-trigger-copy">
-                    <span className="activity-record-trigger-label">
-                      {editingLog
-                        ? "수정 이어가기"
-                        : content.trim()
-                          ? "작성 이어가기"
-                          : "기록 남기기"}
-                    </span>
-                    <span className="activity-record-trigger-meta">
-                      {editingLog
-                        ? "선택한 기록을 수정 중"
-                        : `${recordableActivities.length}개 활동에 연결 가능`}
-                    </span>
-                  </span>
-                  <ArrowRight
-                    className="activity-record-trigger-arrow"
-                    aria-hidden="true"
-                  />
-                  <RippleButtonRipples />
-                </RippleButton>
+              {statusMessage}
+            </p>
+          ) : null}
+          {recordsActionError ? (
+            <p
+              className="activity-form-error activity-records-feedback"
+              role="alert"
+            >
+              {recordsActionError}
+            </p>
+          ) : null}
+          {recordsActionMessage ? (
+            <p
+              className="activity-form-success activity-records-feedback"
+              role="status"
+            >
+              {recordsActionMessage}
+            </p>
+          ) : null}
 
-              {statusMessage ? (
-                <p
-                  className="activity-form-success activity-record-feedback"
-                  role="status"
-                >
-                  {statusMessage}
-                </p>
-              ) : null}
-            </motion.div>
+          {selectedLogs.length > 0 ? (
+            <ol className="activity-event-list">
+              {selectedLogs.map((log) => {
+                const activity = activitiesById[log.activityId];
+                const canEdit = activity?.status === "active";
+
+                return (
+                  <li
+                    key={log.id}
+                    data-editing={editingLog?.id === log.id || undefined}
+                  >
+                    <div className="activity-event-accent" aria-hidden="true" />
+                    <div className="activity-event-content">
+                      <div className="activity-event-meta">
+                        <Link href={`/activities/${log.activityId}`}>
+                          {activity?.title ?? "연결된 활동"}
+                        </Link>
+                      </div>
+                      <p className="activity-event-preview">{log.content}</p>
+                    </div>
+                    {canEdit ? (
+                      <div className="activity-event-actions">
+                        <button
+                          type="button"
+                          onClick={(event) =>
+                            startEditing(log, event.currentTarget)
+                          }
+                          aria-label={`${activity.title} 기록 수정`}
+                          aria-haspopup="dialog"
+                          aria-controls={recordPanelId}
+                          aria-expanded={
+                            isRecordPanelOpen && editingLog?.id === log.id
+                          }
+                        >
+                          <Edit3 aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(log)}
+                          aria-label={`${activity.title} 기록 삭제`}
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </button>
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ol>
           ) : (
-            <motion.div
-              key={quickRecordMode}
-              className="activity-record-empty"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
-            >
-              <CalendarDays aria-hidden="true" />
+            <div className="activity-event-empty">
               <p>
                 {quickRecordMode === "date-unavailable"
-                  ? "이 날짜에 기록할 수 있는 진행 활동이 없습니다. 활동 시작일 이후 날짜를 선택해 주세요."
-                  : "오늘 한 일을 연결하려면 먼저 진행 활동을 등록해 주세요."}
+                  ? "이 날짜에 기록할 수 있는 진행 활동이 없습니다."
+                  : quickRecordMode === "needs-activity"
+                    ? "날짜별 기록을 시작하려면 먼저 진행 활동을 추가해 주세요."
+                    : "이 날짜에 남긴 기록이 없습니다."}
               </p>
               {quickRecordMode === "needs-activity" ? (
                 <RippleButton
@@ -802,10 +882,8 @@ export function TodayDashboard() {
                   <RippleButtonRipples />
                 </RippleButton>
               ) : null}
-            </motion.div>
+            </div>
           )}
-            </AnimatePresence>
-          </MotionConfig>
 
           <FloatingPanel
             open={isRecordPanelOpen}
@@ -935,93 +1013,60 @@ export function TodayDashboard() {
               </div>
             </form>
           </FloatingPanel>
+
+          <FloatingPanel
+            open={isActivityRequiredNoticeOpen}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                closeActivityRequiredNotice();
+              }
+            }}
+            anchorElement={recordPanelAnchor}
+            returnFocusRef={recordReturnFocusRef}
+            initialFocusRef={activityRequiredActionRef}
+            id={activityRequiredPanelId}
+            title="진행 중인 활동이 필요해요"
+            closeLabel="진행 활동 필요 안내 닫기"
+            description="날짜별 기록은 진행 중인 활동과 연결해 저장합니다."
+            className="activity-required-notice-panel"
+            positioning="viewport-center"
+          >
+            <div className="activity-required-notice">
+              <p>
+                먼저 진행 중인 활동을 추가해 주세요. 활동을 만든 뒤 선택한
+                날짜의 기록을 남길 수 있습니다.
+              </p>
+              <div className="activity-required-notice-actions">
+                <RippleButton
+                  type="button"
+                  className="activity-secondary-button"
+                  onClick={closeActivityRequiredNotice}
+                >
+                  나중에
+                  <RippleButtonRipples />
+                </RippleButton>
+                <RippleButton
+                  ref={activityRequiredActionRef}
+                  type="button"
+                  className="activity-primary-button"
+                  onClick={() => {
+                    const trigger = recordTriggerRef.current;
+
+                    closeActivityRequiredNotice();
+                    if (trigger) {
+                      openActivityCreateScreen(trigger);
+                    }
+                  }}
+                >
+                  <Plus aria-hidden="true" />
+                  활동 추가
+                  <RippleButtonRipples />
+                </RippleButton>
+              </div>
+            </div>
+          </FloatingPanel>
         </section>
       </div>
-
-      <section className="activity-day-records" aria-labelledby="day-records-title">
-        <header>
-          <div>
-            <p className="activity-section-kicker">날짜별 기록</p>
-            <h2 id="day-records-title">
-              {formatDateKey(selectedDate, { month: "long", day: "numeric" })}에 한 일
-            </h2>
-          </div>
-          <span>{selectedLogs.length}개</span>
-        </header>
-
-        {recordsActionError ? (
-          <p className="activity-form-error activity-records-feedback" role="alert">
-            {recordsActionError}
-          </p>
-        ) : null}
-        {recordsActionMessage ? (
-          <p
-            className="activity-form-success activity-records-feedback"
-            role="status"
-          >
-            {recordsActionMessage}
-          </p>
-        ) : null}
-
-        {selectedLogs.length > 0 ? (
-          <ol className="activity-log-list">
-            {selectedLogs.map((log) => {
-              const activity = activitiesById[log.activityId];
-              const canEdit = activity?.status === "active";
-
-              return (
-                <li key={log.id} data-editing={editingLog?.id === log.id || undefined}>
-                  <div className="activity-log-marker" aria-hidden="true" />
-                  <div className="activity-log-content">
-                    <div className="activity-log-meta">
-                      <Link href={`/activities/${log.activityId}`}>
-                        {activity?.title ?? "연결된 활동"}
-                      </Link>
-                      <span>{activity ? ACTIVITY_STATUS_LABELS[activity.status] : "상태 없음"}</span>
-                    </div>
-                    <p>{log.content}</p>
-                  </div>
-                  {canEdit ? (
-                    <div className="activity-log-actions">
-                      <button
-                        type="button"
-                        onClick={(event) =>
-                          startEditing(log, event.currentTarget)
-                        }
-                        aria-label={`${activity.title} 기록 수정`}
-                        aria-haspopup="dialog"
-                        aria-controls={recordPanelId}
-                        aria-expanded={
-                          isRecordPanelOpen && editingLog?.id === log.id
-                        }
-                      >
-                        <Edit3 aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(log)}
-                        aria-label={`${activity.title} 기록 삭제`}
-                      >
-                        <Trash2 aria-hidden="true" />
-                      </button>
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ol>
-        ) : (
-          <div className="activity-day-empty">
-            <p>이 날짜에 남긴 기록이 없습니다.</p>
-            {selectedDate !== today ? (
-              <RippleButton type="button" onClick={() => handleSelectDate(today)}>
-                오늘로 돌아가기
-                <RippleButtonRipples />
-              </RippleButton>
-            ) : null}
-          </div>
-        )}
-      </section>
 
       <ExpandableScreen
         open={isActivityCreateOpen}
