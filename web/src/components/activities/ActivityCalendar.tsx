@@ -172,7 +172,6 @@ export function ActivityCalendar({
     <section className="activity-calendar" aria-labelledby="activity-calendar-title">
       <header className="activity-calendar-header">
         <div>
-          <p className="activity-section-kicker">월간 기록</p>
           <h2 id="activity-calendar-title">{monthLabel}</h2>
         </div>
         <div className="activity-calendar-navigation">

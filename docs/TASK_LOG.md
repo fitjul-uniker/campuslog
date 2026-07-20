@@ -30,6 +30,32 @@
 
 ## 작업 로그
 
+### 2026-07-20 - 캘린더 날짜별 이벤트 목록 재구성
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-20 |
+| 작업자 | Codex |
+| 작업 요약 | ReUI Calendar with event list 레퍼런스를 CampusLog 날짜별 기록 흐름에 맞춰 적용 |
+| 수정한 파일 | `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/ActivityCalendar.tsx`, `web/src/app/globals.css`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/IA.md`, `docs/USER_FLOW.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 캘린더 옆 `오늘 한 일 기록하기` 카드를 선택 날짜의 `날짜별 기록` 이벤트 패널로 교체하고, 항목에는 연결 활동 제목과 기록 내용 한 줄을 기본 표시한 뒤 hover·focus-within에서 내용을 최대 3줄로 펼치고 긴 내용은 말줄임 처리. 상태 pill과 상태별 색상 구분은 제거하고 모든 항목에 동일한 검정 세로 accent를 적용. 항목 사이 hover 이동은 line-clamp를 즉시 바꾸지 않고 높이·투명도만 260ms ease-out으로 전환해 급작스러운 재배치를 완화. 캘린더 날짜 hover는 위로 뜨는 transform을 제거하고 배경·테두리·글자색만 160ms ease-out으로 전환하며, 헤더의 중복 `월간 기록` 보조 문구를 제거. 헤더 44px `+` 버튼에서 기존 중앙 기록 패널을 열고 진행 활동이 없으면 활동 필요 안내 dialog를 먼저 표시한 뒤 사용자가 선택한 경우에만 활동 작성 화면으로 연결. 기존 저장·수정·삭제·날짜 제한·초점 복귀·reduced motion·활동 추가 빈 상태를 유지 |
+| 검증한 내용 | 최종 코드 기준 `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. UI preview에서는 날짜별 기록 heading과 `+` 접근성 이름, 기록 작성 dialog 열림, 검증 기록 저장·삭제, 데스크톱·390px 가로 overflow 없음을 확인. 이후 적용한 기록 한 줄 기본 표시·hover 최대 3줄 확장, 상태 표시 제거, 캘린더 hover·`월간 기록` 문구 제거는 정적 검사와 production build로 확인 |
+| 남은 작업 | 실제 로그인 Supabase 세션에서 진행 활동 없음 안내 팝업과 저장·수정·삭제를 회귀 확인하고, 최종 hover 확장·캘린더 hover 표현을 브라우저에서 시각 확인 |
+| 관련 커밋 메시지 | `design: reshape calendar daily records` |
+
+### 2026-07-20 - 나의 활동 검색 헤더 반응형 보정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-20 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 헤더가 줄어드는 중간 폭에서 검색 바가 일시적으로 다음 줄로 이동하는 현상 수정 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 나의 활동 전용 검색 class를 추가하고 헤더는 모바일 이전까지 한 줄을 유지하도록 변경. 검색 컨테이너와 펼쳐진 입력 surface에 가변 폭과 최대 폭을 적용해 목록 패널 너비에 맞춰 줄어들도록 구성하며 640px 이하의 기존 세로 배치는 유지 |
+| 검증한 내용 | 최종 코드 기준 `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 로그인 데이터가 있는 화면에서 목록 단독·상세 패널 전환 중 검색 바 폭과 640px 이하 세로 배치를 브라우저로 시각 확인. 이 확인 전까지 `ISSUE-066`은 진행 중으로 유지 |
+| 관련 커밋 메시지 | `fix: make activity search responsive` |
+
 ### 2026-07-17 - 팀 테스트 계정 시드 스크립트 추가
 
 | 항목 | 내용 |

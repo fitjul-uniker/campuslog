@@ -86,6 +86,8 @@
 | ISSUE-062 | Resolved | Low | Decision | 추천 기록 상단 eyebrow가 메뉴와 중복되고 복사 버튼 텍스트가 과함 | 시각 텍스트 제거 후 접근성 상태 보존 방식 결정 | eyebrow를 제거하고 복사 버튼을 44px 아이콘 전용으로 변경. aria-label, 성공 status, 실패 alert는 유지 | Codex | 2026-07-17 | 2026-07-17 |
 | ISSUE-063 | Resolved | Medium | Decision | 여러 핵심 CTA의 눌림 피드백을 일관화할 필요 | Ripple 적용·제외 범위와 reduced motion 기준 결정 | 결과가 발생하는 CTA에 공용 RippleButton을 적용하고 인증·캘린더·탭·목록·메뉴·링크·닫기·삭제·숨기기는 제외. 키보드 중앙 ripple과 reduced motion 비활성화를 구현 | Codex | 2026-07-17 | 2026-07-17 |
 | ISSUE-064 | Resolved | Medium | Decision | 여러 지역의 팀원이 Google 공유 계정으로 테스트하면 보안 차단이 발생함 | 공유 Google 계정 대신 사용할 테스트 인증 방식, 계정 수, 관리자 키 사용 범위 결정 | Supabase Auth 이메일/비밀번호 기반 `test1@campuslog.test` ~ `test9@campuslog.test` 계정을 사용하기로 결정. `web/scripts/seed-test-users.mjs`와 `npm run seed:test-users`를 추가해 서버 전용 `SUPABASE_SERVICE_ROLE_KEY`가 있는 환경에서 계정을 생성/갱신하게 했고, 사용자가 실제 project에서 9개 계정이 모두 `created`된 것을 확인. 관리자 키는 앱/브라우저/일반 팀원 env에 공유하지 않으며, 더미 데이터 주입은 별도 작업으로 남김 | 사용자 + Codex | 2026-07-17 | 2026-07-17 |
+| ISSUE-065 | Resolved | Medium | Decision | 캘린더 옆 `오늘 한 일 기록하기` 카드와 별도 날짜별 기록 목록이 중복되고 기록 본문 전체 노출로 스캔 밀도가 낮음 | ReUI Calendar with event list를 참고하되 기존 저장·수정·삭제와 진행 활동 빈 상태를 보존할 구조 결정 | 기존 빠른 기록 카드를 선택 날짜의 이벤트형 `날짜별 기록` 패널로 교체하고 활동 제목과 기록 한 줄을 먼저 표시. 상태별 표시는 생략하고 모든 항목에 동일한 검정 세로 accent를 적용. 헤더 `+`에서 중앙 작성 패널을 열며 진행 활동이 없으면 활동 추가 화면 대신 안내 dialog를 먼저 표시하고 사용자가 다시 선택한 경우에만 활동 작성 화면으로 연결 | 사용자 + Codex | 2026-07-20 | 2026-07-20 |
+| ISSUE-066 | In Progress | Medium | Bug | 나의 활동 목록 패널의 가로 폭이 줄어드는 중간 구간에서 고정 너비 검색 바가 제목 아래로 잠시 이동함 | 검색 입력의 확장 애니메이션과 모바일 세로 배치를 유지하면서 중간 폭 줄바꿈 제거 필요 | 640px 초과에서는 제목·검색 행을 줄바꿈하지 않고 검색 컨테이너와 입력 surface가 남는 폭에 맞춰 축소되도록 전용 반응형 class를 적용하고 정적 검사·production build를 통과함. 실제 데이터 화면의 목록·상세 전환과 640px 경계 시각 확인은 남음 | Codex | 2026-07-20 | - |
 
 ## 이슈 추가 템플릿
 
