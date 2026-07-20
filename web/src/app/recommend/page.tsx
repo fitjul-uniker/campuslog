@@ -24,7 +24,7 @@ type RecommendationFormInput = {
 };
 
 const RECOMMENDATION_PAGE_DESCRIPTION =
-  "문항과 JD의 요구사항을 정리하고, 적합한 경험 Top 3를 근거와 함께 비교합니다.";
+  "적합한 경험 Top 3를 근거와 함께 비교합니다.";
 
 function RecommendationPageHeader() {
   return (
@@ -244,8 +244,7 @@ export default function RecommendPage() {
           <div>
             <h2 id="recommend-form-title">추천 입력</h2>
             <p className="muted-text">
-              저장된 활동 {experiences.length}개와 분석 결과 {analyses.length}
-              개를 함께 참고합니다.
+              저장된 활동과 분석 결과를 함께 참고합니다.
             </p>
           </div>
         </div>

@@ -30,6 +30,7 @@ CampusLog
     │   └── 사용자 확인 후 완료 경험 저장
     ├── [현재] 나의 활동 (`/experiences`)
     │   ├── 진행 활동과 완료 경험 통합 목록
+    │   ├── 완료 경험 인라인 상세 ↔ AI 분석 결과 스플릿뷰
     │   ├── 과거 경험 작성 (`/experiences/new`)
     │   └── 완료 경험
     │       ├── 상세 (`/experiences/[id]`)
@@ -81,13 +82,16 @@ CampusLog
 ```text
 나의 활동 (`/experiences`)
 ├── 진행 활동 → `/activities/[id]`
-├── 완료 경험 → `/experiences/[id]`
+├── 완료 경험 → 인라인 활동 상세
+│   └── AI 분석 결과 → 같은 화면의 활동 상세 / 분석 결과 스플릿뷰
 └── 과거 경험 기록하기 → `/experiences/new`
 
 완료 경험 상세 (`/experiences/[id]`)
 ├── 수정 → `/experiences/[id]/edit`
 └── AI 분석 → `/experiences/[id]/analysis`
 ```
+
+`/experiences/[id]`와 `/experiences/[id]/analysis`는 직접 URL과 기존 링크 호환을 위한 상세 경로로 유지합니다. `나의 활동` 목록에서 저장된 분석을 확인하는 기본 흐름은 `/experiences` 안의 스플릿뷰이며 별도 분석 경로로 이동하지 않습니다.
 
 ### CampusLog AI
 

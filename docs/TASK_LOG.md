@@ -30,6 +30,32 @@
 
 ## 작업 로그
 
+### 2026-07-21 - 나의 활동 반응형 헤더와 추천 설명 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-21 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 헤더가 폭별로 안정적으로 전환되도록 보정하고 추천 화면의 반복 설명을 간결하게 정리 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/recommend/page.tsx`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `나의 활동` h1에 flex 축소 방지와 `white-space: nowrap`을 적용해 화면 폭과 관계없이 가로 한 줄로 유지. 목록 패널 기준 390px 이하에서는 검색을 44px 아이콘으로 축약하고 펼친 검색은 행 전체를 사용하며, 320px 이하에서는 보조 개수 배지를 숨겨 폭이 줄어들 때 요소가 충돌하지 않도록 구성. 모바일의 안정적인 세로 배치는 유지. 추천 화면 헤더 설명은 `적합한 경험 Top 3를 근거와 함께 비교합니다.`, 입력 패널 안내는 `저장된 활동과 분석 결과를 함께 참고합니다.`로 축약 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 격리된 UI preview의 활동 상세 상태에서 1180·1050·900·700·390px를 확인해 제목 1줄, 헤더·페이지 가로 overflow 0, 좁은 목록 검색 44px 축약, 최소 폭 보조 개수 숨김, 펼친 검색의 300px 행 전체 사용을 검증. 추천 헤더의 축약 문구와 437px 가로 overflow 0도 DOM으로 확인 |
+| 남은 작업 | 실제 로그인 완료 경험 데이터 화면에서 목록·상세·분석 스플릿 상태의 검색 전환과 추천 입력 패널 축약 문구를 최종 확인. `ISSUE-066`은 진행 중 유지 |
+| 관련 커밋 메시지 | `design: add experience analysis split view` |
+
+### 2026-07-21 - 나의 활동 AI 분석 스플릿뷰
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-21 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 완료 경험 상세와 저장된 AI 분석 결과를 같은 화면의 좌우 스플릿뷰로 재구성 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/components/ai/AnalysisResult.tsx`, `web/src/app/globals.css`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/IA.md`, `docs/USER_FLOW.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 완료 경험 인라인 상세의 `전체 화면으로 보기` 제거. 저장된 `AI 분석 결과`를 링크 대신 controlled 버튼으로 바꾸고, 선택 시 목록을 접어 기존 활동 상세를 왼쪽으로 이동시키며 오른쪽에 전체 분석 결과·기록 보완 질문·재분석 액션을 1:1 동일 폭으로 표시. 분석 닫기와 Escape는 분석 패널을 먼저 닫고 실행 버튼으로 초점을 복귀. 860px 이하에서는 상세·분석을 세로로 배치하고 직접 `/experiences/[id]`, `/experiences/[id]/analysis` 경로와 repository·API 계약은 유지 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. UI preview의 격리된 검증 데이터로 데스크톱 좌우 배치와 독립 스크롤, 390×844에서 343px 단일 열 세로 배치와 가로 overflow 없음을 확인. 후속 요청에 따라 데스크톱 grid를 1:1 동일 폭으로 조정했으며 인라인 상세에서 `전체 화면으로 보기`가 사라진 것도 DOM으로 확인. 임시 검증 route와 preview 테스트 경험은 검증 후 삭제 |
+| 남은 작업 | 실제 로그인 Supabase 분석 데이터에서 `AI 분석 결과` 버튼의 열기·닫기·Escape·초점 복귀, 재분석과 보완 질문 저장을 브라우저로 회귀 확인. 완료 전까지 `ISSUE-067`은 진행 중 유지 |
+| 관련 커밋 메시지 | `design: add experience analysis split view` |
+
 ### 2026-07-20 - 캘린더 날짜별 이벤트 목록 재구성
 
 | 항목 | 내용 |
