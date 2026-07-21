@@ -1,18 +1,37 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-
 import { ActivityCreateForm } from "@/components/activities/ActivityCreateForm";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export function NewActivityClient() {
   return (
-    <div className="activity-form-page">
-      <header className="activity-form-header">
-        <Link href="/dashboard" className="activity-back-link">
-          <ArrowLeft aria-hidden="true" />
-          오늘의 기록
-        </Link>
+    <div className="activity-form-page sub-page">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+              CampusLog
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/dashboard">오늘의 기록</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>활동 추가</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <header className="activity-form-header sub-page-heading">
         <div className="activity-form-heading">
           <div>
             <h1>활동 추가</h1>

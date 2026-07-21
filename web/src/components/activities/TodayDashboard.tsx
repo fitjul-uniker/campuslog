@@ -31,8 +31,25 @@ import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import { Field } from "@/components/ui/field";
 import { FloatingPanel } from "@/components/ui/floating-panel";
 import { ExpandableScreen } from "@/components/ui/expandable-screen";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { DailyLog, TrackedActivity } from "@/lib/types";
 
@@ -40,6 +57,11 @@ type EditingLog = {
   id: string;
   activityId: string;
   content: string;
+};
+
+type ActivityComboboxOption = {
+  label: string;
+  value: string;
 };
 
 function sortActivities(activities: TrackedActivity[]): TrackedActivity[] {
@@ -135,7 +157,7 @@ export function TodayDashboard() {
   const recordPanelId = `daily-log-panel-${generatedPanelId}`;
   const activityRequiredPanelId = `activity-required-panel-${generatedPanelId}`;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const firstActivityRadioRef = useRef<HTMLInputElement>(null);
+  const activityComboboxRef = useRef<HTMLInputElement>(null);
   const recordTriggerRef = useRef<HTMLButtonElement>(null);
   const activityRequiredActionRef = useRef<HTMLButtonElement>(null);
   const recordReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -173,7 +195,7 @@ export function TodayDashboard() {
 
         return recordableTodayActivities.some((activity) => activity.id === current)
           ? current
-          : (recordableTodayActivities[0]?.id ?? "");
+          : "";
       });
     } catch {
       setActivities([]);
@@ -202,6 +224,18 @@ export function TodayDashboard() {
       ) ?? [],
     [activities, selectedDate, today],
   );
+  const activityComboboxOptions = useMemo<ActivityComboboxOption[]>(
+    () =>
+      recordableActivities.map((activity) => ({
+        label: activity.title,
+        value: activity.id,
+      })),
+    [recordableActivities],
+  );
+  const selectedActivityOption =
+    activityComboboxOptions.find(
+      (activity) => activity.value === selectedActivityId,
+    ) ?? null;
   const plannedActivities = useMemo(
     () => activities?.filter((activity) => activity.status === "planned") ?? [],
     [activities],
@@ -267,11 +301,7 @@ export function TodayDashboard() {
     setEditingLog(null);
     setContent("");
     setFormError("");
-    setSelectedActivityId((current) =>
-      recordableActivities.some((activity) => activity.id === current)
-        ? current
-        : (recordableActivities[0]?.id ?? ""),
-    );
+    setSelectedActivityId("");
   }
 
   function openRecordPanel(anchor = recordTriggerRef.current) {
@@ -333,7 +363,7 @@ export function TodayDashboard() {
 
     if (!activity || !isActivityRecordableOnDate(activity, selectedDate, today)) {
       setFormError("기록을 연결할 진행 중 활동을 선택해 주세요.");
-      firstActivityRadioRef.current?.focus();
+      activityComboboxRef.current?.focus();
       return;
     }
 
@@ -497,11 +527,7 @@ export function TodayDashboard() {
       currentLogs.filter((log) => log.activityId !== activity.id),
     );
     setSelectedActivityId((current) =>
-      current === activity.id
-        ? (recordableActivities.find(
-            (recordableActivity) => recordableActivity.id !== activity.id,
-          )?.id ?? "")
-        : current,
+      current === activity.id ? "" : current,
     );
     setActivityActionError("");
     setActivityActionMessage("활동을 삭제했습니다.");
@@ -518,15 +544,7 @@ export function TodayDashboard() {
     setEditingLog(null);
     setContent("");
     setFormError("");
-    const nextRecordableActivities =
-      activities?.filter((activity) =>
-        isActivityRecordableOnDate(activity, date, today),
-      ) ?? [];
-    setSelectedActivityId((current) =>
-      nextRecordableActivities.some((activity) => activity.id === current)
-        ? current
-        : (nextRecordableActivities[0]?.id ?? ""),
-    );
+    setSelectedActivityId("");
   }
 
   const hasActivitySelectionError = formError.includes("활동을 선택");
@@ -550,12 +568,34 @@ export function TodayDashboard() {
   }
 
   return (
-    <div className="activity-today-page">
-      <header className="activity-today-header">
+    <div className="activity-today-page primary-page">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+              CampusLog
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>오늘의 기록</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <header className="activity-today-header primary-page-heading">
         <div>
-          <p className="activity-section-kicker">{formatDateKey(today, { month: "long", day: "numeric", weekday: "long" })}</p>
-          <h1>오늘의 기록</h1>
-          <p>
+          <div className="activity-today-title-row">
+            <h1>오늘의 기록</h1>
+            <p className="activity-section-kicker">
+              {formatDateKey(today, {
+                month: "long",
+                day: "numeric",
+                weekday: "long",
+              })}
+            </p>
+          </div>
+          <p className="primary-page-description">
             하루하루 해낸 일을 기록하세요. 쌓인 기록은 하나의 경험이
             됩니다.
           </p>
@@ -897,7 +937,7 @@ export function TodayDashboard() {
             fallbackFocusRef={recordTriggerRef}
             initialFocusRef={textareaRef}
             id={recordPanelId}
-            title={editingLog ? "기록 수정하기" : "오늘 한 일 남기기"}
+            title={editingLog ? "한 일 수정하기" : "한 일 남기기"}
             closeLabel="오늘 한 일 기록 패널 닫기"
             dismissible={!isSaving}
             description={formatDateKey(selectedDate, {
@@ -907,6 +947,7 @@ export function TodayDashboard() {
             })}
             className="activity-floating-record-panel"
             positioning="viewport-center"
+            preferredWidth={520}
           >
             <form
               onSubmit={handleSubmit}
@@ -915,7 +956,8 @@ export function TodayDashboard() {
               aria-busy={isSaving}
             >
               <div className="activity-floating-record-fields">
-                <fieldset
+                <Field
+                  className="activity-combobox-field"
                   aria-invalid={hasActivitySelectionError || undefined}
                   aria-describedby={
                     hasActivitySelectionError
@@ -923,32 +965,54 @@ export function TodayDashboard() {
                       : undefined
                   }
                 >
-                  <legend>무슨 활동에서 한 일인가요?</legend>
-                  <div className="activity-tag-options">
-                    {recordableActivities.map((activity, index) => (
-                      <label key={activity.id}>
-                        <input
-                          ref={index === 0 ? firstActivityRadioRef : undefined}
-                          type="radio"
-                          name="activityId"
-                          value={activity.id}
-                          checked={selectedActivityId === activity.id}
-                          onChange={() => setSelectedActivityId(activity.id)}
-                          disabled={isSaving}
-                        />
-                        <span>{activity.title}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
+                  <label id={`${recordPanelId}-activity-label`}>
+                    무슨 활동에서 한 일인가요?
+                  </label>
+                  <Combobox
+                    items={activityComboboxOptions}
+                    value={selectedActivityOption}
+                    inputValue={selectedActivityOption?.label ?? ""}
+                    onInputValueChange={() => undefined}
+                    onValueChange={(activity) =>
+                      setSelectedActivityId(activity?.value ?? "")
+                    }
+                  >
+                    <ComboboxInput
+                      ref={activityComboboxRef}
+                      placeholder="활동을 선택하세요"
+                      readOnly
+                      aria-labelledby={`${recordPanelId}-activity-label`}
+                      aria-invalid={hasActivitySelectionError || undefined}
+                      aria-describedby={
+                        hasActivitySelectionError
+                          ? `${recordPanelId}-error`
+                          : undefined
+                      }
+                      disabled={isSaving}
+                    />
+                    <ComboboxContent>
+                      <ComboboxEmpty>일치하는 활동이 없습니다.</ComboboxEmpty>
+                      <ComboboxList>
+                        {(activity: ActivityComboboxOption) => (
+                          <ComboboxItem
+                            key={activity.value}
+                            value={activity}
+                          >
+                            {activity.label}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                </Field>
 
                 <label className="activity-textarea-field">
-                  <span>실제로 한 일</span>
+                  <span>어떤 일을 하셨나요?</span>
                   <textarea
                     ref={textareaRef}
                     value={content}
                     onChange={(event) => setContent(event.target.value)}
-                    rows={6}
+                    rows={5}
                     maxLength={2000}
                     placeholder="예: 사용자 인터뷰 3건을 진행하고 반복해서 나온 불편을 정리했다."
                     aria-invalid={hasContentError || undefined}

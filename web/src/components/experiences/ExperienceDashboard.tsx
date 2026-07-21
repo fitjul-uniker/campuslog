@@ -37,6 +37,14 @@ import type {
 } from "@/lib/types";
 import { CountUp } from "@/components/ui/CountUp";
 import { GooeyInput } from "@/components/ui/GooeyInput";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 const DASHBOARD_LAYOUT_TRANSITION = {
   duration: 0.3,
@@ -435,8 +443,22 @@ export function ExperienceDashboard() {
   return (
     <MotionConfig reducedMotion="user">
       <div
-        className={`dashboard-experience-page${hasSelection ? " has-selection" : ""}${isAnalysisOpen ? " has-analysis" : ""}`}
+        className={`dashboard-experience-page primary-page${hasSelection ? " has-selection" : ""}${isAnalysisOpen ? " has-analysis" : ""}`}
       >
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+                CampusLog
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>나의 활동</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
         <LayoutGroup id="dashboard-experience-layout">
           <motion.div
             layout
@@ -451,7 +473,7 @@ export function ExperienceDashboard() {
               aria-labelledby="dashboard-experience-heading"
               transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
             >
-              <header className="dashboard-experience-heading">
+              <header className="dashboard-experience-heading primary-page-heading">
                 <div className="dashboard-experience-heading-row">
                   <div className="dashboard-experience-title-group">
                     <h1 id="dashboard-experience-heading">나의 활동</h1>
@@ -483,7 +505,7 @@ export function ExperienceDashboard() {
                     />
                   ) : null}
                 </div>
-                <p>
+                <p className="primary-page-description">
                   진행 중인 활동과 완료된 경험을 한곳에서 확인합니다.
                 </p>
                 {normalizedSearchQuery && filteredActivityItems ? (

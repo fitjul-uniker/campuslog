@@ -40,6 +40,7 @@ type FloatingPanelProps = {
   layoutId?: string;
   className?: string;
   positioning?: FloatingPanelPositioning;
+  preferredWidth?: number;
 };
 
 const FOCUSABLE_SELECTOR = [
@@ -84,6 +85,7 @@ export function FloatingPanel({
   layoutId,
   className,
   positioning = "anchored",
+  preferredWidth = 440,
 }: FloatingPanelProps) {
   const generatedId = useId();
   const panelId = idOverride ?? `floating-panel-${generatedId}`;
@@ -142,7 +144,7 @@ export function FloatingPanel({
       const bottomInset = Math.max(baseMargin, safeBottom);
       const leftInset = Math.max(baseMargin, safeLeft);
       const width = Math.min(
-        440,
+        preferredWidth,
         Math.max(0, viewportWidth - leftInset - rightInset),
       );
       const maxHeight = Math.max(
@@ -267,7 +269,7 @@ export function FloatingPanel({
       window.visualViewport?.removeEventListener("resize", updatePosition);
       window.visualViewport?.removeEventListener("scroll", updatePosition);
     };
-  }, [anchorElement, open, positioning]);
+  }, [anchorElement, open, positioning, preferredWidth]);
 
   useEffect(() => {
     if (!open) {
@@ -330,6 +332,10 @@ export function FloatingPanel({
     });
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+
       if (event.key === "Escape") {
         event.preventDefault();
 

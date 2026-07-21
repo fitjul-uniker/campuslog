@@ -6,6 +6,14 @@ import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { ExperienceForm } from "@/components/experiences/ExperienceForm";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceFormInput } from "@/lib/types";
 
@@ -84,10 +92,33 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
   }
 
   return (
-    <div className="page-stack page-stack-narrow">
-      <section className="page-header">
+    <div className="page-stack page-stack-narrow sub-page">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+              CampusLog
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/experiences/${experience.id}`}>
+              경험 상세
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>경험 수정</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <section className="page-header sub-page-heading">
         <div>
-          <p className="eyebrow">활동 경험 수정</p>
           <h1>경험 수정</h1>
           <p className="page-description">
             저장된 경험 원본 내용을 수정합니다.

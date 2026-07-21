@@ -1,13 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpenText, History } from "lucide-react";
+import { BookOpenText, History } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { RecommendationForm } from "@/components/ai/RecommendationForm";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
 import { EmptyState } from "@/components/common/EmptyState";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { createIsoTimestamp } from "@/lib/date";
 import { requestRecommendation } from "@/lib/recommendationApi";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
@@ -26,12 +34,32 @@ type RecommendationFormInput = {
 const RECOMMENDATION_PAGE_DESCRIPTION =
   "적합한 경험 Top 3를 근거와 함께 비교합니다.";
 
+function RecommendationPageBreadcrumb() {
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+            CampusLog
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>AI 기반 활동 추천</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
 function RecommendationPageHeader() {
   return (
-    <section className="page-header recommendation-page-header">
+    <section className="page-header recommendation-page-header primary-page-heading">
       <div className="recommendation-page-header-copy">
         <h1>AI 기반 활동 추천</h1>
-        <p className="page-description">{RECOMMENDATION_PAGE_DESCRIPTION}</p>
+        <p className="page-description primary-page-description">
+          {RECOMMENDATION_PAGE_DESCRIPTION}
+        </p>
       </div>
 
       <div className="header-actions recommendation-header-actions">
@@ -41,10 +69,6 @@ function RecommendationPageHeader() {
         >
           <History className="button-icon" aria-hidden="true" />
           추천 기록
-        </Link>
-        <Link href="/experiences" className="button button-secondary">
-          <ArrowLeft className="button-icon" aria-hidden="true" />
-          나의 활동
         </Link>
       </div>
     </section>
@@ -192,7 +216,8 @@ export default function RecommendPage() {
 
   if (experiences === null) {
     return (
-      <div className="page-stack page-stack-narrow">
+      <div className="page-stack page-stack-narrow recommendation-page primary-page">
+        <RecommendationPageBreadcrumb />
         <RecommendationPageHeader />
 
         <section className="placeholder-panel">
@@ -204,7 +229,8 @@ export default function RecommendPage() {
 
   if (experiences.length === 0) {
     return (
-      <div className="page-stack page-stack-narrow">
+      <div className="page-stack page-stack-narrow recommendation-page primary-page">
+        <RecommendationPageBreadcrumb />
         <RecommendationPageHeader />
 
         <EmptyState
@@ -236,7 +262,8 @@ export default function RecommendPage() {
   }
 
   return (
-    <div className="page-stack page-stack-narrow">
+    <div className="page-stack page-stack-narrow recommendation-page primary-page">
+      <RecommendationPageBreadcrumb />
       <RecommendationPageHeader />
 
       <section className="form-panel" aria-labelledby="recommend-form-title">

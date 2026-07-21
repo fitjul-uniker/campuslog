@@ -17,6 +17,14 @@ import {
 } from "@/components/animate-ui/components/buttons/ripple";
 import { AnimatedRecommendationList } from "@/components/recommendations/AnimatedRecommendationList";
 import { GooeyInput } from "@/components/ui/GooeyInput";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   Experience,
@@ -183,9 +191,28 @@ export default function RecommendationHistoryPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div
-        className={`recommendation-history-page${hasSelection ? " has-selection" : ""}`}
+        className={`recommendation-history-page sub-page${hasSelection ? " has-selection" : ""}`}
       >
         <div className="campuslog-ai-history-header">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+                  CampusLog
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/recommend">
+                  AI 기반 활동 추천
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>추천 기록</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           <Link href="/recommend" className="recommendation-history-new">
             <Sparkles aria-hidden="true" />
             새 추천 받기
@@ -205,7 +232,7 @@ export default function RecommendationHistoryPage() {
               aria-labelledby="recommendation-history-heading"
               transition={{ layout: LAYOUT_TRANSITION }}
             >
-              <header className="recommendation-history-heading">
+              <header className="recommendation-history-heading sub-page-heading">
                 <div className="recommendation-history-heading-row">
                   <div>
                     <h1 id="recommendation-history-heading">추천 기록</h1>

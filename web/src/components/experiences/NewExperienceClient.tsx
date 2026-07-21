@@ -4,6 +4,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { ExperienceForm } from "@/components/experiences/ExperienceForm";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { ExperienceFormInput } from "@/lib/types";
 
@@ -25,10 +33,27 @@ export function NewExperienceClient() {
   }
 
   return (
-    <div className="page-stack page-stack-narrow">
-      <section className="page-header">
+    <div className="page-stack page-stack-narrow sub-page">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+              CampusLog
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>새 경험 기록</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <section className="page-header sub-page-heading">
         <div>
-          <p className="eyebrow">활동 경험 작성</p>
           <h1>새 경험 기록</h1>
           <p className="page-description">
             제목, 기간, 역할, 내용, 성과와 링크별 설명을 기록합니다.
