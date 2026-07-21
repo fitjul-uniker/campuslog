@@ -4,7 +4,6 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowLeft,
-  ArrowRight,
   BarChart3,
   ExternalLink,
   PenLine,
@@ -30,6 +29,8 @@ type DashboardExperienceDetailProps = {
   variant?: "inline" | "fullscreen";
   onClose?: () => void;
   onAnalyze?: () => void;
+  onOpenAnalysis?: (trigger: HTMLButtonElement) => void;
+  isAnalysisOpen?: boolean;
   onDelete?: () => void;
   isAnalyzing?: boolean;
   analysisError?: string;
@@ -41,6 +42,8 @@ export function DashboardExperienceDetail({
   variant = "inline",
   onClose,
   onAnalyze,
+  onOpenAnalysis,
+  isAnalysisOpen = false,
   onDelete,
   isAnalyzing = false,
   analysisError = "",
@@ -95,7 +98,7 @@ export function DashboardExperienceDetail({
       <Sparkles aria-hidden="true" />
       {isAnalyzing ? "분석 중..." : analyzeLabel}
     </BorderBeamButton>
-  ) : analysis ? (
+  ) : analysis && isFullscreen ? (
     <Link
       href={`/experiences/${experience.id}/analysis`}
       className="dashboard-detail-action"
@@ -103,6 +106,17 @@ export function DashboardExperienceDetail({
       <BarChart3 aria-hidden="true" />
       AI 분석 결과
     </Link>
+  ) : analysis && onOpenAnalysis ? (
+    <button
+      type="button"
+      className="dashboard-detail-action"
+      onClick={(event) => onOpenAnalysis(event.currentTarget)}
+      aria-expanded={isAnalysisOpen}
+      aria-controls="dashboard-analysis-split-panel"
+    >
+      <BarChart3 aria-hidden="true" />
+      AI 분석 결과
+    </button>
   ) : null;
 
   return (
@@ -222,32 +236,34 @@ export function DashboardExperienceDetail({
           )}
         </section>
 
-        <section>
-          <SectionHeading>AI 분석</SectionHeading>
-          {analysis ? (
-            <>
-              {needsFreshAnalysis ? (
-                <p className="dashboard-detail-analysis-note">
-                  활동 내용이 수정되어 아래 분석은 최신 기록을 반영하지 않을 수
-                  있습니다.
-                </p>
-              ) : null}
-              <p>{analysis.summary}</p>
-              {analysis.competencyTags.length > 0 ? (
-                <div className="dashboard-detail-tags" aria-label="핵심 역량">
-                  {analysis.competencyTags.map((tag, index) => (
-                    <span key={`${tag}-${index}`}>{tag}</span>
-                  ))}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <p className="is-muted">
-              아직 분석 결과가 없습니다. 아래 버튼에서 바로 분석을 요청할 수
-              있습니다.
-            </p>
-          )}
-        </section>
+        {!isAnalysisOpen ? (
+          <section>
+            <SectionHeading>AI 분석</SectionHeading>
+            {analysis ? (
+              <>
+                {needsFreshAnalysis ? (
+                  <p className="dashboard-detail-analysis-note">
+                    활동 내용이 수정되어 아래 분석은 최신 기록을 반영하지 않을 수
+                    있습니다.
+                  </p>
+                ) : null}
+                <p>{analysis.summary}</p>
+                {analysis.competencyTags.length > 0 ? (
+                  <div className="dashboard-detail-tags" aria-label="핵심 역량">
+                    {analysis.competencyTags.map((tag, index) => (
+                      <span key={`${tag}-${index}`}>{tag}</span>
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="is-muted">
+                아직 분석 결과가 없습니다. 아래 버튼에서 바로 분석을 요청할 수
+                있습니다.
+              </p>
+            )}
+          </section>
+        ) : null}
       </div>
 
       {analysisError ? (
@@ -278,13 +294,6 @@ export function DashboardExperienceDetail({
           </>
         ) : (
           <>
-            <Link
-              href={`/experiences/${experience.id}`}
-              className="dashboard-detail-action dashboard-detail-action-primary"
-            >
-              전체 화면으로 보기
-              <ArrowRight aria-hidden="true" />
-            </Link>
             {editAction}
             {analysisAction}
           </>

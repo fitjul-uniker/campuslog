@@ -11,6 +11,7 @@ import type {
 type AnalysisResultProps = {
   experience: Experience;
   analysis: ExperienceAnalysis;
+  variant?: "default" | "embedded";
 };
 
 const EVIDENCE_SOURCE_LABELS: Record<ExperienceAnalysisEvidenceSource, string> = {
@@ -23,7 +24,11 @@ const EVIDENCE_SOURCE_LABELS: Record<ExperienceAnalysisEvidenceSource, string> =
   followupAnswers: "보완 답변",
 };
 
-export function AnalysisResult({ experience, analysis }: AnalysisResultProps) {
+export function AnalysisResult({
+  experience,
+  analysis,
+  variant = "default",
+}: AnalysisResultProps) {
   const needsReanalysis =
     experience.analysisStatus === "needs_reanalysis" ||
     analysis.sourceExperienceUpdatedAt !== experience.updatedAt;
@@ -34,16 +39,23 @@ export function AnalysisResult({ experience, analysis }: AnalysisResultProps) {
     ["결과", analysis.star.result],
   ] as const;
   const hasStar = starItems.some(([, value]) => value);
+  const isEmbedded = variant === "embedded";
 
   return (
-    <section className="detail-panel" aria-labelledby="analysis-result-title">
-      <div className="detail-header">
-        <div>
-          <p className="experience-meta">{experience.title}</p>
-          <h2 id="analysis-result-title">저장된 분석 결과</h2>
+    <section
+      className={`detail-panel analysis-result${isEmbedded ? " is-embedded" : ""}`}
+      aria-label={isEmbedded ? "상세 AI 분석 결과" : undefined}
+      aria-labelledby={isEmbedded ? undefined : "analysis-result-title"}
+    >
+      {!isEmbedded ? (
+        <div className="detail-header">
+          <div>
+            <p className="experience-meta">{experience.title}</p>
+            <h2 id="analysis-result-title">저장된 분석 결과</h2>
+          </div>
+          <StatusBadge status={experience.analysisStatus} />
         </div>
-        <StatusBadge status={experience.analysisStatus} />
-      </div>
+      ) : null}
 
       {needsReanalysis ? (
         <div className="analysis-notice" role="status">

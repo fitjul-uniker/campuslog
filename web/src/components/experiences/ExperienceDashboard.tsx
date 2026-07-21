@@ -18,6 +18,10 @@ import {
   DASHBOARD_EXPERIENCE_DETAIL_ID,
   DashboardExperienceDetail,
 } from "@/components/experiences/DashboardExperienceDetail";
+import {
+  DASHBOARD_ANALYSIS_SPLIT_PANEL_ID,
+  DashboardAnalysisSplitPanel,
+} from "@/components/experiences/DashboardAnalysisSplitPanel";
 import { DashboardTrackedActivityDetail } from "@/components/experiences/DashboardTrackedActivityDetail";
 import {
   RippleButton,
@@ -85,7 +89,9 @@ export function ExperienceDashboard() {
   const [analysisRequestByExperienceId, setAnalysisRequestByExperienceId] =
     useState<AnalysisRequestState>({});
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const analysisTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
 
   const loadDashboardData = useCallback(async () => {
@@ -182,6 +188,9 @@ export function ExperienceDashboard() {
           (activity) => activity.id === selectedItem.id,
         ) ?? null)
       : null;
+  const selectedAnalysis = selectedExperience
+    ? (analysesByExperienceId[selectedExperience.id] ?? null)
+    : null;
   const selectedTrackedActivityLogs = selectedTrackedActivity
     ? dailyLogs.filter((log) => log.activityId === selectedTrackedActivity.id)
     : [];
@@ -206,11 +215,18 @@ export function ExperienceDashboard() {
     }
   }, [filteredActivityItems, selectedItemKey]);
 
+  useEffect(() => {
+    if (!selectedExperience || !selectedAnalysis) {
+      setIsAnalysisOpen(false);
+    }
+  }, [selectedAnalysis, selectedExperience]);
+
   const handleSelectActivity = (
     item: MyActivityListItem,
     trigger: HTMLButtonElement,
   ) => {
     lastSelectionTriggerRef.current = trigger;
+    setIsAnalysisOpen(false);
     setSelectedItemKey(item.key);
 
     if (window.matchMedia("(max-width: 860px)").matches) {
@@ -237,6 +253,7 @@ export function ExperienceDashboard() {
       mobileScrollTimerRef.current = null;
     }
 
+    setIsAnalysisOpen(false);
     setSelectedItemKey(null);
 
     window.requestAnimationFrame(() => {
@@ -244,6 +261,57 @@ export function ExperienceDashboard() {
         lastSelectionTriggerRef.current.focus();
       }
     });
+  }, []);
+
+  const handleOpenAnalysis = (trigger: HTMLButtonElement) => {
+    analysisTriggerRef.current = trigger;
+    setIsAnalysisOpen(true);
+
+    if (window.matchMedia("(max-width: 860px)").matches) {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById(DASHBOARD_ANALYSIS_SPLIT_PANEL_ID)
+          ?.scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+              .matches
+              ? "auto"
+              : "smooth",
+            block: "start",
+          });
+      });
+    }
+  };
+
+  const handleCloseAnalysis = useCallback(() => {
+    setIsAnalysisOpen(false);
+
+    window.requestAnimationFrame(() => {
+      if (analysisTriggerRef.current?.isConnected) {
+        analysisTriggerRef.current.focus();
+      }
+    });
+  }, []);
+
+  const refreshExperience = useCallback(async (experienceId: string) => {
+    try {
+      const repository = getCampusLogRepository();
+      const refreshedExperience =
+        await repository.experiences.getById(experienceId);
+
+      if (!refreshedExperience) {
+        return;
+      }
+
+      setExperiences((currentExperiences) =>
+        currentExperiences?.map((experience) =>
+          experience.id === refreshedExperience.id
+            ? refreshedExperience
+            : experience,
+        ) ?? currentExperiences,
+      );
+    } catch {
+      // The saved follow-up remains intact even if this non-destructive refresh fails.
+    }
   }, []);
 
   const handleAnalyzeExperience = async (experience: Experience) => {
@@ -349,13 +417,17 @@ export function ExperienceDashboard() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        handleCloseDetail();
+        if (isAnalysisOpen) {
+          handleCloseAnalysis();
+        } else {
+          handleCloseDetail();
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleCloseDetail, selectedItem]);
+  }, [handleCloseAnalysis, handleCloseDetail, isAnalysisOpen, selectedItem]);
 
   const hasSelection = selectedItem !== null;
   const activeActivityCount = trackedActivities?.length ?? 0;
@@ -363,13 +435,14 @@ export function ExperienceDashboard() {
   return (
     <MotionConfig reducedMotion="user">
       <div
-        className={`dashboard-experience-page${hasSelection ? " has-selection" : ""}`}
+        className={`dashboard-experience-page${hasSelection ? " has-selection" : ""}${isAnalysisOpen ? " has-analysis" : ""}`}
       >
         <LayoutGroup id="dashboard-experience-layout">
           <motion.div
             layout
             className="dashboard-experience-workspace"
-            data-detail-open={hasSelection ? "true" : "false"}
+            data-detail-open={hasSelection && !isAnalysisOpen ? "true" : "false"}
+            data-analysis-open={isAnalysisOpen ? "true" : "false"}
             transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
           >
             <motion.section
@@ -479,13 +552,13 @@ export function ExperienceDashboard() {
                   {selectedExperience ? (
                     <DashboardExperienceDetail
                       experience={selectedExperience}
-                      analysis={
-                        analysesByExperienceId[selectedExperience.id] ?? null
-                      }
+                      analysis={selectedAnalysis}
                       onClose={handleCloseDetail}
                       onAnalyze={() =>
                         handleAnalyzeExperience(selectedExperience)
                       }
+                      onOpenAnalysis={handleOpenAnalysis}
+                      isAnalysisOpen={isAnalysisOpen}
                       isAnalyzing={
                         analysisRequestByExperienceId[selectedExperience.id]
                           ?.isLoading ?? false
@@ -504,6 +577,33 @@ export function ExperienceDashboard() {
                     />
                   ) : null}
                 </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            <AnimatePresence initial={false}>
+              {isAnalysisOpen &&
+              selectedExperience &&
+              selectedAnalysis ? (
+                <DashboardAnalysisSplitPanel
+                  key={`analysis:${selectedExperience.id}`}
+                  experience={selectedExperience}
+                  analysis={selectedAnalysis}
+                  isAnalyzing={
+                    analysisRequestByExperienceId[selectedExperience.id]
+                      ?.isLoading ?? false
+                  }
+                  analysisError={
+                    analysisRequestByExperienceId[selectedExperience.id]
+                      ?.error ?? ""
+                  }
+                  onClose={handleCloseAnalysis}
+                  onReanalyze={() =>
+                    handleAnalyzeExperience(selectedExperience)
+                  }
+                  onFollowupsChanged={() => {
+                    void refreshExperience(selectedExperience.id);
+                  }}
+                />
               ) : null}
             </AnimatePresence>
           </motion.div>
