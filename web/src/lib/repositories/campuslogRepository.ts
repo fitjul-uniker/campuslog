@@ -1067,9 +1067,41 @@ function createSupabaseCampusLogRepository(
           return null;
         }
 
+        const currentActivity = await this.getById(id);
+
+        if (!currentActivity) {
+          return null;
+        }
+
+        const currentLogs =
+          await createSupabaseCampusLogRepository(supabase).dailyLogs.listByActivityId(
+            id,
+          );
+        const normalizedCompletionDate = normalizedInput.expected_end_date;
+
+        if (
+          currentLogs.some((log) => log.date < normalizedInput.start_date) ||
+          (currentActivity.status === "completed" &&
+            (!normalizedCompletionDate ||
+              currentLogs.some((log) => log.date > normalizedCompletionDate))) ||
+          (currentActivity.status === "active" &&
+            normalizedInput.start_date > getLocalDateString()) ||
+          (currentActivity.status === "completed" &&
+            normalizedCompletionDate !== null &&
+            normalizedCompletionDate < normalizedInput.start_date)
+        ) {
+          return null;
+        }
+
         const { data, error } = await supabase
           .from("tracked_activities")
-          .update(normalizedInput)
+          .update({
+            ...normalizedInput,
+            completed_at:
+              currentActivity.status === "completed"
+                ? normalizedCompletionDate
+                : currentActivity.completedAt || null,
+          })
           .eq("id", id)
           .select("*")
           .single();
@@ -1093,6 +1125,23 @@ function createSupabaseCampusLogRepository(
 
         if (currentActivity.status === status) {
           return currentActivity;
+        }
+
+        const isAllowedTransition =
+          (currentActivity.status === "planned" && status === "active") ||
+          (currentActivity.status === "active" && status === "completed") ||
+          (currentActivity.status === "completed" && status === "active");
+
+        if (!isAllowedTransition) {
+          return null;
+        }
+
+        if (
+          currentActivity.status === "planned" &&
+          status === "active" &&
+          currentActivity.startDate > getLocalDateString()
+        ) {
+          return null;
         }
 
         const completedDate =

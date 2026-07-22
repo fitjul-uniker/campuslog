@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  Edit3,
   FileCheck2,
   LoaderCircle,
   Play,
@@ -20,6 +21,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { ActivityCreateForm } from "@/components/activities/ActivityCreateForm";
 import {
   ACTIVITY_STATUS_LABELS,
   createExperiencePeriod,
@@ -108,6 +110,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [isSavingExperience, setIsSavingExperience] = useState(false);
+  const [isEditingActivity, setIsEditingActivity] = useState(false);
+  const [isUpdatingActivity, setIsUpdatingActivity] = useState(false);
   const [showEndConfirmation, setShowEndConfirmation] = useState(false);
   const [error, setError] = useState("");
   const endActivityButtonRef = useRef<HTMLButtonElement>(null);
@@ -289,7 +293,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     }
 
     const repository = getCampusLogRepository();
-    const completedAt = activity.expectedEndDate || new Date().toISOString();
+    const completedAt = getLocalDateKey();
     const completedActivity = await repository.trackedActivities.setStatus(
       activity.id,
       "completed",
@@ -304,13 +308,6 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
 
     setActivity(completedActivity);
     setShowEndConfirmation(false);
-    if (completedActivity.completedAt > getLocalDateKey()) {
-      setError(
-        "활동 종료일을 유지했습니다. AI 정리는 종료일 이후 다시 시도할 수 있습니다.",
-      );
-      return;
-    }
-
     await runSynthesis(completedActivity);
   }
 
@@ -495,6 +492,11 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
 
   const isCompleted = activity.status === "completed";
   const canActivate = activity.startDate <= getLocalDateKey();
+  const canEditActivity =
+    !isCompleted &&
+    !isSynthesizing &&
+    !isSavingExperience &&
+    !isUpdatingActivity;
   const canShowRetry =
     isCompleted &&
     !draft &&
@@ -539,6 +541,20 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
         </div>
 
         <div className="activity-detail-primary-actions">
+          {canEditActivity ? (
+            <button
+              type="button"
+              onClick={() => {
+                setError("");
+                setIsEditingActivity((current) => !current);
+              }}
+              className="activity-secondary-button"
+              aria-expanded={isEditingActivity}
+            >
+              <Edit3 aria-hidden="true" />
+              활동 수정
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={handleDeleteActivity}
@@ -631,6 +647,37 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           <dd>{logs.length}개</dd>
         </div>
       </dl>
+
+      {isEditingActivity && !isCompleted ? (
+        <section className="activity-edit-section" aria-labelledby="activity-edit-title">
+          <div className="activity-edit-heading">
+            <h2 id="activity-edit-title">진행 활동 수정</h2>
+            <p>
+              제목, 내용, 시작일과 예상 종료일을 조정합니다. 이미 쓴
+              기록보다 늦은 시작일로는 바꿀 수 없습니다.
+            </p>
+          </div>
+          <ActivityCreateForm
+            key={activity.id}
+            activityId={activity.id}
+            initialValue={{
+              title: activity.title,
+              description: activity.description,
+              startDate: activity.startDate,
+              expectedEndDate: activity.expectedEndDate,
+            }}
+            onCancel={() => setIsEditingActivity(false)}
+            onSaved={(updatedActivity) => {
+              setActivity(updatedActivity);
+              setIsEditingActivity(false);
+              setError("");
+            }}
+            onSavingChange={setIsUpdatingActivity}
+            submitLabel="수정 저장"
+            variant="expanded"
+          />
+        </section>
+      ) : null}
 
       {showEndConfirmation ? (
         <section
