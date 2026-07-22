@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { FormEvent, RefObject } from "react";
 import { useId, useRef, useState } from "react";
@@ -234,7 +233,7 @@ export function ActivityCreateForm({
       </label>
 
       <label htmlFor={descriptionId}>
-        <span>간단한 내용</span>
+        <span>활동 정보</span>
         <textarea
           id={descriptionId}
           value={formValue.description}
@@ -282,6 +281,29 @@ export function ActivityCreateForm({
         <div className="activity-date-field">
           <div className="activity-date-field-heading">
             <label htmlFor={expectedEndDateId}>{endDateLabel}</label>
+          </div>
+          <div className="activity-end-date-controls">
+            <input
+              id={expectedEndDateId}
+              type="date"
+              min={formValue.startDate}
+              value={formValue.expectedEndDate}
+              onChange={(event) => {
+                const expectedEndDate = event.target.value;
+                updateField("expectedEndDate", expectedEndDate);
+
+                if (!expectedEndDate) {
+                  setIsEndDateUndecided(true);
+                }
+              }}
+              disabled={
+                (allowEndDateUndecided && isEndDateUndecided) || isSaving
+              }
+              aria-invalid={error?.field === "expectedEndDate" || undefined}
+              aria-describedby={
+                error?.field === "expectedEndDate" ? errorId : undefined
+              }
+            />
             {allowEndDateUndecided ? (
               <label
                 className="activity-undecided-option"
@@ -291,32 +313,13 @@ export function ActivityCreateForm({
                   id={undecidedId}
                   checked={isEndDateUndecided}
                   onCheckedChange={updateEndDateUndecided}
-                  size="sm"
+                  size="lg"
                   disabled={isSaving}
                 />
                 <span>미정</span>
               </label>
             ) : null}
           </div>
-          <input
-            id={expectedEndDateId}
-            type="date"
-            min={formValue.startDate}
-            value={formValue.expectedEndDate}
-            onChange={(event) => {
-              const expectedEndDate = event.target.value;
-              updateField("expectedEndDate", expectedEndDate);
-
-              if (!expectedEndDate) {
-                setIsEndDateUndecided(true);
-              }
-            }}
-            disabled={(allowEndDateUndecided && isEndDateUndecided) || isSaving}
-            aria-invalid={error?.field === "expectedEndDate" || undefined}
-            aria-describedby={
-              error?.field === "expectedEndDate" ? errorId : undefined
-            }
-          />
         </div>
       </div>
 
@@ -347,7 +350,6 @@ export function ActivityCreateForm({
           className="activity-primary-button"
           disabled={isSaving}
         >
-          <Save aria-hidden="true" />
           {isSaving ? "저장 중…" : (submitLabel ?? (variant === "expanded" ? "저장" : "활동 저장"))}
           <RippleButtonRipples />
         </RippleButton>

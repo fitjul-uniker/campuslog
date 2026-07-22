@@ -30,6 +30,84 @@
 
 ## 작업 로그
 
+### 2026-07-23 - 활동 추가 닫힘 사각 잔상 제거
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 추가 Expandable Screen이 원래 버튼으로 닫히는 마지막 프레임 정리 |
+| 수정한 파일 | `web/src/components/ui/expandable-screen.tsx`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 열림 0.36초 모션은 유지하고 닫힘만 별도 0.18초 전환으로 분리. 닫힐 때 패널색을 버튼색으로 바꾸지 않고 밝은 표면색을 고정한 채 dialog와 표면을 첫 0.12초에 함께 페이드하고 backdrop은 0.16초에 제거해 내용이 사라진 뒤 빈 흰색·회색 사각형과 dimming만 남는 현상을 제거. 스크롤 잠금 시 body에 추가하던 15px 우측 padding이 이 앱 셸에서는 이중 보정되어 배경 카드 폭을 줄이므로 제거. 초점 복귀와 reduced motion 즉시 종료는 유지 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 실제 1189×889 로그인 화면에서 닫힘 60ms 시점의 축소 표면 opacity 약 0.11, 110ms 시점 표면 opacity 0·backdrop opacity 약 0.003, 210ms 이내 layer 제거·body scroll 복원·`aria-expanded=false` 확인. 수정 전 열림 중 캘린더 547.4→532.4px, 활동 카드 889.4→874.4px로 15px 줄던 현상이 수정 후 열기 전·열림·닫힘 중·닫힌 뒤 모두 캘린더 547.4px, 활동 카드 889.4px로 고정됨. 3회 반복 전환에서도 x·y·width·height가 동일하고 런타임 error 없음 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: smooth expandable screen close transition` |
+
+### 2026-07-23 - 캘린더 월·연도 직접 선택
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | ReUI Month and year selection을 참고해 오늘의 기록 캘린더에 월·연도 Select 추가 |
+| 수정한 파일 | `web/src/components/activities/ActivityCalendar.tsx`, `web/src/components/ui/select.tsx`, `web/src/app/globals.css`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 캘린더 헤더의 고정 연·월 제목을 1980년부터 현재까지 선택 가능한 연도 Select와 12개월 월 Select로 교체. 현재 연도에서는 현재 달 이후 항목을 비활성화하고 미래 월로 이동할 수 없게 함. 기존 이전 달·오늘·다음 달 버튼, 기록 개수, 선택 날짜와 날짜 키보드 탐색은 유지. 공용 Base UI Select primitive와 조밀한 중립 목록·선택 체크·focus·reduced motion 스타일 추가 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 1405px 실제 로그인 화면에서 연도·월 Select 2개, 가로 overflow 없음, 2026년 7월 초기값과 다음 달 비활성화 확인. 월 목록 12개와 연도 목록 47개(1980–2026), 6월 선택 시 grid label `2026년 6월 달력` 및 다음 달 활성화, 2025년 선택 시 `2025년 6월 달력`, 현재 연도에서 8–12월 비활성화, `오늘`로 2026년 7월 복귀 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `design: add calendar month and year selectors` |
+
+### 2026-07-23 - 추천 활용 목적 선택 목록 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천의 활용 목적을 날짜별 기록과 같은 검색 없는 선택 목록으로 교체 |
+| 수정한 파일 | `web/src/components/ai/RecommendationForm.tsx`, `web/src/components/ui/combobox.tsx`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 네이티브 select를 공용 Base UI Combobox로 교체해 읽기 전용 필드, 화살표, 조밀한 목록 행과 선택 체크를 날짜별 기록과 동일하게 적용. 공용 Combobox trigger의 접근성 이름을 화면 용도별로 전달할 수 있게 하고 기존 활동 선택에는 `활동 목록 열기`, 추천에는 `활용 목적 목록 열기`를 지정 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 1405px 화면에서 native select 0개, combobox 1개, 가로 overflow 없음 확인. 자기소개서·포트폴리오·면접·JD·대외활동/지원서·기타 6개 목록 노출, `JD` 선택 후 필드 값 반영·목록 닫힘·필드 초점 복귀 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `design: unify recommendation purpose picker` |
+
+### 2026-07-23 - 활동 추가 날짜 입력과 미정 옵션 정렬
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 추가 확장 화면의 예상 종료일 위치와 `미정` 체크 옵션 크기 개선 |
+| 수정한 파일 | `web/src/components/activities/ActivityCreateForm.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 예상 종료일을 하나의 테두리로 묶고 날짜 입력과 오른쪽 `미정` 영역을 내부 구분선으로 나눠 같은 필드의 대안으로 표현. 체크박스를 24px로 확대하고 공용 라벨의 8px 하단 여백이 `미정` 글자에 중첩되지 않게 제거해 체크박스·텍스트 중심선을 일치시킴. 시작일·예상 종료일 라벨 line-height와 입력 상단선도 통일. 공용 활동 작성·수정 폼의 `간단한 내용` 라벨은 `활동 정보`로 변경하고 저장 CTA에서 디스크 아이콘 제거 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 1405×890 확장 화면에서 시작일 입력과 통합 예상 종료일 컨트롤이 같은 `y=575`, `height=54px`, `width=413px`로 정렬됨. 시작일·예상 종료일 라벨은 모두 `y=551.375`, 체크박스와 `미정` 글자의 중심은 모두 `y=602.375`로 일치함. 예상 종료일 내부는 날짜 입력 319×52px와 `미정` 92×52px가 구분선으로 연결되고, 선택 시 체크박스 `data-state=checked`, 날짜 입력 disabled와 선택 영역 배경 변화를 확인. 저장 버튼 SVG 0개 확인. 390×844에서는 323×54px 통합 컨트롤 안에서 날짜 229px와 `미정` 92px를 유지하고 가로 overflow 0. 런타임 error는 없고 기존 Next.js smooth-scroll 향후 변경 warning 1건만 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `design: refine activity end date option` |
+
+### 2026-07-23 - 추천 입력 패널 확장 폭 정렬
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 확장 화면에서 추천 입력·결과 패널의 좁은 최대 너비를 제거하고 공통 콘텐츠 폭에 정렬 |
+| 수정한 파일 | `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 추천 페이지의 헤더와 Breadcrumb을 제외한 직계 패널에 적용되던 920px 제한을 100% 부모 콘텐츠 폭으로 변경해 확장 화면에서 헤더·패널 좌우선을 맞춤. 모바일 유동 폭은 유지 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 1405×890에서 헤더와 입력 패널이 동일한 `x=303`, `width=981px`로 정렬되고 기존 패널 920px보다 확장된 것을 확인. 390×844에서도 헤더와 패널이 동일한 `x=16`, `width=343px`이며 가로 overflow 0 확인. 런타임 error는 없고 기존 Next.js smooth-scroll 향후 변경 warning 1건만 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `design: align recommendation panel width` |
+
+### 2026-07-23 - 완료 경험 독립 상세 이동 액션 복원
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 인라인 완료 경험에서 독립 활동 상세 페이지로 이동하는 버튼 복원 |
+| 수정한 파일 | `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/app/globals.css`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/IA.md`, `docs/USER_FLOW.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 인라인 완료 경험의 첫 번째 주요 액션으로 `활동 상세 보기`를 추가해 `/experiences/[id]`로 이동하게 함. 세 액션의 한 줄 보정은 viewport 861–1180px 조건에서 실제 상세 슬롯 560px 이하 container query로 변경해, 넓은 화면 안의 좁은 패널도 놓치지 않게 함. 해당 패널에서는 글자·아이콘·간격을 작은 툴바 밀도로 조정해 `활동 상세 보기`, `수정`, `AI 분석 결과`를 한 줄에 유지. 분석 스플릿뷰 오른쪽 헤더에서는 왼쪽 활동 상세와 중복되는 회색 활동명을 제거. 기존 같은 화면의 AI 분석 동작은 유지 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 실제 로그인 데이터로 인라인 완료 경험을 열어 `활동 상세 보기`가 정확한 `/experiences/[id]`를 가리키고 독립 상세 H1까지 이동하는 것을 확인. 상세 슬롯 340px 상태에서 `활동 상세 보기`, `수정`, `AI 분석 결과`가 모두 같은 `y=785.77`, 44px 높이로 한 줄에 배치되고 글자 `white-space: nowrap`, 가로 overflow 0을 확인. 분석 스플릿뷰 헤더는 `AI 분석 결과`만 남고 중복 활동명 paragraph가 0개인 것을 DOM과 화면으로 확인. 이전 production build와 실행 중 개발 서버의 `.next` 청크 충돌로 상세 진입 오류가 발생한 뒤 캐시를 복구 가능한 임시 위치로 옮기고 개발 서버를 재시작했으며, 깨끗한 탭에서 전체 이동을 다시 확인해 런타임 error 0건을 확인. 기존 Next.js smooth-scroll 향후 변경 warning 1건만 남음 |
+| 남은 작업 | `ISSUE-067`의 실제 로그인 AI 분석 스플릿뷰 회귀 확인은 기존 범위로 유지 |
+| 관련 커밋 메시지 | `design: restore experience detail navigation` |
+
 ### 2026-07-22 - Breadcrumb 하위 화면 제목 규격 통일
 
 | 항목 | 내용 |

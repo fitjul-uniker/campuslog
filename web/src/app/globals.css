@@ -3013,6 +3013,8 @@ h2 {
 
 .dashboard-experience-detail-slot {
   min-width: 0;
+  container-name: experience-detail-slot;
+  container-type: inline-size;
 }
 
 .dashboard-experience-heading {
@@ -3730,6 +3732,41 @@ h2 {
   .dashboard-experience-detail {
     padding: 26px;
   }
+
+}
+
+@media (min-width: 861px) {
+  @container experience-detail-slot (max-width: 560px) {
+    .dashboard-detail-actions {
+      flex-wrap: nowrap;
+      gap: 6px;
+    }
+
+    .dashboard-detail-action {
+      min-width: 0;
+      flex: 0 1 auto;
+      gap: 4px;
+      padding-right: 8px;
+      padding-left: 8px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .dashboard-detail-action svg {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+    }
+
+    .dashboard-detail-action-primary {
+      flex: 1 1 auto;
+    }
+
+    .dashboard-analysis-request-wrap {
+      min-width: 0;
+      flex: 0 1 auto;
+    }
+  }
 }
 
 @media (max-width: 860px) {
@@ -3951,6 +3988,152 @@ h2 {
   stroke-width: 1.8;
 }
 
+/* ReUI-inspired select */
+.select-trigger {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--activity-line, #deded9);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #252522;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.select-trigger:hover {
+  background: #f7f6f3;
+}
+
+.select-trigger:focus-visible,
+.select-trigger[data-popup-open] {
+  border-color: #8b8983;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(38, 37, 34, 0.1);
+}
+
+.select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-trigger-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #74726d;
+}
+
+.select-trigger-icon svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 150ms ease;
+}
+
+.select-trigger[data-popup-open] .select-trigger-icon svg {
+  transform: rotate(180deg);
+}
+
+.select-positioner {
+  z-index: 150;
+  outline: 0;
+}
+
+.select-popup {
+  min-width: var(--anchor-width);
+  max-width: var(--available-width);
+  overflow: hidden;
+  border: 1px solid #dedbd5;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #252522;
+  box-shadow:
+    0 14px 32px rgba(24, 23, 21, 0.12),
+    0 2px 8px rgba(24, 23, 21, 0.06);
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.select-popup[data-starting-style],
+.select-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.select-list {
+  max-height: min(240px, var(--available-height));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: 0;
+  padding: 5px;
+  scroll-padding: 5px;
+}
+
+.select-item {
+  display: grid;
+  min-height: 38px;
+  cursor: default;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  gap: 8px;
+  border-radius: 8px;
+  outline: 0;
+  padding: 8px 10px;
+  color: #55544f;
+  font-size: 0.81rem;
+  font-weight: 580;
+  user-select: none;
+}
+
+.select-item[data-highlighted] {
+  background: #f3f2ef;
+  color: #1f1f1d;
+}
+
+.select-item[data-selected] {
+  color: #1f1f1d;
+  font-weight: 650;
+}
+
+.select-item[data-disabled] {
+  color: #aaa8a2;
+  opacity: 0.55;
+}
+
+.select-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-item-indicator {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+}
+
+.select-item-indicator svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2;
+}
+
 /* ReUI-inspired auto-highlight combobox */
 .field {
   min-width: 0;
@@ -3962,6 +4145,18 @@ h2 {
   color: var(--color-text-muted);
   font-size: 0.8rem;
   font-weight: 720;
+}
+
+.recommendation-purpose-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recommendation-purpose-field > label {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 800;
 }
 
 .combobox-input-group {
@@ -4150,6 +4345,9 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .select-trigger,
+  .select-trigger-icon svg,
+  .select-popup,
   .combobox-input-group,
   .combobox-trigger svg,
   .combobox-popup {
@@ -4697,16 +4895,6 @@ h2 {
 
 .dashboard-analysis-split-header > div:first-child {
   min-width: 0;
-}
-
-.dashboard-analysis-split-header p {
-  overflow: hidden;
-  margin: 0 0 5px;
-  color: #8a8a85;
-  font-size: 0.75rem;
-  font-weight: 650;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .dashboard-analysis-split-header h2 {
@@ -6399,6 +6587,26 @@ h2 {
   gap: 4px;
 }
 
+.activity-calendar-period-selectors {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.activity-calendar-period-selectors .select-trigger {
+  min-height: 44px;
+  padding-inline: 11px 9px;
+}
+
+.activity-calendar-year-trigger {
+  width: 112px;
+}
+
+.activity-calendar-month-trigger {
+  width: 84px;
+}
+
 .activity-calendar-navigation button,
 .activity-icon-button {
   display: inline-grid;
@@ -7225,39 +7433,97 @@ h2 {
   gap: 14px;
 }
 
+.activity-date-fields > label > span {
+  line-height: 16px;
+}
+
 .activity-date-field-heading {
   display: flex;
-  min-height: 27px;
+  min-height: 24px;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .activity-date-field-heading > label:first-child {
+  display: block;
   color: var(--color-text-muted);
   font-size: 0.82rem;
   font-weight: 720;
+  line-height: 16px;
 }
 
 .activity-undecided-option {
   display: inline-flex;
-  min-height: 44px;
+  min-width: 92px;
+  min-height: 52px;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 7px;
+  border-left: 1px solid var(--color-border);
+  background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 0.78rem;
+  padding: 10px 12px;
+  font-size: 0.82rem;
   font-weight: 680;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
 }
 
-.activity-undecided-option > span {
+.activity-create-form .activity-undecided-option > span {
   cursor: pointer;
+  margin-bottom: 0;
+  line-height: 16px;
 }
 
-.activity-date-field > input:disabled {
+.activity-end-date-controls {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #ffffff;
+  transition:
+    border-color 140ms ease,
+    outline-color 140ms ease;
+}
+
+.activity-create-form .activity-end-date-controls > input {
+  height: 52px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.activity-end-date-controls:focus-within {
+  border-color: var(--color-brand-strong);
+  outline: 3px solid var(--activity-focus);
+  outline-offset: 2px;
+}
+
+.activity-create-form .activity-end-date-controls > input:focus-visible {
+  border-color: transparent;
+  outline: 0;
+}
+
+.activity-undecided-option:has(button[data-state="checked"]) {
   background: var(--activity-soft);
+  color: var(--activity-ink);
+}
+
+.activity-end-date-controls > input:disabled {
+  background: #f7f6f3;
   color: var(--color-text-soft);
   cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .activity-undecided-option:hover {
+    background: #f5f4f1;
+  }
 }
 
 .activity-form-actions {
@@ -8281,7 +8547,7 @@ h2 {
 .product-surface
   .recommendation-page
   > :not(.recommendation-page-header):not(.breadcrumb) {
-  width: min(100%, 920px);
+  width: 100%;
   align-self: center;
 }
 

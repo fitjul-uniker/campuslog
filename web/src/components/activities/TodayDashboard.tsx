@@ -1059,6 +1059,7 @@ export function TodayDashboard() {
                     <ComboboxInput
                       ref={activityComboboxRef}
                       placeholder="활동을 선택하세요"
+                      triggerAriaLabel="활동 목록 열기"
                       readOnly
                       aria-labelledby={`${recordPanelId}-activity-label`}
                       aria-invalid={hasActivitySelectionError || undefined}

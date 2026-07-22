@@ -5,6 +5,13 @@ import type { KeyboardEvent } from "react";
 import { useMemo, useState } from "react";
 
 import { getLocalDateKey, parseLocalDate } from "@/components/activities/activityViewUtils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { DailyLog } from "@/lib/types";
 
 type ActivityCalendarProps = {
@@ -20,6 +27,11 @@ type CalendarCell = {
 };
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, monthIndex) => ({
+  label: `${monthIndex + 1}월`,
+  value: String(monthIndex),
+}));
+const FIRST_CALENDAR_YEAR = 1980;
 
 function createMonthAnchor(dateKey: string): Date {
   const selectedDate = parseLocalDate(dateKey) ?? new Date();
@@ -86,6 +98,18 @@ export function ActivityCalendar({
     createMonthAnchor(selectedDate),
   );
   const today = getLocalDateKey();
+  const currentYear = new Date().getFullYear();
+  const yearOptions = useMemo(
+    () =>
+      Array.from(
+        { length: currentYear - FIRST_CALENDAR_YEAR + 1 },
+        (_, index) => {
+          const year = currentYear - index;
+          return { label: `${year}년`, value: String(year) };
+        },
+      ),
+    [currentYear],
+  );
 
   const countsByDate = useMemo(
     () =>
@@ -114,6 +138,29 @@ export function ActivityCalendar({
   function moveMonth(offset: number) {
     setMonthAnchor(
       new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + offset, 1),
+    );
+  }
+
+  function selectYear(value: string | null) {
+    if (!value) {
+      return;
+    }
+
+    const year = Number(value);
+    const month =
+      year === currentYear
+        ? Math.min(monthAnchor.getMonth(), new Date().getMonth())
+        : monthAnchor.getMonth();
+    setMonthAnchor(new Date(year, month, 1));
+  }
+
+  function selectMonth(value: string | null) {
+    if (!value) {
+      return;
+    }
+
+    setMonthAnchor(
+      new Date(monthAnchor.getFullYear(), Number(value), 1),
     );
   }
 
@@ -171,8 +218,55 @@ export function ActivityCalendar({
   return (
     <section className="activity-calendar" aria-labelledby="activity-calendar-title">
       <header className="activity-calendar-header">
-        <div>
-          <h2 id="activity-calendar-title">{monthLabel}</h2>
+        <div className="activity-calendar-period-selectors">
+          <h2 id="activity-calendar-title" className="sr-only">
+            {monthLabel} 달력
+          </h2>
+          <Select
+            items={yearOptions}
+            value={String(monthAnchor.getFullYear())}
+            onValueChange={selectYear}
+          >
+            <SelectTrigger
+              className="activity-calendar-year-trigger"
+              aria-label="연도 선택"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            items={MONTH_OPTIONS}
+            value={String(monthAnchor.getMonth())}
+            onValueChange={selectMonth}
+          >
+            <SelectTrigger
+              className="activity-calendar-month-trigger"
+              aria-label="월 선택"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTH_OPTIONS.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  disabled={
+                    monthAnchor.getFullYear() === currentYear &&
+                    Number(option.value) > new Date().getMonth()
+                  }
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="activity-calendar-navigation">
           <button

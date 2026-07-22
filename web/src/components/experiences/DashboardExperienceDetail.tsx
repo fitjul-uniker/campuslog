@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowLeft,
+  ArrowRight,
   BarChart3,
   ExternalLink,
   PenLine,
@@ -301,6 +302,13 @@ export function DashboardExperienceDetail({
           </>
         ) : (
           <>
+            <Link
+              href={`/experiences/${experience.id}`}
+              className="dashboard-detail-action dashboard-detail-action-primary"
+            >
+              활동 상세 보기
+              <ArrowRight aria-hidden="true" />
+            </Link>
             {editAction}
             {analysisAction}
           </>
