@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   AlertCircle,
-  ArrowLeft,
   ArrowRight,
   Bot,
   CalendarClock,
@@ -32,6 +31,14 @@ import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { requestActivitySynthesis } from "@/lib/activitySynthesisApi";
 import { ACTIVITY_SYNTHESIS_LIMITS } from "@/lib/activitySynthesisLimits";
 import {
@@ -452,10 +459,23 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   if (!activity) {
     return (
       <div className="activity-detail-page">
-        <Link href="/dashboard" className="activity-back-link">
-          <ArrowLeft aria-hidden="true" />
-          오늘의 기록
-        </Link>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+                CampusLog
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard">오늘의 기록</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>활동 상세</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <section className="activity-not-found">
           <AlertCircle aria-hidden="true" />
           <h1>활동을 찾을 수 없습니다</h1>
@@ -482,14 +502,28 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     !isSynthesizing;
 
   return (
-    <div className="activity-detail-page">
-      <Link href="/dashboard" className="activity-back-link">
-        <ArrowLeft aria-hidden="true" />
-        오늘의 기록
-      </Link>
+    <div className="activity-detail-page sub-page">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+              CampusLog
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/dashboard">오늘의 기록</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>활동 상세</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-      <header className="activity-detail-hero">
+      <header className="activity-detail-hero sub-page-heading">
         <div className="activity-detail-heading">
+          <h1>{activity.title}</h1>
           <div className="activity-status-row">
             <span className={`activity-status-badge is-${activity.status}`}>
               {ACTIVITY_STATUS_LABELS[activity.status]}
@@ -501,7 +535,6 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               </span>
             ) : null}
           </div>
-          <h1>{activity.title}</h1>
           <p>{activity.description}</p>
         </div>
 

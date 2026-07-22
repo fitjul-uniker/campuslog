@@ -6,6 +6,14 @@ import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { DashboardExperienceDetail } from "@/components/experiences/DashboardExperienceDetail";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
@@ -129,7 +137,24 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   }
 
   return (
-    <div className="product-page product-detail-page">
+    <div className="product-page product-detail-page sub-page">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+              CampusLog
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>경험 상세</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <DashboardExperienceDetail
         experience={experience}
         analysis={analysis}

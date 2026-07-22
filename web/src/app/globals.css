@@ -3880,6 +3880,287 @@ h2 {
   width: min(100%, 920px);
 }
 
+/* Basic breadcrumb */
+.breadcrumb {
+  min-width: 0;
+  color: #858580;
+  font-size: 0.82rem;
+  font-weight: 620;
+  line-height: 1.4;
+}
+
+.breadcrumb-list {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumb-item,
+.breadcrumb-separator {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.breadcrumb-link {
+  border-radius: 6px;
+  color: #777772;
+  text-decoration: none;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.breadcrumb-brand-link {
+  color: #4f4c47;
+  font-family: var(--font-serif);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+}
+
+.breadcrumb-link:hover {
+  color: #242421;
+}
+
+.breadcrumb-link:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.breadcrumb-page {
+  max-width: min(42vw, 300px);
+  overflow: hidden;
+  color: #242421;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breadcrumb-separator {
+  flex: 0 0 auto;
+  color: #b0b0ab;
+}
+
+.breadcrumb-separator svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.8;
+}
+
+/* ReUI-inspired auto-highlight combobox */
+.field {
+  min-width: 0;
+}
+
+.activity-combobox-field > label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 720;
+}
+
+.combobox-input-group {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--activity-line, #deded9);
+  border-radius: 12px;
+  background: #ffffff;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.combobox-input-group:focus-within {
+  border-color: #8b8983;
+  box-shadow: 0 0 0 3px rgba(38, 37, 34, 0.1);
+}
+
+.combobox-input-group:has(.combobox-input[aria-invalid="true"]) {
+  border-color: var(--color-danger);
+}
+
+.combobox-input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #252522;
+  padding: 0 8px 0 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combobox-input[readonly] {
+  cursor: pointer;
+}
+
+.combobox-input::placeholder {
+  color: #9a9993;
+  font-weight: 500;
+}
+
+.combobox-input:disabled,
+.combobox-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.combobox-trigger {
+  display: inline-grid;
+  width: 44px;
+  min-width: 44px;
+  height: 42px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #62615c;
+}
+
+.combobox-trigger:hover {
+  background: #f4f3f0;
+  color: #242421;
+}
+
+.combobox-trigger svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 150ms ease;
+}
+
+.combobox-trigger[data-popup-open] svg {
+  transform: rotate(180deg);
+}
+
+.combobox-positioner {
+  z-index: 140;
+  outline: 0;
+}
+
+.combobox-popup {
+  width: var(--anchor-width);
+  max-width: var(--available-width);
+  overflow: hidden;
+  border: 1px solid #dedbd5;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #252522;
+  box-shadow:
+    0 14px 32px rgba(24, 23, 21, 0.12),
+    0 2px 8px rgba(24, 23, 21, 0.06);
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.combobox-popup[data-starting-style],
+.combobox-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.combobox-list {
+  max-height: min(168px, var(--available-height));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: 0;
+  padding: 5px;
+  scroll-padding: 5px;
+}
+
+.combobox-list[data-empty] {
+  padding: 0;
+}
+
+.combobox-empty {
+  color: #85837d;
+  padding: 16px 14px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.combobox-empty:empty {
+  display: none;
+}
+
+.combobox-item {
+  position: relative;
+  display: grid;
+  min-height: 38px;
+  cursor: default;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  gap: 8px;
+  border-radius: 8px;
+  outline: 0;
+  padding: 8px 10px;
+  color: #55544f;
+  font-size: 0.81rem;
+  font-weight: 580;
+  user-select: none;
+}
+
+.combobox-item[data-highlighted] {
+  background: #f3f2ef;
+  color: #1f1f1d;
+}
+
+.combobox-item[data-selected] {
+  color: #1f1f1d;
+  font-weight: 650;
+}
+
+.combobox-item-indicator {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+}
+
+.combobox-item-indicator svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2;
+}
+
+.combobox-item-label {
+  min-width: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combobox-input-group,
+  .combobox-trigger svg,
+  .combobox-popup {
+    transition-duration: 0ms;
+  }
+}
+
+.product-surface > .page-stack > .breadcrumb {
+  margin-bottom: 24px;
+}
+
 .product-surface .page-header {
   align-items: flex-end;
   margin-bottom: 4px;
@@ -4014,6 +4295,9 @@ h2 {
 
 .product-detail-page {
   width: min(100%, 960px);
+  align-items: stretch;
+  flex-direction: column;
+  gap: 24px;
 }
 
 /* CountUp */
@@ -4134,6 +4418,12 @@ h2 {
 
 .gooey-input-surface input::placeholder {
   color: rgba(255, 255, 255, 0.58);
+}
+
+.gooey-input-surface input::-webkit-search-cancel-button,
+.gooey-input-surface input::-webkit-search-decoration {
+  display: none;
+  appearance: none;
 }
 
 .gooey-input-bubble {
@@ -4545,9 +4835,14 @@ h2 {
   display: flex;
   width: min(100%, 600px);
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 16px;
   transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.campuslog-ai-history-header .breadcrumb {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .recommendation-history-page.has-selection .campuslog-ai-history-header {
@@ -5343,11 +5638,12 @@ h2 {
 
   .recommendation-header-actions {
     flex-direction: row;
+    justify-content: flex-start;
   }
 
   .recommendation-header-actions .button {
     width: auto;
-    flex: 1 1 0;
+    flex: 0 0 auto;
   }
 
   .product-surface .form-panel,
@@ -5358,10 +5654,46 @@ h2 {
     padding: 22px 20px;
   }
 
-  .recommendation-history-heading-row,
-  .dashboard-experience-heading-row {
+  .recommendation-history-heading-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .dashboard-experience-heading-row {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dashboard-experience-heading-row .dashboard-experience-title-group {
+    min-width: 0;
+    flex: 1 1 calc(100% - 56px);
+  }
+
+  .dashboard-experience-search:not([data-expanded="true"]) {
+    width: 44px;
+    min-width: 44px;
+    flex: 0 0 44px;
+  }
+
+  .dashboard-experience-search:not([data-expanded="true"])
+    .gooey-input-filter-wrap,
+  .dashboard-experience-search:not([data-expanded="true"])
+    .gooey-input-surface {
+    width: 44px !important;
+  }
+
+  .dashboard-experience-search:not([data-expanded="true"])
+    .gooey-input-trigger {
+    gap: 0;
+    padding: 0;
+  }
+
+  .dashboard-experience-search:not([data-expanded="true"])
+    .gooey-input-trigger
+    span {
+    display: none;
   }
 
   .gooey-input[data-expanded="true"] {
@@ -5373,8 +5705,35 @@ h2 {
     max-width: 100%;
   }
 
+  .dashboard-experience-search[data-expanded="true"] {
+    width: min(250px, calc(100% - 132px));
+    min-width: 0;
+    flex: 0 1 250px;
+    margin-left: auto;
+  }
+
+  .dashboard-experience-heading-row:has(
+      .dashboard-experience-search[data-expanded="true"]
+    )
+    .dashboard-experience-title-group {
+    flex: 0 0 auto;
+  }
+
+  .dashboard-experience-heading-row:has(
+      .dashboard-experience-search[data-expanded="true"]
+    )
+    :is(.dashboard-experience-count, .dashboard-active-activity-count) {
+    display: none;
+  }
+
   .gooey-input[data-expanded="true"] .gooey-input-surface {
     width: min(250px, calc(100vw - 74px)) !important;
+  }
+
+  .dashboard-experience-search[data-expanded="true"]
+    .gooey-input-surface {
+    width: calc(100% - 42px) !important;
+    max-width: none;
   }
 
   .recommendation-result-header-actions {
@@ -5511,6 +5870,11 @@ h2 {
   padding: clamp(48px, 7vw, 82px) clamp(24px, 6vw, 84px) 96px;
 }
 
+.activity-form-page > .breadcrumb,
+.activity-detail-page > .breadcrumb {
+  margin-bottom: 28px;
+}
+
 .activity-form-page {
   max-width: 1020px;
 }
@@ -5640,8 +6004,19 @@ h2 {
   min-width: 0;
 }
 
+.activity-today-title-row {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
 .activity-today-header .activity-section-kicker {
+  margin: 0;
+  color: #858580;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .activity-today-header h1,
@@ -6247,6 +6622,10 @@ h2 {
   overflow: hidden;
 }
 
+.activity-floating-record-panel .floating-panel-header {
+  padding: 17px 20px 14px;
+}
+
 .activity-floating-record-form {
   display: flex;
   min-height: 0;
@@ -6259,10 +6638,10 @@ h2 {
   display: grid;
   min-height: 0;
   flex: 1 1 auto;
-  gap: 16px;
+  gap: 13px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 19px 20px 16px;
+  padding: 16px 20px 14px;
   scrollbar-gutter: stable;
 }
 
@@ -6287,7 +6666,7 @@ h2 {
   gap: 9px;
   border-top: 1px solid #ece9e4;
   background: rgba(255, 255, 255, 0.96);
-  padding: 14px 20px;
+  padding: 12px 20px;
   backdrop-filter: blur(8px);
 }
 
@@ -7773,4 +8152,318 @@ h2 {
   position: static;
   padding: 10px 14px max(10px, env(safe-area-inset-bottom));
   backdrop-filter: none;
+}
+
+/* Shared primary page geometry */
+.product-surface .primary-page {
+  --primary-page-gutter: clamp(24px, 5vw, 72px);
+  --primary-page-top: clamp(76px, 9vh, 112px);
+
+  position: relative;
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: var(--primary-page-top) var(--primary-page-gutter) 96px;
+}
+
+.product-surface .primary-page > .breadcrumb {
+  position: absolute;
+  top: calc(var(--primary-page-top) - 34px);
+  right: var(--primary-page-gutter);
+  left: var(--primary-page-gutter);
+  z-index: 1;
+  width: auto;
+  margin: 0;
+}
+
+.product-surface
+  :is(.primary-page, .sub-page)
+  > .breadcrumb,
+.product-surface
+  .sub-page
+  > .campuslog-ai-history-header
+  .breadcrumb {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.product-surface
+  :is(.primary-page, .sub-page)
+  > .breadcrumb::-webkit-scrollbar,
+.product-surface
+  .sub-page
+  > .campuslog-ai-history-header
+  .breadcrumb::-webkit-scrollbar {
+  display: none;
+}
+
+.product-surface
+  :is(.primary-page, .sub-page)
+  > .breadcrumb
+  .breadcrumb-list,
+.product-surface
+  .sub-page
+  > .campuslog-ai-history-header
+  .breadcrumb-list {
+  width: max-content;
+  min-width: 100%;
+  flex-wrap: nowrap;
+}
+
+.product-surface
+  :is(.primary-page, .sub-page)
+  > .breadcrumb
+  .breadcrumb-link,
+.product-surface
+  .sub-page
+  > .campuslog-ai-history-header
+  .breadcrumb-link {
+  white-space: nowrap;
+}
+
+.product-surface .dashboard-experience-workspace {
+  justify-content: stretch;
+}
+
+.product-surface
+  .recommendation-page
+  > :not(.recommendation-page-header):not(.breadcrumb) {
+  width: min(100%, 920px);
+  align-self: center;
+}
+
+.product-surface .primary-page-heading {
+  margin-bottom: 30px;
+}
+
+.product-surface .recommendation-page .primary-page-heading {
+  margin-bottom: 0;
+}
+
+.product-surface .primary-page-heading h1 {
+  margin: 0;
+  color: #171717;
+  font-size: clamp(2.15rem, 3vw, 2.5rem);
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+}
+
+.product-surface .primary-page-heading .primary-page-description {
+  max-width: 650px;
+  margin: 12px 0 0;
+  color: #777773;
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 860px) {
+  .product-surface .primary-page {
+    --primary-page-gutter: 20px;
+    --primary-page-top: 48px;
+
+    min-height: calc(100svh - 58px);
+    padding: var(--primary-page-top) var(--primary-page-gutter) 96px;
+  }
+}
+
+@media (max-width: 640px) {
+  .product-surface .primary-page {
+    --primary-page-gutter: 16px;
+    --primary-page-top: 38px;
+
+    padding: var(--primary-page-top) var(--primary-page-gutter) 96px;
+  }
+
+  .product-surface
+    .primary-page-heading
+    .dashboard-experience-heading-row {
+    position: relative;
+    display: block;
+  }
+
+  .product-surface
+    .primary-page-heading
+    .dashboard-experience-title-group {
+    height: 2.408rem;
+  }
+
+  .product-surface .primary-page-heading .dashboard-experience-search {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-left: 0;
+  }
+
+  .product-surface .primary-page-heading h1 {
+    font-size: 2.15rem;
+  }
+
+  .product-surface .primary-page-heading .primary-page-description {
+    font-size: 0.9rem;
+  }
+
+}
+
+/* Shared sub-page geometry */
+.product-surface .sub-page {
+  --sub-page-gutter: clamp(24px, 5vw, 72px);
+  --sub-page-top: clamp(76px, 9vh, 112px);
+
+  position: relative;
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: var(--sub-page-top) var(--sub-page-gutter) 96px;
+}
+
+.product-surface .page-stack.sub-page,
+.product-surface .product-page.sub-page,
+.product-surface .recommendation-history-page.sub-page {
+  gap: 0;
+}
+
+.product-surface .sub-page > .breadcrumb,
+.product-surface .sub-page > .campuslog-ai-history-header {
+  position: absolute;
+  top: calc(var(--sub-page-top) - 34px);
+  right: var(--sub-page-gutter);
+  left: var(--sub-page-gutter);
+  width: auto;
+  margin: 0;
+}
+
+.product-surface .sub-page > .breadcrumb {
+  z-index: 1;
+}
+
+.product-surface .sub-page-heading {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.product-surface .sub-page-heading h1,
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-header
+  h1 {
+  max-width: 24ch;
+  margin: 0;
+  color: #171717;
+  font-size: clamp(2.15rem, 3vw, 2.5rem);
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+.product-surface .sub-page-heading .page-description,
+.product-surface .sub-page-heading .activity-form-heading p {
+  max-width: 650px;
+  margin: 12px 0 0;
+  color: #777773;
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
+
+.product-surface .sub-page .activity-detail-heading h1 + .activity-status-row {
+  margin: 12px 0 0;
+}
+
+.product-surface .sub-page .activity-detail-heading > p {
+  max-width: 650px;
+  margin-top: 12px;
+  color: #777773;
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
+
+.product-surface .sub-page.page-stack-narrow > :not(.breadcrumb):not(.sub-page-heading),
+.product-surface .sub-page .activity-form-surface {
+  width: min(100%, 920px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.product-surface .sub-page .campuslog-ai-history-header {
+  position: absolute;
+  width: auto;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.product-surface .sub-page .recommendation-history-new {
+  position: absolute;
+  top: 34px;
+  right: 0;
+}
+
+.product-surface .sub-page .recommendation-history-workspace,
+.product-surface
+  .sub-page
+  .recommendation-history-workspace[data-detail-open="true"] {
+  width: 100%;
+  justify-content: stretch;
+}
+
+.product-surface .sub-page .dashboard-experience-detail.is-fullscreen {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-status {
+  margin: 12px 0 0;
+}
+
+@media (max-width: 860px) {
+  .product-surface .sub-page {
+    --sub-page-gutter: 20px;
+    --sub-page-top: 48px;
+
+    min-height: calc(100svh - 58px);
+    padding: var(--sub-page-top) var(--sub-page-gutter) 96px;
+  }
+}
+
+@media (max-width: 640px) {
+  .product-surface .sub-page {
+    --sub-page-gutter: 16px;
+    --sub-page-top: 38px;
+
+    padding: var(--sub-page-top) var(--sub-page-gutter) 96px;
+  }
+
+  .product-surface .sub-page-heading h1,
+  .product-surface
+    .sub-page
+    .dashboard-experience-detail.is-fullscreen
+    .dashboard-detail-header
+    h1 {
+    font-size: 2.15rem;
+  }
+
+  .product-surface .sub-page-heading .page-description,
+  .product-surface .sub-page-heading .activity-form-heading p,
+  .product-surface .sub-page .activity-detail-heading > p {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .product-surface
+    :is(.primary-page, .sub-page)
+    .breadcrumb-list {
+    gap: 4px;
+  }
 }

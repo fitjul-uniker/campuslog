@@ -30,6 +30,71 @@
 
 ## 작업 로그
 
+### 2026-07-22 - Breadcrumb 하위 화면 제목 규격 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-22 |
+| 작업자 | Codex |
+| 작업 요약 | 활동·경험·추천 기록 하위 화면의 Breadcrumb, 제목 위치와 타이포그래피 통일 |
+| 수정한 파일 | 활동 추가·상세, 경험 작성·상세·수정·분석, 추천 기록 컴포넌트, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/app/globals.css`, 관련 활성 문서 |
+| 변경 내용 | 하위 화면 7곳에 상위 화면과 같은 최대 1120px 프레임·H1 규격을 적용하고 Breadcrumb은 문서 흐름에서 분리해 H1 시작점 34px 위에 고정하여 제목과 16px 시각 여백 확보. 모든 경로를 `CampusLog`부터 시작하는 전체 계층으로 확장하고 `CampusLog`는 Petrona 800 브랜드 서체로 표시. AI는 `CampusLog > AI 기반 활동 추천 > 추천 기록`으로 정리. 중복 eyebrow를 제거하고 활동·완료 경험 상태를 H1 아래로 이동했으며 추천 기록 우측 액션과 완료 경험 직접 상세 여백을 공통선에 정렬 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 1440×900에서 상위 화면과 하위 화면 7곳 H1 `x=322`, `y=81`, `40px` 일치하고 Breadcrumb은 `y=47`. 532×890에서 상위·하위 H1 `x=16`, `y=105`, `34.4px` 일치하고 Breadcrumb은 `y=71`. Breadcrumb과 H1 사이의 실제 시각적 간격은 16px이며 전 화면 가로 overflow 0 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `design: unify subpage headers` |
+
+### 2026-07-22 - 상위 화면 제목 규격 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-22 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록·나의 활동·AI 기반 활동 추천의 제목 위치와 타이포그래피 통일 |
+| 수정한 파일 | `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 세 상위 화면에 최대 1120px 공통 페이지 프레임과 동일한 데스크톱·모바일 상단·좌우 여백을 적용. H1 크기·굵기·자간·행간과 설명 간격·크기를 통일하고 오늘 날짜를 제목 위에서 제목 옆 메타 정보로 이동. 각 화면에 `CampusLog > 현재 화면` Breadcrumb을 H1 34px 위 고정 위치로 추가해 제목 위치는 유지하고 Breadcrumb과 H1 사이에 16px의 시각적 여백을 확보. 나의 활동 목록과 추천 입력 패널의 기능별 너비는 보존 |
+| 검증한 내용 | lint, TypeScript, `git diff --check` 통과. 1440×900에서 세 화면 H1 `x=322`, `y=81`, `40px`, 설명 `y=138` 일치, 1024×800에서 H1 `x=226`, `y=76`, `34.4px`, 설명 `y=127` 일치, 532px 모바일에서 H1 `x=16`, `y=105`, `34.4px`, 설명 `y=156` 일치와 전 구간 가로 overflow 0 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `design: unify primary page headers` |
+
+### 2026-07-22 - 추천 화면 중복 활동 바로가기 제거
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-22 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 화면 헤더에서 전역 내비게이션과 중복되는 `나의 활동` 바로가기를 제거 |
+| 수정한 파일 | `web/src/app/recommend/page.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 추천 화면 헤더에는 추천 결과 탐색에 직접 필요한 `추천 기록`만 남기고, 모바일에서 단일 액션이 행 전체로 과도하게 늘어나지 않도록 콘텐츠 너비로 정렬 |
+| 검증한 내용 | lint, TypeScript, `git diff --check`와 추천 화면 모바일 레이아웃 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `design: simplify recommendation header actions` |
+
+### 2026-07-22 - 나의 활동 모바일 검색 위치 안정화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-22 |
+| 작업자 | Codex |
+| 작업 요약 | 모바일 `나의 활동` 헤더의 검색 위치와 펼침 레이아웃 정리 |
+| 수정한 파일 | `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 닫힌 검색을 제목 오른쪽 44px 아이콘으로 고정. 펼칠 때도 `나의 활동` 제목은 유지하고 활동 수·진행 중 배지만 잠시 숨긴 뒤 같은 행의 남은 폭 안에서 최대 250px로 확장해 검색 버튼이 아래로 내려가거나 과도하게 긴 막대로 변하지 않도록 조정. 전용 검색 닫기 버튼과 중복되고 브라우저 기본색으로 표시되던 native search cancel·decoration은 숨김 |
+| 검증한 내용 | lint, TypeScript, `git diff --check`와 모바일 검색 열기·닫기 및 가로 overflow 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: stabilize mobile activity search layout` |
+
+### 2026-07-22 - 하위 화면 Breadcrumb과 날짜별 기록 활동 Combobox
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-22 |
+| 작업자 | Codex |
+| 작업 요약 | 하위 화면의 현재 위치 탐색을 보강하고 날짜별 기록의 활동 선택을 조밀한 선택 목록으로 전환 |
+| 수정한 파일 | `web/src/components/ui/breadcrumb.tsx`, `web/src/components/ui/combobox.tsx`, `web/src/components/ui/field.tsx`, `web/src/components/ui/floating-panel.tsx`, 활동·경험·추천 하위 화면 컴포넌트, `web/src/components/activities/TodayDashboard.tsx`, `web/src/app/globals.css`, `web/package.json`, `web/package-lock.json`, 관련 활성 문서 |
+| 변경 내용 | ReUI Basic Breadcrumb을 참고한 공용 primitive를 만들고 활동 추가·상세, 경험 작성·상세·수정·분석, 추천 기록에 상위 링크와 현재 위치를 표시. Base UI 기반 Combobox로 날짜별 기록 활동 라디오 태그를 방향키·Enter 선택과 선택 체크가 가능한 목록으로 교체. 사용자 피드백에 따라 활동 검색은 제거하고 필드를 읽기 전용 선택 방식으로 단순화했으며 신규 기록은 첫 활동을 자동 선택하지 않고 `활동을 선택하세요` 안내부터 표시. Escape가 바깥 기록 패널까지 닫지 않도록 이미 처리된 키 이벤트를 플로팅 패널에서 존중. 패널 제목을 `한 일 남기기`, 입력 라벨을 `어떤 일을 하셨나요?`로 바꾸고 긴 활동명은 목록에서 최대 두 줄로 표시. 결과가 있을 때도 빈 상태 영역이 남던 오류를 `:empty` 처리로 수정하고 검색 아이콘을 제거했으며 목록을 38px 행, 작은 본문 글꼴, 우측 체크 표시로 정돈. 기록 패널은 데스크톱 최대 너비를 440px에서 520px로 넓히고 모바일 안전 여백 기반 유동 너비는 유지하며, 한 일 입력은 최소 148px·5줄로 높여 가로·세로 읽기 비율을 보완 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 실제 로그인 데이터가 있는 브라우저에서 Breadcrumb 접근성 이름·상위 링크, 기록 패널 활동 목록 열기, 읽기 전용 상태, 문자 입력 차단, 방향키·Enter 선택, Escape 시 목록만 닫힘을 확인. 신규 기록은 532px에서 빈 값과 `활동을 선택하세요` 초기 문구를 표시하고 직접 선택한 뒤 활동명으로 바뀌는 것을 확인. 데스크톱 패널은 520px 너비·textarea 약 158px 높이, 390px에서는 좌우 14px 안전 여백과 가로 overflow 없음을 확인 |
+| 남은 작업 | 이번 변경의 기록 저장 자체는 실행하지 않아 기존 Supabase write 회귀는 정적 로직 보존 기준으로만 확인 |
+| 관련 커밋 메시지 | `design: add breadcrumbs and activity combobox` |
+
 ### 2026-07-21 - 나의 활동 반응형 헤더와 추천 설명 정리
 
 | 항목 | 내용 |

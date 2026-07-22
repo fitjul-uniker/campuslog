@@ -49,7 +49,8 @@ CampusLog
 
 - 데스크톱 순서: `오늘의 기록 → 나의 활동 → CampusLog AI`
 - 모바일 축약: `오늘 → 활동 → AI`
-- `/activities/**`는 `오늘의 기록`, `/experiences/**`는 `나의 활동`, `/recommend/**`는 `CampusLog AI`의 하위 위치로 표시합니다.
+- 인증된 제품 화면은 `CampusLog`부터 시작하는 공통 Basic Breadcrumb으로 전체 위치를 표시합니다. `/dashboard`, `/experiences`, `/recommend`는 `CampusLog > 현재 화면`, `/activities/**`는 `CampusLog > 오늘의 기록 > 현재 화면`, `/experiences/**`는 `CampusLog > 나의 활동 > 현재 화면`, 추천 기록은 `CampusLog > AI 기반 활동 추천 > 추천 기록`을 사용합니다.
+- 하위 작성·상세·수정·분석·기록 화면에는 해당 상위 메뉴에서 현재 화면까지의 Basic Breadcrumb을 표시하며, 최종 항목은 링크가 아닌 현재 위치로 제공합니다.
 - 데스크톱은 좌측 하단의 원형 프로필 사진·닉네임 영역, 모바일은 헤더 우측의 원형 아바타를 계정 메뉴 진입점으로 사용합니다. 드롭다운에는 현재 확정된 로그아웃만 제공하고 존재하지 않는 설정 경로는 추가하지 않습니다.
 
 ### 비로그인 사용자

@@ -12,6 +12,14 @@ import {
 } from "@/components/animate-ui/components/buttons/ripple";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
@@ -129,10 +137,33 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
   }
 
   return (
-    <div className="page-stack">
-      <section className="page-header">
+    <div className="page-stack sub-page">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+              CampusLog
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/experiences/${experience.id}`}>
+              경험 상세
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>AI 분석</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <section className="page-header sub-page-heading">
         <div>
-          <p className="eyebrow">AI 경험 분석 결과</p>
           <h1>분석 결과</h1>
           <p className="page-description">
             특정 활동 경험에 연결된 요약, STAR, 근거, 보완할 정보를
