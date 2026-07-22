@@ -21,6 +21,7 @@ import {
 } from "react";
 
 import { ActivityCreateScreen } from "@/components/activities/ActivityCreateScreen";
+import { ActivityCreateForm } from "@/components/activities/ActivityCreateForm";
 import { ActivityCalendar } from "@/components/activities/ActivityCalendar";
 import {
   formatDateKey,
@@ -153,6 +154,10 @@ export function TodayDashboard() {
   const [isActivityCreateSaving, setIsActivityCreateSaving] = useState(false);
   const [activityCreateAnchor, setActivityCreateAnchor] =
     useState<HTMLElement | null>(null);
+  const [editingCompletionActivityId, setEditingCompletionActivityId] =
+    useState("");
+  const [isCompletionActivitySaving, setIsCompletionActivitySaving] =
+    useState(false);
   const generatedPanelId = useId().replaceAll(":", "");
   const recordPanelId = `daily-log-panel-${generatedPanelId}`;
   const activityRequiredPanelId = `activity-required-panel-${generatedPanelId}`;
@@ -260,6 +265,9 @@ export function TodayDashboard() {
       ),
     [activities],
   );
+  const editingCompletionActivity = editingCompletionActivityId
+    ? (activitiesById[editingCompletionActivityId] ?? null)
+    : null;
   const selectedLogs = useMemo(
     () => logs.filter((log) => log.date === selectedDate),
     [logs, selectedDate],
@@ -531,6 +539,24 @@ export function TodayDashboard() {
     );
     setActivityActionError("");
     setActivityActionMessage("활동을 삭제했습니다.");
+    if (editingCompletionActivityId === activity.id) {
+      setEditingCompletionActivityId("");
+    }
+  }
+
+  function handleCompletionActivitySaved(updatedActivity: TrackedActivity) {
+    setActivities((currentActivities) =>
+      currentActivities
+        ? sortActivities(
+            currentActivities.map((activity) =>
+              activity.id === updatedActivity.id ? updatedActivity : activity,
+            ),
+          )
+        : currentActivities,
+    );
+    setEditingCompletionActivityId("");
+    setActivityActionError("");
+    setActivityActionMessage("활동 정보를 수정했습니다.");
   }
 
   function handleSelectDate(date: string) {
@@ -704,9 +730,27 @@ export function TodayDashboard() {
                   </Link>
                   <button
                     type="button"
+                    className="activity-summary-edit-button"
+                    onClick={() => {
+                      setActivityActionError("");
+                      setActivityActionMessage("");
+                      setEditingCompletionActivityId((current) =>
+                        current === activity.id ? "" : activity.id,
+                      );
+                    }}
+                    aria-expanded={editingCompletionActivityId === activity.id}
+                    aria-label={`${activity.title} 활동 수정`}
+                    disabled={isCompletionActivitySaving}
+                  >
+                    <Edit3 aria-hidden="true" />
+                    수정
+                  </button>
+                  <button
+                    type="button"
                     className="activity-summary-delete-button"
                     onClick={() => handleDeleteActivity(activity)}
                     aria-label={`${activity.title} 활동 삭제`}
+                    disabled={isCompletionActivitySaving}
                   >
                     <Trash2 aria-hidden="true" />
                     삭제
@@ -714,6 +758,41 @@ export function TodayDashboard() {
                 </li>
               ))}
             </ul>
+            {editingCompletionActivity ? (
+              <section
+                className="activity-edit-section activity-finishing-edit-section"
+                aria-labelledby="activity-finishing-edit-title"
+              >
+                <div className="activity-edit-heading">
+                  <h3 id="activity-finishing-edit-title">
+                    완료 경험 정리 전 활동 수정
+                  </h3>
+                  <p>
+                    제목, 내용, 시작일과 종료일을 조정합니다. 이미 쓴
+                    날짜별 기록을 벗어나는 기간으로는 바꿀 수 없습니다.
+                  </p>
+                </div>
+                <ActivityCreateForm
+                  key={editingCompletionActivity.id}
+                  activityId={editingCompletionActivity.id}
+                  allowEndDateUndecided={false}
+                  endDateLabel="종료일"
+                  initialValue={{
+                    title: editingCompletionActivity.title,
+                    description: editingCompletionActivity.description,
+                    startDate: editingCompletionActivity.startDate,
+                    expectedEndDate:
+                      editingCompletionActivity.completedAt ||
+                      editingCompletionActivity.expectedEndDate,
+                  }}
+                  onCancel={() => setEditingCompletionActivityId("")}
+                  onSaved={handleCompletionActivitySaved}
+                  onSavingChange={setIsCompletionActivitySaving}
+                  submitLabel="수정 저장"
+                  variant="expanded"
+                />
+              </section>
+            ) : null}
           </div>
         ) : null}
 

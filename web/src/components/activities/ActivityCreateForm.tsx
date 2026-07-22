@@ -13,6 +13,7 @@ import {
 } from "@/components/animate-ui/components/buttons/ripple";
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
+import type { TrackedActivity } from "@/lib/types";
 
 type ActivityFormValue = {
   title: string;
@@ -27,15 +28,27 @@ type ActivityFormError = {
 };
 
 type ActivityCreateFormProps = {
+  activityId?: string;
+  allowEndDateUndecided?: boolean;
+  endDateLabel?: string;
+  initialValue?: ActivityFormValue;
   onCancel?: () => void;
+  onSaved?: (activity: TrackedActivity) => void;
   onSavingChange?: (isSaving: boolean) => void;
+  submitLabel?: string;
   titleInputRef?: RefObject<HTMLInputElement | null>;
   variant?: "page" | "expanded";
 };
 
 export function ActivityCreateForm({
+  activityId,
+  allowEndDateUndecided = true,
+  endDateLabel = "예상 종료일",
+  initialValue,
   onCancel,
+  onSaved,
   onSavingChange,
+  submitLabel,
   titleInputRef,
   variant = "page",
 }: ActivityCreateFormProps) {
@@ -44,13 +57,17 @@ export function ActivityCreateForm({
   const internalTitleRef = useRef<HTMLInputElement>(null);
   const resolvedTitleRef = titleInputRef ?? internalTitleRef;
   const today = getLocalDateKey();
-  const [formValue, setFormValue] = useState<ActivityFormValue>({
-    title: "",
-    description: "",
-    startDate: today,
-    expectedEndDate: "",
-  });
-  const [isEndDateUndecided, setIsEndDateUndecided] = useState(true);
+  const [formValue, setFormValue] = useState<ActivityFormValue>(
+    initialValue ?? {
+      title: "",
+      description: "",
+      startDate: today,
+      expectedEndDate: "",
+    },
+  );
+  const [isEndDateUndecided, setIsEndDateUndecided] = useState(
+    allowEndDateUndecided && !initialValue?.expectedEndDate,
+  );
   const [error, setError] = useState<ActivityFormError | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -122,10 +139,12 @@ export function ActivityCreateForm({
       return;
     }
 
-    if (!isEndDateUndecided && !formValue.expectedEndDate) {
+    if ((!allowEndDateUndecided || !isEndDateUndecided) && !formValue.expectedEndDate) {
       setError({
         field: "expectedEndDate",
-        message: "예상 종료일을 선택하거나 미정을 선택해 주세요.",
+        message: allowEndDateUndecided
+          ? "예상 종료일을 선택하거나 미정을 선택해 주세요."
+          : `${endDateLabel}을 선택해 주세요.`,
       });
       document.getElementById(expectedEndDateId)?.focus();
       return;
@@ -147,28 +166,43 @@ export function ActivityCreateForm({
     const repository = getCampusLogRepository();
 
     try {
-      const createdActivity = await repository.trackedActivities.create({
-        title,
-        description,
-        startDate: formValue.startDate,
-        expectedEndDate: formValue.expectedEndDate,
-      });
+      const savedActivity = activityId
+        ? await repository.trackedActivities.update(activityId, {
+            title,
+            description,
+            startDate: formValue.startDate,
+            expectedEndDate: formValue.expectedEndDate,
+          })
+        : await repository.trackedActivities.create({
+            title,
+            description,
+            startDate: formValue.startDate,
+            expectedEndDate: formValue.expectedEndDate,
+          });
 
-      if (!createdActivity) {
+      if (!savedActivity) {
         updateSaving(false);
         setError({
           field: "form",
-          message: "활동을 저장하지 못했습니다. 입력 내용을 확인해 주세요.",
+          message: activityId
+            ? "활동을 수정하지 못했습니다. 날짜와 연결된 기록을 확인해 주세요."
+            : "활동을 저장하지 못했습니다. 입력 내용을 확인해 주세요.",
         });
         return;
       }
 
-      router.push(`/activities/${createdActivity.id}`);
+      updateSaving(false);
+      onSaved?.(savedActivity);
+      if (!onSaved) {
+        router.push(`/activities/${savedActivity.id}`);
+      }
     } catch {
       updateSaving(false);
       setError({
         field: "form",
-        message: "활동을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        message: activityId
+          ? "활동을 수정하지 못했습니다. 잠시 후 다시 시도해 주세요."
+          : "활동을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       });
     }
   }
@@ -247,20 +281,22 @@ export function ActivityCreateForm({
 
         <div className="activity-date-field">
           <div className="activity-date-field-heading">
-            <label htmlFor={expectedEndDateId}>예상 종료일</label>
-            <label
-              className="activity-undecided-option"
-              htmlFor={undecidedId}
-            >
-              <Checkbox
-                id={undecidedId}
-                checked={isEndDateUndecided}
-                onCheckedChange={updateEndDateUndecided}
-                size="sm"
-                disabled={isSaving}
-              />
-              <span>미정</span>
-            </label>
+            <label htmlFor={expectedEndDateId}>{endDateLabel}</label>
+            {allowEndDateUndecided ? (
+              <label
+                className="activity-undecided-option"
+                htmlFor={undecidedId}
+              >
+                <Checkbox
+                  id={undecidedId}
+                  checked={isEndDateUndecided}
+                  onCheckedChange={updateEndDateUndecided}
+                  size="sm"
+                  disabled={isSaving}
+                />
+                <span>미정</span>
+              </label>
+            ) : null}
           </div>
           <input
             id={expectedEndDateId}
@@ -275,7 +311,7 @@ export function ActivityCreateForm({
                 setIsEndDateUndecided(true);
               }
             }}
-            disabled={isEndDateUndecided || isSaving}
+            disabled={(allowEndDateUndecided && isEndDateUndecided) || isSaving}
             aria-invalid={error?.field === "expectedEndDate" || undefined}
             aria-describedby={
               error?.field === "expectedEndDate" ? errorId : undefined
@@ -312,11 +348,7 @@ export function ActivityCreateForm({
           disabled={isSaving}
         >
           <Save aria-hidden="true" />
-          {isSaving
-            ? "저장 중…"
-            : variant === "expanded"
-              ? "저장"
-              : "활동 저장"}
+          {isSaving ? "저장 중…" : (submitLabel ?? (variant === "expanded" ? "저장" : "활동 저장"))}
           <RippleButtonRipples />
         </RippleButton>
       </div>

@@ -1260,10 +1260,13 @@ export function updateTrackedActivity(
 
   if (
     activityLogs.some((log) => log.date < normalizedInput.startDate) ||
+    (currentActivity.status === "completed" &&
+      (!normalizedInput.expectedEndDate ||
+        activityLogs.some((log) => log.date > normalizedInput.expectedEndDate))) ||
     (currentActivity.status === "active" &&
       normalizedInput.startDate > getLocalDateString()) ||
     (currentActivity.status === "completed" &&
-      currentActivity.completedAt < normalizedInput.startDate)
+      normalizedInput.expectedEndDate < normalizedInput.startDate)
   ) {
     return null;
   }
@@ -1272,7 +1275,9 @@ export function updateTrackedActivity(
     currentActivity.title !== normalizedInput.title ||
     currentActivity.description !== normalizedInput.description ||
     currentActivity.startDate !== normalizedInput.startDate ||
-    currentActivity.expectedEndDate !== normalizedInput.expectedEndDate;
+    currentActivity.expectedEndDate !== normalizedInput.expectedEndDate ||
+    (currentActivity.status === "completed" &&
+      currentActivity.completedAt !== normalizedInput.expectedEndDate);
 
   if (!hasMetadataChange) {
     return currentActivity;
@@ -1282,6 +1287,10 @@ export function updateTrackedActivity(
   const updatedActivity: TrackedActivity = {
     ...currentActivity,
     ...normalizedInput,
+    completedAt:
+      currentActivity.status === "completed"
+        ? normalizedInput.expectedEndDate
+        : currentActivity.completedAt,
     updatedAt: timestamp,
   };
   const nextActivities = activities.map((activity) =>

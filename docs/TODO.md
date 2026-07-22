@@ -35,6 +35,7 @@
 - 2026-07-14: `feature/ai-answer-drafts`에서 `/api/answer-drafts` structured output과 prompt를 추가. 추천 v2의 선택 match, extractedRequirements, 경험 원본, 분석 v2 결과를 활용해 사용자가 고른 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 초안을 생성·저장·표시. 초안은 추천에 사용된 원 질문 / 문항 / JD / 면접 질문을 직접 답하도록 생성. 원본에 없는 사실은 본문에 넣지 않고 `missingEvidenceNotes` 또는 `cautions`로 분리. 초안은 별도 `answer_drafts` table과 `campuslog:v1:answer-drafts` localStorage key에 type별로 누적 저장해 기존 추천 v1/v2 기록 하위 호환을 유지.
 - 2026-07-14: `feature/ai-evidence-followup`에서 `/api/evidence-followups` 보완 질문 생성, `experience_followups` table / `campuslog:v1:experience-followups` 저장소, 분석 화면의 질문 생성 / 답변 저장 / 수정 / dismiss / 보완 답변 기반 재분석 CTA를 구현. 보완 답변은 원본 경험을 자동 수정하지 않고 answered followup을 `/api/analyze` 재분석 context로만 전달하며, 분석 evidence에는 `followupAnswers` 출처로 구분. 답변 저장 후 기존 분석이 있던 경험은 `needs_reanalysis`로 표시하고 추천 / 답변 초안 화면은 stale 가능성을 안내.
 - 2026-07-17: 팀 테스트를 위해 Supabase Auth 관리자 API 기반 `npm run seed:test-users` 스크립트를 추가. 기본 계정은 `test1@campuslog.test` ~ `test9@campuslog.test`, 비밀번호는 `test1111` ~ `test9999`이며 `campuslog_profile` metadata를 함께 설정. 사용자가 실제 Supabase project에 9개 계정이 모두 `created`로 생성된 것을 확인. 더미 경험·활동 데이터 주입은 아직 수행하지 않음.
+- 2026-07-17: 진행 중 / 시작 예정 활동을 상세 화면에서 수정할 수 있게 하고, 오늘의 기록의 마무리 필요 활동도 정리 전 수정할 수 있게 함. 활동 종료 시 현재 날짜를 완료일로 저장해 예상 종료일이 미래여도 즉시 AI 초안을 생성하도록 수정. 실제 로그인 브라우저 세션 회귀 확인은 남음.
 
 ### High
 
@@ -49,6 +50,7 @@
 - [x] Experience / TrackedActivity / DailyLog / SynthesisDraft / Analysis / Recommendation 관계 정의
 - [x] 합성 초안 RLS·보존·완료 Experience 멱등 저장 schema contract 작성 (`ISSUE-029`)
 - [x] 합성 초안 저장과 완료 Experience 생성의 Supabase repository 멱등 흐름 구현 (`ISSUE-029`)
+- [x] 진행 활동과 마무리 필요 활동의 날짜 수정, 미래 예정 종료 활동의 즉시 완료일 갱신과 AI 초안 생성을 수행 (`ISSUE-070`)
 - [x] repository 경계를 두고 localStorage adapter 추가
 - [x] 주요 UI의 `storage.ts` 직접 호출을 repository 경계로 전환
 - [x] localStorage → 계정 데이터 마이그레이션 정책 문서화 (`ISSUE-025`)

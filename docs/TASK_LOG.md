@@ -147,6 +147,19 @@
 | 남은 작업 | 실제 로그인 데이터가 있는 화면에서 목록 단독·상세 패널 전환 중 검색 바 폭과 640px 이하 세로 배치를 브라우저로 시각 확인. 이 확인 전까지 `ISSUE-066`은 진행 중으로 유지 |
 | 관련 커밋 메시지 | `fix: make activity search responsive` |
 
+### 2026-07-17 - 진행 / 마무리 필요 활동 수정과 조기 종료 초안 생성 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-17 |
+| 작업자 | Codex |
+| 작업 요약 | 진행 중 / 시작 예정 활동의 제목·내용·날짜를 상세 화면에서 수정할 수 있게 하고, 오늘의 기록의 `완료 경험으로 정리할 활동` 목록에서도 같은 방식으로 정리 전 활동을 수정할 수 있게 함. 예상 종료일이 미래여도 활동 종료 즉시 완료일을 오늘로 저장해 AI 초안을 생성하도록 수정 |
+| 수정한 파일 | `web/src/components/activities/ActivityCreateForm.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/app/globals.css`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TODO.md` |
+| 변경 내용 | 활동 추가 폼을 수정 모드에서도 재사용할 수 있게 확장하고, 활동 상세에 `활동 수정` 섹션을 추가. 오늘의 기록의 마무리 필요 활동에는 `수정` 버튼과 종료일 필수 수정 폼을 추가해 저장 시 `completedAt`도 함께 갱신. 활동 종료 시 `expectedEndDate`가 아니라 현재 로컬 날짜를 `completedAt`으로 저장해 기간 표시와 완료 경험 저장 기간이 실제 종료일 기준으로 갱신되도록 변경. Supabase repository의 활동 수정 / 상태 전환 guard를 localStorage adapter와 맞춰 잘못된 날짜 변경과 비정상 상태 전환을 차단 |
+| 검증한 내용 | `npm run lint`, `npm run build` 통과 |
+| 남은 작업 | 실제 로그인 브라우저 세션에서 미래 예상 종료일 활동을 종료해 AI 초안 생성과 완료 경험 기간 저장을 수동 확인 필요. 마무리 필요 목록에서 종료일 수정 후 초안 검토 화면 기간이 갱신되는지도 수동 확인 필요 |
+| 관련 커밋 메시지 | `fix: allow editing and early activity completion` |
+
 ### 2026-07-17 - 팀 테스트 계정 시드 스크립트 추가
 
 | 항목 | 내용 |
