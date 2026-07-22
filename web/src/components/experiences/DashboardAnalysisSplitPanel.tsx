@@ -62,7 +62,6 @@ export function DashboardAnalysisSplitPanel({
     >
       <header className="dashboard-analysis-split-header">
         <div>
-          <p>{experience.title}</p>
           <h2 id={titleId}>AI 분석 결과</h2>
         </div>
         <div className="dashboard-analysis-split-header-actions">

@@ -11,10 +11,14 @@ import { cn } from "@/lib/utils";
 
 export const Combobox = ComboboxPrimitive.Root;
 
-export const ComboboxInput = forwardRef<
-  HTMLInputElement,
-  ComponentPropsWithoutRef<typeof ComboboxPrimitive.Input>
->(({ className, ...props }, ref) => (
+type ComboboxInputProps = ComponentPropsWithoutRef<
+  typeof ComboboxPrimitive.Input
+> & {
+  triggerAriaLabel?: string;
+};
+
+export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
+  ({ className, triggerAriaLabel = "목록 열기", ...props }, ref) => (
   <ComboboxPrimitive.InputGroup className="combobox-input-group">
     <ComboboxPrimitive.Input
       ref={ref}
@@ -23,12 +27,13 @@ export const ComboboxInput = forwardRef<
     />
     <ComboboxPrimitive.Trigger
       className="combobox-trigger"
-      aria-label="활동 목록 열기"
+      aria-label={triggerAriaLabel}
     >
       <ChevronDown aria-hidden="true" />
     </ComboboxPrimitive.Trigger>
   </ComboboxPrimitive.InputGroup>
-));
+  ),
+);
 ComboboxInput.displayName = "ComboboxInput";
 
 type ComboboxContentProps = ComponentPropsWithoutRef<

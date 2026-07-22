@@ -171,18 +171,12 @@ export function ExpandableScreen({
       ".app-shell, .auth-shell, .cover-main",
     );
     const previousBodyOverflow = document.body.style.overflow;
-    const previousBodyPaddingRight = document.body.style.paddingRight;
     const previousOverscrollBehavior = document.body.style.overscrollBehavior;
     const previousAriaHidden = shell?.getAttribute("aria-hidden") ?? null;
     const previouslyInert = shell?.hasAttribute("inert") ?? false;
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
-
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
 
     shell?.setAttribute("inert", "");
     shell?.setAttribute("aria-hidden", "true");
@@ -195,7 +189,6 @@ export function ExpandableScreen({
 
       hasRestored = true;
       document.body.style.overflow = previousBodyOverflow;
-      document.body.style.paddingRight = previousBodyPaddingRight;
       document.body.style.overscrollBehavior = previousOverscrollBehavior;
 
       if (shell) {
@@ -316,8 +309,16 @@ export function ExpandableScreen({
         scaleX: resolvedOrigin.scaleX,
         scaleY: resolvedOrigin.scaleY,
         borderRadius: resolvedOrigin.borderRadius,
-        backgroundColor: resolvedOrigin.backgroundColor,
-        opacity: 1,
+        backgroundColor: EXPANDED_SCREEN_COLOR,
+        opacity: 0,
+        transition: {
+          duration: 0.18,
+          ease: [0.22, 1, 0.36, 1] as const,
+          opacity: {
+            duration: 0.12,
+            ease: "easeOut" as const,
+          },
+        },
       };
 
   return createPortal(
@@ -330,7 +331,12 @@ export function ExpandableScreen({
               aria-hidden="true"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{
+                opacity: 0,
+                transition: shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.16, ease: "easeOut" },
+              }}
               transition={
                 shouldReduceMotion
                   ? { duration: 0 }

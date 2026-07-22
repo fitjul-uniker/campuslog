@@ -5,6 +5,14 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 
 import { BorderBeamButton } from "@/components/ui/BorderBeamButton";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import { Field } from "@/components/ui/field";
 import type { RecommendationPurpose } from "@/lib/types";
 
 type RecommendationFormInput = {
@@ -37,6 +45,9 @@ export function RecommendationForm({
     useState<RecommendationPurpose>("cover_letter");
   const [prompt, setPrompt] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const selectedPurpose =
+    PURPOSE_OPTIONS.find((option) => option.value === purpose) ??
+    PURPOSE_OPTIONS[0];
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,25 +66,38 @@ export function RecommendationForm({
 
   return (
     <form className="experience-form" onSubmit={handleSubmit} noValidate>
-      <div className="form-field">
-        <label htmlFor="recommendation-purpose">활용 목적</label>
-        <select
-          id="recommendation-purpose"
-          name="purpose"
-          value={purpose}
-          onChange={(event) =>
-            setPurpose(event.target.value as RecommendationPurpose)
-          }
-          disabled={isLoading}
-          required
+      <Field className="recommendation-purpose-field">
+        <label id="recommendation-purpose-label">활용 목적</label>
+        <Combobox
+          items={PURPOSE_OPTIONS}
+          value={selectedPurpose}
+          inputValue={selectedPurpose.label}
+          onInputValueChange={() => undefined}
+          onValueChange={(option) => {
+            if (option) {
+              setPurpose(option.value);
+            }
+          }}
         >
-          {PURPOSE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+          <ComboboxInput
+            id="recommendation-purpose"
+            name="purpose"
+            readOnly
+            triggerAriaLabel="활용 목적 목록 열기"
+            aria-labelledby="recommendation-purpose-label"
+            disabled={isLoading}
+          />
+          <ComboboxContent>
+            <ComboboxList>
+              {(option: (typeof PURPOSE_OPTIONS)[number]) => (
+                <ComboboxItem key={option.value} value={option}>
+                  {option.label}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      </Field>
 
       <div className="form-field">
         <label htmlFor="recommendation-prompt">질문 / 문항</label>
