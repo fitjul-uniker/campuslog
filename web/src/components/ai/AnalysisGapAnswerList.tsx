@@ -1,8 +1,9 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, PencilLine, Save } from "lucide-react";
+import { CheckCircle2, HelpCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { MorphSurface } from "@/components/ui/MorphSurface";
 import { formatDateTime } from "@/lib/date";
 import {
   createAnalysisGapFollowup,
@@ -59,6 +60,7 @@ export function AnalysisGapAnswerList({
   const [savedGapIds, setSavedGapIds] = useState<Set<string>>(new Set());
   const [errorByGapId, setErrorByGapId] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState("");
+  const [openGapId, setOpenGapId] = useState<string | null>(null);
 
   const answerItems = useMemo(
     () => getAnalysisGapAnswerItems(analysis, followups),
@@ -109,7 +111,9 @@ export function AnalysisGapAnswerList({
     };
   }, [analysis, experience.id]);
 
-  async function handleSaveAnswer(item: AnalysisGapAnswerItem) {
+  async function handleSaveAnswer(
+    item: AnalysisGapAnswerItem,
+  ): Promise<boolean> {
     const answer = draftAnswers[item.id]?.trim() ?? "";
 
     if (!answer) {
@@ -117,7 +121,7 @@ export function AnalysisGapAnswerList({
         ...current,
         [item.id]: "보완 답변을 입력한 뒤 저장해 주세요.",
       }));
-      return;
+      return false;
     }
 
     setSavingGapId(item.id);
@@ -138,7 +142,7 @@ export function AnalysisGapAnswerList({
             ...current,
             [item.id]: "보완 답변을 저장할 준비를 하지 못했습니다.",
           }));
-          return;
+          return false;
         }
 
         followupId = savedFollowup.id;
@@ -158,7 +162,7 @@ export function AnalysisGapAnswerList({
           ...current,
           [item.id]: "보완 답변을 저장하지 못했습니다.",
         }));
-        return;
+        return false;
       }
 
       await repository.analyses.saveGapAnswer(experience.id, item.id, answer);
@@ -179,6 +183,7 @@ export function AnalysisGapAnswerList({
         [item.id]: answer,
       }));
       setSavedGapIds((current) => new Set(current).add(item.id));
+      return true;
     } catch (error) {
       console.error("CampusLog analysis gap answer save failed", error);
       setErrorByGapId((current) => ({
@@ -188,6 +193,7 @@ export function AnalysisGapAnswerList({
           "보완 답변 저장 중 문제가 발생했습니다.",
         ),
       }));
+      return false;
     } finally {
       setSavingGapId(null);
     }
@@ -208,7 +214,6 @@ export function AnalysisGapAnswerList({
   return (
     <div className="analysis-gap-answer-block">
       <div className="analysis-gap-answer-intro">
-        <PencilLine aria-hidden="true" />
         <p>
           답변은 원본 경험을 수정하지 않고 분석에 연결된 보완 답변으로
           저장됩니다. 추천에는 바로 반영되며, 요약과 STAR까지 갱신하려면 다시
@@ -226,39 +231,61 @@ export function AnalysisGapAnswerList({
         {answerItems.map((item) => {
           const draftAnswer = draftAnswers[item.id] ?? "";
           const savedAnswer = item.answer.trim();
+          const isOpen = openGapId === item.id;
           const isSaving = savingGapId === item.id;
           const isEditing = draftAnswer.trim() !== savedAnswer;
           const hasDraft = draftAnswer.trim().length > 0;
           const error = errorByGapId[item.id];
           const wasSavedNow = savedGapIds.has(item.id);
+          const statusText = isSaving
+            ? "저장 중"
+            : error
+              ? "저장 실패"
+              : isEditing && savedAnswer
+                ? "기존 답변 수정 중"
+                : isEditing && hasDraft
+                  ? "답변 작성 중"
+                  : savedAnswer
+                    ? wasSavedNow
+                      ? "저장 완료"
+                      : `마지막 저장 ${formatDateTime(item.updatedAt ?? item.answeredAt ?? "")}`
+                    : "";
+
+          async function saveAndClose() {
+            const didSave = await handleSaveAnswer(item);
+
+            if (didSave) {
+              window.setTimeout(() => {
+                setOpenGapId((current) =>
+                  current === item.id ? null : current,
+                );
+              }, 650);
+            }
+          }
 
           return (
-            <article
-              className="analysis-gap-answer-card"
+            <MorphSurface
               key={item.id}
-              data-answered={savedAnswer ? "true" : "false"}
-            >
-              <div className="analysis-gap-answer-card-header">
-                <div>
-                  <span>{getCategoryLabel(item.category)}</span>
-                  <h4>{item.title}</h4>
-                </div>
-                {savedAnswer ? (
+              surfaceId={`analysis-gap-${item.id}`}
+              isOpen={isOpen}
+              onOpenChange={(open) => setOpenGapId(open ? item.id : null)}
+              triggerLabel={item.question}
+              triggerMeta={getCategoryLabel(item.category)}
+              statusLabel={savedAnswer ? "답변 완료" : "답변 필요"}
+              isComplete={Boolean(savedAnswer)}
+              triggerIcon={
+                savedAnswer ? (
                   <CheckCircle2 aria-hidden="true" />
                 ) : (
-                  <AlertTriangle aria-hidden="true" />
-                )}
+                  <HelpCircle aria-hidden="true" />
+                )
+              }
+              focusTargetId={`gap-answer-${item.id}`}
+            >
+              <div className="analysis-gap-morph-heading">
+                <p className="analysis-gap-question">{item.question}</p>
+                <p className="analysis-gap-reason">{item.reason}</p>
               </div>
-
-              <p className="analysis-gap-reason">{item.reason}</p>
-              <p className="analysis-gap-question">{item.question}</p>
-
-              {savedAnswer ? (
-                <div className="analysis-gap-saved-answer">
-                  <strong>저장된 답변</strong>
-                  <p>{savedAnswer}</p>
-                </div>
-              ) : null}
 
               <label className="sr-only" htmlFor={`gap-answer-${item.id}`}>
                 {item.title} 보완 답변
@@ -270,6 +297,15 @@ export function AnalysisGapAnswerList({
                 rows={4}
                 maxLength={1600}
                 placeholder="실제로 기억하거나 기록에서 확인할 수 있는 내용만 적어주세요."
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    (event.metaKey || event.ctrlKey)
+                  ) {
+                    event.preventDefault();
+                    void saveAndClose();
+                  }
+                }}
                 onChange={(event) => {
                   setDraftAnswers((current) => ({
                     ...current,
@@ -288,29 +324,25 @@ export function AnalysisGapAnswerList({
               />
 
               <div className="analysis-gap-answer-actions">
-                <span>
-                  {isSaving
-                    ? "저장 중"
-                    : error
-                      ? "저장 실패"
-                      : isEditing && savedAnswer
-                        ? "기존 답변 수정 중"
-                        : isEditing && hasDraft
-                          ? "답변 작성 중"
-                          : savedAnswer
-                            ? wasSavedNow
-                              ? "저장 완료"
-                              : `마지막 저장 ${formatDateTime(item.updatedAt ?? item.answeredAt ?? "")}`
-                            : "답변 없음"}
-                </span>
+                <div className="analysis-gap-answer-meta">
+                  {statusText ? <span>{statusText}</span> : null}
+                  <span>{draftAnswer.length}/1600</span>
+                </div>
                 <button
-                  className="button button-secondary"
+                  className="button button-primary analysis-gap-save-button"
                   type="button"
-                  onClick={() => handleSaveAnswer(item)}
-                  disabled={isSaving || !hasDraft || (!isEditing && Boolean(savedAnswer))}
+                  onClick={() => void saveAndClose()}
+                  disabled={
+                    isSaving ||
+                    !hasDraft ||
+                    (!isEditing && Boolean(savedAnswer))
+                  }
                 >
-                  <Save className="button-icon" aria-hidden="true" />
-                  {isSaving ? "저장 중..." : savedAnswer ? "수정 저장" : "답변 저장"}
+                  {isSaving
+                    ? "저장 중..."
+                    : savedAnswer
+                      ? "수정 저장"
+                      : "답변 저장"}
                 </button>
               </div>
 
@@ -319,7 +351,7 @@ export function AnalysisGapAnswerList({
                   {error}
                 </p>
               ) : null}
-            </article>
+            </MorphSurface>
           );
         })}
       </div>

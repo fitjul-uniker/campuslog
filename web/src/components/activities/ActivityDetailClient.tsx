@@ -22,11 +22,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ActivityCreateForm } from "@/components/activities/ActivityCreateForm";
 import {
-  ACTIVITY_STATUS_LABELS,
+  ACTIVITY_DISPLAY_STATE_LABELS,
   createExperiencePeriod,
   formatDateKey,
   getActivityDateRange,
   getLocalDateKey,
+  getTrackedActivityDisplayState,
 } from "@/components/activities/activityViewUtils";
 import {
   RippleButton,
@@ -547,6 +548,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   }
 
   const isCompleted = activity.status === "completed";
+  const displayState = getTrackedActivityDisplayState(activity);
+  const isCompletionDue = displayState === "completion_due";
   const canActivate = activity.startDate <= getLocalDateKey();
   const canEditActivity =
     !isCompleted &&
@@ -583,8 +586,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
         <div className="activity-detail-heading">
           <h1>{activity.title}</h1>
           <div className="activity-status-row">
-            <span className={`activity-status-badge is-${activity.status}`}>
-              {ACTIVITY_STATUS_LABELS[activity.status]}
+            <span className={`activity-status-badge is-${displayState}`}>
+              {ACTIVITY_DISPLAY_STATE_LABELS[displayState]}
             </span>
             {isCompleted ? (
               <span className="activity-synthesis-label">
@@ -644,12 +647,14 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           ) : null}
           {activity.status === "active" ? (
             <>
-              <Link
-                href={`/dashboard?activityId=${encodeURIComponent(activity.id)}#quick-record-title`}
-                className="activity-secondary-button"
-              >
-                오늘 한 일 기록하기
-              </Link>
+              {!isCompletionDue ? (
+                <Link
+                  href={`/dashboard?activityId=${encodeURIComponent(activity.id)}#quick-record-title`}
+                  className="activity-secondary-button"
+                >
+                  오늘 한 일 기록하기
+                </Link>
+              ) : null}
               <RippleButton
                 ref={endActivityButtonRef}
                 type="button"
@@ -660,7 +665,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
                 className="activity-primary-button"
               >
                 <FileCheck2 aria-hidden="true" />
-                활동 종료
+                {isCompletionDue ? "활동 종료 확인" : "활동 종료"}
                 <RippleButtonRipples />
               </RippleButton>
             </>
@@ -996,7 +1001,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
             <Clock3 aria-hidden="true" />
             <h3>아직 쌓인 기록이 없습니다</h3>
             <p>오늘의 기록에서 이 활동을 선택하고 실제로 한 일을 남겨보세요.</p>
-            {activity.status === "active" ? (
+            {displayState === "active" ? (
               <Link
                 href={`/dashboard?activityId=${encodeURIComponent(activity.id)}#quick-record-title`}
                 className="activity-secondary-button"

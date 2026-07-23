@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Edit3,
+  FileCheck2,
   Loader2,
   Plus,
   Save,
@@ -26,6 +27,7 @@ import { ActivityCalendar } from "@/components/activities/ActivityCalendar";
 import {
   formatDateKey,
   getLocalDateKey,
+  getTrackedActivityDisplayState,
   isActivityRecordableOnDate,
 } from "@/components/activities/activityViewUtils";
 import {
@@ -95,7 +97,7 @@ function getCompletionActionLabel(activity: TrackedActivity): string {
     case "failed":
       return "AI 정리 다시 시도";
     default:
-      return "완료 경험 마무리하기";
+      return "경험 정리 시작하기";
   }
 }
 
@@ -244,6 +246,15 @@ export function TodayDashboard() {
   const plannedActivities = useMemo(
     () => activities?.filter((activity) => activity.status === "planned") ?? [],
     [activities],
+  );
+  const activitiesAwaitingEndConfirmation = useMemo(
+    () =>
+      activities?.filter(
+        (activity) =>
+          getTrackedActivityDisplayState(activity, today) ===
+          "completion_due",
+      ) ?? [],
+    [activities, today],
   );
   const activitiesRequiringCompletion = useMemo(
     () =>
@@ -665,6 +676,30 @@ export function TodayDashboard() {
           </div>
         </div>
 
+        {activityActionError || activityActionMessage ? (
+          <div
+            className="activity-overview-feedback-region"
+            aria-label="활동 처리 결과"
+          >
+            {activityActionError ? (
+              <p
+                className="activity-form-error activity-overview-feedback"
+                role="alert"
+              >
+                {activityActionError}
+              </p>
+            ) : null}
+            {activityActionMessage ? (
+              <p
+                className="activity-form-success activity-overview-feedback"
+                role="status"
+              >
+                {activityActionMessage}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         {activeActivities.length > 0 ? (
           <ul className="activity-summary-list activity-active-list">
             {activeActivities.map((activity) => (
@@ -692,26 +727,43 @@ export function TodayDashboard() {
           </div>
         )}
 
-        {activityActionError ? (
-          <p className="activity-form-error activity-overview-feedback" role="alert">
-            {activityActionError}
-          </p>
-        ) : null}
-        {activityActionMessage ? (
-          <p
-            className="activity-form-success activity-overview-feedback"
-            role="status"
-          >
-            {activityActionMessage}
-          </p>
+        {activitiesAwaitingEndConfirmation.length > 0 ? (
+          <div className="activity-finishing-section">
+            <div className="activity-finishing-heading">
+              <div>
+                <p className="activity-section-kicker">종료 확인 필요</p>
+                <h3>예상 종료일이 지난 활동</h3>
+              </div>
+              <span>{activitiesAwaitingEndConfirmation.length}개</span>
+            </div>
+            <ul className="activity-summary-list activity-finishing-list">
+              {activitiesAwaitingEndConfirmation.map((activity) => (
+                <li key={activity.id}>
+                  <Link href={`/activities/${activity.id}`}>
+                    <span className="activity-summary-icon">
+                      <FileCheck2 aria-hidden="true" />
+                    </span>
+                    <span className="activity-summary-copy">
+                      <strong>{activity.title}</strong>
+                      <span>
+                        {formatDateKey(activity.expectedEndDate)} 종료 예정 ·
+                        종료 여부를 확인해 주세요
+                      </span>
+                    </span>
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
 
         {activitiesRequiringCompletion.length > 0 ? (
           <div className="activity-finishing-section">
             <div className="activity-finishing-heading">
               <div>
-                <p className="activity-section-kicker">마무리 필요</p>
-                <h3>완료 경험으로 정리할 활동</h3>
+                <p className="activity-section-kicker">경험 정리 필요</p>
+                <h3>완료한 활동을 경험으로 정리하기</h3>
               </div>
               <span>{activitiesRequiringCompletion.length}개</span>
             </div>

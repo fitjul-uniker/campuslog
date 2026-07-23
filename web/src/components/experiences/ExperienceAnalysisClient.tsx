@@ -6,12 +6,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
-import {
-  RippleButton,
-  RippleButtonRipples,
-} from "@/components/animate-ui/components/buttons/ripple";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -254,6 +251,18 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
             확인합니다.
           </p>
         </div>
+        <div className="header-actions analysis-page-header-actions">
+          <Link
+            href={`/experiences/${experience.id}`}
+            className="button button-secondary"
+          >
+            <ArrowLeft className="button-icon" aria-hidden="true" />
+            활동 경험 상세로 돌아가기
+          </Link>
+          <Link href="/experiences" className="button button-secondary">
+            나의 활동으로 돌아가기
+          </Link>
+        </div>
       </section>
 
       {analysis ? (
@@ -265,31 +274,16 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
               {analysisError}
             </p>
           ) : null}
-          <div className="panel-actions">
-            <RippleButton
-              className="button button-primary"
+          <div className="panel-actions analysis-page-footer-actions analysis-page-footer-actions-spaced">
+            <AnimatedGradientActionButton
               type="button"
               onClick={handleAnalyze}
               disabled={isAnalyzing}
+              aria-busy={isAnalyzing}
+              icon={<RefreshCcw />}
             >
-              <RefreshCcw className="button-icon" aria-hidden="true" />
               {isAnalyzing ? "분석 중..." : "다시 분석하기"}
-              <RippleButtonRipples />
-            </RippleButton>
-            <Link
-              href={`/experiences/${experience.id}`}
-              className="button button-secondary"
-            >
-              <ArrowLeft className="button-icon" aria-hidden="true" />
-              활동 경험 상세로 돌아가기
-            </Link>
-            <Link href="/experiences" className="button button-secondary">
-              나의 활동으로 돌아가기
-            </Link>
-            <Link href="/recommend" className="button button-ghost">
-              <Sparkles className="button-icon" aria-hidden="true" />
-              AI 기반 활동 추천
-            </Link>
+            </AnimatedGradientActionButton>
           </div>
         </>
       ) : (
@@ -318,27 +312,16 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
               </p>
             ) : null}
 
-            <div className="panel-actions">
-              <RippleButton
-                className="button button-primary"
+            <div className="panel-actions analysis-page-footer-actions">
+              <AnimatedGradientActionButton
                 type="button"
                 onClick={handleAnalyze}
                 disabled={isAnalyzing}
+                aria-busy={isAnalyzing}
+                icon={<Sparkles />}
               >
-                <Sparkles className="button-icon" aria-hidden="true" />
                 {isAnalyzing ? "분석 중..." : "AI 분석 요청"}
-                <RippleButtonRipples />
-              </RippleButton>
-              <Link
-                href={`/experiences/${experience.id}`}
-                className="button button-secondary"
-              >
-                <ArrowLeft className="button-icon" aria-hidden="true" />
-                활동 경험 상세로 돌아가기
-              </Link>
-              <Link href="/experiences" className="button button-ghost">
-                나의 활동으로 돌아가기
-              </Link>
+              </AnimatedGradientActionButton>
             </div>
           </section>
         </>

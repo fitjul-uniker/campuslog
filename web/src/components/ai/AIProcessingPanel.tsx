@@ -1,7 +1,11 @@
 "use client";
 
-import { Clock3, Sparkles, XCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { XCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+import { AITextLoading } from "@/components/ui/AITextLoading";
+import { Strands } from "@/components/ui/Strands";
 
 type AIProcessingContextItem = {
   label: string;
@@ -35,9 +39,8 @@ type AIProcessingPanelProps = {
   className?: string;
 };
 
-function formatContextValue(value: string | number): string {
-  return typeof value === "number" ? value.toLocaleString("ko-KR") : value;
-}
+let activeAIProcessingOverlayCount = 0;
+let bodyOverflowBeforeAIProcessing = "";
 
 function getActiveMessage(
   elapsedMs: number,
@@ -50,77 +53,28 @@ function getActiveMessage(
   );
 }
 
-function AISkeleton({ variant }: { variant: AISkeletonVariant }) {
-  if (variant === "recommendation") {
-    return (
-      <div className="ai-processing-skeleton ai-processing-skeleton-recommendation" aria-hidden="true">
-        <div className="ai-skeleton-requirements">
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className="ai-skeleton-match-list">
-          <span />
-          <span />
-          <span />
-        </div>
-      </div>
-    );
-  }
+function normalizeLoadingText(text: string): string {
+  const normalizedText = text.trim().replace(/[.…]+$/u, "");
+  return `${normalizedText}...`;
+}
 
-  if (variant === "answerDraft") {
-    return (
-      <div className="ai-processing-skeleton ai-processing-skeleton-draft" aria-hidden="true">
-        <span className="ai-skeleton-title" />
-        <span />
-        <span />
-        <span className="ai-skeleton-short" />
-        <div className="ai-skeleton-evidence-row">
-          <span />
-          <span />
-        </div>
-      </div>
-    );
-  }
-
-  if (variant === "activitySynthesis") {
-    return (
-      <div className="ai-processing-skeleton ai-processing-skeleton-activity" aria-hidden="true">
-        <span className="ai-skeleton-title" />
-        <span />
-        <span />
-        <div className="ai-skeleton-list">
-          <span />
-          <span />
-          <span />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="ai-processing-skeleton ai-processing-skeleton-analysis" aria-hidden="true">
-      <span className="ai-skeleton-title" />
-      <div className="ai-skeleton-star-grid">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-      <span />
-      <span className="ai-skeleton-short" />
-    </div>
+function uniqueTexts(texts: Array<string | undefined>): string[] {
+  return Array.from(
+    new Set(
+      texts
+        .map((text) => text?.trim())
+        .filter(Boolean)
+        .map((text) => normalizeLoadingText(text as string)),
+    ),
   );
 }
 
 export function AIProcessingPanel({
   title,
   description,
-  contextItems = [],
   steps,
   messages,
   statusMessage,
-  skeletonVariant,
   longWaitThresholdMs = 18_000,
   longWaitMessage = "입력 내용이 많거나 결과 형식 검증에 시간이 걸리면 평소보다 조금 더 걸릴 수 있어요.",
   canCancel = false,
@@ -129,12 +83,32 @@ export function AIProcessingPanel({
   className = "",
 }: AIProcessingPanelProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [portalNode, setPortalNode] = useState<HTMLDivElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const timedMessage = useMemo(
     () => getActiveMessage(elapsedMs, messages),
     [elapsedMs, messages],
   );
   const activeMessage = statusMessage ?? timedMessage;
   const shouldShowLongWait = elapsedMs >= longWaitThresholdMs;
+  const loadingTexts = useMemo(
+    () =>
+      uniqueTexts([
+        title,
+        activeMessage,
+        ...steps,
+        description,
+        shouldShowLongWait ? longWaitMessage : undefined,
+      ]),
+    [
+      activeMessage,
+      description,
+      longWaitMessage,
+      shouldShowLongWait,
+      steps,
+      title,
+    ],
+  );
 
   useEffect(() => {
     const startedAt = Date.now();
@@ -145,23 +119,80 @@ export function AIProcessingPanel({
     return () => window.clearInterval(intervalId);
   }, []);
 
-  return (
+  useEffect(() => {
+    const node = document.createElement("div");
+    node.dataset.aiProcessingPortal = "true";
+    document.body.appendChild(node);
+
+    if (activeAIProcessingOverlayCount === 0) {
+      bodyOverflowBeforeAIProcessing = document.body.style.overflow;
+    }
+    activeAIProcessingOverlayCount += 1;
+    document.body.style.overflow = "hidden";
+    setPortalNode(node);
+
+    return () => {
+      activeAIProcessingOverlayCount = Math.max(
+        activeAIProcessingOverlayCount - 1,
+        0,
+      );
+      if (activeAIProcessingOverlayCount === 0) {
+        document.body.style.overflow = bodyOverflowBeforeAIProcessing;
+      }
+      node.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (portalNode && canCancel) {
+      cancelButtonRef.current?.focus({ preventScroll: true });
+    }
+  }, [canCancel, portalNode]);
+
+  if (!portalNode) {
+    return null;
+  }
+
+  return createPortal(
     <section
-      className={`ai-processing-panel${className ? ` ${className}` : ""}`}
+      className={`ai-processing-overlay${className ? ` ${className}` : ""}`}
       aria-live="polite"
       aria-busy="true"
+      aria-label={title}
+      role="dialog"
+      aria-modal="true"
     >
-      <div className="ai-processing-header">
-        <span className="ai-processing-icon" aria-hidden="true">
-          <Sparkles />
-        </span>
-        <div>
-          <p className="ai-processing-kicker">AI 처리 중</p>
-          <h2>{title}</h2>
-          <p>{description}</p>
+      <div className="ai-processing-overlay-surface">
+        <div className="ai-processing-strands-stage">
+          <Strands
+            colors={["#F97316", "#7C3AED", "#06B6D4"]}
+            count={3}
+            speed={0.5}
+            amplitude={1}
+            waviness={1}
+            thickness={0.7}
+            glow={2.6}
+            taper={3}
+            spread={1}
+            intensity={0.6}
+            saturation={1.5}
+            opacity={1}
+            scale={1.5}
+            glass={false}
+          />
         </div>
+
+        <div className="ai-processing-text" role="status">
+          <AITextLoading
+            texts={loadingTexts}
+            interval={2_400}
+            className="ai-processing-loading-text"
+          />
+        </div>
+
         {canCancel ? (
           <button
+            ref={cancelButtonRef}
             className="ai-processing-cancel-button"
             type="button"
             onClick={onCancel}
@@ -171,48 +202,7 @@ export function AIProcessingPanel({
           </button>
         ) : null}
       </div>
-
-      <div
-        className="ai-processing-progress"
-        role="progressbar"
-        aria-label={title}
-      >
-        <span />
-      </div>
-
-      <p className="ai-processing-message" role="status">
-        {activeMessage}
-      </p>
-
-      {contextItems.length > 0 ? (
-        <dl className="ai-processing-context">
-          {contextItems.map((item) => (
-            <div key={item.label}>
-              <dt>{item.label}</dt>
-              <dd>{formatContextValue(item.value)}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-
-      <div className="ai-processing-body">
-        <div className="ai-processing-steps">
-          <p>확인 중인 내용</p>
-          <ul>
-            {steps.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ul>
-        </div>
-        <AISkeleton variant={skeletonVariant} />
-      </div>
-
-      {shouldShowLongWait ? (
-        <div className="ai-processing-long-wait">
-          <Clock3 aria-hidden="true" />
-          <p>{longWaitMessage}</p>
-        </div>
-      ) : null}
-    </section>
+    </section>,
+    portalNode,
   );
 }

@@ -4,12 +4,15 @@ import { motion, useReducedMotion } from "motion/react";
 import type { KeyboardEvent, UIEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { TrackedActivityDisplayState } from "@/components/activities/activityViewUtils";
+
 export type MyActivityListItem = {
   key: string;
   id: string;
   title: string;
   kind: "experience" | "tracked";
   updatedAt: string;
+  displayState?: TrackedActivityDisplayState;
 };
 
 type AnimatedExperienceListProps = {
@@ -154,8 +157,13 @@ export function AnimatedExperienceList({
                 >
                   <span className="dashboard-activity-title">{item.title}</span>
                   {item.kind === "tracked" ? (
-                    <span className="dashboard-activity-progress-badge">
-                      진행 중
+                    <span
+                      className="dashboard-activity-progress-badge"
+                      data-activity-status={item.displayState}
+                    >
+                      {item.displayState === "completion_due"
+                        ? "종료 확인 필요"
+                        : "진행 중"}
                     </span>
                   ) : null}
                 </button>

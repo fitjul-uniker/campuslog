@@ -1,9 +1,21 @@
 import type { ActivityStatus, TrackedActivity } from "@/lib/types";
 
+export type TrackedActivityDisplayState =
+  | ActivityStatus
+  | "completion_due";
+
 export const ACTIVITY_STATUS_LABELS: Record<ActivityStatus, string> = {
   planned: "시작 예정",
   active: "진행 중",
   completed: "종료",
+};
+
+export const ACTIVITY_DISPLAY_STATE_LABELS: Record<
+  TrackedActivityDisplayState,
+  string
+> = {
+  ...ACTIVITY_STATUS_LABELS,
+  completion_due: "종료 확인 필요",
 };
 
 export function getLocalDateKey(date = new Date()): string {
@@ -12,6 +24,21 @@ export function getLocalDateKey(date = new Date()): string {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+export function getTrackedActivityDisplayState(
+  activity: TrackedActivity,
+  todayKey = getLocalDateKey(),
+): TrackedActivityDisplayState {
+  if (
+    activity.status === "active" &&
+    activity.expectedEndDate &&
+    activity.expectedEndDate < todayKey
+  ) {
+    return "completion_due";
+  }
+
+  return activity.status;
 }
 
 export function parseLocalDate(dateKey: string): Date | null {

@@ -4,7 +4,7 @@ import { Sparkles } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
 
-import { BorderBeamButton } from "@/components/ui/BorderBeamButton";
+import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
 import {
   Combobox,
   ComboboxContent,
@@ -74,6 +74,7 @@ export function RecommendationForm({
         <label id="recommendation-purpose-label">활용 목적</label>
         <Combobox
           items={PURPOSE_OPTIONS}
+          filter={null}
           value={selectedPurpose}
           inputValue={selectedPurpose.inputLabel}
           onInputValueChange={() => undefined}
@@ -160,17 +161,15 @@ export function RecommendationForm({
       ) : null}
 
       <div className="panel-actions">
-        <BorderBeamButton
-          className="button button-primary"
-          wrapperClassName="recommendation-analysis-request-wrap"
-          colorVariant="colorful"
+        <AnimatedGradientActionButton
+          className="recommendation-analysis-request"
           type="submit"
           disabled={isLoading}
           aria-busy={isLoading}
+          icon={<Sparkles />}
         >
-          <Sparkles className="button-icon" aria-hidden="true" />
           {isLoading ? "AI 분석 중..." : "AI 분석"}
-        </BorderBeamButton>
+        </AnimatedGradientActionButton>
       </div>
     </form>
   );

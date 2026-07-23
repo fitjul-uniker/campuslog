@@ -5,8 +5,10 @@ import { ArrowRight, CalendarDays, NotebookPen, Trash2, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import {
+  ACTIVITY_DISPLAY_STATE_LABELS,
   formatDateKey,
   getActivityDateRange,
+  getTrackedActivityDisplayState,
 } from "@/components/activities/activityViewUtils";
 import {
   DASHBOARD_EXPERIENCE_DETAIL_ID,
@@ -30,6 +32,8 @@ export function DashboardTrackedActivityDetail({
   const titleId = `${DASHBOARD_EXPERIENCE_DETAIL_ID}-title`;
   const recordedDayCount = new Set(logs.map((log) => log.date)).size;
   const latestLog = logs[0] ?? null;
+  const displayState = getTrackedActivityDisplayState(activity);
+  const isCompletionDue = displayState === "completion_due";
 
   return (
     <motion.section
@@ -38,7 +42,7 @@ export function DashboardTrackedActivityDetail({
       className="dashboard-experience-detail dashboard-tracked-activity-detail"
       aria-labelledby={titleId}
       role="complementary"
-      data-activity-status="active"
+      data-activity-status={displayState}
       initial={
         shouldReduceMotion ? false : { opacity: 0, x: 24, scale: 0.985 }
       }
@@ -54,7 +58,9 @@ export function DashboardTrackedActivityDetail({
       <div className="dashboard-detail-header">
         <div>
           <div className="dashboard-detail-status">
-            <span className="dashboard-detail-progress-badge">진행 중</span>
+            <span className="dashboard-detail-progress-badge">
+              {ACTIVITY_DISPLAY_STATE_LABELS[displayState]}
+            </span>
           </div>
           <h2 id={titleId}>{activity.title}</h2>
         </div>
@@ -82,10 +88,17 @@ export function DashboardTrackedActivityDetail({
       <div className="dashboard-detail-content">
         <section>
           <h3>현재 상태</h3>
-          <p>
-            이 활동은 현재 진행 중입니다. 오늘 한 일을 기록하며 활동 내용을
-            계속 쌓을 수 있습니다.
-          </p>
+          {isCompletionDue ? (
+            <p>
+              예상 종료일이 지났습니다. 실제 종료 여부를 확인하거나 활동
+              기간을 수정해 주세요.
+            </p>
+          ) : (
+            <p>
+              이 활동은 현재 진행 중입니다. 오늘 한 일을 기록하며 활동 내용을
+              계속 쌓을 수 있습니다.
+            </p>
+          )}
         </section>
 
         <section>
@@ -132,15 +145,17 @@ export function DashboardTrackedActivityDetail({
           href={`/activities/${activity.id}`}
           className="dashboard-detail-action dashboard-detail-action-primary"
         >
-          진행 중 활동 보기
+          {isCompletionDue ? "활동 종료 확인하기" : "진행 중 활동 보기"}
           <ArrowRight aria-hidden="true" />
         </Link>
-        <Link
-          href={`/dashboard?activityId=${encodeURIComponent(activity.id)}#quick-record-title`}
-          className="dashboard-detail-action"
-        >
-          오늘 한 일 기록하기
-        </Link>
+        {!isCompletionDue ? (
+          <Link
+            href={`/dashboard?activityId=${encodeURIComponent(activity.id)}#quick-record-title`}
+            className="dashboard-detail-action"
+          >
+            오늘 한 일 기록하기
+          </Link>
+        ) : null}
       </div>
     </motion.section>
   );

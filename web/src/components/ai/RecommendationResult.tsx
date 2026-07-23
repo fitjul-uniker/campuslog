@@ -495,7 +495,6 @@ export function RecommendationResult({
   variant = "default",
   onClose,
 }: RecommendationResultProps) {
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const [answerDraftsByExperienceId, setAnswerDraftsByExperienceId] = useState<
     Record<string, AnswerDraftResult>
   >({});
@@ -515,10 +514,7 @@ export function RecommendationResult({
   const generationOptions = getGenerationOptionsForPurpose(result.purpose);
   const requirements = result.extractedRequirements;
   const hasRequirements =
-    hasListContent(requirements.requiredCompetencies) ||
     hasListContent(requirements.preferredCompetencies) ||
-    hasListContent(requirements.keywords) ||
-    hasListContent(requirements.constraints) ||
     requirements.intent.trim().length > 0;
   const matches = result.matches.length > 0
     ? result.matches
@@ -855,16 +851,6 @@ export function RecommendationResult({
             </p>
           ) : null}
           <div className="recommendation-requirements-grid">
-            {hasListContent(requirements.requiredCompetencies) ? (
-              <div>
-                <h4>필수 역량</h4>
-                <div className="experience-tags">
-                  {requirements.requiredCompetencies.map((item, index) => (
-                    <span key={`required-${item}-${index}`}>{item}</span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
             {hasListContent(requirements.preferredCompetencies) ? (
               <div>
                 <h4>우대 역량</h4>
@@ -873,26 +859,6 @@ export function RecommendationResult({
                     <span key={`preferred-${item}-${index}`}>{item}</span>
                   ))}
                 </div>
-              </div>
-            ) : null}
-            {hasListContent(requirements.keywords) ? (
-              <div>
-                <h4>키워드</h4>
-                <div className="experience-tags">
-                  {requirements.keywords.map((item, index) => (
-                    <span key={`keyword-${item}-${index}`}>{item}</span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            {hasListContent(requirements.constraints) ? (
-              <div>
-                <h4>제약</h4>
-                <ul className="recommendation-compact-list">
-                  {requirements.constraints.map((item, index) => (
-                    <li key={`constraint-${item}-${index}`}>{item}</li>
-                  ))}
-                </ul>
               </div>
             ) : null}
           </div>
@@ -1231,45 +1197,6 @@ export function RecommendationResult({
         </div>
       </div>
 
-      <div className="detail-section recommendation-legacy-summary">
-        <h3>1순위 요약</h3>
-        <p>{result.reason}</p>
-        {hasListContent(result.relatedTags) ? (
-          <div className="experience-tags">
-            {result.relatedTags.map((tag, index) => (
-              <span key={`${tag}-${index}`}>{tag}</span>
-            ))}
-          </div>
-        ) : null}
-        <p>{result.highlightedAchievement}</p>
-        <p>{result.usageDirection}</p>
-      </div>
-
-      <div className="detail-section">
-        <div className="recommendation-section-heading">
-          <h3>참고 문장</h3>
-          <CopyButton
-            className="button button-secondary recommendation-copy-button"
-            content={result.draftSentence}
-            size="icon"
-            onCopiedChange={(copied) =>
-              setCopyStatus(copied ? "success" : "idle")
-            }
-            onCopyError={() => setCopyStatus("failed")}
-          />
-        </div>
-        <p className="draft-sentence">{result.draftSentence}</p>
-        {copyStatus === "success" ? (
-          <p className="copy-status" role="status">
-            참고 문장을 클립보드에 복사했습니다.
-          </p>
-        ) : null}
-        {copyStatus === "failed" ? (
-          <p className="form-error" role="alert">
-            복사에 실패했습니다. 문장을 직접 선택해 복사해주세요.
-          </p>
-        ) : null}
-      </div>
     </section>
   );
 }
