@@ -37,6 +37,7 @@
 - 2026-07-23: AI 경험 분석 화면을 요약, STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 축소. 핵심 역량 태그, 역량별 근거, 원본 근거, 자소서 소재 각도와 별도 보완 질문 생성 UI는 제거. 분석 부족 정보 카드 안에서 바로 답변을 저장하고, 답변은 분석 `evidenceGaps.answer`와 기존 `experience_followups` 호환 저장소에 함께 반영하며 보완 답변만으로는 `needs_reanalysis`를 강제하지 않음. 추천 / 답변 초안 입력에는 원본 경험, 분석 요약, STAR, 주요 성과, 부족 정보 보완 답변, 키워드를 함께 전달.
 - 2026-07-23: AI 추천 활용 목적을 면접 / 자기소개서 / JD 분석 / 기타 4개 신규 생성값으로 정리하고 목적별 입력 안내·예시·생성 옵션을 단일 설정 객체로 관리. 기존 `portfolio`, `activity_application` 저장 기록은 `other`로 읽어 하위 호환. 추천 API는 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 사용하도록 prompt를 조정했으며, 직접 근거가 부족하면 억지로 Top 3를 채우지 않음. 답변 생성 API는 목적별 허용 타입만 받도록 제한. 사용자가 Supabase SQL Editor에서 `jd` purpose 허용, `recommendations.jd_analysis`, 새 answer draft type constraint migration을 적용함. 실제 OpenAI 성공 경로와 목적별 생성 결과 수동 smoke test는 남음.
 - 2026-07-23: AI 추천 화면의 목적별 예시 문항을 실제 채용·지원 상황에서 입력할 법한 문장으로 교체. JD 분석 첫 예시는 버튼 문구와 실제 입력값을 분리해, 선택 시 백엔드 개발자 JD 샘플 전문이 입력되도록 조정. 긴 예시 문항의 모바일 줄바꿈도 보정. `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과했고 사용자가 예시 선택 입력 반영 등 직접 로직 테스트를 완료.
+- 2026-07-23: AI 구조화 호출 1차 대기 UX를 개선. 공통 `AIProcessingPanel`을 추가하고 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성 대기 상태에 단계형 안내 문구, skeleton, 장기 대기 안내, 처리 대상 메타 정보를 표시하도록 연결. API 응답 계약과 모델 호출 방식은 변경하지 않음. 추천 / 분석 / 활동 합성 / 답변 초안의 중복 실행 방지를 보강하고, 답변 초안 대기 상태에는 목표 분량에 맞춰 초안을 다듬을 수 있다는 안내를 추가. `npm run lint`, `npm run build`, `git diff --check` 통과, Codex가 `/recommend`와 `/experiences` 기본 렌더링을 확인했고 사용자가 직접 로직 테스트를 완료.
 - 2026-07-17: 팀 테스트를 위해 Supabase Auth 관리자 API 기반 `npm run seed:test-users` 스크립트를 추가. 기본 계정은 `test1@campuslog.test` ~ `test9@campuslog.test`, 비밀번호는 `test1111` ~ `test9999`이며 `campuslog_profile` metadata를 함께 설정. 사용자가 실제 Supabase project에 9개 계정이 모두 `created`로 생성된 것을 확인. 더미 경험·활동 데이터 주입은 아직 수행하지 않음.
 - 2026-07-17: 진행 중 / 시작 예정 활동을 상세 화면에서 수정할 수 있게 하고, 오늘의 기록의 마무리 필요 활동도 정리 전 수정할 수 있게 함. 활동 종료 시 현재 날짜를 완료일로 저장해 예상 종료일이 미래여도 즉시 AI 초안을 생성하도록 수정. 실제 로그인 브라우저 세션 회귀 확인은 남음.
 
@@ -134,6 +135,7 @@
 - [ ] 로그아웃 실패 안내·재시도와 현재 기기/전체 기기 scope 정책 확정 (`ISSUE-043`)
 - [ ] 모바일 상단 내비게이션과 safe area 재검증
 - [ ] loading / empty / error / success / reconnecting 상태 통일
+  - [x] AI 구조화 호출의 1차 대기 UX에 단계형 문구, skeleton, 장기 대기 안내, 처리 대상 메타 정보 적용
 - [ ] 키보드 focus 이동과 Dialog 초점 복귀 검증
 - [ ] 200% 확대와 긴 한글·URL 줄바꿈 검증
 - [ ] reduced motion과 애니메이션 fallback 검증

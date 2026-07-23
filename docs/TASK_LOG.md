@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - AI 구조화 호출 대기 UX 1차 개선
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 분석, AI 추천, 활동 완료 경험 합성, 추천 기반 답변 초안 생성의 긴 대기 상태를 단순 스피너에서 단계형 안내와 skeleton 중심 UX로 개선 |
+| 수정한 파일 | `web/src/components/ai/AIProcessingPanel.tsx`, `web/src/app/globals.css`, `web/src/app/recommend/page.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 공통 `AIProcessingPanel`을 추가해 단계형 안내 문구, indeterminate progress bar, 처리 대상 메타 정보, 결과 유형별 skeleton, 장기 대기 안내를 제공. AI 추천 / JD 분석, 경험 분석 / 재분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성 화면에 연결하고, 기존 결과 또는 입력 정보는 유지한 채 대기 상태를 표시. 분석, 추천, 활동 합성, 답변 초안 생성의 중복 클릭 방지를 보강. 답변 초안 생성 중에는 목표 분량과 선택 조건을 반영해 초안을 교정할 수 있음을 안내. API 응답 계약, 모델 호출 방식, 저장 구조는 변경하지 않음 |
+| 검증한 내용 | `npm run lint`, `npm run build`, `git diff --check` 통과. Codex가 `/recommend`와 `/experiences` 기본 렌더링과 브라우저 error 로그 0건을 확인. 사용자가 직접 로직 테스트를 실행해 완료 확인 |
+| 남은 작업 | 실제 로그인 세션에서 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 추가 smoke test. 답변 초안 스트리밍, 측정 / 취소 기능, 구조화 이벤트 스트리밍은 후속 단계로 유지 |
+| 관련 커밋 메시지 | `feat: improve ai loading states` |
+
 ### 2026-07-23 - AI 추천 목적별 예시 문항 현실화
 
 | 항목 | 내용 |

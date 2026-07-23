@@ -76,7 +76,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   }
 
   async function handleAnalyze() {
-    if (!experience) {
+    if (!experience || isAnalyzing) {
       return;
     }
 

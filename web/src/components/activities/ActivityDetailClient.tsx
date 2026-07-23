@@ -10,7 +10,6 @@ import {
   Clock3,
   Edit3,
   FileCheck2,
-  LoaderCircle,
   Play,
   RotateCcw,
   Save,
@@ -33,6 +32,7 @@ import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
+import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -179,6 +179,10 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     const usedLogIdSet = new Set(draft.usedLogIds);
     return logs.filter((log) => usedLogIdSet.has(log.id));
   }, [draft, logs]);
+  const totalLogCharacterCount = useMemo(
+    () => logs.reduce((total, log) => total + log.content.length, 0),
+    [logs],
+  );
 
   async function handleActivate() {
     setError("");
@@ -280,7 +284,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   }
 
   async function handleConfirmEnd() {
-    if (!activity) {
+    if (!activity || isSynthesizing) {
       return;
     }
 
@@ -717,6 +721,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
                 type="button"
                 onClick={handleConfirmEnd}
                 className="activity-primary-button"
+                disabled={isSynthesizing}
               >
                 종료하고 AI 초안 만들기
                 <RippleButtonRipples />
@@ -734,16 +739,38 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       ) : null}
 
       {isSynthesizing ? (
-        <section className="activity-synthesis-loading" aria-live="polite" aria-busy="true">
-          <span>
-            <LoaderCircle aria-hidden="true" />
-          </span>
-          <div>
-            <p className="activity-section-kicker">AI 경험 합성</p>
-            <h2>날짜별 기록을 하나의 경험으로 정리하고 있어요</h2>
-            <p>기록에 없는 사실은 만들지 않고, 실제로 남긴 내용만 검토합니다.</p>
-          </div>
-        </section>
+        <AIProcessingPanel
+          className="activity-synthesis-ai-processing"
+          title="날짜별 기록을 하나의 경험으로 정리하고 있어요"
+          description="기록에 없는 사실은 만들지 않고, 실제로 남긴 내용만 검토합니다."
+          contextItems={[
+            { label: "활동", value: activity.title },
+            { label: "기록 개수", value: `${logs.length}개` },
+            { label: "기록 분량", value: `${totalLogCharacterCount}자` },
+          ]}
+          steps={[
+            "활동 기간 안의 날짜별 기록을 확인하고 있어요.",
+            "반복되는 내용을 묶고 실제 행동 흐름을 정리하고 있어요.",
+            "초안에 사용한 기록과 부족한 정보를 분리하고 있어요.",
+          ]}
+          messages={[
+            {
+              afterMs: 0,
+              text: "날짜별 기록의 흐름을 살펴보고 있어요.",
+            },
+            {
+              afterMs: 8_000,
+              text: "하나의 완료 경험으로 묶을 내용을 정리하고 있어요.",
+            },
+            {
+              afterMs: 18_000,
+              text: "초안에 쓸 수 있는 성과와 부족한 정보를 확인하고 있어요.",
+            },
+          ]}
+          skeletonVariant="activitySynthesis"
+          longWaitThresholdMs={24_000}
+          longWaitMessage="기록 개수나 전체 분량이 많으면 초안 근거를 확인하는 데 시간이 더 걸릴 수 있어요."
+        />
       ) : null}
 
       {canShowRetry ? (

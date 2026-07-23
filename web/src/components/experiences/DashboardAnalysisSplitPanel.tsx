@@ -4,6 +4,7 @@ import { RefreshCcw, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 
+import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
 import {
   RippleButton,
@@ -35,6 +36,11 @@ export function DashboardAnalysisSplitPanel({
   const shouldReduceMotion = useReducedMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleId = `${DASHBOARD_ANALYSIS_SPLIT_PANEL_ID}-title`;
+  const sourceCharacterCount =
+    experience.title.length +
+    experience.role.length +
+    experience.description.length +
+    experience.achievements.length;
 
   useEffect(() => {
     closeButtonRef.current?.focus({ preventScroll: true });
@@ -81,6 +87,41 @@ export function DashboardAnalysisSplitPanel({
           analysis={analysis}
           variant="embedded"
         />
+
+        {isAnalyzing ? (
+          <AIProcessingPanel
+            className="analysis-ai-processing"
+            title="경험을 다시 분석하고 있어요"
+            description="현재 결과는 그대로 두고, 최신 기록과 보완 답변을 반영해 새 결과를 준비합니다."
+            contextItems={[
+              { label: "분석 대상", value: experience.title },
+              { label: "원본 분량", value: `${sourceCharacterCount}자` },
+              { label: "현재 상태", value: "기존 결과 유지" },
+            ]}
+            steps={[
+              "활동 내용과 성과 단서를 확인하고 있어요.",
+              "STAR 구조로 다시 활용할 정보를 나누고 있어요.",
+              "부족한 정보와 키워드를 정리하고 있어요.",
+            ]}
+            messages={[
+              {
+                afterMs: 0,
+                text: "경험 기록의 핵심 내용을 다시 살펴보고 있어요.",
+              },
+              {
+                afterMs: 7_000,
+                text: "STAR 구조와 주요 성과를 정리하고 있어요.",
+              },
+              {
+                afterMs: 16_000,
+                text: "부족한 정보와 활용 키워드를 확인하고 있어요.",
+              },
+            ]}
+            skeletonVariant="analysis"
+            longWaitThresholdMs={20_000}
+            longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."
+          />
+        ) : null}
 
         {analysisError ? (
           <p className="dashboard-detail-analysis-error" role="alert">
