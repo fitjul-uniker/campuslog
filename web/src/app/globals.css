@@ -4367,6 +4367,7 @@ h2 {
 }
 
 .recommendation-example-list button {
+  max-width: 100%;
   border: 1px solid #deded9;
   border-radius: 999px;
   background: #ffffff;
@@ -4375,6 +4376,7 @@ h2 {
   font-size: 0.78rem;
   font-weight: 650;
   line-height: 1.45;
+  overflow-wrap: anywhere;
   text-align: left;
   transition:
     background 150ms ease,

@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - AI 추천 목적별 예시 문항 현실화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천 화면의 활용 목적별 예시 문항을 실제 채용·지원 상황에서 사용자가 입력할 법한 문장으로 교체 |
+| 수정한 파일 | `web/src/lib/recommendationPurposeConfig.ts`, `web/src/components/ai/RecommendationForm.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 면접, 자기소개서, JD 분석, 기타 목적의 설명 문구와 예시 문항을 현실적인 채용·지원 문항으로 교체. JD 분석 첫 예시는 버튼에는 안내 문구를 표시하되 클릭 시 백엔드 개발자 JD 샘플 전문이 입력되도록 예시 타입을 문자열 또는 `{ label, input }` 구조로 확장. 예시 버튼 클릭 로직은 표시 문구와 실제 입력값을 분리해 처리하도록 수정. 모바일에서 긴 예시 문항이 버튼 영역 밖으로 밀리지 않도록 예시 버튼에 최대 폭과 줄바꿈 보정 추가. 목적 값과 기존 `portfolio`, `activity_application` → `other` 호환 로직은 유지 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. 사용자가 예시 질문 선택 시 입력창 반영 등 직접 로직 테스트를 실행해 완료 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `chore: update recommendation example prompts` |
+
 ### 2026-07-23 - AI 추천 목적별 추천·생성 흐름 재정리
 
 | 항목 | 내용 |
