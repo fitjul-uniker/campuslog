@@ -11,11 +11,13 @@ import {
 import { useEffect, useState } from "react";
 
 import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
+import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
 import {
+  ANSWER_DRAFT_TARGET_GUIDES,
   ANSWER_DRAFT_TYPE_LABELS,
   countAnswerDraftCharacters,
   getAnswerDraftCharacterLimit,
@@ -138,6 +140,7 @@ function AnswerDraftViewer({
   selectedType,
   onSelectType,
   isGenerating,
+  isGenerateDisabled,
   onGenerate,
   generationOptions,
   primaryActionLabel,
@@ -147,6 +150,7 @@ function AnswerDraftViewer({
   selectedType: ActiveAnswerDraftType;
   onSelectType: (type: ActiveAnswerDraftType) => void;
   isGenerating: boolean;
+  isGenerateDisabled: boolean;
   onGenerate: (type: ActiveAnswerDraftType) => void;
   generationOptions: RecommendationGenerationOption[];
   primaryActionLabel: string;
@@ -194,6 +198,7 @@ function AnswerDraftViewer({
                   ? "answer-draft-tab is-active"
                   : "answer-draft-tab"
               }
+              disabled={isGenerateDisabled}
               onClick={() => onSelectType(option.type)}
             >
               <span>{option.label}</span>
@@ -248,7 +253,7 @@ function AnswerDraftViewer({
         <RippleButton
           className="button button-secondary answer-draft-generate-button"
           type="button"
-          disabled={isGenerating}
+          disabled={isGenerateDisabled}
           onClick={() => onGenerate(selectedType)}
         >
           {isGenerating ? (
@@ -418,6 +423,10 @@ export function RecommendationResult({
     match: RecommendationMatch,
     draftType: ActiveAnswerDraftType,
   ) {
+    if (generatingDraftKey) {
+      return;
+    }
+
     const matchedExperience = experiencesById.get(match.experienceId);
     const draftKey = `${match.experienceId}:${draftType}`;
 
@@ -896,9 +905,48 @@ export function RecommendationResult({
                 ) : null}
 
                 {isGeneratingDraft ? (
-                  <p className="answer-draft-status" role="status">
-                    선택한 답변 초안을 생성하는 중입니다.
-                  </p>
+                  <AIProcessingPanel
+                    className="answer-draft-ai-processing"
+                    title="선택한 답변 초안을 생성하고 있어요"
+                    description="추천 근거와 원본 경험 안에서만 문장을 만들고, 부족한 근거는 본문과 분리합니다."
+                    contextItems={[
+                      {
+                        label: "선택 경험",
+                        value: matchedExperience?.title ?? match.experienceTitle,
+                      },
+                      {
+                        label: "초안 유형",
+                        value: ANSWER_DRAFT_TYPE_LABELS[selectedDraftType],
+                      },
+                      { label: "활용 목적", value: purposeConfig.label },
+                      {
+                        label: "목표 분량",
+                        value: ANSWER_DRAFT_TARGET_GUIDES[selectedDraftType],
+                      },
+                    ]}
+                    steps={[
+                      "질문과 선택 경험의 연결 지점을 확인하고 있어요.",
+                      "원본 근거를 바탕으로 답변 흐름을 만들고 있어요.",
+                      "선택한 글자 수와 맞는지 확인하고 필요하면 문장을 다듬고 있어요.",
+                    ]}
+                    messages={[
+                      {
+                        afterMs: 0,
+                        text: "선택한 경험과 문항을 다시 확인하고 있어요.",
+                      },
+                      {
+                        afterMs: 7_000,
+                        text: "근거가 있는 문장만 사용해 초안을 작성하고 있어요.",
+                      },
+                      {
+                        afterMs: 18_000,
+                        text: "답변의 구조와 목표 분량을 다듬고 있어요.",
+                      },
+                    ]}
+                    skeletonVariant="answerDraft"
+                    longWaitThresholdMs={24_000}
+                    longWaitMessage="자기소개서 분량 조건이 있으면 글자 수를 맞추는 검토 때문에 시간이 더 걸릴 수 있어요."
+                  />
                 ) : null}
 
                 {draftError ? (
@@ -918,6 +966,7 @@ export function RecommendationResult({
                       }))
                     }
                     isGenerating={isGeneratingDraft}
+                    isGenerateDisabled={Boolean(generatingDraftKey)}
                     generationOptions={generationOptions}
                     primaryActionLabel={purposeConfig.primaryActionLabel}
                     onGenerate={(draftType) =>

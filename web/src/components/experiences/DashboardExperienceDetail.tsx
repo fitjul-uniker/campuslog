@@ -15,6 +15,7 @@ import {
 
 import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { BorderBeamButton } from "@/components/ui/BorderBeamButton";
 import {
   getRelatedLinkHostname,
@@ -59,6 +60,11 @@ export function DashboardExperienceDetail({
     Boolean(onAnalyze) && (!analysis || needsFreshAnalysis);
   const analyzeLabel = needsFreshAnalysis ? "다시 분석하기" : "AI 분석 요청";
   const SectionHeading = isFullscreen ? "h2" : "h3";
+  const sourceCharacterCount =
+    experience.title.length +
+    experience.role.length +
+    experience.description.length +
+    experience.achievements.length;
 
   const handleDelete = () => {
     if (!onDelete) {
@@ -270,6 +276,44 @@ export function DashboardExperienceDetail({
           </section>
         ) : null}
       </div>
+
+      {isAnalyzing ? (
+        <AIProcessingPanel
+          className="analysis-ai-processing"
+          title="경험을 분석하고 있어요"
+          description="기록에 없는 사실은 만들지 않고 요약, STAR, 주요 성과와 부족 정보를 정리합니다."
+          contextItems={[
+            { label: "분석 대상", value: experience.title },
+            { label: "원본 분량", value: `${sourceCharacterCount}자` },
+            {
+              label: "분석 방식",
+              value: analysis ? "기존 결과를 유지하며 재분석" : "새 분석 생성",
+            },
+          ]}
+          steps={[
+            "활동 내용과 성과 단서를 확인하고 있어요.",
+            "STAR 구조로 다시 활용할 정보를 나누고 있어요.",
+            "부족한 정보와 키워드를 정리하고 있어요.",
+          ]}
+          messages={[
+            {
+              afterMs: 0,
+              text: "경험 기록의 핵심 내용을 살펴보고 있어요.",
+            },
+            {
+              afterMs: 7_000,
+              text: "STAR 구조와 주요 성과를 정리하고 있어요.",
+            },
+            {
+              afterMs: 16_000,
+              text: "부족한 정보와 활용 키워드를 확인하고 있어요.",
+            },
+          ]}
+          skeletonVariant="analysis"
+          longWaitThresholdMs={20_000}
+          longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."
+        />
+      ) : null}
 
       {analysisError ? (
         <p className="dashboard-detail-analysis-error" role="alert">

@@ -27,6 +27,7 @@
 - [x] AI 추천 목적별 흐름 재정리: 신규 목적을 면접 / 자기소개서 / JD 분석 / 기타로 제한하고, 목적별 입력 안내·예시·생성 옵션·CTA를 단일 설정 객체로 관리 (`ISSUE-079`)
 - [x] AI 추천 목적별 예시 문항을 실제 채용·지원 문항에 가깝게 교체하고, JD 분석 첫 예시 선택 시 백엔드 개발자 JD 샘플이 입력되도록 조정 (`ISSUE-079`)
 - [x] 답변 생성 목적별 제한: 추천 v2 선택 경험 기반 자기소개서 300자 / 500자 / 1000자, 면접 30초 / 1분 이상 / 예상 꼬리 질문, JD 지원 전략, 기타 맞춤 결과 단일 초안 schema / 저장 / 표시 구현 (`ISSUE-079`)
+- [x] AI 구조화 호출 1차 대기 UX 개선: 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성에 단계형 안내, skeleton, 장기 대기 안내, 처리 대상 메타 정보와 중복 실행 방지 보강 (`ISSUE-080`)
 - [x] Supabase project에 `jd` purpose 허용, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 완료. 실제 로그인 세션 smoke test는 남음 (`ISSUE-060`, `ISSUE-079`)
 - [x] 기록 보완 루프: 부족 정보 카드 안 직접 답변 저장, 추천 / 답변 초안 즉시 반영, 명시적 재분석 흐름 구현
 - [x] QA 버그 안정화: 보완 질문 draft 보존·복원, 답변 초안 분량 보정, 활동 복원·삭제·날짜 상태, 추천 점수 등급, 오늘 한 일 팝업 스크롤 수정
@@ -55,6 +56,8 @@
 2026-07-23 AI 추천 목적별 재정리에서는 신규 생성 목적을 면접 / 자기소개서 / JD 분석 / 기타로 제한하고, 포트폴리오와 대외활동 지원서는 기타 목적에 포함했습니다. 기존 저장된 `portfolio`, `activity_application` 기록은 `other`로 읽어 하위 호환을 유지합니다. 추천 단계는 질문 / JD를 역량, 기술, 행동, 역할, 성과로 분해하고 원본 경험과 보완 답변만 사실 근거로 사용하며 기존 AI 분석 결과는 참고 자료로만 사용합니다. 직접 근거가 부족하면 3개를 채우지 않고, 추천 이유와 직접 근거, 부족 정보, 과장 주의점을 분리합니다. 생성 단계는 사용자가 추천 경험과 목적별 생성 타입을 선택한 뒤에만 실행하며, 서버에서도 목적에 맞지 않는 타입 요청을 거절합니다. JD 분석은 담당 업무, 필수요건, 우대사항, 기술 스택, 요구 경험, 요구사항별 충족 상태, 강조점, 부족 역량, 과장 금지 부분, 최종 지원 판단을 표시합니다. 외부 OpenAI 호출은 이번 자동 검증에서 실행하지 않았고, 실제 품질 확인은 남아 있습니다.
 
 2026-07-23 AI 추천 목적별 예시 문항 개선에서는 면접, 자기소개서, JD 분석, 기타의 예시를 실제 채용·지원 과정에서 사용자가 입력할 법한 문장으로 교체했습니다. JD 분석의 첫 예시는 버튼 문구와 입력값을 분리해, 선택 시 단순 안내가 아니라 백엔드 개발자 채용공고 샘플 전문이 입력되도록 했습니다. 목적 값과 기존 포트폴리오·대외활동 지원서 저장값의 기타 호환 로직은 유지했습니다. `npm run lint`, `npx tsc --noEmit`, `npm run build`를 통과했고 사용자가 예시 선택 입력 반영 등 직접 로직 테스트를 완료했습니다.
+
+2026-07-23 AI 구조화 호출 1차 대기 UX 개선에서는 API 응답 계약과 모델 호출 방식은 유지한 채 공통 `AIProcessingPanel`을 추가했습니다. 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성은 이제 처리 대상 메타 정보, 단계형 안내 문구, 결과 유형별 skeleton, 장기 대기 안내를 표시합니다. 기존 입력과 기존 분석 결과는 대기 중에도 유지하며, 추천 / 분석 / 활동 합성 / 답변 초안의 중복 실행 방지를 보강했습니다. 답변 초안 생성 대기에는 목표 분량과 선택 조건에 맞춰 초안을 교정할 수 있다는 안내를 추가했습니다. `npm run lint`, `npm run build`, `git diff --check`를 통과했고 Codex가 `/recommend`와 `/experiences` 기본 렌더링을 확인했으며 사용자가 직접 로직 테스트를 완료했습니다. 실제 로그인 세션의 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 smoke test는 후속 확인 대상입니다.
 
 `feature/ai-api-protection`에서는 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`가 route handler 내부에서도 Supabase 세션을 확인합니다. 비로그인 요청은 공통 401 `SESSION_REQUIRED` JSON으로 반환하고, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard와 429 `RATE_LIMITED` + `retryAfter` contract를 추가했습니다. `service_role` key는 사용하지 않으며 AI 세부 계약은 `docs/AI_API_CONTRACT.md`에 기록했습니다.
 
@@ -123,14 +126,15 @@
 2. 2026-07-17 QA 수정 범위의 실제 로그인 세션 브라우저 회귀 확인
 3. 테스트 계정별 더미 경험·활동·기록 데이터 seed 필요 여부 결정
 4. 목적별 AI 추천·생성 실제 로그인 세션 smoke test: 면접 / 자기소개서 / JD 분석 / 기타 추천 저장·재조회, 목적별 생성 옵션 노출, 생성 결과 확인 (`ISSUE-079`)
-5. JD 분석 실제 OpenAI 응답 품질 확인과 prompt 튜닝 (`ISSUE-079`)
-6. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
-7. 분석 부족 정보 답변 저장의 실제 로그인 세션 smoke test와 추천 반영 평가 기준 정리
-8. AI API 보호 foundation 실제 세션 환경 smoke test와 durable rate limit / OpenAI spend alert 운영 결정
-9. 추천 v2 / 목적별 답변 생성 저장 smoke test
-10. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증
-11. Vercel + Supabase preview 환경 통합 확인
-12. 통합 회귀·보안·비용·접근성 검증
+5. AI 구조화 호출 1차 대기 UX의 실제 로그인 세션 장시간 응답 표시와 저장 성공 경로 smoke test (`ISSUE-080`)
+6. JD 분석 실제 OpenAI 응답 품질 확인과 prompt 튜닝 (`ISSUE-079`)
+7. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
+8. 분석 부족 정보 답변 저장의 실제 로그인 세션 smoke test와 추천 반영 평가 기준 정리
+9. AI API 보호 foundation 실제 세션 환경 smoke test와 durable rate limit / OpenAI spend alert 운영 결정
+10. 추천 v2 / 목적별 답변 생성 저장 smoke test
+11. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증
+12. Vercel + Supabase preview 환경 통합 확인
+13. 통합 회귀·보안·비용·접근성 검증
 
 ## 활성 기준 문서
 
@@ -163,6 +167,7 @@
 - AI 경험 분석 v2의 실제 OpenAI 성공 경로와 Supabase migration 적용 후 저장 smoke test 필요
 - 목적별 추천 v2와 JD 분석은 Supabase migration 적용과 예시 선택 입력 반영 로직 테스트는 완료됐지만 실제 로그인 세션 OpenAI 성공 경로, 저장·재조회, 결과 품질 smoke test 필요 (`ISSUE-079`)
 - 목적별 답변 생성은 정적 검사와 build를 통과했지만 실제 OpenAI 성공 경로와 생성 결과 품질 smoke test 필요 (`ISSUE-079`)
+- AI 구조화 호출 1차 대기 UX는 정적 검사와 기본 렌더링, 사용자 직접 로직 테스트를 완료했지만 실제 로그인 세션에서 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 smoke test 필요 (`ISSUE-080`)
 - 기록 보완 루프의 실제 OpenAI 성공 경로, Supabase migration 적용 후 저장 smoke test, 평가 기준과 회귀 사례 필요
 - 팀 테스트용 Supabase Auth 계정 9개는 생성됐지만, 각 계정에 넣을 더미 경험·활동·기록 데이터 seed는 아직 없음
 - 2026-07-17 QA 수정은 `npm run lint`, `npm run build`를 통과했지만 실제 로그인 세션에서 보완 질문 복원, 활동 삭제 cascade, 완료 활동 복원, 날짜별 기록 제한, 답변 초안 실제 OpenAI 분량 보정, 작은 화면 팝업 스크롤 회귀 확인이 아직 필요

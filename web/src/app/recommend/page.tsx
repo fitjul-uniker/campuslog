@@ -6,6 +6,7 @@ import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { RecommendationForm } from "@/components/ai/RecommendationForm";
+import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
 import { EmptyState } from "@/components/common/EmptyState";
 import {
@@ -19,6 +20,7 @@ import {
 import { createIsoTimestamp } from "@/lib/date";
 import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { requestRecommendation } from "@/lib/recommendationApi";
+import { getRecommendationPurposeConfig } from "@/lib/recommendationPurposeConfig";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   Experience,
@@ -95,6 +97,8 @@ export default function RecommendPage() {
   );
   const [isRecommending, setIsRecommending] = useState(false);
   const [recommendationError, setRecommendationError] = useState("");
+  const [pendingRecommendationInput, setPendingRecommendationInput] =
+    useState<RecommendationFormInput | null>(null);
   const recommendationResultRef = useRef<HTMLDivElement>(null);
   const lastScrolledRecommendationIdRef = useRef<string | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -174,6 +178,10 @@ export default function RecommendPage() {
   }, [recommendationId, shouldReduceMotion]);
 
   async function handleRecommend(input: RecommendationFormInput) {
+    if (isRecommending) {
+      return;
+    }
+
     if (!experiences || experiences.length === 0) {
       setRecommendationError(
         "먼저 경험을 기록해야 AI 기반 활동 추천을 받을 수 있습니다.",
@@ -184,6 +192,7 @@ export default function RecommendPage() {
     setIsRecommending(true);
     setRecommendationError("");
     setRecommendation(null);
+    setPendingRecommendationInput(input);
 
     const response = await requestRecommendation({
       ...input,
@@ -221,6 +230,9 @@ export default function RecommendPage() {
   const recommendedExperience = experiences?.find(
     (experience) => experience.id === recommendation?.recommendedExperienceId,
   );
+  const pendingPurposeConfig = pendingRecommendationInput
+    ? getRecommendationPurposeConfig(pendingRecommendationInput.purpose)
+    : null;
 
   if (experiences === null) {
     return (
@@ -303,19 +315,45 @@ export default function RecommendPage() {
       </section>
 
       {isRecommending ? (
-        <section className="detail-panel" aria-live="polite">
-          <div className="detail-header">
-            <div>
-              <p className="experience-meta">활동 추천 생성 중</p>
-              <h2>요구사항과 추천 후보를 비교하는 중입니다</h2>
-            </div>
-          </div>
-          <div className="recommendation-preview" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-        </section>
+        <AIProcessingPanel
+          className="recommendation-ai-processing"
+          title="요구사항과 추천 후보를 비교하고 있어요"
+          description="저장된 활동과 분석 결과를 함께 참고해 근거가 있는 추천만 정리합니다."
+          contextItems={[
+            {
+              label: "활용 목적",
+              value: pendingPurposeConfig?.label ?? "AI 추천",
+            },
+            {
+              label: "입력 글자 수",
+              value: pendingRecommendationInput?.prompt.length ?? 0,
+            },
+            { label: "비교 대상", value: `${experiences.length}개 경험` },
+            { label: "분석 결과", value: `${analyses.length}개 반영` },
+          ]}
+          steps={[
+            "질문이나 JD에서 핵심 요구사항을 파악하고 있어요.",
+            "저장된 경험과 분석 결과를 비교하고 있어요.",
+            "추천 Top 3와 부족 근거를 정리하고 있어요.",
+          ]}
+          messages={[
+            {
+              afterMs: 0,
+              text: "질문의 핵심 요구사항을 살펴보고 있어요.",
+            },
+            {
+              afterMs: 7_000,
+              text: "저장된 경험과 분석 결과를 비교하고 있어요.",
+            },
+            {
+              afterMs: 16_000,
+              text: "적합한 경험과 추천 근거를 정리하고 있어요.",
+            },
+          ]}
+          skeletonVariant="recommendation"
+          longWaitThresholdMs={22_000}
+          longWaitMessage="입력한 질문이 길거나 비교할 경험이 많으면 추천 근거 정리에 시간이 더 걸릴 수 있어요."
+        />
       ) : recommendation ? (
         <div
           ref={recommendationResultRef}
