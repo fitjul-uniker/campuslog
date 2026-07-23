@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - 답변 초안 생성 스트리밍 UX 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 기반 답변 초안 생성에 실제 텍스트 스트리밍 미리보기를 적용하되, 저장은 최종 structured output 완료 후에만 수행 |
+| 수정한 파일 | `web/src/app/api/answer-drafts/route.ts`, `web/src/lib/answerDraftApi.ts`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | `/api/answer-drafts`는 기존 JSON 응답을 유지하면서 `stream: true` 요청에서 NDJSON 스트림을 반환. 서버는 OpenAI Responses structured output 스트림을 내부에서 누적하고 raw JSON 토큰을 노출하지 않으며, `draft.content` 문자열만 `delta` 이벤트로 전달. 분량 교정 호출이 발생하면 최종 본문을 `replace` 이벤트로 교체하고, `completed` 이벤트의 정규화된 `AnswerDraftResult`만 클라이언트가 기존 저장소에 저장. 클라이언트 helper는 status / delta / replace / completed / error 이벤트를 해석하고, 추천 결과 화면은 첫 본문 전 단계형 로딩, 이후 점진 렌더링, 커서, 글자 수, 실패 시 부분 텍스트 유지와 같은 조건 재시도를 표시 |
+| 검증한 내용 | `git diff --check`, `npm run lint`, `npm run build` 통과. UI preview 개발 서버에서 `/recommend` 기본 렌더링, 가로 overflow 없음, 브라우저 앱 콘솔 error 0건 확인. 사용자가 직접 로직 테스트를 실행해 완료 확인 |
+| 남은 작업 | 3차에서 TTFT / 완료 시간 측정과 명시적 취소 버튼 정책 구현. 배포 환경에서 스트림 버퍼링 여부와 장시간 응답 회귀 모니터링 |
+| 관련 커밋 메시지 | `feat: stream answer draft generation` |
+
 ### 2026-07-23 - AI 구조화 호출 대기 UX 1차 개선
 
 | 항목 | 내용 |

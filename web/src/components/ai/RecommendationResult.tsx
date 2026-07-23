@@ -22,7 +22,7 @@ import {
   countAnswerDraftCharacters,
   getAnswerDraftCharacterLimit,
 } from "@/lib/answerDraftResult";
-import { requestAnswerDrafts } from "@/lib/answerDraftApi";
+import { requestAnswerDraftsStream } from "@/lib/answerDraftApi";
 import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { formatDateTime } from "@/lib/date";
 import {
@@ -53,6 +53,15 @@ type RecommendationResultProps = {
 };
 
 type CopyStatus = "idle" | "success" | "failed";
+
+type StreamingDraftState = {
+  key: string;
+  experienceId: string;
+  draftType: ActiveAnswerDraftType;
+  statusMessage: string;
+  streamedText: string;
+  mode: "loading" | "streaming" | "repairing" | "failed";
+};
 
 const FIT_LEVEL_LABELS = {
   high: "높음",
@@ -318,6 +327,143 @@ function AnswerDraftViewer({
   );
 }
 
+function AnswerDraftStreamingPanel({
+  streamingDraft,
+  experienceTitle,
+  purposeLabel,
+  onRetry,
+  isRetryDisabled,
+}: {
+  streamingDraft: StreamingDraftState;
+  experienceTitle: string;
+  purposeLabel: string;
+  onRetry: () => void;
+  isRetryDisabled: boolean;
+}) {
+  const draftTypeLabel = ANSWER_DRAFT_TYPE_LABELS[streamingDraft.draftType];
+  const targetGuide = ANSWER_DRAFT_TARGET_GUIDES[streamingDraft.draftType];
+  const characterLimit = getAnswerDraftCharacterLimit(streamingDraft.draftType);
+  const characterCount = countAnswerDraftCharacters(
+    streamingDraft.streamedText,
+  );
+  const isFailed = streamingDraft.mode === "failed";
+  const isRepairing = streamingDraft.mode === "repairing";
+  const hasStreamedText = streamingDraft.streamedText.trim().length > 0;
+
+  if (!hasStreamedText && !isFailed) {
+    return (
+      <AIProcessingPanel
+        className="answer-draft-ai-processing"
+        title="선택한 답변 초안을 생성하고 있어요"
+        description="추천 근거와 원본 경험 안에서만 문장을 만들고, 부족한 근거는 본문과 분리합니다."
+        contextItems={[
+          { label: "선택 경험", value: experienceTitle },
+          { label: "초안 유형", value: draftTypeLabel },
+          { label: "활용 목적", value: purposeLabel },
+          { label: "목표 분량", value: targetGuide },
+        ]}
+        steps={[
+          "질문과 선택 경험의 연결 지점을 확인하고 있어요.",
+          "원본 근거를 바탕으로 답변 흐름을 만들고 있어요.",
+          "선택한 글자 수와 맞는지 확인하고 필요하면 문장을 다듬고 있어요.",
+        ]}
+        messages={[
+          {
+            afterMs: 0,
+            text: streamingDraft.statusMessage,
+          },
+          {
+            afterMs: 7_000,
+            text: "근거가 있는 문장만 사용해 초안을 작성하고 있어요.",
+          },
+          {
+            afterMs: 18_000,
+            text: "답변의 구조와 목표 분량을 다듬고 있어요.",
+          },
+        ]}
+        skeletonVariant="answerDraft"
+        longWaitThresholdMs={24_000}
+        longWaitMessage="자기소개서 분량 조건이 있으면 글자 수를 맞추는 검토 때문에 시간이 더 걸릴 수 있어요."
+      />
+    );
+  }
+
+  return (
+    <div
+      className="answer-draft-streaming-panel"
+      aria-busy={isFailed ? "false" : "true"}
+      aria-live="polite"
+    >
+      <div className="answer-draft-streaming-header">
+        <div>
+          <p className="answer-draft-streaming-kicker">
+            {isFailed
+              ? "생성 중단"
+              : isRepairing
+                ? "분량 교정 중"
+                : "초안 생성 중"}
+          </p>
+          <h5>{draftTypeLabel}</h5>
+          <p>{streamingDraft.statusMessage}</p>
+        </div>
+        {characterLimit ? (
+          <span
+            className={
+              characterCount >= characterLimit.min &&
+              characterCount <= characterLimit.max
+                ? "answer-draft-streaming-count"
+                : "answer-draft-streaming-count is-pending"
+            }
+          >
+            {characterCount}자
+          </span>
+        ) : null}
+      </div>
+
+      <dl className="answer-draft-streaming-context">
+        <div>
+          <dt>선택 경험</dt>
+          <dd>{experienceTitle}</dd>
+        </div>
+        <div>
+          <dt>활용 목적</dt>
+          <dd>{purposeLabel}</dd>
+        </div>
+        <div>
+          <dt>목표 분량</dt>
+          <dd>{targetGuide}</dd>
+        </div>
+      </dl>
+
+      {hasStreamedText ? (
+        <p className="answer-draft-streaming-content">
+          {streamingDraft.streamedText}
+          {!isFailed ? (
+            <span className="answer-draft-streaming-cursor" aria-hidden="true" />
+          ) : null}
+        </p>
+      ) : (
+        <p className="answer-draft-streaming-empty">
+          완성된 문장을 받지 못했습니다.
+        </p>
+      )}
+
+      {isFailed ? (
+        <RippleButton
+          className="button button-secondary answer-draft-generate-button"
+          type="button"
+          disabled={isRetryDisabled}
+          onClick={onRetry}
+        >
+          <FileText className="button-icon" aria-hidden="true" />
+          같은 조건으로 다시 생성
+          <RippleButtonRipples />
+        </RippleButton>
+      ) : null}
+    </div>
+  );
+}
+
 export function RecommendationResult({
   result,
   experience,
@@ -334,6 +480,8 @@ export function RecommendationResult({
   >({});
   const [generatingDraftKey, setGeneratingDraftKey] =
     useState<string | null>(null);
+  const [streamingDraft, setStreamingDraft] =
+    useState<StreamingDraftState | null>(null);
   const [answerDraftError, setAnswerDraftError] = useState<
     Record<string, string>
   >({});
@@ -408,6 +556,7 @@ export function RecommendationResult({
     setAnswerDraftsByExperienceId({});
     setSelectedDraftTypes({});
     setAnswerDraftError({});
+    setStreamingDraft(null);
     loadAnswerDrafts().catch(() => {
       if (isMounted) {
         setAnswerDraftsByExperienceId({});
@@ -440,10 +589,26 @@ export function RecommendationResult({
     }
 
     setGeneratingDraftKey(draftKey);
+    setStreamingDraft({
+      key: draftKey,
+      experienceId: match.experienceId,
+      draftType,
+      statusMessage: "선택한 경험과 문항을 다시 확인하고 있어요.",
+      streamedText: "",
+      mode: "loading",
+    });
     setAnswerDraftError((currentErrors) => ({
       ...currentErrors,
       [match.experienceId]: "",
     }));
+
+    const updateStreamingDraft = (
+      updater: (currentDraft: StreamingDraftState) => StreamingDraftState,
+    ) => {
+      setStreamingDraft((currentDraft) =>
+        currentDraft?.key === draftKey ? updater(currentDraft) : currentDraft,
+      );
+    };
 
     try {
       const repository = getCampusLogRepository();
@@ -451,7 +616,7 @@ export function RecommendationResult({
         repository.analyses.getByExperienceId(match.experienceId),
         repository.experienceFollowups.listByExperienceId(match.experienceId),
       ]);
-      const response = await requestAnswerDrafts({
+      const response = await requestAnswerDraftsStream({
         draftType,
         recommendation: result,
         match,
@@ -459,9 +624,45 @@ export function RecommendationResult({
         analysis: analysis
           ? mergeAnalysisGapAnswersIntoAnalysis(analysis, followups)
           : null,
+        onStatus: (message) => {
+          updateStreamingDraft((currentDraft) => ({
+            ...currentDraft,
+            statusMessage: message,
+            mode: message.includes("분량")
+              ? "repairing"
+              : currentDraft.streamedText
+                ? "streaming"
+                : "loading",
+          }));
+        },
+        onDelta: (text) => {
+          if (!text) {
+            return;
+          }
+
+          updateStreamingDraft((currentDraft) => ({
+            ...currentDraft,
+            statusMessage: "문장을 이어서 작성하고 있어요.",
+            streamedText: `${currentDraft.streamedText}${text}`,
+            mode: "streaming",
+          }));
+        },
+        onReplace: (text) => {
+          updateStreamingDraft((currentDraft) => ({
+            ...currentDraft,
+            statusMessage: "목표 분량에 맞게 문장을 다듬었어요.",
+            streamedText: text,
+            mode: "repairing",
+          }));
+        },
       });
 
       if (!response.ok) {
+        updateStreamingDraft((currentDraft) => ({
+          ...currentDraft,
+          statusMessage: "생성을 완료하지 못했습니다.",
+          mode: "failed",
+        }));
         setAnswerDraftError((currentErrors) => ({
           ...currentErrors,
           [match.experienceId]: response.error.message,
@@ -474,6 +675,11 @@ export function RecommendationResult({
       );
 
       if (!savedDraft) {
+        updateStreamingDraft((currentDraft) => ({
+          ...currentDraft,
+          statusMessage: "초안을 저장하지 못했습니다.",
+          mode: "failed",
+        }));
         setAnswerDraftError((currentErrors) => ({
           ...currentErrors,
           [match.experienceId]:
@@ -490,8 +696,16 @@ export function RecommendationResult({
         ...currentTypes,
         [savedDraft.experienceId]: draftType,
       }));
+      setStreamingDraft((currentDraft) =>
+        currentDraft?.key === draftKey ? null : currentDraft,
+      );
     } catch (error) {
       console.error("CampusLog answer draft generation failed", error);
+      updateStreamingDraft((currentDraft) => ({
+        ...currentDraft,
+        statusMessage: "생성을 완료하지 못했습니다.",
+        mode: "failed",
+      }));
       setAnswerDraftError((currentErrors) => ({
         ...currentErrors,
         [match.experienceId]: getErrorMessage(
@@ -789,6 +1003,11 @@ export function RecommendationResult({
             const isGeneratingDraft =
               generatingDraftKey ===
               `${match.experienceId}:${selectedDraftType}`;
+            const activeStreamingDraft =
+              streamingDraft?.key ===
+              `${match.experienceId}:${selectedDraftType}`
+                ? streamingDraft
+                : null;
             const draftError = answerDraftError[match.experienceId];
             const hasFollowupSignal =
               hasListContent(match.missingEvidence) ||
@@ -904,48 +1123,20 @@ export function RecommendationResult({
                   </div>
                 ) : null}
 
-                {isGeneratingDraft ? (
-                  <AIProcessingPanel
-                    className="answer-draft-ai-processing"
-                    title="선택한 답변 초안을 생성하고 있어요"
-                    description="추천 근거와 원본 경험 안에서만 문장을 만들고, 부족한 근거는 본문과 분리합니다."
-                    contextItems={[
-                      {
-                        label: "선택 경험",
-                        value: matchedExperience?.title ?? match.experienceTitle,
-                      },
-                      {
-                        label: "초안 유형",
-                        value: ANSWER_DRAFT_TYPE_LABELS[selectedDraftType],
-                      },
-                      { label: "활용 목적", value: purposeConfig.label },
-                      {
-                        label: "목표 분량",
-                        value: ANSWER_DRAFT_TARGET_GUIDES[selectedDraftType],
-                      },
-                    ]}
-                    steps={[
-                      "질문과 선택 경험의 연결 지점을 확인하고 있어요.",
-                      "원본 근거를 바탕으로 답변 흐름을 만들고 있어요.",
-                      "선택한 글자 수와 맞는지 확인하고 필요하면 문장을 다듬고 있어요.",
-                    ]}
-                    messages={[
-                      {
-                        afterMs: 0,
-                        text: "선택한 경험과 문항을 다시 확인하고 있어요.",
-                      },
-                      {
-                        afterMs: 7_000,
-                        text: "근거가 있는 문장만 사용해 초안을 작성하고 있어요.",
-                      },
-                      {
-                        afterMs: 18_000,
-                        text: "답변의 구조와 목표 분량을 다듬고 있어요.",
-                      },
-                    ]}
-                    skeletonVariant="answerDraft"
-                    longWaitThresholdMs={24_000}
-                    longWaitMessage="자기소개서 분량 조건이 있으면 글자 수를 맞추는 검토 때문에 시간이 더 걸릴 수 있어요."
+                {activeStreamingDraft ? (
+                  <AnswerDraftStreamingPanel
+                    streamingDraft={activeStreamingDraft}
+                    experienceTitle={
+                      matchedExperience?.title ?? match.experienceTitle
+                    }
+                    purposeLabel={purposeConfig.label}
+                    isRetryDisabled={Boolean(generatingDraftKey)}
+                    onRetry={() =>
+                      handleGenerateAnswerDrafts(
+                        match,
+                        activeStreamingDraft.draftType,
+                      )
+                    }
                   />
                 ) : null}
 
@@ -954,7 +1145,7 @@ export function RecommendationResult({
                     {draftError}
                   </p>
                 ) : null}
-                {matchedExperience ? (
+                {matchedExperience && !activeStreamingDraft ? (
                   <AnswerDraftViewer
                     draftResult={answerDrafts}
                     experienceId={matchedExperience.id}

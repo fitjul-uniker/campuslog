@@ -65,6 +65,10 @@ const MAX_SERIALIZED_RECOMMENDATION_LENGTH = 36_000;
 const MAX_SERIALIZED_ANALYSIS_LENGTH = 24_000;
 const MAX_EVIDENCE_OPTION_LENGTH = 900;
 const MAX_EVIDENCE_OPTIONS = 44;
+const ANSWER_DRAFT_SYSTEM_CONTENT =
+  "당신은 CampusLog의 결과물 생성 도우미입니다. 추천 v2 이후 사용자가 선택한 경험, 활용 목적, 생성 옵션에 맞는 결과물 1개만 작성합니다. 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 보며, 원본에 없는 성과, 수치, 역할, 협업 규모, 기술명은 만들지 않고 부족 근거와 과장 위험을 별도 필드로 분리합니다.";
+const ANSWER_DRAFT_REPAIR_SYSTEM_CONTENT =
+  "당신은 CampusLog의 답변 초안 분량 교정 도우미입니다. 원본 근거만 사용하면서 자기소개서 초안의 공백 포함 글자 수를 사용자가 선택한 범위 안으로 정확히 맞춥니다.";
 
 const answerDraftsResponseSchema = {
   type: "object",
@@ -125,6 +129,10 @@ const answerDraftsResponseSchema = {
     },
   },
 } as const;
+
+type ParsedAnswerDraftsRequest = AnswerDraftsRequest & {
+  stream: boolean;
+};
 
 function hasText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -675,6 +683,377 @@ async function requestOpenAiStructuredOutput({
   };
 }
 
+type OpenAiStructuredOutputStreamInput = OpenAiStructuredOutputInput & {
+  onContentDelta: (text: string) => void;
+};
+
+function parseJsonStringToken(
+  value: string,
+  startIndex: number,
+): { value: string; endIndex: number } | null {
+  if (value[startIndex] !== "\"") {
+    return null;
+  }
+
+  let parsedValue = "";
+  let isEscaped = false;
+
+  for (let index = startIndex + 1; index < value.length; index += 1) {
+    const char = value[index];
+
+    if (isEscaped) {
+      if (char === "u") {
+        const hexValue = value.slice(index + 1, index + 5);
+
+        if (!/^[0-9a-fA-F]{4}$/.test(hexValue)) {
+          return null;
+        }
+
+        parsedValue += String.fromCharCode(Number.parseInt(hexValue, 16));
+        index += 4;
+      } else {
+        parsedValue +=
+          {
+            "\"": "\"",
+            "\\": "\\",
+            "/": "/",
+            b: "\b",
+            f: "\f",
+            n: "\n",
+            r: "\r",
+            t: "\t",
+          }[char] ?? char;
+      }
+
+      isEscaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      isEscaped = true;
+      continue;
+    }
+
+    if (char === "\"") {
+      return {
+        value: parsedValue,
+        endIndex: index + 1,
+      };
+    }
+
+    parsedValue += char;
+  }
+
+  return null;
+}
+
+function parsePartialJsonStringValue(
+  value: string,
+  startIndex: number,
+): string {
+  let parsedValue = "";
+  let isEscaped = false;
+
+  for (let index = startIndex; index < value.length; index += 1) {
+    const char = value[index];
+
+    if (isEscaped) {
+      if (char === "u") {
+        const hexValue = value.slice(index + 1, index + 5);
+
+        if (!/^[0-9a-fA-F]{4}$/.test(hexValue)) {
+          return parsedValue;
+        }
+
+        parsedValue += String.fromCharCode(Number.parseInt(hexValue, 16));
+        index += 4;
+      } else {
+        parsedValue +=
+          {
+            "\"": "\"",
+            "\\": "\\",
+            "/": "/",
+            b: "\b",
+            f: "\f",
+            n: "\n",
+            r: "\r",
+            t: "\t",
+          }[char] ?? char;
+      }
+
+      isEscaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      isEscaped = true;
+      continue;
+    }
+
+    if (char === "\"") {
+      return parsedValue;
+    }
+
+    parsedValue += char;
+  }
+
+  return parsedValue;
+}
+
+function extractPartialJsonStringProperty(
+  rawOutput: string,
+  propertyName: string,
+): string | null {
+  for (let index = 0; index < rawOutput.length; index += 1) {
+    if (rawOutput[index] !== "\"") {
+      continue;
+    }
+
+    const token = parseJsonStringToken(rawOutput, index);
+
+    if (!token) {
+      return null;
+    }
+
+    let cursor = token.endIndex;
+
+    while (/\s/.test(rawOutput[cursor] ?? "")) {
+      cursor += 1;
+    }
+
+    if (rawOutput[cursor] !== ":") {
+      index = token.endIndex - 1;
+      continue;
+    }
+
+    cursor += 1;
+
+    while (/\s/.test(rawOutput[cursor] ?? "")) {
+      cursor += 1;
+    }
+
+    if (token.value !== propertyName) {
+      index = token.endIndex - 1;
+      continue;
+    }
+
+    if (rawOutput[cursor] !== "\"") {
+      return null;
+    }
+
+    return parsePartialJsonStringValue(rawOutput, cursor + 1);
+  }
+
+  return null;
+}
+
+function consumeSseDataMessages(
+  chunkBuffer: string,
+  onData: (data: string) => void,
+): string {
+  const normalizedBuffer = chunkBuffer.replace(/\r\n/g, "\n");
+  const parts = normalizedBuffer.split("\n\n");
+  const rest = parts.pop() ?? "";
+
+  parts.forEach((part) => {
+    const data = part
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trimStart())
+      .join("\n")
+      .trim();
+
+    if (data && data !== "[DONE]") {
+      onData(data);
+    }
+  });
+
+  return rest;
+}
+
+async function requestOpenAiStructuredOutputStream({
+  apiKey,
+  systemContent,
+  userContent,
+  schemaName,
+  schema,
+  maxOutputTokens,
+  logLabel,
+  signal,
+  onContentDelta,
+}: OpenAiStructuredOutputStreamInput): Promise<OpenAiStructuredOutputResult> {
+  const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
+    method: "POST",
+    signal,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: ANSWER_DRAFT_MODEL,
+      input: [
+        {
+          role: "system",
+          content: systemContent,
+        },
+        {
+          role: "user",
+          content: userContent,
+        },
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: schemaName,
+          strict: true,
+          schema,
+        },
+      },
+      max_output_tokens: maxOutputTokens,
+      store: false,
+      stream: true,
+    }),
+  });
+
+  if (!openAiResponse.ok) {
+    try {
+      const errorPayload = (await openAiResponse.json()) as {
+        error?: {
+          code?: unknown;
+          type?: unknown;
+        };
+      };
+
+      console.warn("CampusLog answer drafts OpenAI stream request failed", {
+        phase: logLabel,
+        status: openAiResponse.status,
+        code: errorPayload.error?.code,
+        type: errorPayload.error?.type,
+      });
+    } catch {
+      console.warn("CampusLog answer drafts OpenAI stream request failed", {
+        phase: logLabel,
+        status: openAiResponse.status,
+      });
+    }
+
+    return {
+      ok: false,
+      reason: "api_error",
+    };
+  }
+
+  const reader = openAiResponse.body?.getReader();
+
+  if (!reader) {
+    return {
+      ok: false,
+      reason: "invalid_output",
+    };
+  }
+
+  const decoder = new TextDecoder();
+  let sseBuffer = "";
+  let outputText = "";
+  let streamedContent = "";
+  let didOpenAiStreamFail = false;
+
+  const flushDraftContentPreview = () => {
+    const nextContent = extractPartialJsonStringProperty(outputText, "content");
+
+    if (!nextContent || nextContent.length <= streamedContent.length) {
+      return;
+    }
+
+    const nextDelta = nextContent.slice(streamedContent.length);
+    streamedContent = nextContent;
+    onContentDelta(nextDelta);
+  };
+
+  const handleData = (data: string) => {
+    try {
+      const payload = JSON.parse(data) as Record<string, unknown>;
+      const eventType = payload.type;
+
+      if (
+        eventType === "response.output_text.delta" &&
+        typeof payload.delta === "string"
+      ) {
+        outputText += payload.delta;
+        flushDraftContentPreview();
+        return;
+      }
+
+      if (
+        eventType === "response.output_text.done" &&
+        typeof payload.text === "string" &&
+        outputText.length === 0
+      ) {
+        outputText = payload.text;
+        flushDraftContentPreview();
+        return;
+      }
+
+      if (eventType === "response.completed" && outputText.length === 0) {
+        const completedOutputText = extractOutputText(payload.response);
+
+        if (completedOutputText) {
+          outputText = completedOutputText;
+          flushDraftContentPreview();
+        }
+
+        return;
+      }
+
+      if (
+        eventType === "response.failed" ||
+        eventType === "response.incomplete" ||
+        eventType === "error"
+      ) {
+        didOpenAiStreamFail = true;
+      }
+    } catch {
+      didOpenAiStreamFail = true;
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    sseBuffer += decoder.decode(value, { stream: true });
+    sseBuffer = consumeSseDataMessages(sseBuffer, handleData);
+  }
+
+  sseBuffer += decoder.decode();
+
+  if (sseBuffer.trim()) {
+    consumeSseDataMessages(`${sseBuffer}\n\n`, handleData);
+  }
+
+  if (didOpenAiStreamFail) {
+    return {
+      ok: false,
+      reason: "api_error",
+    };
+  }
+
+  if (!outputText.trim()) {
+    return {
+      ok: false,
+      reason: "invalid_output",
+    };
+  }
+
+  return {
+    ok: true,
+    outputText,
+  };
+}
+
 function stripJsonFence(value: string): string {
   const match = value.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
 
@@ -815,7 +1194,7 @@ function createAnswerDraftRepairPrompt(
 
 async function readRequestBody(
   request: Request,
-): Promise<AnswerDraftsRequest | null> {
+): Promise<ParsedAnswerDraftsRequest | null> {
   try {
     const body = (await request.json()) as unknown;
 
@@ -866,10 +1245,273 @@ async function readRequestBody(
       match,
       experience,
       analysis,
+      stream: candidate.stream === true,
     };
   } catch {
     return null;
   }
+}
+
+type AnswerDraftStreamEvent =
+  | {
+      type: "status";
+      message: string;
+    }
+  | {
+      type: "delta";
+      text: string;
+    }
+  | {
+      type: "replace";
+      text: string;
+    }
+  | {
+      type: "completed";
+      answerDrafts: AnswerDraftResult;
+    }
+  | {
+      type: "error";
+      error: {
+        code: "OPENAI_API_ERROR" | "UNKNOWN_ERROR";
+        message: string;
+      };
+    };
+
+type CreateAnswerDraftsStreamResponseInput = {
+  request: Request;
+  apiKey: string;
+  body: ParsedAnswerDraftsRequest;
+  evidenceOptions: string[];
+};
+
+const answerDraftStreamEncoder = new TextEncoder();
+
+function createAnswerDraftsStreamResponse({
+  request,
+  apiKey,
+  body,
+  evidenceOptions,
+}: CreateAnswerDraftsStreamResponseInput): Response {
+  let cancelOpenAiRequest: (() => void) | null = null;
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const openAiAbortController = new AbortController();
+      cancelOpenAiRequest = () => openAiAbortController.abort();
+      let didOpenAiRequestTimeOut = false;
+      let isControllerClosed = false;
+      const openAiTimeoutId = setTimeout(() => {
+        didOpenAiRequestTimeOut = true;
+        openAiAbortController.abort();
+      }, OPENAI_REQUEST_TIMEOUT_MS);
+      const handleClientAbort = () => {
+        openAiAbortController.abort();
+      };
+      const send = (event: AnswerDraftStreamEvent) => {
+        if (isControllerClosed) {
+          return;
+        }
+
+        try {
+          controller.enqueue(
+            answerDraftStreamEncoder.encode(`${JSON.stringify(event)}\n`),
+          );
+        } catch {
+          isControllerClosed = true;
+          openAiAbortController.abort();
+        }
+      };
+      const close = () => {
+        if (isControllerClosed) {
+          return;
+        }
+
+        isControllerClosed = true;
+        controller.close();
+      };
+
+      request.signal.addEventListener("abort", handleClientAbort, {
+        once: true,
+      });
+
+      try {
+        send({
+          type: "status",
+          message: "선택한 경험과 문항을 다시 확인하고 있어요.",
+        });
+
+        const draftOutput = await requestOpenAiStructuredOutputStream({
+          apiKey,
+          systemContent: ANSWER_DRAFT_SYSTEM_CONTENT,
+          userContent: createAnswerDraftPrompt(body),
+          schemaName: "campuslog_answer_drafts_v1",
+          schema: answerDraftsResponseSchema,
+          maxOutputTokens: 2600,
+          logLabel: "answer-drafts-v1",
+          signal: openAiAbortController.signal,
+          onContentDelta: (text) => {
+            send({
+              type: "delta",
+              text,
+            });
+          },
+        });
+
+        if (!draftOutput.ok) {
+          send({
+            type: "error",
+            error: {
+              code: "OPENAI_API_ERROR",
+              message:
+                draftOutput.reason === "invalid_output"
+                  ? "답변 초안 생성 응답을 해석하지 못했습니다. 다시 시도해주세요."
+                  : "답변 초안 생성 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+            },
+          });
+          return;
+        }
+
+        let answerDrafts = parseAnswerDraftsResult(
+          draftOutput.outputText,
+          body,
+          evidenceOptions,
+        );
+
+        if (!answerDrafts) {
+          send({
+            type: "error",
+            error: {
+              code: "OPENAI_API_ERROR",
+              message:
+                "답변 초안 생성 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
+            },
+          });
+          return;
+        }
+
+        const lengthIssue = getAnswerDraftLengthIssue(
+          answerDrafts,
+          body.draftType,
+        );
+
+        if (lengthIssue) {
+          send({
+            type: "status",
+            message: "목표 분량에 맞게 문장을 다듬고 있어요.",
+          });
+
+          const repairedDraftOutput = await requestOpenAiStructuredOutputStream({
+            apiKey,
+            systemContent: ANSWER_DRAFT_REPAIR_SYSTEM_CONTENT,
+            userContent: createAnswerDraftRepairPrompt(
+              body,
+              answerDrafts,
+              lengthIssue,
+            ),
+            schemaName: "campuslog_answer_drafts_length_repair_v1",
+            schema: answerDraftsResponseSchema,
+            maxOutputTokens: 3200,
+            logLabel: "answer-drafts-length-repair-v1",
+            signal: openAiAbortController.signal,
+            onContentDelta: () => undefined,
+          });
+
+          if (!repairedDraftOutput.ok) {
+            send({
+              type: "error",
+              error: {
+                code: "OPENAI_API_ERROR",
+                message:
+                  "답변 초안 분량을 맞추지 못했습니다. 다시 시도해주세요.",
+              },
+            });
+            return;
+          }
+
+          const repairedAnswerDrafts = parseAnswerDraftsResult(
+            repairedDraftOutput.outputText,
+            body,
+            evidenceOptions,
+          );
+
+          if (!repairedAnswerDrafts) {
+            send({
+              type: "error",
+              error: {
+                code: "OPENAI_API_ERROR",
+                message:
+                  "답변 초안 분량을 맞추지 못했습니다. 다시 시도해주세요.",
+              },
+            });
+            return;
+          }
+
+          answerDrafts = repairedAnswerDrafts;
+
+          const finalDraft = answerDrafts.drafts.find(
+            (draft) => draft.type === body.draftType,
+          );
+
+          if (finalDraft) {
+            send({
+              type: "replace",
+              text: finalDraft.content,
+            });
+          }
+
+          const repairedLengthIssue = getAnswerDraftLengthIssue(
+            repairedAnswerDrafts,
+            body.draftType,
+          );
+
+          if (repairedLengthIssue) {
+            console.warn("CampusLog answer draft length repair out of range", {
+              draftType: body.draftType,
+              characterCount: repairedLengthIssue.count,
+              minimum: repairedLengthIssue.min,
+              maximum: repairedLengthIssue.max,
+            });
+          }
+        }
+
+        send({
+          type: "status",
+          message: "초안 검증을 마쳤어요.",
+        });
+        send({
+          type: "completed",
+          answerDrafts,
+        });
+      } catch {
+        if (!request.signal.aborted) {
+          send({
+            type: "error",
+            error: {
+              code: didOpenAiRequestTimeOut ? "OPENAI_API_ERROR" : "UNKNOWN_ERROR",
+              message: didOpenAiRequestTimeOut
+                ? "답변 초안 생성 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."
+                : "알 수 없는 오류로 답변 초안 생성을 완료하지 못했습니다.",
+            },
+          });
+        }
+      } finally {
+        clearTimeout(openAiTimeoutId);
+        request.signal.removeEventListener("abort", handleClientAbort);
+        cancelOpenAiRequest = null;
+        close();
+      }
+    },
+    cancel() {
+      cancelOpenAiRequest?.();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
 
 export async function POST(request: Request) {
@@ -928,6 +1570,15 @@ export async function POST(request: Request) {
     );
   }
 
+  if (body.stream) {
+    return createAnswerDraftsStreamResponse({
+      request,
+      apiKey,
+      body,
+      evidenceOptions,
+    });
+  }
+
   const openAiAbortController = new AbortController();
   let didOpenAiRequestTimeOut = false;
   const openAiTimeoutId = setTimeout(() => {
@@ -938,8 +1589,7 @@ export async function POST(request: Request) {
   try {
     const draftOutput = await requestOpenAiStructuredOutput({
       apiKey,
-      systemContent:
-        "당신은 CampusLog의 결과물 생성 도우미입니다. 추천 v2 이후 사용자가 선택한 경험, 활용 목적, 생성 옵션에 맞는 결과물 1개만 작성합니다. 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 보며, 원본에 없는 성과, 수치, 역할, 협업 규모, 기술명은 만들지 않고 부족 근거와 과장 위험을 별도 필드로 분리합니다.",
+      systemContent: ANSWER_DRAFT_SYSTEM_CONTENT,
       userContent: createAnswerDraftPrompt(body),
       schemaName: "campuslog_answer_drafts_v1",
       schema: answerDraftsResponseSchema,
@@ -977,8 +1627,7 @@ export async function POST(request: Request) {
     if (lengthIssue) {
       const repairedDraftOutput = await requestOpenAiStructuredOutput({
         apiKey,
-        systemContent:
-          "당신은 CampusLog의 답변 초안 분량 교정 도우미입니다. 원본 근거만 사용하면서 자기소개서 초안의 공백 포함 글자 수를 사용자가 선택한 범위 안으로 정확히 맞춥니다.",
+        systemContent: ANSWER_DRAFT_REPAIR_SYSTEM_CONTENT,
         userContent: createAnswerDraftRepairPrompt(
           body,
           answerDrafts,
