@@ -124,9 +124,15 @@ export type ExperienceAnalysisEvidence = {
 };
 
 export type ExperienceAnalysisEvidenceGap = {
+  id: string;
+  category: string;
+  title: string;
   topic: string;
   reason: string;
   question: string;
+  answer: string;
+  answeredAt?: string;
+  updatedAt?: string;
 };
 
 export type ExperienceAnalysisCoverLetterAngle = {

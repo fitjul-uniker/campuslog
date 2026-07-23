@@ -382,17 +382,11 @@ function createExperiencePromptContext(
           promptVersion: analysis.promptVersion,
           model: analysis.model,
           summary: analysis.summary,
-          competencyTags: analysis.competencyTags,
           achievements: analysis.achievements,
           keywords: analysis.keywords,
           star: analysis.star,
-          evidence: analysis.evidence.slice(0, 8),
           evidenceGaps: analysis.evidenceGaps.slice(0, 6),
-          coverLetterAngles: analysis.coverLetterAngles.slice(0, 4),
-          competencyEvidence: analysis.competencyEvidence.slice(0, 6),
-          isStale:
-            analysis.sourceExperienceUpdatedAt !== experience.updatedAt ||
-            experience.analysisStatus === "needs_reanalysis",
+          isStale: analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
         }
       : null,
   };
@@ -422,8 +416,9 @@ function createRecommendationPrompt(body: RecommendRequest): string {
         `matches는 정확히 ${topMatchCount}개를 반환합니다. 경험이 3개 이상이면 반드시 3개입니다.`,
         "rank는 1부터 시작하며 중복하지 않습니다.",
         "fitLevel은 score 기준으로만 정합니다. score >= 75는 high, score >= 45는 medium, 그 미만은 low입니다.",
-        "제목 유사도만 보지 말고 목적, 질문, 역할, 성과, 분석 태그, 키워드, STAR, 원본 evidence를 함께 판단합니다.",
-        "분석 v2가 있으면 star, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 우선 활용합니다.",
+        "제목 유사도만 보지 말고 목적, 질문, 역할, 원본 성과, 분석 요약, STAR, 주요 성과, 키워드, 부족 정보의 보완 답변을 함께 판단합니다.",
+        "분석 v2가 있으면 summary, star, achievements, evidenceGaps, keywords를 우선 활용합니다.",
+        "evidenceGaps에 answer가 있으면 사용자가 보완한 사실로 보고 추천 근거에 반영합니다. 단, 원본 경험에 원래 있던 내용처럼 표현하지 않습니다.",
         "분석이 없거나 오래되었으면 원본 description, achievements, role, relatedLinks 설명을 fallback 근거로 사용합니다.",
         "matchedEvidence에는 입력 원본 또는 분석 결과에서 실제 확인되는 근거만 씁니다.",
         "근거가 약하거나 빠진 부분은 missingEvidence에 분리하고, 사실처럼 보강하지 않습니다.",

@@ -925,6 +925,49 @@ export function saveAnalysisResult(
     : null;
 }
 
+export function saveAnalysisGapAnswer(
+  experienceId: string,
+  gapId: string,
+  answer: string,
+): ExperienceAnalysis | null {
+  const analyses = readStoredAnalyses();
+  const analysis = analyses[experienceId];
+
+  if (!analysis) {
+    return null;
+  }
+
+  const timestamp = createIsoTimestamp();
+  let didUpdate = false;
+  const evidenceGaps = analysis.evidenceGaps.map((gap) => {
+    if (gap.id !== gapId) {
+      return gap;
+    }
+
+    didUpdate = true;
+    return {
+      ...gap,
+      answer,
+      answeredAt: gap.answeredAt || timestamp,
+      updatedAt: timestamp,
+    };
+  });
+
+  if (!didUpdate) {
+    return null;
+  }
+
+  const nextAnalysis: ExperienceAnalysis = {
+    ...analysis,
+    evidenceGaps,
+  };
+  analyses[experienceId] = nextAnalysis;
+
+  return writeJsonTransaction([[STORAGE_KEYS.analyses, analyses]])
+    ? nextAnalysis
+    : null;
+}
+
 export function getRecommendationResults(): RecommendationResult[] {
   return readStoredRecommendations();
 }
@@ -1105,34 +1148,11 @@ export function answerExperienceFollowupQuestion(
     status: getFollowupStatus(currentFollowup.questions, nextAnswers, "open"),
     updatedAt: timestamp,
   };
-  const experiences = readStoredExperiences();
-  const analyses = readStoredAnalyses();
-  const nextExperiences = experiences.map((experience) => {
-    if (experience.id !== currentFollowup.experienceId) {
-      return experience;
-    }
-
-    const hasExistingAnalysis =
-      Boolean(analyses[experience.id]) ||
-      experience.analysisStatus === "analyzed" ||
-      experience.analysisStatus === "needs_reanalysis";
-
-    return hasExistingAnalysis
-      ? {
-          ...experience,
-          analysisStatus: "needs_reanalysis" as const,
-        }
-      : experience;
-  });
   const nextFollowups = followups.map((followup) =>
     followup.id === currentFollowup.id ? updatedFollowup : followup,
   );
 
-  return writeJsonTransaction([
-    [STORAGE_KEYS.experienceFollowups, nextFollowups],
-    [STORAGE_KEYS.experiences, sortByUpdatedDesc(nextExperiences)],
-    [STORAGE_KEYS.experienceMigration, true],
-  ])
+  return writeJson(STORAGE_KEYS.experienceFollowups, nextFollowups)
     ? updatedFollowup
     : null;
 }

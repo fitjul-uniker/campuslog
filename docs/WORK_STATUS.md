@@ -22,10 +22,10 @@
 - [x] 활동 추가의 날짜 입력 상단선을 맞추고 예상 종료일 `미정` 체크박스를 24px로 확대해 라벨 옆에 정렬 (`ISSUE-074`)
 - [x] 프로필 드롭다운 로그아웃 제출 안정화와 세션 제거·보호 경로 재차단 브라우저 확인
 - [x] AI API 보호 foundation: 세 AI API Route의 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용
-- [x] AI 경험 분석 v2: STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거 schema / 저장 / 표시 구현
+- [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심 schema / 저장 / 표시 간소화
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 schema / 저장 / 표시 구현
 - [x] 답변 초안 생성: 추천 v2 선택 경험 기반 사용자가 고른 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 단일 초안 schema / 저장 / 표시 구현
-- [x] 기록 보완 루프: AI 보완 질문 생성, 사용자 보완 답변 별도 저장, 보완 답변 기반 분석 재생성 흐름 구현
+- [x] 기록 보완 루프: 부족 정보 카드 안 직접 답변 저장, 추천 / 답변 초안 즉시 반영, 명시적 재분석 흐름 구현
 - [x] QA 버그 안정화: 보완 질문 draft 보존·복원, 답변 초안 분량 보정, 활동 복원·삭제·날짜 상태, 추천 점수 등급, 오늘 한 일 팝업 스크롤 수정
 - [x] 오늘의 기록 캘린더 옆 빠른 기록 카드를 제목 우선 날짜별 이벤트 목록과 `+` 작성·진행 활동 필요 안내 팝업으로 재구성
 - [x] 하위 화면 Basic Breadcrumb과 날짜별 기록의 검색 없는 활동 선택 목록을 적용하고, 신규 기록의 `활동을 선택하세요` 초기 상태·390px 키보드·overflow 검증 완료 (`ISSUE-068`)
@@ -36,7 +36,7 @@
 - [x] 오늘의 기록 캘린더에 1980년부터 현재까지 연도·월 직접 선택을 추가하고 미래 월 선택 차단 (`ISSUE-076`)
 - [x] 활동 추가 Expandable Screen 닫힘 마지막 구간을 페이드해 버튼 주변 사각 잔상 제거 (`ISSUE-077`)
 - [ ] 나의 활동 제목 한 줄 고정·좁은 패널 검색 축약 구현과 UI preview 폭별 검증 완료, 실제 로그인 완료 경험의 목록·상세·분석 전환 확인 필요 (`ISSUE-066`)
-- [ ] 나의 활동 AI 분석 스플릿뷰 구현·preview 반응형 검증 완료, 실제 로그인 분석 데이터의 상호작용 회귀 확인 필요 (`ISSUE-067`)
+- [ ] 나의 활동 AI 분석 스플릿뷰 구현·preview 반응형 검증 완료, 실제 로그인 분석 데이터의 상호작용 회귀 확인 필요 (`ISSUE-067`, `ISSUE-078`)
 - [x] 최신 main 기준 미반영 UI 재적용: 랜딩·인증 입력, 중앙 빠른 기록 패널, AI Border Beam, JD 목적, Checkbox, 추천 기록 복사, RippleButton
 - [x] 팀 테스트용 Supabase Auth 이메일/비밀번호 계정 9개 생성
 - [x] 진행 활동과 마무리 필요 활동 수정 경로, 미래 예정 종료일 활동의 즉시 종료 / AI 초안 생성 수정
@@ -47,7 +47,7 @@
 
 ## 구현 이력
 
-현재 `main`에는 PR #29의 Supabase Auth foundation과 PR #30의 사용자별 데이터 schema, RLS 정책, repository 경계, 주요 화면의 Supabase repository 연결이 반영되어 있습니다. 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, Supabase SQL Editor migration 적용, Table Editor 테이블 생성, 서로 다른 Google 계정의 계정별 데이터 분리 smoke test를 확인했습니다. `ux/auth-first-entry-flow`에서는 비로그인 `/` 좌측 상단에 `CampusLog` 워드마크를 고정하고, 중앙 순환 기록 문구와 GSAP 스크롤 아웃을 적용한 뒤 작은 휠 입력으로 다음 viewport의 중앙 인증 카드까지 자동 이동하도록 진입 순서를 재구성했습니다. `대학생활`은 강하게, 나머지 순환 명사는 옅고 가볍게 표시하며 조사 `을/를`은 항상 검정·강한 굵기로 고정합니다. 실제 글자 폭은 연속 보간하고 조사는 값이 실제로 바뀔 때만 전환하며, 44px 일시정지·재생 컨트롤과 reduced motion 정지 상태를 제공합니다. 구분선과 로그인 mode의 `Welcome back`·소개 문구는 제거했습니다. Tailwind CSS v4와 shadcn/ui 설정 및 Input·Label primitive도 추가했습니다. 회원가입은 이메일·Google 방식 선택으로 시작하며, 이메일은 자격 증명 뒤 이름·닉네임 Stepper를 완료하고 Google 신규·미완료 계정은 OAuth 시작 위치와 무관하게 callback 뒤 `/onboarding`에서 같은 단계를 진행합니다. 미완료 세션은 제품 화면에 진입할 수 없고 기존 계정도 완료 metadata가 없으면 최초 1회 입력합니다. 이름·닉네임은 비공개 Supabase user metadata로 저장하고 권한 판단에는 사용하지 않습니다. `/dashboard`의 빠른 기록은 설명 문단 없는 CTA 카드에서 활동·내용을 입력하는 플로팅 패널로 확장되고, 자세한 기록이 AI 분석 정확도에 도움이 된다고 안내하며 빈 상태는 `진행 활동 추가`와 `오늘로 돌아가기`로 원인을 구분합니다. 활동 추가는 누른 버튼에서 가장자리 여백을 둔 near-white 대형 둥근 패널로 확장되고 닫을 때 같은 버튼으로 축소되며, `/activities/new` 직접 진입도 같은 validation을 사용합니다. 좌측 하단은 원형 아바타·닉네임의 구분된 프로필 영역으로 바꾸고 로그아웃을 드롭다운에 통합했으며, 메뉴 제출을 안정화하고 실제 세션을 삭제한 뒤 완료 알림 없이 로그인 영역으로 복귀합니다. Checkbox·CopyButton 상태도 공용 접근성 primitive로 통일했습니다. CampusLog AI 추천 화면은 현재 경로를 반복하는 분할 탭과 제목 위 `CampusLog AI` eyebrow를 제거하고 헤더의 `추천 기록`, 기록 화면의 `새 추천 받기` 액션으로 교차 이동하도록 정리했습니다. 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UI / upsert 구현은 Deferred / Optional로 전환했습니다. `feature/ai-analysis-v2`에서는 기존 분석 네 필드의 하위 호환을 유지하면서 STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 `/api/analyze` structured output, repository 저장, Supabase migration, 결과 화면에 추가했습니다. `feature/ai-recommendation-v2`에서는 `/api/recommend`가 문항 / JD 요구사항을 구조화하고 분석 v2의 STAR, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 활용해 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 반환·저장·표시하도록 확장했습니다. 기존 추천 v1 필드는 유지하고 v1 저장 결과는 1개 match와 빈 요구사항으로 보정해 읽습니다. `feature/ai-answer-drafts`에서는 추천 v2의 선택 match와 경험 원본, 분석 v2 결과를 바탕으로 사용자가 선택한 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 초안을 생성하고, 별도 `answer_drafts` 저장소에 type별로 누적 연결해 기존 추천 v1/v2 기록을 보존합니다. `feature/ai-evidence-followup`에서는 분석 / 추천 / 답변 초안에서 드러난 부족 근거를 보완 질문으로 바꾸고, 사용자 답변을 별도 `experience_followups` 저장소에 저장한 뒤 명시적 재분석 때 원본 경험과 함께 사용하도록 연결했습니다. 다음 AI 개발 초점은 `OCR / JD 이미지 입력`입니다.
+현재 `main`에는 PR #29의 Supabase Auth foundation과 PR #30의 사용자별 데이터 schema, RLS 정책, repository 경계, 주요 화면의 Supabase repository 연결이 반영되어 있습니다. 사용자가 일반 이메일 인증 메일 흐름, Google OAuth, Supabase SQL Editor migration 적용, Table Editor 테이블 생성, 서로 다른 Google 계정의 계정별 데이터 분리 smoke test를 확인했습니다. `ux/auth-first-entry-flow`에서는 비로그인 `/` 좌측 상단에 `CampusLog` 워드마크를 고정하고, 중앙 순환 기록 문구와 GSAP 스크롤 아웃을 적용한 뒤 작은 휠 입력으로 다음 viewport의 중앙 인증 카드까지 자동 이동하도록 진입 순서를 재구성했습니다. `대학생활`은 강하게, 나머지 순환 명사는 옅고 가볍게 표시하며 조사 `을/를`은 항상 검정·강한 굵기로 고정합니다. 실제 글자 폭은 연속 보간하고 조사는 값이 실제로 바뀔 때만 전환하며, 44px 일시정지·재생 컨트롤과 reduced motion 정지 상태를 제공합니다. 구분선과 로그인 mode의 `Welcome back`·소개 문구는 제거했습니다. Tailwind CSS v4와 shadcn/ui 설정 및 Input·Label primitive도 추가했습니다. 회원가입은 이메일·Google 방식 선택으로 시작하며, 이메일은 자격 증명 뒤 이름·닉네임 Stepper를 완료하고 Google 신규·미완료 계정은 OAuth 시작 위치와 무관하게 callback 뒤 `/onboarding`에서 같은 단계를 진행합니다. 미완료 세션은 제품 화면에 진입할 수 없고 기존 계정도 완료 metadata가 없으면 최초 1회 입력합니다. 이름·닉네임은 비공개 Supabase user metadata로 저장하고 권한 판단에는 사용하지 않습니다. `/dashboard`의 빠른 기록은 설명 문단 없는 CTA 카드에서 활동·내용을 입력하는 플로팅 패널로 확장되고, 자세한 기록이 AI 분석 정확도에 도움이 된다고 안내하며 빈 상태는 `진행 활동 추가`와 `오늘로 돌아가기`로 원인을 구분합니다. 활동 추가는 누른 버튼에서 가장자리 여백을 둔 near-white 대형 둥근 패널로 확장되고 닫을 때 같은 버튼으로 축소되며, `/activities/new` 직접 진입도 같은 validation을 사용합니다. 좌측 하단은 원형 아바타·닉네임의 구분된 프로필 영역으로 바꾸고 로그아웃을 드롭다운에 통합했으며, 메뉴 제출을 안정화하고 실제 세션을 삭제한 뒤 완료 알림 없이 로그인 영역으로 복귀합니다. Checkbox·CopyButton 상태도 공용 접근성 primitive로 통일했습니다. CampusLog AI 추천 화면은 현재 경로를 반복하는 분할 탭과 제목 위 `CampusLog AI` eyebrow를 제거하고 헤더의 `추천 기록`, 기록 화면의 `새 추천 받기` 액션으로 교차 이동하도록 정리했습니다. 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UI / upsert 구현은 Deferred / Optional로 전환했습니다. `feature/ai-analysis-v2`에서는 기존 분석 네 필드의 하위 호환을 유지하면서 STAR, 원본 근거, 부족 정보, 자소서 소재 각도, 역량별 근거를 `/api/analyze` structured output, repository 저장, Supabase migration, 결과 화면에 추가했습니다. `feature/ai-analysis-gap-answers`에서는 신규 분석 출력과 화면을 요약, STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 줄이고 별도 보완 질문 생성 단계를 제거했습니다. 보완 답변은 원본 경험을 자동 수정하지 않고 추천 / 답변 초안 입력에 즉시 반영하며, 원본 경험이 분석 이후 수정된 경우에만 업데이트 필요를 표시합니다. `feature/ai-recommendation-v2`에서는 `/api/recommend`가 문항 / JD 요구사항을 구조화하고 분석 결과와 보완 답변을 활용해 경험 Top 3, 매칭 근거, 부족 근거, 과장 위험, 활용 각도를 반환·저장·표시하도록 확장했습니다. 기존 추천 v1 필드는 유지하고 v1 저장 결과는 1개 match와 빈 요구사항으로 보정해 읽습니다. `feature/ai-answer-drafts`에서는 추천 v2의 선택 match와 경험 원본, 분석 결과, 보완 답변을 바탕으로 사용자가 선택한 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 초안을 생성하고, 별도 `answer_drafts` 저장소에 type별로 누적 연결해 기존 추천 v1/v2 기록을 보존합니다. 다음 AI 개발 초점은 `OCR / JD 이미지 입력`입니다.
 
 `feature/ai-api-protection`에서는 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`가 route handler 내부에서도 Supabase 세션을 확인합니다. 비로그인 요청은 공통 401 `SESSION_REQUIRED` JSON으로 반환하고, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard와 429 `RATE_LIMITED` + `retryAfter` contract를 추가했습니다. `service_role` key는 사용하지 않으며 AI 세부 계약은 `docs/AI_API_CONTRACT.md`에 기록했습니다.
 
@@ -116,7 +116,7 @@
 2. 2026-07-17 QA 수정 범위의 실제 로그인 세션 브라우저 회귀 확인
 3. 테스트 계정별 더미 경험·활동·기록 데이터 seed 필요 여부 결정
 4. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
-5. 기록 보완 루프의 실제 로그인 세션 smoke test와 평가 기준 정리
+5. 분석 부족 정보 답변 저장의 실제 로그인 세션 smoke test와 추천 반영 평가 기준 정리
 6. AI API 보호 foundation 실제 세션 환경 smoke test와 durable rate limit / OpenAI spend alert 운영 결정
 7. 추천 v2 / 답변 초안 migration 적용 후 로그인 세션 저장 smoke test
 8. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증

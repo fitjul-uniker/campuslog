@@ -300,28 +300,6 @@ export function ExperienceDashboard() {
     });
   }, []);
 
-  const refreshExperience = useCallback(async (experienceId: string) => {
-    try {
-      const repository = getCampusLogRepository();
-      const refreshedExperience =
-        await repository.experiences.getById(experienceId);
-
-      if (!refreshedExperience) {
-        return;
-      }
-
-      setExperiences((currentExperiences) =>
-        currentExperiences?.map((experience) =>
-          experience.id === refreshedExperience.id
-            ? refreshedExperience
-            : experience,
-        ) ?? currentExperiences,
-      );
-    } catch {
-      // The saved follow-up remains intact even if this non-destructive refresh fails.
-    }
-  }, []);
-
   const handleAnalyzeExperience = async (experience: Experience) => {
     const experienceId = experience.id;
 
@@ -622,9 +600,6 @@ export function ExperienceDashboard() {
                   onReanalyze={() =>
                     handleAnalyzeExperience(selectedExperience)
                   }
-                  onFollowupsChanged={() => {
-                    void refreshExperience(selectedExperience.id);
-                  }}
                 />
               ) : null}
             </AnimatePresence>
