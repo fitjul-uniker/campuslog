@@ -25,10 +25,10 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { getRecommendationPurposeConfig } from "@/lib/recommendationPurposeConfig";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   Experience,
-  RecommendationPurpose,
   RecommendationResult as Recommendation,
 } from "@/lib/types";
 
@@ -37,15 +37,6 @@ const LAYOUT_TRANSITION = {
   duration: 0.3,
   ease: [0.22, 1, 0.36, 1] as const,
 };
-const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
-  cover_letter: "자기소개서",
-  portfolio: "포트폴리오",
-  interview: "면접",
-  jd: "JD",
-  activity_application: "대외활동/지원서",
-  other: "기타",
-};
-
 function normalizeSearchValue(value: string): string {
   return value.normalize("NFKC").trim().toLocaleLowerCase("ko-KR");
 }
@@ -100,7 +91,7 @@ export default function RecommendationHistoryPage() {
 
     return recommendations.filter((recommendation) => {
       const searchableText = [
-        PURPOSE_LABELS[recommendation.purpose],
+        getRecommendationPurposeConfig(recommendation.purpose).inputLabel,
         recommendation.recommendedExperienceTitle,
         recommendation.prompt,
         recommendation.extractedRequirements.intent,

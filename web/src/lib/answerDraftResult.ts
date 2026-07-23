@@ -1,4 +1,5 @@
 import type {
+  ActiveAnswerDraftType,
   AnswerDraft,
   AnswerDraftResult,
   AnswerDraftSchemaVersion,
@@ -9,25 +10,54 @@ export const ANSWER_DRAFT_SCHEMA_VERSION = "v1" as const;
 export const ANSWER_DRAFT_PROMPT_VERSION = "answer-drafts-v1.0";
 
 export const ANSWER_DRAFT_TYPES: AnswerDraftType[] = [
+  "cover_letter_300",
   "cover_letter_500",
-  "cover_letter_800",
   "cover_letter_1000",
+  "interview_30s",
+  "interview_60s",
+  "interview_followups",
+  "jd_strategy",
+  "custom",
+  "cover_letter_800",
   "interview",
   "portfolio",
 ];
 
+export const ACTIVE_ANSWER_DRAFT_TYPES: ActiveAnswerDraftType[] = [
+  "cover_letter_300",
+  "cover_letter_500",
+  "cover_letter_1000",
+  "interview_30s",
+  "interview_60s",
+  "interview_followups",
+  "jd_strategy",
+  "custom",
+];
+
 export const ANSWER_DRAFT_TYPE_LABELS: Record<AnswerDraftType, string> = {
-  cover_letter_500: "500자 자기소개서",
+  cover_letter_300: "300자",
+  cover_letter_500: "500자",
+  cover_letter_1000: "1000자",
+  interview_30s: "30초 답변",
+  interview_60s: "1분 이상 답변",
+  interview_followups: "예상 꼬리 질문",
+  jd_strategy: "지원 전략",
+  custom: "맞춤 결과",
   cover_letter_800: "800자 자기소개서",
-  cover_letter_1000: "1000자 자기소개서",
   interview: "면접 답변",
   portfolio: "포트폴리오 설명",
 };
 
 export const ANSWER_DRAFT_TARGET_GUIDES: Record<AnswerDraftType, string> = {
-  cover_letter_500: "430~500자 자기소개서 초안",
+  cover_letter_300: "260~290자 자기소개서 초안",
+  cover_letter_500: "440~480자 자기소개서 초안",
+  cover_letter_1000: "880~950자 자기소개서 초안",
+  interview_30s: "30초 말하기용 면접 답변",
+  interview_60s: "1분 이상 STAR 구조 면접 답변",
+  interview_followups: "예상 꼬리 질문",
+  jd_strategy: "JD 맞춤 지원 전략",
+  custom: "사용자 질문에 맞춘 결과",
   cover_letter_800: "700~800자 자기소개서 초안",
-  cover_letter_1000: "900~1000자 자기소개서 초안",
   interview: "45~60초 말하기용 면접 답변",
   portfolio: "프로젝트/활동 설명용 포트폴리오 문단",
 };
@@ -35,9 +65,10 @@ export const ANSWER_DRAFT_TARGET_GUIDES: Record<AnswerDraftType, string> = {
 export const ANSWER_DRAFT_CHARACTER_LIMITS: Partial<
   Record<AnswerDraftType, { min: number; max: number }>
 > = {
-  cover_letter_500: { min: 430, max: 500 },
+  cover_letter_300: { min: 260, max: 290 },
+  cover_letter_500: { min: 440, max: 480 },
   cover_letter_800: { min: 700, max: 800 },
-  cover_letter_1000: { min: 900, max: 1000 },
+  cover_letter_1000: { min: 880, max: 950 },
 };
 
 export function countAnswerDraftCharacters(value: string): number {

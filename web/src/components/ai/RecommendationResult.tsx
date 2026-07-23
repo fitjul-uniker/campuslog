@@ -17,21 +17,28 @@ import {
 } from "@/components/animate-ui/components/buttons/ripple";
 import {
   ANSWER_DRAFT_TYPE_LABELS,
-  ANSWER_DRAFT_TYPES,
   countAnswerDraftCharacters,
   getAnswerDraftCharacterLimit,
 } from "@/lib/answerDraftResult";
 import { requestAnswerDrafts } from "@/lib/answerDraftApi";
 import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { formatDateTime } from "@/lib/date";
+import {
+  getGenerationOptionsForPurpose,
+  getRecommendationPurposeConfig,
+  type RecommendationGenerationOption,
+} from "@/lib/recommendationPurposeConfig";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
+  ActiveAnswerDraftType,
   AnswerDraft,
   AnswerDraftResult,
   AnswerDraftType,
   Experience,
+  JdFinalVerdict,
+  JdRequirementCategory,
+  JdRequirementStatus,
   RecommendationMatch,
-  RecommendationPurpose,
   RecommendationResult as Result,
 } from "@/lib/types";
 
@@ -45,20 +52,32 @@ type RecommendationResultProps = {
 
 type CopyStatus = "idle" | "success" | "failed";
 
-const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
-  cover_letter: "자기소개서",
-  portfolio: "포트폴리오",
-  interview: "면접",
-  jd: "JD",
-  activity_application: "대외활동/지원서",
-  other: "기타",
-};
-
 const FIT_LEVEL_LABELS = {
   high: "높음",
   medium: "보통",
   low: "낮음",
 } as const;
+
+const JD_REQUIREMENT_CATEGORY_LABELS: Record<JdRequirementCategory, string> = {
+  responsibility: "담당 업무",
+  required_qualification: "필수 자격요건",
+  preferred_qualification: "우대사항",
+  tech_stack: "기술 스택",
+  required_experience: "요구 경험",
+};
+
+const JD_REQUIREMENT_STATUS_LABELS: Record<JdRequirementStatus, string> = {
+  met: "충족",
+  partially_met: "부분 충족",
+  insufficient_evidence: "근거 부족",
+  not_met: "미충족",
+};
+
+const JD_FINAL_VERDICT_LABELS: Record<JdFinalVerdict, string> = {
+  recommended: "지원 추천",
+  challenge_possible: "도전 지원 가능",
+  needs_improvement: "현재는 보완 필요",
+};
 
 function hasListContent(values: string[]): boolean {
   return values.some((value) => value.trim().length > 0);
@@ -70,8 +89,17 @@ function getErrorMessage(error: unknown, fallback: string): string {
     : fallback;
 }
 
-function getInitialDraftType(draftResult: AnswerDraftResult): AnswerDraftType {
-  return draftResult.drafts[0]?.type ?? "cover_letter_500";
+function getInitialDraftType(
+  draftResult: AnswerDraftResult,
+  generationOptions: RecommendationGenerationOption[],
+): ActiveAnswerDraftType {
+  return (
+    generationOptions.find((option) =>
+      draftResult.drafts.some((draft) => draft.type === option.type),
+    )?.type ??
+    generationOptions[0]?.type ??
+    "custom"
+  );
 }
 
 function findDraftByType(
@@ -111,13 +139,17 @@ function AnswerDraftViewer({
   onSelectType,
   isGenerating,
   onGenerate,
+  generationOptions,
+  primaryActionLabel,
 }: {
   draftResult?: AnswerDraftResult;
   experienceId: string;
-  selectedType: AnswerDraftType;
-  onSelectType: (type: AnswerDraftType) => void;
+  selectedType: ActiveAnswerDraftType;
+  onSelectType: (type: ActiveAnswerDraftType) => void;
   isGenerating: boolean;
-  onGenerate: (type: AnswerDraftType) => void;
+  onGenerate: (type: ActiveAnswerDraftType) => void;
+  generationOptions: RecommendationGenerationOption[];
+  primaryActionLabel: string;
 }) {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const activeDraft = findDraftByType(draftResult, selectedType);
@@ -131,6 +163,9 @@ function AnswerDraftViewer({
     !activeCharacterLimit ||
     (activeCharacterCount >= activeCharacterLimit.min &&
       activeCharacterCount <= activeCharacterLimit.max);
+  const missingEvidenceHeading = selectedType.startsWith("cover_letter_")
+    ? "추가하면 좋은 정보 / 수정할 부분"
+    : "부족한 근거";
 
   useEffect(() => {
     setCopyStatus("idle");
@@ -143,13 +178,13 @@ function AnswerDraftViewer({
         role="tablist"
         aria-label="답변 초안 버전"
       >
-        {ANSWER_DRAFT_TYPES.map((type) => {
-          const hasDraft = Boolean(findDraftByType(draftResult, type));
-          const isActive = selectedType === type;
+        {generationOptions.map((option) => {
+          const hasDraft = Boolean(findDraftByType(draftResult, option.type));
+          const isActive = selectedType === option.type;
 
           return (
             <button
-              key={type}
+              key={option.type}
               type="button"
               role="tab"
               aria-selected={isActive}
@@ -159,9 +194,10 @@ function AnswerDraftViewer({
                   ? "answer-draft-tab is-active"
                   : "answer-draft-tab"
               }
-              onClick={() => onSelectType(type)}
+              onClick={() => onSelectType(option.type)}
             >
-              {ANSWER_DRAFT_TYPE_LABELS[type]}
+              <span>{option.label}</span>
+              <small>{option.description}</small>
             </button>
           );
         })}
@@ -220,7 +256,7 @@ function AnswerDraftViewer({
           ) : (
             <FileText className="button-icon" aria-hidden="true" />
           )}
-          {activeDraft ? `${activeLabel} 다시 생성` : `${activeLabel} 생성`}
+          {activeDraft ? `${activeLabel} 다시 생성` : primaryActionLabel}
           <RippleButtonRipples />
         </RippleButton>
 
@@ -245,7 +281,7 @@ function AnswerDraftViewer({
               />
             </div>
             <div>
-              <h6>부족한 근거</h6>
+              <h6>{missingEvidenceHeading}</h6>
               <DraftEvidenceList
                 items={activeDraft.missingEvidenceNotes}
                 emptyText="분리된 부족 근거 없음"
@@ -289,7 +325,7 @@ export function RecommendationResult({
     Record<string, AnswerDraftResult>
   >({});
   const [selectedDraftTypes, setSelectedDraftTypes] = useState<
-    Record<string, AnswerDraftType>
+    Record<string, ActiveAnswerDraftType>
   >({});
   const [generatingDraftKey, setGeneratingDraftKey] =
     useState<string | null>(null);
@@ -297,6 +333,8 @@ export function RecommendationResult({
     Record<string, string>
   >({});
   const isEmbedded = variant === "embedded";
+  const purposeConfig = getRecommendationPurposeConfig(result.purpose);
+  const generationOptions = getGenerationOptionsForPurpose(result.purpose);
   const requirements = result.extractedRequirements;
   const hasRequirements =
     hasListContent(requirements.requiredCompetencies) ||
@@ -349,10 +387,13 @@ export function RecommendationResult({
         ),
       );
       setSelectedDraftTypes(
-        storedDrafts.reduce<Record<string, AnswerDraftType>>(
+        storedDrafts.reduce<Record<string, ActiveAnswerDraftType>>(
           (draftTypes, draft) => ({
             ...draftTypes,
-            [draft.experienceId]: getInitialDraftType(draft),
+            [draft.experienceId]: getInitialDraftType(
+              draft,
+              generationOptions,
+            ),
           }),
           {},
         ),
@@ -371,11 +412,11 @@ export function RecommendationResult({
     return () => {
       isMounted = false;
     };
-  }, [result.id]);
+  }, [generationOptions, result.id]);
 
   async function handleGenerateAnswerDrafts(
     match: RecommendationMatch,
-    draftType: AnswerDraftType,
+    draftType: ActiveAnswerDraftType,
   ) {
     const matchedExperience = experiencesById.get(match.experienceId);
     const draftKey = `${match.experienceId}:${draftType}`;
@@ -520,17 +561,17 @@ export function RecommendationResult({
 
       <div className="detail-section">
         <h3>활용 목적</h3>
-        <p>{PURPOSE_LABELS[result.purpose]}</p>
+        <p>{purposeConfig.inputLabel}</p>
       </div>
 
       <div className="detail-section">
-        <h3>질문 / 문항</h3>
+        <h3>{result.purpose === "jd" ? "채용공고 / 질문" : "질문 / 문항"}</h3>
         <p>{result.prompt}</p>
       </div>
 
       {hasRequirements ? (
         <div className="detail-section recommendation-requirements-section">
-          <h3>추출한 요구사항</h3>
+          <h3>질문 또는 요구사항 분석</h3>
           {requirements.intent ? (
             <p className="recommendation-requirements-intent">
               {requirements.intent}
@@ -581,6 +622,150 @@ export function RecommendationResult({
         </div>
       ) : null}
 
+      {result.purpose === "jd" && result.jdAnalysis ? (
+        <div className="detail-section recommendation-jd-section">
+          <div className="recommendation-section-heading">
+            <div>
+              <h3>JD 분석</h3>
+              <p className="muted-text">Job Description</p>
+            </div>
+            <span
+              className="recommendation-jd-verdict"
+              data-verdict={result.jdAnalysis.finalVerdict}
+            >
+              {JD_FINAL_VERDICT_LABELS[result.jdAnalysis.finalVerdict]}
+            </span>
+          </div>
+
+          {result.jdAnalysis.summary ? (
+            <p className="recommendation-requirements-intent">
+              {result.jdAnalysis.summary}
+            </p>
+          ) : null}
+
+          <div className="recommendation-requirements-grid">
+            {hasListContent(result.jdAnalysis.responsibilities) ? (
+              <div>
+                <h4>담당 업무</h4>
+                <ul className="recommendation-compact-list">
+                  {result.jdAnalysis.responsibilities.map((item, index) => (
+                    <li key={`jd-responsibility-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {hasListContent(result.jdAnalysis.requiredQualifications) ? (
+              <div>
+                <h4>필수요건</h4>
+                <ul className="recommendation-compact-list">
+                  {result.jdAnalysis.requiredQualifications.map(
+                    (item, index) => (
+                      <li key={`jd-required-${index}`}>{item}</li>
+                    ),
+                  )}
+                </ul>
+              </div>
+            ) : null}
+            {hasListContent(result.jdAnalysis.preferredQualifications) ? (
+              <div>
+                <h4>우대사항</h4>
+                <ul className="recommendation-compact-list">
+                  {result.jdAnalysis.preferredQualifications.map(
+                    (item, index) => (
+                      <li key={`jd-preferred-${index}`}>{item}</li>
+                    ),
+                  )}
+                </ul>
+              </div>
+            ) : null}
+            {hasListContent(result.jdAnalysis.techStack) ? (
+              <div>
+                <h4>기술 스택</h4>
+                <div className="experience-tags">
+                  {result.jdAnalysis.techStack.map((item, index) => (
+                    <span key={`jd-tech-${item}-${index}`}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {hasListContent(result.jdAnalysis.requiredExperience) ? (
+              <div>
+                <h4>요구 경험</h4>
+                <ul className="recommendation-compact-list">
+                  {result.jdAnalysis.requiredExperience.map((item, index) => (
+                    <li key={`jd-experience-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+
+          {result.jdAnalysis.requirementMatches.length > 0 ? (
+            <div className="recommendation-jd-match-table">
+              <h4>요구사항별 경험 매칭</h4>
+              <div className="recommendation-jd-match-list">
+                {result.jdAnalysis.requirementMatches.map((item, index) => (
+                  <article key={`${item.category}-${item.requirement}-${index}`}>
+                    <div>
+                      <span>
+                        {JD_REQUIREMENT_CATEGORY_LABELS[item.category]}
+                      </span>
+                      <strong>{item.requirement}</strong>
+                    </div>
+                    <span data-status={item.status}>
+                      {JD_REQUIREMENT_STATUS_LABELS[item.status]}
+                    </span>
+                    {hasListContent(item.evidence) ? (
+                      <ul className="recommendation-compact-list">
+                        {item.evidence.map((evidenceItem, evidenceIndex) => (
+                          <li key={`jd-evidence-${index}-${evidenceIndex}`}>
+                            {evidenceItem}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : item.missingEvidence ? (
+                      <p className="muted-text">{item.missingEvidence}</p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="recommendation-match-details">
+            <div>
+              <h5>지원 시 강조할 내용</h5>
+              <DraftEvidenceList
+                items={result.jdAnalysis.emphasisPoints}
+                emptyText="추천 경험을 먼저 확인해 주세요."
+              />
+            </div>
+            <div>
+              <h5>부족한 역량과 근거</h5>
+              <DraftEvidenceList
+                items={result.jdAnalysis.gaps}
+                emptyText="분리된 부족 역량 없음"
+              />
+            </div>
+            <div>
+              <h5>과장하면 안 되는 부분</h5>
+              <DraftEvidenceList
+                items={result.jdAnalysis.overclaimRisks}
+                emptyText="기록 밖 사실 추가만 피하면 됩니다."
+                isRisk
+              />
+            </div>
+          </div>
+
+          {result.jdAnalysis.finalVerdictReason ? (
+            <div className="recommendation-match-angle">
+              <h5>최종 지원 판단</h5>
+              <p>{result.jdAnalysis.finalVerdictReason}</p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="detail-section recommendation-matches-section">
         <h3>추천 경험 Top {matches.length}</h3>
         <div className="recommendation-match-list">
@@ -590,8 +775,8 @@ export function RecommendationResult({
             const selectedDraftType =
               selectedDraftTypes[match.experienceId] ??
               (answerDrafts
-                ? getInitialDraftType(answerDrafts)
-                : "cover_letter_500");
+                ? getInitialDraftType(answerDrafts, generationOptions)
+                : generationOptions[0]?.type ?? "custom");
             const isGeneratingDraft =
               generatingDraftKey ===
               `${match.experienceId}:${selectedDraftType}`;
@@ -619,7 +804,10 @@ export function RecommendationResult({
                   </span>
                 </div>
 
-                <p>{match.matchReason}</p>
+                <div className="recommendation-match-reason">
+                  <h5>추천 이유</h5>
+                  <p>{match.matchReason}</p>
+                </div>
 
                 {hasListContent(match.relatedCompetencies) ? (
                   <div className="experience-tags">
@@ -633,7 +821,7 @@ export function RecommendationResult({
 
                 <div className="recommendation-match-details">
                   <div>
-                    <h5>매칭 근거</h5>
+                    <h5>직접 근거</h5>
                     {hasListContent(match.matchedEvidence) ? (
                       <ul className="recommendation-compact-list">
                         {match.matchedEvidence.map((item, index) => (
@@ -646,7 +834,7 @@ export function RecommendationResult({
                       </ul>
                     ) : (
                       <p className="muted-text">
-                        확인된 근거가 적어 원본 경험을 함께 검토해 주세요.
+                        원본 경험 또는 보완 답변에서 확인된 근거가 적습니다.
                       </p>
                     )}
                   </div>
@@ -730,6 +918,8 @@ export function RecommendationResult({
                       }))
                     }
                     isGenerating={isGeneratingDraft}
+                    generationOptions={generationOptions}
+                    primaryActionLabel={purposeConfig.primaryActionLabel}
                     onGenerate={(draftType) =>
                       handleGenerateAnswerDrafts(match, draftType)
                     }

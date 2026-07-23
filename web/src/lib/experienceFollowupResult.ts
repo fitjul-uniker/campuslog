@@ -33,9 +33,15 @@ export const EXPERIENCE_FOLLOWUP_TARGET_EVIDENCE_TYPES = [
 ] as const satisfies readonly ExperienceFollowupTargetEvidenceType[];
 
 const ANSWER_DRAFT_TYPES = [
+  "cover_letter_300",
   "cover_letter_500",
-  "cover_letter_800",
   "cover_letter_1000",
+  "interview_30s",
+  "interview_60s",
+  "interview_followups",
+  "jd_strategy",
+  "custom",
+  "cover_letter_800",
   "interview",
   "portfolio",
 ] as const satisfies readonly AnswerDraftType[];

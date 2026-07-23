@@ -13,6 +13,10 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import { Field } from "@/components/ui/field";
+import {
+  ACTIVE_RECOMMENDATION_PURPOSES,
+  getRecommendationPurposeConfig,
+} from "@/lib/recommendationPurposeConfig";
 import type { RecommendationPurpose } from "@/lib/types";
 
 type RecommendationFormInput = {
@@ -25,17 +29,16 @@ type RecommendationFormProps = {
   onSubmit: (input: RecommendationFormInput) => void;
 };
 
-const PURPOSE_OPTIONS: Array<{
-  value: RecommendationPurpose;
-  label: string;
-}> = [
-  { value: "cover_letter", label: "자기소개서" },
-  { value: "portfolio", label: "포트폴리오" },
-  { value: "interview", label: "면접" },
-  { value: "jd", label: "JD" },
-  { value: "activity_application", label: "대외활동/지원서" },
-  { value: "other", label: "기타" },
-];
+const PURPOSE_OPTIONS = ACTIVE_RECOMMENDATION_PURPOSES.map((purpose) => {
+  const config = getRecommendationPurposeConfig(purpose);
+
+  return {
+    value: purpose,
+    label: config.label,
+    inputLabel: config.inputLabel,
+    description: config.description,
+  };
+});
 
 export function RecommendationForm({
   isLoading,
@@ -48,12 +51,13 @@ export function RecommendationForm({
   const selectedPurpose =
     PURPOSE_OPTIONS.find((option) => option.value === purpose) ??
     PURPOSE_OPTIONS[0];
+  const selectedConfig = getRecommendationPurposeConfig(purpose);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!prompt.trim()) {
-      setErrorMessage("추천받고 싶은 질문이나 활용 목적을 입력해주세요.");
+      setErrorMessage("추천받을 내용을 입력해 주세요.");
       return;
     }
 
@@ -71,11 +75,12 @@ export function RecommendationForm({
         <Combobox
           items={PURPOSE_OPTIONS}
           value={selectedPurpose}
-          inputValue={selectedPurpose.label}
+          inputValue={selectedPurpose.inputLabel}
           onInputValueChange={() => undefined}
           onValueChange={(option) => {
             if (option) {
               setPurpose(option.value);
+              setErrorMessage("");
             }
           }}
         >
@@ -91,7 +96,12 @@ export function RecommendationForm({
             <ComboboxList>
               {(option: (typeof PURPOSE_OPTIONS)[number]) => (
                 <ComboboxItem key={option.value} value={option}>
-                  {option.label}
+                  <span>{option.label}</span>
+                  {option.value === "jd" ? (
+                    <span className="recommendation-purpose-option-subtitle">
+                      Job Description
+                    </span>
+                  ) : null}
                 </ComboboxItem>
               )}
             </ComboboxList>
@@ -100,7 +110,9 @@ export function RecommendationForm({
       </Field>
 
       <div className="form-field">
-        <label htmlFor="recommendation-prompt">질문 / 문항</label>
+        <label htmlFor="recommendation-prompt">
+          {selectedConfig.promptTitle}
+        </label>
         <textarea
           id="recommendation-prompt"
           name="prompt"
@@ -109,13 +121,31 @@ export function RecommendationForm({
           onChange={(event) => setPrompt(event.target.value)}
           aria-invalid={Boolean(errorMessage && !prompt.trim())}
           disabled={isLoading}
-          placeholder="예: 문제 해결 역량을 보여주는 자기소개서 문항이나 JD 원문을 붙여넣어 주세요"
+          placeholder={selectedConfig.placeholder}
           required
         />
         <p className="period-help">
-          자기소개서 문항, 면접 질문, JD, 지원서 원문을 입력하면 요구사항과
-          적합한 경험 Top 3를 함께 정리합니다.
+          {selectedConfig.promptDescription}
         </p>
+      </div>
+
+      <div
+        className="recommendation-example-list"
+        aria-label={`${selectedConfig.label} 예시 문항`}
+      >
+        {selectedConfig.examples.map((example) => (
+          <button
+            key={example}
+            type="button"
+            disabled={isLoading}
+            onClick={() => {
+              setPrompt(example);
+              setErrorMessage("");
+            }}
+          >
+            {example}
+          </button>
+        ))}
       </div>
 
       {errorMessage ? (

@@ -1,12 +1,17 @@
 import type {
+  JdFinalVerdict,
+  JdRequirementCategory,
+  JdRequirementStatus,
   RecommendationApiResult,
   RecommendationExtractedRequirements,
   RecommendationFitLevel,
+  RecommendationJdAnalysis,
+  RecommendationJdRequirementMatch,
   RecommendationMatch,
-  RecommendationPurpose,
   RecommendationResult,
   RecommendationSchemaVersion,
 } from "@/lib/types";
+import { normalizeRecommendationPurpose } from "@/lib/recommendationPurposeConfig";
 
 export const RECOMMENDATION_SCHEMA_VERSION = "v2" as const;
 export const RECOMMENDATION_PROMPT_VERSION = "recommendation-v2.0";
@@ -19,6 +24,21 @@ export const DEFAULT_RECOMMENDATION_REQUIREMENTS: RecommendationExtractedRequire
     intent: "",
     constraints: [],
   };
+
+export const DEFAULT_RECOMMENDATION_JD_ANALYSIS: RecommendationJdAnalysis = {
+  summary: "",
+  responsibilities: [],
+  requiredQualifications: [],
+  preferredQualifications: [],
+  techStack: [],
+  requiredExperience: [],
+  requirementMatches: [],
+  emphasisPoints: [],
+  gaps: [],
+  overclaimRisks: [],
+  finalVerdict: "needs_improvement",
+  finalVerdictReason: "",
+};
 
 function normalizeText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -53,19 +73,6 @@ export function getRecommendationFitLevelFromScore(
   return "low";
 }
 
-function isRecommendationPurpose(
-  value: unknown,
-): value is RecommendationPurpose {
-  return (
-    value === "cover_letter" ||
-    value === "portfolio" ||
-    value === "interview" ||
-    value === "jd" ||
-    value === "activity_application" ||
-    value === "other"
-  );
-}
-
 function normalizeStringList(value: unknown, maxItems: number): string[] {
   if (!Array.isArray(value)) {
     return [];
@@ -76,6 +83,118 @@ function normalizeStringList(value: unknown, maxItems: number): string[] {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, maxItems);
+}
+
+function normalizeJdRequirementCategory(
+  value: unknown,
+): JdRequirementCategory {
+  if (
+    value === "responsibility" ||
+    value === "required_qualification" ||
+    value === "preferred_qualification" ||
+    value === "tech_stack" ||
+    value === "required_experience"
+  ) {
+    return value;
+  }
+
+  return "required_experience";
+}
+
+function normalizeJdRequirementStatus(value: unknown): JdRequirementStatus {
+  if (
+    value === "met" ||
+    value === "partially_met" ||
+    value === "insufficient_evidence" ||
+    value === "not_met"
+  ) {
+    return value;
+  }
+
+  return "insufficient_evidence";
+}
+
+function normalizeJdFinalVerdict(value: unknown): JdFinalVerdict {
+  if (
+    value === "recommended" ||
+    value === "challenge_possible" ||
+    value === "needs_improvement"
+  ) {
+    return value;
+  }
+
+  return "needs_improvement";
+}
+
+function normalizeJdRequirementMatch(
+  value: unknown,
+): RecommendationJdRequirementMatch | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const requirement = normalizeText(candidate.requirement);
+
+  if (!requirement) {
+    return null;
+  }
+
+  return {
+    category: normalizeJdRequirementCategory(candidate.category),
+    requirement,
+    status: normalizeJdRequirementStatus(candidate.status),
+    matchedExperienceIds: normalizeStringList(candidate.matchedExperienceIds, 6),
+    evidence: normalizeStringList(candidate.evidence, 6),
+    missingEvidence: normalizeText(candidate.missingEvidence),
+  };
+}
+
+export function normalizeRecommendationJdAnalysis(
+  value: unknown,
+): RecommendationJdAnalysis | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const summary = normalizeText(candidate.summary);
+  const finalVerdictReason = normalizeText(candidate.finalVerdictReason);
+  const requirementMatches = Array.isArray(candidate.requirementMatches)
+    ? candidate.requirementMatches
+        .map(normalizeJdRequirementMatch)
+        .filter(
+          (
+            match,
+          ): match is RecommendationJdRequirementMatch => match !== null,
+        )
+        .slice(0, 24)
+    : [];
+
+  if (!summary && requirementMatches.length === 0 && !finalVerdictReason) {
+    return null;
+  }
+
+  return {
+    summary,
+    responsibilities: normalizeStringList(candidate.responsibilities, 12),
+    requiredQualifications: normalizeStringList(
+      candidate.requiredQualifications,
+      12,
+    ),
+    preferredQualifications: normalizeStringList(
+      candidate.preferredQualifications,
+      12,
+    ),
+    techStack: normalizeStringList(candidate.techStack, 16),
+    requiredExperience: normalizeStringList(candidate.requiredExperience, 12),
+    requirementMatches,
+    emphasisPoints: normalizeStringList(candidate.emphasisPoints, 10),
+    gaps: normalizeStringList(candidate.gaps, 10),
+    overclaimRisks: normalizeStringList(candidate.overclaimRisks, 10),
+    finalVerdict: normalizeJdFinalVerdict(candidate.finalVerdict),
+    finalVerdictReason,
+  };
 }
 
 export function normalizeRecommendationRequirements(
@@ -204,7 +323,7 @@ export function normalizeRecommendationResult(
 
   const candidate = value as Record<string, unknown>;
   const id = normalizeText(candidate.id);
-  const purpose = candidate.purpose;
+  const purpose = normalizeRecommendationPurpose(candidate.purpose);
   const prompt = normalizeText(candidate.prompt);
   const recommendedExperienceId = normalizeText(
     candidate.recommendedExperienceId,
@@ -222,7 +341,7 @@ export function normalizeRecommendationResult(
 
   if (
     !id ||
-    !isRecommendationPurpose(purpose) ||
+    !purpose ||
     !prompt ||
     !recommendedExperienceId ||
     !recommendedExperienceTitle ||
@@ -252,6 +371,7 @@ export function normalizeRecommendationResult(
     extractedRequirements: normalizeRecommendationRequirements(
       candidate.extractedRequirements,
     ),
+    jdAnalysis: normalizeRecommendationJdAnalysis(candidate.jdAnalysis),
     matches,
     recommendedExperienceId,
     recommendedExperienceTitle,
@@ -290,6 +410,7 @@ export function normalizeRecommendationApiResult(
     promptVersion: normalized.promptVersion,
     model: normalized.model,
     extractedRequirements: normalized.extractedRequirements,
+    jdAnalysis: normalized.jdAnalysis,
     matches: normalized.matches,
     recommendedExperienceId: normalized.recommendedExperienceId,
     recommendedExperienceTitle: normalized.recommendedExperienceTitle,
