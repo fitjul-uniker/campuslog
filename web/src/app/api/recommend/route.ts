@@ -561,7 +561,7 @@ function createRecommendationPrompt(body: RecommendRequest): string {
   return JSON.stringify(
     {
       instruction:
-        "사용자의 입력을 역량, 기술, 행동, 역할, 성과로 분해하고 저장된 경험 중 직접 근거가 있는 경험만 최대 Top 3로 추천해주세요.",
+        "사용자의 입력을 역량, 기술, 행동, 역할, 성과로 분해하고 전달된 후보 경험 중 직접 근거가 있는 경험만 최대 Top 3로 추천해주세요.",
       schemaMetadata: {
         schemaVersion: RECOMMENDATION_SCHEMA_VERSION,
         promptVersion: RECOMMENDATION_PROMPT_VERSION,
@@ -589,7 +589,7 @@ function createRecommendationPrompt(body: RecommendRequest): string {
       matchingGuidelines: [
         "matches는 최대 3개만 반환합니다. 적합한 경험이 1~2개뿐이면 1~2개만 반환합니다.",
         "직접 근거가 부족한 경험으로 억지로 3개를 채우지 않습니다.",
-        "저장된 경험 전체에서 직접 근거가 있는 후보가 하나도 없으면 matches는 빈 배열로 두고 noMatchReason에 이유를 씁니다.",
+        "전달된 후보 경험에서 직접 근거가 있는 후보가 하나도 없으면 matches는 빈 배열로 두고 noMatchReason에 이유를 씁니다.",
         "rank는 1부터 시작하며 중복하지 않습니다.",
         "fitLevel은 score 기준으로만 정합니다. score >= 75는 high, score >= 45는 medium, 그 미만은 low입니다.",
         "제목 유사도만 보지 말고 목적, 질문, 역할, 원본 성과, 분석 요약, STAR, 주요 성과, 키워드, 부족 정보의 보완 답변을 함께 판단합니다.",
@@ -1090,12 +1090,12 @@ export async function POST(request: Request) {
 
     try {
       sendStatus?.("질문과 활용 목적을 확인했어요.");
-      sendStatus?.("저장된 경험과 분석 결과를 함께 비교하고 있어요.");
+      sendStatus?.("선별된 후보 경험과 분석 결과를 함께 비교하고 있어요.");
 
       const recommendationOutput = await requestOpenAiStructuredOutput({
         apiKey: openAiApiKey,
         systemContent:
-          "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 문항/JD 요구사항을 구조화하고, 사용자가 저장한 원본 경험과 보완 답변을 사실 근거로 삼아 적합한 경험만 최대 Top 3로 추천합니다. 기존 AI 분석은 참고 자료로만 사용하고, 원본에 없는 사실은 만들지 않으며 추천 이유와 직접 근거, 부족 근거, 과장 위험을 분리합니다.",
+          "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 문항/JD 요구사항을 구조화하고, 전달된 후보 경험 context와 보완 답변을 사실 근거로 삼아 적합한 경험만 최대 Top 3로 추천합니다. 기존 AI 분석은 참고 자료로만 사용하고, 원본에 없는 사실은 만들지 않으며 추천 이유와 직접 근거, 부족 근거, 과장 위험을 분리합니다.",
         userContent: createRecommendationPrompt(parsedBody),
         schemaName: "campuslog_experience_recommendation_v2",
         schema: recommendationV2ResponseSchema,

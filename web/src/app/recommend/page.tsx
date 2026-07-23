@@ -20,6 +20,10 @@ import {
 import { createIsoTimestamp } from "@/lib/date";
 import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { requestRecommendation } from "@/lib/recommendationApi";
+import {
+  createRecommendationRequestContext,
+  type RecommendationRequestContextStats,
+} from "@/lib/recommendationInputCompaction";
 import { getRecommendationPurposeConfig } from "@/lib/recommendationPurposeConfig";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
@@ -101,6 +105,10 @@ export default function RecommendPage() {
     useState("");
   const [pendingRecommendationInput, setPendingRecommendationInput] =
     useState<RecommendationFormInput | null>(null);
+  const [
+    pendingRecommendationContextStats,
+    setPendingRecommendationContextStats,
+  ] = useState<RecommendationRequestContextStats | null>(null);
   const recommendationResultRef = useRef<HTMLDivElement>(null);
   const lastScrolledRecommendationIdRef = useRef<string | null>(null);
   const recommendationAbortControllerRef = useRef<AbortController | null>(
@@ -206,14 +214,21 @@ export default function RecommendPage() {
     setRecommendation(null);
     setPendingRecommendationInput(input);
 
+    const recommendationContext = createRecommendationRequestContext({
+      ...input,
+      experiences,
+      analyses,
+    });
+    setPendingRecommendationContextStats(recommendationContext.stats);
+
     const abortController = new AbortController();
     recommendationAbortControllerRef.current = abortController;
 
     try {
       const response = await requestRecommendation({
         ...input,
-        experiences,
-        analyses,
+        experiences: recommendationContext.experiences,
+        analyses: recommendationContext.analyses,
         signal: abortController.signal,
         stream: true,
         onStatus: setRecommendationStatusMessage,
@@ -359,12 +374,22 @@ export default function RecommendPage() {
               label: "입력 글자 수",
               value: pendingRecommendationInput?.prompt.length ?? 0,
             },
-            { label: "비교 대상", value: `${experiences.length}개 경험` },
-            { label: "분석 결과", value: `${analyses.length}개 반영` },
+            {
+              label: "비교 후보",
+              value: pendingRecommendationContextStats
+                ? `${pendingRecommendationContextStats.selectedExperienceCount}/${pendingRecommendationContextStats.totalExperienceCount}개 경험`
+                : `${experiences.length}개 경험`,
+            },
+            {
+              label: "분석 요약",
+              value: pendingRecommendationContextStats
+                ? `${pendingRecommendationContextStats.selectedAnalysisCount}/${pendingRecommendationContextStats.totalAnalysisCount}개 반영`
+                : `${analyses.length}개 반영`,
+            },
           ]}
           steps={[
             "질문이나 JD에서 핵심 요구사항을 파악하고 있어요.",
-            "저장된 경험과 분석 결과를 비교하고 있어요.",
+            "선별된 후보 경험과 분석 결과를 비교하고 있어요.",
             "추천 Top 3와 부족 근거를 정리하고 있어요.",
           ]}
           messages={[
@@ -374,7 +399,7 @@ export default function RecommendPage() {
             },
             {
               afterMs: 7_000,
-              text: "저장된 경험과 분석 결과를 비교하고 있어요.",
+              text: "선별된 후보 경험과 분석 결과를 비교하고 있어요.",
             },
             {
               afterMs: 16_000,
@@ -384,7 +409,7 @@ export default function RecommendPage() {
           statusMessage={recommendationStatusMessage || undefined}
           skeletonVariant="recommendation"
           longWaitThresholdMs={22_000}
-          longWaitMessage="입력한 질문이 길거나 비교할 경험이 많으면 추천 근거 정리에 시간이 더 걸릴 수 있어요."
+          longWaitMessage="저장된 경험이 많으면 관련 후보를 먼저 추려 비교합니다. 질문이 길면 추천 근거 정리에 시간이 더 걸릴 수 있어요."
           canCancel
           onCancel={handleCancelRecommendation}
         />
