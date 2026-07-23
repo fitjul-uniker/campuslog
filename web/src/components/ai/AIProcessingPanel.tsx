@@ -25,6 +25,7 @@ type AIProcessingPanelProps = {
   contextItems?: AIProcessingContextItem[];
   steps: string[];
   messages: AIProcessingMessage[];
+  statusMessage?: string;
   skeletonVariant: AISkeletonVariant;
   longWaitThresholdMs?: number;
   longWaitMessage?: string;
@@ -118,6 +119,7 @@ export function AIProcessingPanel({
   contextItems = [],
   steps,
   messages,
+  statusMessage,
   skeletonVariant,
   longWaitThresholdMs = 18_000,
   longWaitMessage = "입력 내용이 많거나 결과 형식 검증에 시간이 걸리면 평소보다 조금 더 걸릴 수 있어요.",
@@ -127,10 +129,11 @@ export function AIProcessingPanel({
   className = "",
 }: AIProcessingPanelProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
-  const activeMessage = useMemo(
+  const timedMessage = useMemo(
     () => getActiveMessage(elapsedMs, messages),
     [elapsedMs, messages],
   );
+  const activeMessage = statusMessage ?? timedMessage;
   const shouldShowLongWait = elapsedMs >= longWaitThresholdMs;
 
   useEffect(() => {

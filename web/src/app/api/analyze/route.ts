@@ -18,6 +18,7 @@ import {
   countAiInputCharacters,
   createAiRequestMetricLogger,
 } from "@/lib/aiRequestMetrics";
+import { createStructuredAiSseResponse } from "@/lib/structuredAiStream";
 import {
   hasAnsweredFollowup,
   normalizeExperienceFollowup,
@@ -32,10 +33,16 @@ import type {
   AnalysisApiResult,
   AnalyzeRequest,
   AnalyzeResponse,
+  ApiErrorCode,
   RelatedLink,
   Experience,
   ExperienceFollowup,
 } from "@/lib/types";
+
+type AnalyzeRouteResult = {
+  response: AnalyzeResponse;
+  status?: number;
+};
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const ANALYSIS_MODEL = "gpt-4.1-mini";
@@ -650,7 +657,11 @@ async function readRequestBody(request: Request): Promise<AnalyzeRequest | null>
       experience.id,
     );
 
-    return { experience, followups };
+    return {
+      experience,
+      followups,
+      stream: (body as Record<string, unknown>).stream === true,
+    };
   } catch {
     return null;
   }
@@ -685,9 +696,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const followups = body.followups ?? [];
+  const parsedBody = body;
+  const followups = parsedBody.followups ?? [];
 
-  if (!hasSufficientAnalysisInput(body.experience, followups)) {
+  if (!hasSufficientAnalysisInput(parsedBody.experience, followups)) {
     return createErrorResponse(
       "INSUFFICIENT_INPUT",
       INSUFFICIENT_ANALYSIS_MESSAGE,
@@ -705,16 +717,18 @@ export async function POST(request: Request) {
     );
   }
 
+  const openAiApiKey = apiKey.trim();
+
   const aiMetric = createAiRequestMetricLogger({
     feature: "experience_analysis",
-    responseType: "structured_json",
+    responseType: parsedBody.stream ? "sse_stream" : "structured_json",
     inputCharacterCount: countAiInputCharacters([
-      body.experience.title,
-      body.experience.period,
-      body.experience.role,
-      body.experience.description,
-      body.experience.achievements,
-      body.experience.relatedLinks.map((link) => link.description),
+      parsedBody.experience.title,
+      parsedBody.experience.period,
+      parsedBody.experience.role,
+      parsedBody.experience.description,
+      parsedBody.experience.achievements,
+      parsedBody.experience.relatedLinks.map((link) => link.description),
       followups.map((followup) => [
         followup.questions.map((question) => question.question),
         followup.answers,
@@ -724,143 +738,188 @@ export async function POST(request: Request) {
     model: ANALYSIS_MODEL,
     retry: false,
   });
-  const createTrackedErrorResponse = (
-    ...args: Parameters<typeof createErrorResponse>
-  ) => {
+  const createTrackedErrorResult = (
+    code: ApiErrorCode,
+    message: string,
+    status: number,
+  ): AnalyzeRouteResult => {
     aiMetric.complete({ status: "error" });
-    return createErrorResponse(...args);
-  };
-
-  const openAiAbortController = new AbortController();
-  let didOpenAiRequestTimeOut = false;
-  const openAiTimeoutId = setTimeout(() => {
-    didOpenAiRequestTimeOut = true;
-    openAiAbortController.abort();
-  }, OPENAI_REQUEST_TIMEOUT_MS);
-  const handleClientAbort = () => {
-    openAiAbortController.abort();
-  };
-
-  if (request.signal.aborted) {
-    handleClientAbort();
-  } else {
-    request.signal.addEventListener("abort", handleClientAbort, {
-      once: true,
-    });
-  }
-
-  try {
-    const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
-      method: "POST",
-      signal: openAiAbortController.signal,
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: ANALYSIS_MODEL,
-        input: [
-          {
-            role: "system",
-            content:
-              "당신은 CampusLog의 AI 경험 분석 도우미입니다. 대학생 활동 경험을 과장 없이 간결하게 정리하고, 사용자가 바로 답할 수 있는 부족 정보 질문을 한국어로 제공합니다.",
-          },
-          {
-            role: "user",
-            content: createPrompt(body.experience, followups),
-          },
-        ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "campuslog_experience_analysis_v2",
-            strict: true,
-            schema: analysisResponseSchema,
-          },
+    return {
+      response: {
+        ok: false,
+        error: {
+          code,
+          message,
         },
-        max_output_tokens: 1600,
-        store: false,
-      }),
-    });
+      },
+      status,
+    };
+  };
 
-    if (!openAiResponse.ok) {
-      try {
-        const errorPayload = (await openAiResponse.json()) as {
-          error?: {
-            code?: unknown;
-            type?: unknown;
+  async function executeAnalysisRequest(
+    sendStatus?: (message: string) => void,
+  ): Promise<AnalyzeRouteResult> {
+    const openAiAbortController = new AbortController();
+    let didOpenAiRequestTimeOut = false;
+    const openAiTimeoutId = setTimeout(() => {
+      didOpenAiRequestTimeOut = true;
+      openAiAbortController.abort();
+    }, OPENAI_REQUEST_TIMEOUT_MS);
+    const handleClientAbort = () => {
+      openAiAbortController.abort();
+    };
+
+    if (request.signal.aborted) {
+      handleClientAbort();
+    } else {
+      request.signal.addEventListener("abort", handleClientAbort, {
+        once: true,
+      });
+    }
+
+    try {
+      sendStatus?.("경험 입력과 보완 답변을 확인했어요.");
+      sendStatus?.("AI가 요약, STAR, 주요 성과를 구조화하고 있어요.");
+
+      const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
+        method: "POST",
+        signal: openAiAbortController.signal,
+        headers: {
+          Authorization: `Bearer ${openAiApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: ANALYSIS_MODEL,
+          input: [
+            {
+              role: "system",
+              content:
+                "당신은 CampusLog의 AI 경험 분석 도우미입니다. 대학생 활동 경험을 과장 없이 간결하게 정리하고, 사용자가 바로 답할 수 있는 부족 정보 질문을 한국어로 제공합니다.",
+            },
+            {
+              role: "user",
+              content: createPrompt(parsedBody.experience, followups),
+            },
+          ],
+          text: {
+            format: {
+              type: "json_schema",
+              name: "campuslog_experience_analysis_v2",
+              strict: true,
+              schema: analysisResponseSchema,
+            },
+          },
+          max_output_tokens: 1600,
+          store: false,
+        }),
+      });
+
+      if (!openAiResponse.ok) {
+        try {
+          const errorPayload = (await openAiResponse.json()) as {
+            error?: {
+              code?: unknown;
+              type?: unknown;
+            };
           };
-        };
 
-        console.warn("CampusLog analyze OpenAI request failed", {
-          status: openAiResponse.status,
-          code: errorPayload.error?.code,
-          type: errorPayload.error?.type,
-        });
-      } catch {
-        console.warn("CampusLog analyze OpenAI request failed", {
-          status: openAiResponse.status,
-        });
+          console.warn("CampusLog analyze OpenAI request failed", {
+            status: openAiResponse.status,
+            code: errorPayload.error?.code,
+            type: errorPayload.error?.type,
+          });
+        } catch {
+          console.warn("CampusLog analyze OpenAI request failed", {
+            status: openAiResponse.status,
+          });
+        }
+
+        return createTrackedErrorResult(
+          "OPENAI_API_ERROR",
+          "AI 분석 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+          502,
+        );
       }
 
-      return createTrackedErrorResponse(
-        "OPENAI_API_ERROR",
-        "AI 분석 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
-        502,
+      sendStatus?.("AI 응답 형식을 검증하고 있어요.");
+      const openAiPayload = (await openAiResponse.json()) as unknown;
+      const outputText = extractOutputText(openAiPayload);
+
+      if (!outputText) {
+        return createTrackedErrorResult(
+          "OPENAI_API_ERROR",
+          "AI 분석 응답을 해석하지 못했습니다. 다시 시도해주세요.",
+          502,
+        );
+      }
+
+      sendStatus?.("부족 정보와 활용 키워드를 정리하고 있어요.");
+      const analysis = parseAnalysisResult(outputText, parsedBody.experience);
+
+      if (!analysis) {
+        return createTrackedErrorResult(
+          "OPENAI_API_ERROR",
+          "입력된 경험에서 분석에 필요한 단서를 충분히 찾지 못했습니다. 활동에서 맡은 일, 직접 한 행동, 결과나 배운 점을 조금 더 구체적으로 기록한 뒤 다시 요청해주세요.",
+          502,
+        );
+      }
+
+      aiMetric.complete({ status: "success" });
+      return {
+        response: {
+          ok: true,
+          analysis,
+        },
+      };
+    } catch {
+      if (request.signal.aborted && !didOpenAiRequestTimeOut) {
+        aiMetric.complete({ status: "cancelled" });
+        return {
+          response: {
+            ok: false,
+            error: {
+              code: "REQUEST_CANCELLED",
+              message: "AI 분석 요청을 취소했습니다.",
+            },
+          },
+          status: 499,
+        };
+      }
+
+      if (didOpenAiRequestTimeOut) {
+        return createTrackedErrorResult(
+          "OPENAI_API_ERROR",
+          "AI 분석 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
+          504,
+        );
+      }
+
+      return createTrackedErrorResult(
+        "UNKNOWN_ERROR",
+        "알 수 없는 오류로 AI 분석을 완료하지 못했습니다.",
+        500,
       );
+    } finally {
+      clearTimeout(openAiTimeoutId);
+      request.signal.removeEventListener("abort", handleClientAbort);
     }
-
-    const openAiPayload = (await openAiResponse.json()) as unknown;
-    const outputText = extractOutputText(openAiPayload);
-
-    if (!outputText) {
-      return createTrackedErrorResponse(
-        "OPENAI_API_ERROR",
-        "AI 분석 응답을 해석하지 못했습니다. 다시 시도해주세요.",
-        502,
-      );
-    }
-
-    const analysis = parseAnalysisResult(outputText, body.experience);
-
-    if (!analysis) {
-      return createTrackedErrorResponse(
-        "OPENAI_API_ERROR",
-        "입력된 경험에서 분석에 필요한 단서를 충분히 찾지 못했습니다. 활동에서 맡은 일, 직접 한 행동, 결과나 배운 점을 조금 더 구체적으로 기록한 뒤 다시 요청해주세요.",
-        502,
-      );
-    }
-
-    aiMetric.complete({ status: "success" });
-    return NextResponse.json<AnalyzeResponse>({
-      ok: true,
-      analysis,
-    });
-  } catch {
-    if (request.signal.aborted && !didOpenAiRequestTimeOut) {
-      aiMetric.complete({ status: "cancelled" });
-      return createErrorResponse(
-        "REQUEST_CANCELLED",
-        "AI 분석 요청을 취소했습니다.",
-        499,
-      );
-    }
-
-    if (didOpenAiRequestTimeOut) {
-      return createTrackedErrorResponse(
-        "OPENAI_API_ERROR",
-        "AI 분석 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
-        504,
-      );
-    }
-
-    return createTrackedErrorResponse(
-      "UNKNOWN_ERROR",
-      "알 수 없는 오류로 AI 분석을 완료하지 못했습니다.",
-      500,
-    );
-  } finally {
-    clearTimeout(openAiTimeoutId);
-    request.signal.removeEventListener("abort", handleClientAbort);
   }
+
+  if (parsedBody.stream) {
+    return createStructuredAiSseResponse<AnalyzeResponse>(async (sender) => {
+      const result = await executeAnalysisRequest(sender.sendStatus);
+
+      if (result.response.ok) {
+        sender.sendCompleted(result.response);
+      } else {
+        sender.sendError(result.response);
+      }
+    });
+  }
+
+  const result = await executeAnalysisRequest();
+
+  return NextResponse.json<AnalyzeResponse>(result.response, {
+    status: result.status ?? 200,
+  });
 }

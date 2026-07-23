@@ -30,6 +30,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   const [analysis, setAnalysis] = useState<ExperienceAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const [analysisStatusMessage, setAnalysisStatusMessage] = useState("");
   const analysisAbortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
 
     setIsAnalyzing(true);
     setAnalysisError("");
+    setAnalysisStatusMessage("");
 
     const abortController = new AbortController();
     analysisAbortControllerRef.current = abortController;
@@ -98,6 +100,8 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
       await repository.experienceFollowups.listByExperienceId(experience.id);
     const response = await requestExperienceAnalysis(experience, followups, {
       signal: abortController.signal,
+      stream: true,
+      onStatus: setAnalysisStatusMessage,
     });
 
     if (!response.ok) {
@@ -107,6 +111,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
           : response.error.message,
       );
       setIsAnalyzing(false);
+      setAnalysisStatusMessage("");
       if (analysisAbortControllerRef.current === abortController) {
         analysisAbortControllerRef.current = null;
       }
@@ -120,6 +125,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
         "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해주세요.",
       );
       setIsAnalyzing(false);
+      setAnalysisStatusMessage("");
       if (analysisAbortControllerRef.current === abortController) {
         analysisAbortControllerRef.current = null;
       }
@@ -129,6 +135,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
     setAnalysis(savedAnalysis);
     setExperience(await repository.experiences.getById(id));
     setIsAnalyzing(false);
+    setAnalysisStatusMessage("");
     if (analysisAbortControllerRef.current === abortController) {
       analysisAbortControllerRef.current = null;
     }
@@ -193,6 +200,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
         onCancelAnalysis={handleCancelAnalysis}
         isAnalyzing={isAnalyzing}
         analysisError={analysisError}
+        analysisStatusMessage={analysisStatusMessage}
       />
     </div>
   );

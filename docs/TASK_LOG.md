@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - 구조화 AI 호출 이벤트 스트리밍 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 분석, AI 추천 / JD 분석, 활동 완료 경험 합성의 구조화 JSON 호출에 서버 주도 status 이벤트와 최종 JSON completed / error 이벤트를 추가 |
+| 수정한 파일 | `web/src/lib/structuredAiStream.ts`, `web/src/lib/aiRequestMetrics.ts`, `web/src/lib/types.ts`, `web/src/lib/analysisApi.ts`, `web/src/lib/recommendationApi.ts`, `web/src/lib/activitySynthesisApi.ts`, `web/src/app/api/analyze/route.ts`, `web/src/app/api/recommend/route.ts`, `web/src/app/api/synthesize-activity/route.ts`, `web/src/components/ai/AIProcessingPanel.tsx`, `web/src/app/recommend/page.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 공통 structured AI SSE helper를 추가해 `status`, `completed`, `error` 이벤트를 처리. `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`는 기존 JSON 응답을 유지하고 `stream: true` 요청에서만 서버가 자체 상태 문구를 먼저 전송한 뒤 기존 정규화 로직을 통과한 최종 JSON만 terminal 이벤트로 전달. 클라이언트 API helper는 SSE 응답을 읽어 상태 문구를 UI에 반영하고, 완료 결과는 기존 파싱 / 저장 흐름에 넘김. 경험 분석, 추천 / JD 분석, 활동 완료 경험 합성 화면은 기존 `AIProcessingPanel`에 서버 status 문구를 표시. 모델 호출 횟수, 저장 구조, raw JSON 토큰 노출 방식은 변경하지 않음 |
+| 검증한 내용 | `npm run lint`, `npm run build` 통과 |
+| 남은 작업 | 실제 로그인 세션과 충분한 테스트 데이터로 장시간 OpenAI 호출 중 status 이벤트 표시, completed / error 수신, 배포 환경 SSE 버퍼링 여부를 확인 |
+| 관련 커밋 메시지 | `feat: stream structured ai status events` |
+
 ### 2026-07-23 - AI 요청 측정과 취소 UX 구현
 
 | 항목 | 내용 |

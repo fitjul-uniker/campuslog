@@ -5,7 +5,10 @@ export type AiRequestFeature =
   | "evidence_followup"
   | "activity_synthesis";
 
-export type AiRequestResponseType = "structured_json" | "ndjson_stream";
+export type AiRequestResponseType =
+  | "structured_json"
+  | "ndjson_stream"
+  | "sse_stream";
 
 export type AiRequestStatus = "success" | "error" | "cancelled";
 

@@ -173,6 +173,7 @@ export type AnalysisApiResult = Omit<
 export type AnalyzeRequest = {
   experience: Experience;
   followups?: ExperienceFollowup[];
+  stream?: boolean;
 };
 
 export type ApiErrorCode =
@@ -206,6 +207,7 @@ export type AnalyzeResponse =
 export type SynthesizeActivityRequest = {
   activity: TrackedActivity;
   dailyLogs: DailyLog[];
+  stream?: boolean;
 };
 
 export type SynthesizeActivityResponse =
@@ -313,6 +315,7 @@ export type RecommendRequest = {
   prompt: string;
   experiences: Experience[];
   analyses: ExperienceAnalysis[];
+  stream?: boolean;
 };
 
 export type RecommendResponse =

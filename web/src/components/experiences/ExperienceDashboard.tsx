@@ -56,6 +56,7 @@ type AnalysisRequestState = Record<
   {
     isLoading: boolean;
     error: string;
+    statusMessage: string;
   }
 >;
 
@@ -318,7 +319,7 @@ export function ExperienceDashboard() {
 
     setAnalysisRequestByExperienceId((current) => ({
       ...current,
-      [experienceId]: { isLoading: true, error: "" },
+      [experienceId]: { isLoading: true, error: "", statusMessage: "" },
     }));
 
     const abortController = new AbortController();
@@ -328,6 +329,17 @@ export function ExperienceDashboard() {
       await repository.experienceFollowups.listByExperienceId(experience.id);
     const response = await requestExperienceAnalysis(experience, followups, {
       signal: abortController.signal,
+      stream: true,
+      onStatus: (message) => {
+        setAnalysisRequestByExperienceId((current) => ({
+          ...current,
+          [experienceId]: {
+            isLoading: true,
+            error: "",
+            statusMessage: message,
+          },
+        }));
+      },
     });
 
     if (!response.ok) {
@@ -339,6 +351,7 @@ export function ExperienceDashboard() {
             response.error.code === "REQUEST_CANCELLED"
               ? "AI 분석 요청을 취소했습니다. 기존 기록과 분석 결과는 그대로 유지했어요."
               : response.error.message,
+          statusMessage: "",
         },
       }));
       if (analysisAbortControllersRef.current[experienceId] === abortController) {
@@ -356,6 +369,7 @@ export function ExperienceDashboard() {
           isLoading: false,
           error:
             "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해 주세요.",
+          statusMessage: "",
         },
       }));
       if (analysisAbortControllersRef.current[experienceId] === abortController) {
@@ -371,7 +385,7 @@ export function ExperienceDashboard() {
     setExperiences(await repository.experiences.list());
     setAnalysisRequestByExperienceId((current) => ({
       ...current,
-      [experienceId]: { isLoading: false, error: "" },
+      [experienceId]: { isLoading: false, error: "", statusMessage: "" },
     }));
     if (analysisAbortControllersRef.current[experienceId] === abortController) {
       delete analysisAbortControllersRef.current[experienceId];
@@ -599,6 +613,10 @@ export function ExperienceDashboard() {
                         analysisRequestByExperienceId[selectedExperience.id]
                           ?.error ?? ""
                       }
+                      analysisStatusMessage={
+                        analysisRequestByExperienceId[selectedExperience.id]
+                          ?.statusMessage ?? ""
+                      }
                     />
                   ) : selectedTrackedActivity ? (
                     <DashboardTrackedActivityDetail
@@ -627,6 +645,10 @@ export function ExperienceDashboard() {
                   analysisError={
                     analysisRequestByExperienceId[selectedExperience.id]
                       ?.error ?? ""
+                  }
+                  analysisStatusMessage={
+                    analysisRequestByExperienceId[selectedExperience.id]
+                      ?.statusMessage ?? ""
                   }
                   onClose={handleCloseAnalysis}
                   onReanalyze={() =>

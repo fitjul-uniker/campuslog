@@ -11,6 +11,7 @@ import {
   countAiInputCharacters,
   createAiRequestMetricLogger,
 } from "@/lib/aiRequestMetrics";
+import { createStructuredAiSseResponse } from "@/lib/structuredAiStream";
 import {
   MAX_RELATED_LINK_DESCRIPTION_LENGTH,
   MAX_RELATED_LINKS,
@@ -33,6 +34,7 @@ import {
 import type {
   Experience,
   ExperienceAnalysis,
+  ApiErrorCode,
   RecommendationApiResult,
   RecommendationMatch,
   RecommendationPurpose,
@@ -40,6 +42,11 @@ import type {
   RecommendRequest,
   RecommendResponse,
 } from "@/lib/types";
+
+type RecommendRouteResult = {
+  response: RecommendResponse;
+  status?: number;
+};
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const RECOMMENDATION_MODEL = "gpt-4.1-mini";
@@ -967,6 +974,7 @@ async function readRequestBody(
       prompt: candidate.prompt.trim(),
       experiences,
       analyses,
+      stream: candidate.stream === true,
     };
   } catch {
     return null;
@@ -1002,6 +1010,7 @@ export async function POST(request: Request) {
     );
   }
 
+  const parsedBody = body;
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey?.trim()) {
@@ -1012,13 +1021,15 @@ export async function POST(request: Request) {
     );
   }
 
+  const openAiApiKey = apiKey.trim();
+
   const aiMetric = createAiRequestMetricLogger({
     feature: "experience_recommendation",
-    responseType: "structured_json",
+    responseType: parsedBody.stream ? "sse_stream" : "structured_json",
     inputCharacterCount: countAiInputCharacters([
-      body.purpose,
-      body.prompt,
-      body.experiences.map((experience) => [
+      parsedBody.purpose,
+      parsedBody.prompt,
+      parsedBody.experiences.map((experience) => [
         experience.title,
         experience.period,
         experience.role,
@@ -1026,7 +1037,7 @@ export async function POST(request: Request) {
         experience.achievements,
         experience.relatedLinks.map((link) => link.description),
       ]),
-      body.analyses.map((analysis) => [
+      parsedBody.analyses.map((analysis) => [
         analysis.summary,
         analysis.achievements,
         analysis.keywords,
@@ -1034,110 +1045,155 @@ export async function POST(request: Request) {
         analysis.evidenceGaps.map((gap) => [gap.title, gap.reason, gap.answer]),
       ]),
     ]),
-    experienceCount: body.experiences.length,
+    experienceCount: parsedBody.experiences.length,
     model: RECOMMENDATION_MODEL,
     retry: false,
   });
-  const createTrackedErrorResponse = (
-    ...args: Parameters<typeof createErrorResponse>
-  ) => {
+  const createTrackedErrorResult = (
+    code: ApiErrorCode,
+    message: string,
+    status: number,
+  ): RecommendRouteResult => {
     aiMetric.complete({ status: "error" });
-    return createErrorResponse(...args);
+    return {
+      response: {
+        ok: false,
+        error: {
+          code,
+          message,
+        },
+      },
+      status,
+    };
   };
 
-  const openAiAbortController = new AbortController();
-  let didOpenAiRequestTimeOut = false;
-  const openAiTimeoutId = setTimeout(() => {
-    didOpenAiRequestTimeOut = true;
-    openAiAbortController.abort();
-  }, OPENAI_REQUEST_TIMEOUT_MS);
-  const handleClientAbort = () => {
-    openAiAbortController.abort();
-  };
+  async function executeRecommendationRequest(
+    sendStatus?: (message: string) => void,
+  ): Promise<RecommendRouteResult> {
+    const openAiAbortController = new AbortController();
+    let didOpenAiRequestTimeOut = false;
+    const openAiTimeoutId = setTimeout(() => {
+      didOpenAiRequestTimeOut = true;
+      openAiAbortController.abort();
+    }, OPENAI_REQUEST_TIMEOUT_MS);
+    const handleClientAbort = () => {
+      openAiAbortController.abort();
+    };
 
-  if (request.signal.aborted) {
-    handleClientAbort();
-  } else {
-    request.signal.addEventListener("abort", handleClientAbort, {
-      once: true,
+    if (request.signal.aborted) {
+      handleClientAbort();
+    } else {
+      request.signal.addEventListener("abort", handleClientAbort, {
+        once: true,
+      });
+    }
+
+    try {
+      sendStatus?.("질문과 활용 목적을 확인했어요.");
+      sendStatus?.("저장된 경험과 분석 결과를 함께 비교하고 있어요.");
+
+      const recommendationOutput = await requestOpenAiStructuredOutput({
+        apiKey: openAiApiKey,
+        systemContent:
+          "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 문항/JD 요구사항을 구조화하고, 사용자가 저장한 원본 경험과 보완 답변을 사실 근거로 삼아 적합한 경험만 최대 Top 3로 추천합니다. 기존 AI 분석은 참고 자료로만 사용하고, 원본에 없는 사실은 만들지 않으며 추천 이유와 직접 근거, 부족 근거, 과장 위험을 분리합니다.",
+        userContent: createRecommendationPrompt(parsedBody),
+        schemaName: "campuslog_experience_recommendation_v2",
+        schema: recommendationV2ResponseSchema,
+        maxOutputTokens: 4200,
+        logLabel: "recommendation-v2",
+        signal: openAiAbortController.signal,
+      });
+
+      if (!recommendationOutput.ok) {
+        return createTrackedErrorResult(
+          "OPENAI_API_ERROR",
+          recommendationOutput.reason === "invalid_output"
+            ? "AI 기반 활동 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
+            : "AI 기반 활동 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+          502,
+        );
+      }
+
+      sendStatus?.("추천 결과 형식을 검증하고 있어요.");
+      const recommendation = parseRecommendationV2Result(
+        recommendationOutput.outputText,
+        parsedBody.experiences,
+        parsedBody.purpose,
+      );
+
+      if (!recommendation) {
+        return createTrackedErrorResult(
+          "OPENAI_API_ERROR",
+          "AI 기반 활동 추천 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
+          502,
+        );
+      }
+
+      if (!recommendation.ok) {
+        return createTrackedErrorResult(
+          "INSUFFICIENT_INPUT",
+          `${recommendation.message} 경험 내용을 보완하거나 질문을 더 구체적으로 입력해 주세요.`,
+          422,
+        );
+      }
+
+      sendStatus?.("추천 Top 후보와 부족 근거를 정리하고 있어요.");
+      aiMetric.complete({ status: "success" });
+      return {
+        response: {
+          ok: true,
+          recommendation: recommendation.recommendation,
+        },
+      };
+    } catch {
+      if (request.signal.aborted && !didOpenAiRequestTimeOut) {
+        aiMetric.complete({ status: "cancelled" });
+        return {
+          response: {
+            ok: false,
+            error: {
+              code: "REQUEST_CANCELLED",
+              message: "AI 추천 요청을 취소했습니다.",
+            },
+          },
+          status: 499,
+        };
+      }
+
+      if (didOpenAiRequestTimeOut) {
+        return createTrackedErrorResult(
+          "OPENAI_API_ERROR",
+          "AI 기반 활동 추천 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
+          504,
+        );
+      }
+
+      return createTrackedErrorResult(
+        "UNKNOWN_ERROR",
+        "알 수 없는 오류로 AI 기반 활동 추천을 완료하지 못했습니다.",
+        500,
+      );
+    } finally {
+      clearTimeout(openAiTimeoutId);
+      request.signal.removeEventListener("abort", handleClientAbort);
+    }
+  }
+
+  if (parsedBody.stream) {
+    return createStructuredAiSseResponse<RecommendResponse>(async (sender) => {
+      const result = await executeRecommendationRequest(sender.sendStatus);
+
+      if (result.response.ok) {
+        sender.sendCompleted(result.response);
+      } else {
+        sender.sendError(result.response);
+      }
     });
   }
 
-  try {
-    const recommendationOutput = await requestOpenAiStructuredOutput({
-      apiKey,
-      systemContent:
-        "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 문항/JD 요구사항을 구조화하고, 사용자가 저장한 원본 경험과 보완 답변을 사실 근거로 삼아 적합한 경험만 최대 Top 3로 추천합니다. 기존 AI 분석은 참고 자료로만 사용하고, 원본에 없는 사실은 만들지 않으며 추천 이유와 직접 근거, 부족 근거, 과장 위험을 분리합니다.",
-      userContent: createRecommendationPrompt(body),
-      schemaName: "campuslog_experience_recommendation_v2",
-      schema: recommendationV2ResponseSchema,
-      maxOutputTokens: 4200,
-      logLabel: "recommendation-v2",
-      signal: openAiAbortController.signal,
-    });
+  const result = await executeRecommendationRequest();
 
-    if (!recommendationOutput.ok) {
-      return createTrackedErrorResponse(
-        "OPENAI_API_ERROR",
-        recommendationOutput.reason === "invalid_output"
-          ? "AI 기반 활동 추천 응답을 해석하지 못했습니다. 다시 시도해주세요."
-          : "AI 기반 활동 추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
-        502,
-      );
-    }
-
-    const recommendation = parseRecommendationV2Result(
-      recommendationOutput.outputText,
-      body.experiences,
-      body.purpose,
-    );
-
-    if (!recommendation) {
-      return createTrackedErrorResponse(
-        "OPENAI_API_ERROR",
-        "AI 기반 활동 추천 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
-        502,
-      );
-    }
-
-    if (!recommendation.ok) {
-      return createTrackedErrorResponse(
-        "INSUFFICIENT_INPUT",
-        `${recommendation.message} 경험 내용을 보완하거나 질문을 더 구체적으로 입력해 주세요.`,
-        422,
-      );
-    }
-
-    aiMetric.complete({ status: "success" });
-    return NextResponse.json<RecommendResponse>({
-      ok: true,
-      recommendation: recommendation.recommendation,
-    });
-  } catch {
-    if (request.signal.aborted && !didOpenAiRequestTimeOut) {
-      aiMetric.complete({ status: "cancelled" });
-      return createErrorResponse(
-        "REQUEST_CANCELLED",
-        "AI 추천 요청을 취소했습니다.",
-        499,
-      );
-    }
-
-    if (didOpenAiRequestTimeOut) {
-      return createTrackedErrorResponse(
-        "OPENAI_API_ERROR",
-        "AI 기반 활동 추천 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
-        504,
-      );
-    }
-
-    return createTrackedErrorResponse(
-      "UNKNOWN_ERROR",
-      "알 수 없는 오류로 AI 기반 활동 추천을 완료하지 못했습니다.",
-      500,
-    );
-  } finally {
-    clearTimeout(openAiTimeoutId);
-    request.signal.removeEventListener("abort", handleClientAbort);
-  }
+  return NextResponse.json<RecommendResponse>(result.response, {
+    status: result.status ?? 200,
+  });
 }
