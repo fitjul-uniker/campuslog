@@ -31,6 +31,7 @@ type DashboardExperienceDetailProps = {
   variant?: "inline" | "fullscreen";
   onClose?: () => void;
   onAnalyze?: () => void;
+  onCancelAnalysis?: () => void;
   onOpenAnalysis?: (trigger: HTMLButtonElement) => void;
   isAnalysisOpen?: boolean;
   onDelete?: () => void;
@@ -44,6 +45,7 @@ export function DashboardExperienceDetail({
   variant = "inline",
   onClose,
   onAnalyze,
+  onCancelAnalysis,
   onOpenAnalysis,
   isAnalysisOpen = false,
   onDelete,
@@ -312,6 +314,8 @@ export function DashboardExperienceDetail({
           skeletonVariant="analysis"
           longWaitThresholdMs={20_000}
           longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."
+          canCancel={Boolean(onCancelAnalysis)}
+          onCancel={onCancelAnalysis}
         />
       ) : null}
 

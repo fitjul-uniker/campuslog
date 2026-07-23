@@ -23,6 +23,7 @@ type DashboardAnalysisSplitPanelProps = {
   analysisError?: string;
   onClose: () => void;
   onReanalyze: () => void;
+  onCancelAnalysis?: () => void;
 };
 
 export function DashboardAnalysisSplitPanel({
@@ -32,6 +33,7 @@ export function DashboardAnalysisSplitPanel({
   analysisError = "",
   onClose,
   onReanalyze,
+  onCancelAnalysis,
 }: DashboardAnalysisSplitPanelProps) {
   const shouldReduceMotion = useReducedMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -120,6 +122,8 @@ export function DashboardAnalysisSplitPanel({
             skeletonVariant="analysis"
             longWaitThresholdMs={20_000}
             longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."
+            canCancel={Boolean(onCancelAnalysis)}
+            onCancel={onCancelAnalysis}
           />
         ) : null}
 

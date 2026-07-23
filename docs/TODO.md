@@ -38,7 +38,8 @@
 - 2026-07-23: AI 추천 활용 목적을 면접 / 자기소개서 / JD 분석 / 기타 4개 신규 생성값으로 정리하고 목적별 입력 안내·예시·생성 옵션을 단일 설정 객체로 관리. 기존 `portfolio`, `activity_application` 저장 기록은 `other`로 읽어 하위 호환. 추천 API는 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 사용하도록 prompt를 조정했으며, 직접 근거가 부족하면 억지로 Top 3를 채우지 않음. 답변 생성 API는 목적별 허용 타입만 받도록 제한. 사용자가 Supabase SQL Editor에서 `jd` purpose 허용, `recommendations.jd_analysis`, 새 answer draft type constraint migration을 적용함. 실제 OpenAI 성공 경로와 목적별 생성 결과 수동 smoke test는 남음.
 - 2026-07-23: AI 추천 화면의 목적별 예시 문항을 실제 채용·지원 상황에서 입력할 법한 문장으로 교체. JD 분석 첫 예시는 버튼 문구와 실제 입력값을 분리해, 선택 시 백엔드 개발자 JD 샘플 전문이 입력되도록 조정. 긴 예시 문항의 모바일 줄바꿈도 보정. `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과했고 사용자가 예시 선택 입력 반영 등 직접 로직 테스트를 완료.
 - 2026-07-23: AI 구조화 호출 1차 대기 UX를 개선. 공통 `AIProcessingPanel`을 추가하고 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성 대기 상태에 단계형 안내 문구, skeleton, 장기 대기 안내, 처리 대상 메타 정보를 표시하도록 연결. API 응답 계약과 모델 호출 방식은 변경하지 않음. 추천 / 분석 / 활동 합성 / 답변 초안의 중복 실행 방지를 보강하고, 답변 초안 대기 상태에는 목표 분량에 맞춰 초안을 다듬을 수 있다는 안내를 추가. `npm run lint`, `npm run build`, `git diff --check` 통과, Codex가 `/recommend`와 `/experiences` 기본 렌더링을 확인했고 사용자가 직접 로직 테스트를 완료.
-- 2026-07-23: 답변 초안 생성 2차 스트리밍 UX를 구현. `/api/answer-drafts`의 기존 strict JSON 응답은 유지하고, `stream: true` 요청에서만 서버가 OpenAI structured output 스트림을 내부 누적한 뒤 `draft.content` 문자열만 NDJSON `delta` 이벤트로 전달. 최종 `completed` 이벤트의 정규화된 `AnswerDraftResult`만 기존 저장소에 저장하며, 분량 교정이 발생하면 `replace` 이벤트로 최종 본문을 교체. 화면은 첫 토큰 전 1차 `AIProcessingPanel`을 유지하고, 첫 본문 조각 이후 점진 렌더링 / 커서 / 글자 수 / 부분 실패 재시도를 표시. `git diff --check`, `npm run lint`, `npm run build`, UI preview 기본 렌더링 확인을 완료했고 사용자가 직접 로직 테스트를 완료. 취소 버튼, TTFT 측정, 구조화 이벤트 스트리밍은 후속 단계로 유지.
+- 2026-07-23: 답변 초안 생성 2차 스트리밍 UX를 구현. `/api/answer-drafts`의 기존 strict JSON 응답은 유지하고, `stream: true` 요청에서만 서버가 OpenAI structured output 스트림을 내부 누적한 뒤 `draft.content` 문자열만 NDJSON `delta` 이벤트로 전달. 최종 `completed` 이벤트의 정규화된 `AnswerDraftResult`만 기존 저장소에 저장하며, 분량 교정이 발생하면 `replace` 이벤트로 최종 본문을 교체. 화면은 첫 토큰 전 1차 `AIProcessingPanel`을 유지하고, 첫 본문 조각 이후 점진 렌더링 / 커서 / 글자 수 / 부분 실패 재시도를 표시. `git diff --check`, `npm run lint`, `npm run build`, UI preview 기본 렌더링 확인을 완료했고 사용자가 직접 로직 테스트를 완료. 구조화 이벤트 스트리밍은 후속 단계로 유지.
+- 2026-07-23: AI 요청 측정 / 취소 3차를 구현. `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`, `/api/evidence-followups`, `/api/answer-drafts`에서 기능 종류, 응답 유형, 입력 글자 수, 경험 수, 목표 글자 수, 모델, 스트리밍 TTFT, 전체 완료 시간, 성공 / 실패 / 취소, 재시도 여부만 서버 `console.info` 메타데이터로 기록. 클라이언트 AI helper에 AbortSignal을 전달하고, 경험 분석 / 추천 / 활동 완료 경험 합성 / 답변 초안 스트리밍 화면에 취소 버튼을 연결. 취소 시 기존 입력과 기존 결과를 유지하고, 답변 초안은 부분 텍스트를 저장하지 않은 채 화면에 남겨 같은 조건 재시도를 제공. 실제 장시간 OpenAI 호출의 외부 비용 중단 여부와 배포 로그 수집 방식은 후속 검증으로 남음.
 - 2026-07-17: 팀 테스트를 위해 Supabase Auth 관리자 API 기반 `npm run seed:test-users` 스크립트를 추가. 기본 계정은 `test1@campuslog.test` ~ `test9@campuslog.test`, 비밀번호는 `test1111` ~ `test9999`이며 `campuslog_profile` metadata를 함께 설정. 사용자가 실제 Supabase project에 9개 계정이 모두 `created`로 생성된 것을 확인. 더미 경험·활동 데이터 주입은 아직 수행하지 않음.
 - 2026-07-17: 진행 중 / 시작 예정 활동을 상세 화면에서 수정할 수 있게 하고, 오늘의 기록의 마무리 필요 활동도 정리 전 수정할 수 있게 함. 활동 종료 시 현재 날짜를 완료일로 저장해 예상 종료일이 미래여도 즉시 AI 초안을 생성하도록 수정. 실제 로그인 브라우저 세션 회귀 확인은 남음.
 
@@ -138,6 +139,7 @@
 - [ ] loading / empty / error / success / reconnecting 상태 통일
   - [x] AI 구조화 호출의 1차 대기 UX에 단계형 문구, skeleton, 장기 대기 안내, 처리 대상 메타 정보 적용
   - [x] 추천 기반 답변 초안 생성에 스트리밍 미리보기와 완료 후 최종 저장 적용
+  - [x] AI 요청 취소 버튼과 메타데이터 측정 로그 적용
 - [ ] 키보드 focus 이동과 Dialog 초점 복귀 검증
 - [ ] 200% 확대와 긴 한글·URL 줄바꿈 검증
 - [ ] reduced motion과 애니메이션 fallback 검증
@@ -154,6 +156,7 @@
 - [x] 추천 목적별 입력·생성 옵션과 JD 분석 응답 구조 변경에 맞춰 타입 / API / 결과 화면 수정 (`ISSUE-079`)
 - [x] 기록 보완 루프 schema와 API response 변경에 맞춰 관련 계약 문서와 분석 결과 화면 수정
 - [x] AI 분석 v2.1 간소화와 부족 정보 카드 답변 저장 흐름에 맞춰 분석 / 추천 / 초안 입력 계약 수정 (`ISSUE-078`)
+- [x] AI 요청 측정 / 취소 contract 적용: 민감 원문 없이 메타데이터만 로그 기록, AbortSignal 전달, 취소 error code 공유 (`ISSUE-082`)
 - [x] QA 안정화: 기록 보완 질문 답변 draft 보존, 질문-답변 입력 묶음 재배치, 숨긴 질문 복원 버튼 추가 (`ISSUE-045`, `ISSUE-046`, `ISSUE-047`)
 - [x] QA 안정화: 답변 초안 자기소개서 분량을 선택 범위 안으로 보정하고 실제 글자 수 표시 기준 정리 (`ISSUE-048`)
 - [x] QA 안정화: 완료 활동 복원, 활동 상태별 삭제, 과거 종료 활동 상태·기록 가능 날짜·타임라인 날짜 표시·종료일 보존 흐름 수정 (`ISSUE-049`~`ISSUE-054`)

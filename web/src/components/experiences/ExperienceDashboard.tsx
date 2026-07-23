@@ -101,6 +101,9 @@ export function ExperienceDashboard() {
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const analysisTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
+  const analysisAbortControllersRef = useRef<
+    Record<string, AbortController | undefined>
+  >({});
 
   const loadDashboardData = useCallback(async () => {
     setLoadError("");
@@ -142,10 +145,16 @@ export function ExperienceDashboard() {
   }, [loadDashboardData]);
 
   useEffect(() => {
+    const analysisAbortControllers = analysisAbortControllersRef.current;
+
     return () => {
       if (mobileScrollTimerRef.current !== null) {
         window.clearTimeout(mobileScrollTimerRef.current);
       }
+
+      Object.values(analysisAbortControllers).forEach(
+        (abortController) => abortController?.abort(),
+      );
     };
   }, []);
 
@@ -312,19 +321,29 @@ export function ExperienceDashboard() {
       [experienceId]: { isLoading: true, error: "" },
     }));
 
+    const abortController = new AbortController();
+    analysisAbortControllersRef.current[experienceId] = abortController;
     const repository = getCampusLogRepository();
     const followups =
       await repository.experienceFollowups.listByExperienceId(experience.id);
-    const response = await requestExperienceAnalysis(experience, followups);
+    const response = await requestExperienceAnalysis(experience, followups, {
+      signal: abortController.signal,
+    });
 
     if (!response.ok) {
       setAnalysisRequestByExperienceId((current) => ({
         ...current,
         [experienceId]: {
           isLoading: false,
-          error: response.error.message,
+          error:
+            response.error.code === "REQUEST_CANCELLED"
+              ? "AI 분석 요청을 취소했습니다. 기존 기록과 분석 결과는 그대로 유지했어요."
+              : response.error.message,
         },
       }));
+      if (analysisAbortControllersRef.current[experienceId] === abortController) {
+        delete analysisAbortControllersRef.current[experienceId];
+      }
       return;
     }
 
@@ -339,6 +358,9 @@ export function ExperienceDashboard() {
             "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해 주세요.",
         },
       }));
+      if (analysisAbortControllersRef.current[experienceId] === abortController) {
+        delete analysisAbortControllersRef.current[experienceId];
+      }
       return;
     }
 
@@ -351,6 +373,13 @@ export function ExperienceDashboard() {
       ...current,
       [experienceId]: { isLoading: false, error: "" },
     }));
+    if (analysisAbortControllersRef.current[experienceId] === abortController) {
+      delete analysisAbortControllersRef.current[experienceId];
+    }
+  };
+
+  const handleCancelAnalyzeExperience = (experienceId: string) => {
+    analysisAbortControllersRef.current[experienceId]?.abort();
   };
 
   const handleDeleteTrackedActivity = async (
@@ -557,6 +586,9 @@ export function ExperienceDashboard() {
                       onAnalyze={() =>
                         handleAnalyzeExperience(selectedExperience)
                       }
+                      onCancelAnalysis={() =>
+                        handleCancelAnalyzeExperience(selectedExperience.id)
+                      }
                       onOpenAnalysis={handleOpenAnalysis}
                       isAnalysisOpen={isAnalysisOpen}
                       isAnalyzing={
@@ -599,6 +631,9 @@ export function ExperienceDashboard() {
                   onClose={handleCloseAnalysis}
                   onReanalyze={() =>
                     handleAnalyzeExperience(selectedExperience)
+                  }
+                  onCancelAnalysis={() =>
+                    handleCancelAnalyzeExperience(selectedExperience.id)
                   }
                 />
               ) : null}

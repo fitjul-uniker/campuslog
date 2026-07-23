@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, BookOpenText, RefreshCcw, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
@@ -35,6 +35,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
   const [analysis, setAnalysis] = useState<ExperienceAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const analysisAbortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -66,6 +67,12 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     };
   }, [id]);
 
+  useEffect(() => {
+    return () => {
+      analysisAbortControllerRef.current?.abort();
+    };
+  }, []);
+
   async function refreshExperience() {
     const repository = getCampusLogRepository();
     const updatedExperience = await repository.experiences.getById(id);
@@ -83,14 +90,26 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     setIsAnalyzing(true);
     setAnalysisError("");
 
+    const abortController = new AbortController();
+    analysisAbortControllerRef.current = abortController;
+
     const repository = getCampusLogRepository();
     const followups =
       await repository.experienceFollowups.listByExperienceId(experience.id);
-    const response = await requestExperienceAnalysis(experience, followups);
+    const response = await requestExperienceAnalysis(experience, followups, {
+      signal: abortController.signal,
+    });
 
     if (!response.ok) {
-      setAnalysisError(response.error.message);
+      setAnalysisError(
+        response.error.code === "REQUEST_CANCELLED"
+          ? "AI 분석 요청을 취소했습니다. 기존 기록과 분석 결과는 그대로 유지했어요."
+          : response.error.message,
+      );
       setIsAnalyzing(false);
+      if (analysisAbortControllerRef.current === abortController) {
+        analysisAbortControllerRef.current = null;
+      }
       return;
     }
 
@@ -101,6 +120,9 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
         "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해주세요.",
       );
       setIsAnalyzing(false);
+      if (analysisAbortControllerRef.current === abortController) {
+        analysisAbortControllerRef.current = null;
+      }
       return;
     }
 
@@ -108,6 +130,13 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
 
     setAnalysis(savedAnalysis);
     setIsAnalyzing(false);
+    if (analysisAbortControllerRef.current === abortController) {
+      analysisAbortControllerRef.current = null;
+    }
+  }
+
+  function handleCancelAnalysis() {
+    analysisAbortControllerRef.current?.abort();
   }
 
   const sourceCharacterCount = experience
@@ -152,6 +181,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       skeletonVariant="analysis"
       longWaitThresholdMs={20_000}
       longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."
+      canCancel
+      onCancel={handleCancelAnalysis}
     />
   ) : null;
 

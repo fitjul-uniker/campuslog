@@ -8,6 +8,10 @@ import {
   rejectTooLargeAiApiRequest,
   requireAuthenticatedAiApiUser,
 } from "@/lib/aiApiProtection";
+import {
+  countAiInputCharacters,
+  createAiRequestMetricLogger,
+} from "@/lib/aiRequestMetrics";
 import type {
   ActivitySynthesisApiResult,
   DailyLog,
@@ -707,12 +711,45 @@ export async function POST(request: Request) {
     );
   }
 
+  const aiMetric = createAiRequestMetricLogger({
+    feature: "activity_synthesis",
+    responseType: "structured_json",
+    inputCharacterCount: countAiInputCharacters([
+      validation.body.activity.title,
+      validation.body.activity.description,
+      validation.body.activity.startDate,
+      validation.body.activity.expectedEndDate,
+      validation.body.activity.completedAt,
+      validation.body.dailyLogs.map((log) => [log.date, log.content]),
+    ]),
+    experienceCount: 0,
+    model: ACTIVITY_SYNTHESIS_MODEL,
+    retry: false,
+  });
+  const createTrackedErrorResponse = (
+    ...args: Parameters<typeof createErrorResponse>
+  ) => {
+    aiMetric.complete({ status: "error" });
+    return createErrorResponse(...args);
+  };
+
   const openAiAbortController = new AbortController();
   let didOpenAiRequestTimeOut = false;
   const openAiTimeoutId = setTimeout(() => {
     didOpenAiRequestTimeOut = true;
     openAiAbortController.abort();
   }, OPENAI_REQUEST_TIMEOUT_MS);
+  const handleClientAbort = () => {
+    openAiAbortController.abort();
+  };
+
+  if (request.signal.aborted) {
+    handleClientAbort();
+  } else {
+    request.signal.addEventListener("abort", handleClientAbort, {
+      once: true,
+    });
+  }
 
   try {
     const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
@@ -768,7 +805,7 @@ export async function POST(request: Request) {
         });
       }
 
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "AI 완료 경험 생성 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
         502,
@@ -779,7 +816,7 @@ export async function POST(request: Request) {
     const outputText = extractOutputText(openAiPayload);
 
     if (!outputText) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "AI 완료 경험 응답을 해석하지 못했습니다. 다시 시도해주세요.",
         502,
@@ -792,32 +829,43 @@ export async function POST(request: Request) {
     );
 
     if (!synthesis) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "AI가 기록 근거에 맞는 완료 경험 초안을 만들지 못했습니다. 기록을 확인한 뒤 다시 시도해주세요.",
         502,
       );
     }
 
+    aiMetric.complete({ status: "success" });
     return NextResponse.json<SynthesizeActivityResponse>({
       ok: true,
       synthesis,
     });
   } catch {
-    if (didOpenAiRequestTimeOut) {
+    if (request.signal.aborted && !didOpenAiRequestTimeOut) {
+      aiMetric.complete({ status: "cancelled" });
       return createErrorResponse(
+        "REQUEST_CANCELLED",
+        "AI 완료 경험 생성 요청을 취소했습니다.",
+        499,
+      );
+    }
+
+    if (didOpenAiRequestTimeOut) {
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "AI 완료 경험 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
         504,
       );
     }
 
-    return createErrorResponse(
+    return createTrackedErrorResponse(
       "UNKNOWN_ERROR",
       "알 수 없는 오류로 완료 경험 초안을 만들지 못했습니다.",
       500,
     );
   } finally {
     clearTimeout(openAiTimeoutId);
+    request.signal.removeEventListener("abort", handleClientAbort);
   }
 }

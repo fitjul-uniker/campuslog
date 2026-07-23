@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - AI 요청 측정과 취소 UX 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | AI 호출별 처리 시간 메타데이터를 기록하고 구조화 호출 / 답변 초안 스트리밍에 취소 흐름을 연결 |
+| 수정한 파일 | `web/src/lib/aiRequestMetrics.ts`, `web/src/lib/requestCancel.ts`, `web/src/lib/types.ts`, `web/src/lib/analysisApi.ts`, `web/src/lib/recommendationApi.ts`, `web/src/lib/activitySynthesisApi.ts`, `web/src/lib/evidenceFollowupApi.ts`, `web/src/lib/answerDraftApi.ts`, `web/src/app/api/analyze/route.ts`, `web/src/app/api/recommend/route.ts`, `web/src/app/api/synthesize-activity/route.ts`, `web/src/app/api/evidence-followups/route.ts`, `web/src/app/api/answer-drafts/route.ts`, `web/src/components/ai/AIProcessingPanel.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/app/recommend/page.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 공통 AI 요청 메트릭 logger를 추가해 기능 종류, 응답 유형, 입력 글자 수, 경험 수, 목표 글자 수, 모델, 스트리밍 TTFT, 전체 완료 시간, 성공 / 실패 / 취소, 재시도 여부만 서버 `console.info`로 기록. 각 AI Route는 클라이언트 연결 종료를 OpenAI fetch AbortController에 연결하고 `REQUEST_CANCELLED` 오류 코드를 반환. 클라이언트 API helper는 AbortSignal을 받도록 확장하고 abort 오류를 공통 취소 응답으로 변환. 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 답변 초안 스트리밍 화면은 `AIProcessingPanel` 취소 버튼 또는 스트리밍 헤더 취소 버튼으로 요청을 중단. 취소 시 입력과 기존 결과를 유지하고, 답변 초안 스트리밍은 부분 텍스트를 저장하지 않은 채 화면에 남겨 같은 조건 재시도를 제공 |
+| 검증한 내용 | `npm run lint`, `npm run build` 통과. UI preview 개발 서버에서 `/experiences`, `/recommend` 기본 렌더링과 브라우저 앱 콘솔 error 0건 확인. 브라우저 데이터가 비어 있어 실제 OpenAI 장시간 요청 중 취소 버튼의 end-to-end 비용 중단 여부는 자동 검증하지 못함 |
+| 남은 작업 | 실제 로그인 세션과 충분한 테스트 데이터로 장시간 OpenAI 요청 취소, 서버 로그 메트릭 값, 스트리밍 TTFT / 완료 시간 기록, 배포 환경 버퍼링과 로그 수집 방식을 확인 |
+| 관련 커밋 메시지 | `feat: add ai request metrics and cancellation` |
+
 ### 2026-07-23 - 답변 초안 생성 스트리밍 UX 구현
 
 | 항목 | 내용 |
@@ -40,7 +53,7 @@
 | 수정한 파일 | `web/src/app/api/answer-drafts/route.ts`, `web/src/lib/answerDraftApi.ts`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/globals.css`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
 | 변경 내용 | `/api/answer-drafts`는 기존 JSON 응답을 유지하면서 `stream: true` 요청에서 NDJSON 스트림을 반환. 서버는 OpenAI Responses structured output 스트림을 내부에서 누적하고 raw JSON 토큰을 노출하지 않으며, `draft.content` 문자열만 `delta` 이벤트로 전달. 분량 교정 호출이 발생하면 최종 본문을 `replace` 이벤트로 교체하고, `completed` 이벤트의 정규화된 `AnswerDraftResult`만 클라이언트가 기존 저장소에 저장. 클라이언트 helper는 status / delta / replace / completed / error 이벤트를 해석하고, 추천 결과 화면은 첫 본문 전 단계형 로딩, 이후 점진 렌더링, 커서, 글자 수, 실패 시 부분 텍스트 유지와 같은 조건 재시도를 표시 |
 | 검증한 내용 | `git diff --check`, `npm run lint`, `npm run build` 통과. UI preview 개발 서버에서 `/recommend` 기본 렌더링, 가로 overflow 없음, 브라우저 앱 콘솔 error 0건 확인. 사용자가 직접 로직 테스트를 실행해 완료 확인 |
-| 남은 작업 | 3차에서 TTFT / 완료 시간 측정과 명시적 취소 버튼 정책 구현. 배포 환경에서 스트림 버퍼링 여부와 장시간 응답 회귀 모니터링 |
+| 남은 작업 | 배포 환경에서 스트림 버퍼링 여부와 장시간 응답 회귀 모니터링. 구조화 호출 이벤트 스트리밍은 후속 단계로 유지 |
 | 관련 커밋 메시지 | `feat: stream answer draft generation` |
 
 ### 2026-07-23 - AI 구조화 호출 대기 UX 1차 개선
@@ -53,7 +66,7 @@
 | 수정한 파일 | `web/src/components/ai/AIProcessingPanel.tsx`, `web/src/app/globals.css`, `web/src/app/recommend/page.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceDetailClient.tsx`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
 | 변경 내용 | 공통 `AIProcessingPanel`을 추가해 단계형 안내 문구, indeterminate progress bar, 처리 대상 메타 정보, 결과 유형별 skeleton, 장기 대기 안내를 제공. AI 추천 / JD 분석, 경험 분석 / 재분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성 화면에 연결하고, 기존 결과 또는 입력 정보는 유지한 채 대기 상태를 표시. 분석, 추천, 활동 합성, 답변 초안 생성의 중복 클릭 방지를 보강. 답변 초안 생성 중에는 목표 분량과 선택 조건을 반영해 초안을 교정할 수 있음을 안내. API 응답 계약, 모델 호출 방식, 저장 구조는 변경하지 않음 |
 | 검증한 내용 | `npm run lint`, `npm run build`, `git diff --check` 통과. Codex가 `/recommend`와 `/experiences` 기본 렌더링과 브라우저 error 로그 0건을 확인. 사용자가 직접 로직 테스트를 실행해 완료 확인 |
-| 남은 작업 | 실제 로그인 세션에서 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 추가 smoke test. 답변 초안 스트리밍, 측정 / 취소 기능, 구조화 이벤트 스트리밍은 후속 단계로 유지 |
+| 남은 작업 | 실제 로그인 세션에서 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 추가 smoke test. 구조화 이벤트 스트리밍은 후속 단계로 유지 |
 | 관련 커밋 메시지 | `feat: improve ai loading states` |
 
 ### 2026-07-23 - AI 추천 목적별 예시 문항 현실화

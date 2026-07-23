@@ -7,8 +7,9 @@ import {
   FileText,
   Loader2,
   X,
+  XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
@@ -60,7 +61,7 @@ type StreamingDraftState = {
   draftType: ActiveAnswerDraftType;
   statusMessage: string;
   streamedText: string;
-  mode: "loading" | "streaming" | "repairing" | "failed";
+  mode: "loading" | "streaming" | "repairing" | "failed" | "cancelled";
 };
 
 const FIT_LEVEL_LABELS = {
@@ -332,13 +333,17 @@ function AnswerDraftStreamingPanel({
   experienceTitle,
   purposeLabel,
   onRetry,
+  onCancel,
   isRetryDisabled,
+  canCancel,
 }: {
   streamingDraft: StreamingDraftState;
   experienceTitle: string;
   purposeLabel: string;
   onRetry: () => void;
+  onCancel: () => void;
   isRetryDisabled: boolean;
+  canCancel: boolean;
 }) {
   const draftTypeLabel = ANSWER_DRAFT_TYPE_LABELS[streamingDraft.draftType];
   const targetGuide = ANSWER_DRAFT_TARGET_GUIDES[streamingDraft.draftType];
@@ -347,10 +352,12 @@ function AnswerDraftStreamingPanel({
     streamingDraft.streamedText,
   );
   const isFailed = streamingDraft.mode === "failed";
+  const isCancelled = streamingDraft.mode === "cancelled";
   const isRepairing = streamingDraft.mode === "repairing";
   const hasStreamedText = streamingDraft.streamedText.trim().length > 0;
+  const isTerminal = isFailed || isCancelled;
 
-  if (!hasStreamedText && !isFailed) {
+  if (!hasStreamedText && !isTerminal) {
     return (
       <AIProcessingPanel
         className="answer-draft-ai-processing"
@@ -384,6 +391,9 @@ function AnswerDraftStreamingPanel({
         skeletonVariant="answerDraft"
         longWaitThresholdMs={24_000}
         longWaitMessage="자기소개서 분량 조건이 있으면 글자 수를 맞추는 검토 때문에 시간이 더 걸릴 수 있어요."
+        canCancel={canCancel}
+        cancelLabel="생성 취소"
+        onCancel={onCancel}
       />
     );
   }
@@ -391,7 +401,7 @@ function AnswerDraftStreamingPanel({
   return (
     <div
       className="answer-draft-streaming-panel"
-      aria-busy={isFailed ? "false" : "true"}
+      aria-busy={isTerminal ? "false" : "true"}
       aria-live="polite"
     >
       <div className="answer-draft-streaming-header">
@@ -399,25 +409,39 @@ function AnswerDraftStreamingPanel({
           <p className="answer-draft-streaming-kicker">
             {isFailed
               ? "생성 중단"
-              : isRepairing
-                ? "분량 교정 중"
-                : "초안 생성 중"}
+              : isCancelled
+                ? "생성 취소"
+                : isRepairing
+                  ? "분량 교정 중"
+                  : "초안 생성 중"}
           </p>
           <h5>{draftTypeLabel}</h5>
           <p>{streamingDraft.statusMessage}</p>
         </div>
-        {characterLimit ? (
-          <span
-            className={
-              characterCount >= characterLimit.min &&
-              characterCount <= characterLimit.max
-                ? "answer-draft-streaming-count"
-                : "answer-draft-streaming-count is-pending"
-            }
-          >
-            {characterCount}자
-          </span>
-        ) : null}
+        <div className="answer-draft-streaming-actions">
+          {canCancel ? (
+            <button
+              className="ai-processing-cancel-button answer-draft-streaming-cancel"
+              type="button"
+              onClick={onCancel}
+            >
+              <XCircle aria-hidden="true" />
+              생성 취소
+            </button>
+          ) : null}
+          {characterLimit ? (
+            <span
+              className={
+                characterCount >= characterLimit.min &&
+                characterCount <= characterLimit.max
+                  ? "answer-draft-streaming-count"
+                  : "answer-draft-streaming-count is-pending"
+              }
+            >
+              {characterCount}자
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <dl className="answer-draft-streaming-context">
@@ -438,7 +462,7 @@ function AnswerDraftStreamingPanel({
       {hasStreamedText ? (
         <p className="answer-draft-streaming-content">
           {streamingDraft.streamedText}
-          {!isFailed ? (
+          {!isTerminal ? (
             <span className="answer-draft-streaming-cursor" aria-hidden="true" />
           ) : null}
         </p>
@@ -448,7 +472,7 @@ function AnswerDraftStreamingPanel({
         </p>
       )}
 
-      {isFailed ? (
+      {isTerminal ? (
         <RippleButton
           className="button button-secondary answer-draft-generate-button"
           type="button"
@@ -485,6 +509,7 @@ export function RecommendationResult({
   const [answerDraftError, setAnswerDraftError] = useState<
     Record<string, string>
   >({});
+  const draftAbortControllerRef = useRef<AbortController | null>(null);
   const isEmbedded = variant === "embedded";
   const purposeConfig = getRecommendationPurposeConfig(result.purpose);
   const generationOptions = getGenerationOptionsForPurpose(result.purpose);
@@ -520,6 +545,8 @@ export function RecommendationResult({
 
   useEffect(() => {
     let isMounted = true;
+    draftAbortControllerRef.current?.abort();
+    draftAbortControllerRef.current = null;
 
     async function loadAnswerDrafts() {
       const repository = getCampusLogRepository();
@@ -568,6 +595,12 @@ export function RecommendationResult({
     };
   }, [generationOptions, result.id]);
 
+  useEffect(() => {
+    return () => {
+      draftAbortControllerRef.current?.abort();
+    };
+  }, []);
+
   async function handleGenerateAnswerDrafts(
     match: RecommendationMatch,
     draftType: ActiveAnswerDraftType,
@@ -601,6 +634,8 @@ export function RecommendationResult({
       ...currentErrors,
       [match.experienceId]: "",
     }));
+    const abortController = new AbortController();
+    draftAbortControllerRef.current = abortController;
 
     const updateStreamingDraft = (
       updater: (currentDraft: StreamingDraftState) => StreamingDraftState,
@@ -624,6 +659,7 @@ export function RecommendationResult({
         analysis: analysis
           ? mergeAnalysisGapAnswersIntoAnalysis(analysis, followups)
           : null,
+        signal: abortController.signal,
         onStatus: (message) => {
           updateStreamingDraft((currentDraft) => ({
             ...currentDraft,
@@ -658,14 +694,17 @@ export function RecommendationResult({
       });
 
       if (!response.ok) {
+        const isCancelled = response.error.code === "REQUEST_CANCELLED";
         updateStreamingDraft((currentDraft) => ({
           ...currentDraft,
-          statusMessage: "생성을 완료하지 못했습니다.",
-          mode: "failed",
+          statusMessage: isCancelled
+            ? "생성을 취소했습니다. 작성 중이던 문장은 참고용으로 남겨두었어요."
+            : "생성을 완료하지 못했습니다.",
+          mode: isCancelled ? "cancelled" : "failed",
         }));
         setAnswerDraftError((currentErrors) => ({
           ...currentErrors,
-          [match.experienceId]: response.error.message,
+          [match.experienceId]: isCancelled ? "" : response.error.message,
         }));
         return;
       }
@@ -714,8 +753,23 @@ export function RecommendationResult({
         ),
       }));
     } finally {
+      if (draftAbortControllerRef.current === abortController) {
+        draftAbortControllerRef.current = null;
+      }
       setGeneratingDraftKey(null);
     }
+  }
+
+  function handleCancelAnswerDraftGeneration() {
+    setStreamingDraft((currentDraft) =>
+      currentDraft
+        ? {
+            ...currentDraft,
+            statusMessage: "생성을 취소하고 있어요.",
+          }
+        : currentDraft,
+    );
+    draftAbortControllerRef.current?.abort();
   }
 
   return (
@@ -1131,6 +1185,12 @@ export function RecommendationResult({
                     }
                     purposeLabel={purposeConfig.label}
                     isRetryDisabled={Boolean(generatingDraftKey)}
+                    canCancel={
+                      generatingDraftKey === activeStreamingDraft.key &&
+                      activeStreamingDraft.mode !== "failed" &&
+                      activeStreamingDraft.mode !== "cancelled"
+                    }
+                    onCancel={handleCancelAnswerDraftGeneration}
                     onRetry={() =>
                       handleGenerateAnswerDrafts(
                         match,

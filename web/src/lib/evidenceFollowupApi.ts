@@ -1,4 +1,5 @@
 import { normalizeExperienceFollowup } from "@/lib/experienceFollowupResult";
+import { isRequestAbortError } from "@/lib/requestCancel";
 import type {
   AnswerDraft,
   EvidenceFollowupsResponse,
@@ -16,6 +17,7 @@ type RequestEvidenceFollowupsInput = {
   recommendation?: RecommendationResult | null;
   match?: RecommendationMatch | null;
   answerDraft?: AnswerDraft | null;
+  signal?: AbortSignal;
 };
 
 function isEvidenceFollowupsResponse(
@@ -52,10 +54,12 @@ export async function requestEvidenceFollowupQuestions({
   recommendation = null,
   match = null,
   answerDraft = null,
+  signal,
 }: RequestEvidenceFollowupsInput): Promise<EvidenceFollowupsResponse> {
   try {
     const response = await fetch("/api/evidence-followups", {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -85,7 +89,17 @@ export async function requestEvidenceFollowupQuestions({
 
       return payload;
     }
-  } catch {
+  } catch (error) {
+    if (isRequestAbortError(error)) {
+      return {
+        ok: false,
+        error: {
+          code: "REQUEST_CANCELLED",
+          message: "보완 질문 생성을 취소했습니다.",
+        },
+      };
+    }
+
     return {
       ok: false,
       error: {

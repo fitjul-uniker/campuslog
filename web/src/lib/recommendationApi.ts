@@ -5,12 +5,14 @@ import type {
   RecommendResponse,
 } from "@/lib/types";
 import { normalizeRecommendationApiResult } from "@/lib/recommendationResult";
+import { isRequestAbortError } from "@/lib/requestCancel";
 
 type RequestRecommendationInput = {
   purpose: RecommendationPurpose;
   prompt: string;
   experiences: Experience[];
   analyses: ExperienceAnalysis[];
+  signal?: AbortSignal;
 };
 
 function isRecommendResponse(value: unknown): value is RecommendResponse {
@@ -43,10 +45,12 @@ export async function requestRecommendation({
   prompt,
   experiences,
   analyses,
+  signal,
 }: RequestRecommendationInput): Promise<RecommendResponse> {
   try {
     const response = await fetch("/api/recommend", {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -76,7 +80,17 @@ export async function requestRecommendation({
 
       return payload;
     }
-  } catch {
+  } catch (error) {
+    if (isRequestAbortError(error)) {
+      return {
+        ok: false,
+        error: {
+          code: "REQUEST_CANCELLED",
+          message: "AI 추천 요청을 취소했습니다.",
+        },
+      };
+    }
+
     return {
       ok: false,
       error: {

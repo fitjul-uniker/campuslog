@@ -29,6 +29,7 @@
 - [x] 답변 생성 목적별 제한: 추천 v2 선택 경험 기반 자기소개서 300자 / 500자 / 1000자, 면접 30초 / 1분 이상 / 예상 꼬리 질문, JD 지원 전략, 기타 맞춤 결과 단일 초안 schema / 저장 / 표시 구현 (`ISSUE-079`)
 - [x] AI 구조화 호출 1차 대기 UX 개선: 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성에 단계형 안내, skeleton, 장기 대기 안내, 처리 대상 메타 정보와 중복 실행 방지 보강 (`ISSUE-080`)
 - [x] 답변 초안 생성 2차 스트리밍 UX 구현: `/api/answer-drafts`의 기존 JSON 계약을 유지하면서 `stream: true` NDJSON 이벤트 계약, 본문 delta 미리보기, 분량 교정 replace, 완료 후 최종 저장 적용 (`ISSUE-081`)
+- [x] AI 요청 측정 / 취소 3차 구현: 민감 원문 없이 기능·분량·모델·TTFT·전체 시간·성공 / 실패 / 취소·재시도 여부를 서버 로그로 기록하고, 경험 분석 / 추천 / 활동 합성 / 답변 초안 스트리밍에 AbortController 기반 취소 UI 적용 (`ISSUE-082`)
 - [x] Supabase project에 `jd` purpose 허용, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 완료. 실제 로그인 세션 smoke test는 남음 (`ISSUE-060`, `ISSUE-079`)
 - [x] 기록 보완 루프: 부족 정보 카드 안 직접 답변 저장, 추천 / 답변 초안 즉시 반영, 명시적 재분석 흐름 구현
 - [x] QA 버그 안정화: 보완 질문 draft 보존·복원, 답변 초안 분량 보정, 활동 복원·삭제·날짜 상태, 추천 점수 등급, 오늘 한 일 팝업 스크롤 수정
@@ -60,7 +61,9 @@
 
 2026-07-23 AI 구조화 호출 1차 대기 UX 개선에서는 API 응답 계약과 모델 호출 방식은 유지한 채 공통 `AIProcessingPanel`을 추가했습니다. 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성은 이제 처리 대상 메타 정보, 단계형 안내 문구, 결과 유형별 skeleton, 장기 대기 안내를 표시합니다. 기존 입력과 기존 분석 결과는 대기 중에도 유지하며, 추천 / 분석 / 활동 합성 / 답변 초안의 중복 실행 방지를 보강했습니다. 답변 초안 생성 대기에는 목표 분량과 선택 조건에 맞춰 초안을 교정할 수 있다는 안내를 추가했습니다. `npm run lint`, `npm run build`, `git diff --check`를 통과했고 Codex가 `/recommend`와 `/experiences` 기본 렌더링을 확인했으며 사용자가 직접 로직 테스트를 완료했습니다. 실제 로그인 세션의 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 smoke test는 후속 확인 대상입니다.
 
-2026-07-23 답변 초안 생성 2차 스트리밍 UX에서는 `/api/answer-drafts`의 기존 strict JSON 응답을 그대로 유지하고, `stream: true` 요청에서만 NDJSON 이벤트 계약을 추가했습니다. 서버는 OpenAI Responses structured output 스트림을 내부에서 누적해 raw JSON 토큰을 화면에 노출하지 않고 `draft.content` 문자열만 `delta` 이벤트로 전달합니다. 자기소개서 분량 교정이 발생하면 `replace` 이벤트로 최종 본문을 교체하며, 클라이언트는 `completed` 이벤트의 정규화된 `AnswerDraftResult`만 기존 answer drafts 저장소에 저장합니다. 추천 결과 화면은 첫 본문 전 1차 단계형 로딩 패널을 유지하고, 첫 본문 이후에는 텍스트 점진 렌더링, 커서, 목표 글자 수 표시, 실패 시 부분 텍스트 유지와 같은 조건 재시도를 제공합니다. `git diff --check`, `npm run lint`, `npm run build`를 통과했고 UI preview 개발 서버에서 `/recommend` 기본 렌더링과 브라우저 앱 콘솔 error 0건을 확인했으며 사용자가 직접 로직 테스트를 완료했습니다. 명시적 취소 버튼, TTFT / 완료 시간 측정, 구조화 호출 이벤트 스트리밍은 아직 구현하지 않고 후속 단계로 남겼습니다.
+2026-07-23 답변 초안 생성 2차 스트리밍 UX에서는 `/api/answer-drafts`의 기존 strict JSON 응답을 그대로 유지하고, `stream: true` 요청에서만 NDJSON 이벤트 계약을 추가했습니다. 서버는 OpenAI Responses structured output 스트림을 내부에서 누적해 raw JSON 토큰을 화면에 노출하지 않고 `draft.content` 문자열만 `delta` 이벤트로 전달합니다. 자기소개서 분량 교정이 발생하면 `replace` 이벤트로 최종 본문을 교체하며, 클라이언트는 `completed` 이벤트의 정규화된 `AnswerDraftResult`만 기존 answer drafts 저장소에 저장합니다. 추천 결과 화면은 첫 본문 전 1차 단계형 로딩 패널을 유지하고, 첫 본문 이후에는 텍스트 점진 렌더링, 커서, 목표 글자 수 표시, 실패 시 부분 텍스트 유지와 같은 조건 재시도를 제공합니다. `git diff --check`, `npm run lint`, `npm run build`를 통과했고 UI preview 개발 서버에서 `/recommend` 기본 렌더링과 브라우저 앱 콘솔 error 0건을 확인했으며 사용자가 직접 로직 테스트를 완료했습니다. 구조화 호출 이벤트 스트리밍은 아직 구현하지 않고 후속 단계로 남겼습니다.
+
+2026-07-23 AI 요청 측정 / 취소 3차에서는 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`, `/api/evidence-followups`, `/api/answer-drafts`에 공통 메타데이터 측정을 추가했습니다. 기록하는 값은 기능 종류, 응답 유형, 입력 글자 수, 경험 수, 목표 글자 수, 모델, 스트리밍 TTFT, 전체 완료 시간, 성공 / 실패 / 취소, 재시도 여부뿐이며 원문 입력과 생성 본문은 로그에 남기지 않습니다. 각 route handler는 클라이언트 연결 종료를 OpenAI fetch AbortController에 연결하고 취소 응답을 `REQUEST_CANCELLED`로 반환합니다. 클라이언트 API helper와 경험 분석 / AI 추천 / 활동 완료 경험 합성 / 답변 초안 스트리밍 UI는 AbortSignal을 전달하며, 취소 시 기존 입력과 기존 결과를 유지합니다. 답변 초안 스트리밍은 취소 시 부분 텍스트를 저장하지 않고 화면에 남겨 같은 조건으로 재시도할 수 있게 했습니다. `npm run lint`, `npm run build`, UI preview의 `/experiences`와 `/recommend` 기본 렌더링을 확인했습니다. 실제 장시간 OpenAI 호출에서 외부 요청이 어느 시점에 중단되는지, 취소 후 비용이 얼마나 절감되는지, 배포 환경에서 로그를 어디에 수집할지는 후속 검증 대상입니다.
 
 `feature/ai-api-protection`에서는 `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`가 route handler 내부에서도 Supabase 세션을 확인합니다. 비로그인 요청은 공통 401 `SESSION_REQUIRED` JSON으로 반환하고, 요청 크기 / 필드 상한, OpenAI timeout, 사용자별 runtime-local rate guard와 429 `RATE_LIMITED` + `retryAfter` contract를 추가했습니다. `service_role` key는 사용하지 않으며 AI 세부 계약은 `docs/AI_API_CONTRACT.md`에 기록했습니다.
 
@@ -131,7 +134,7 @@
 4. 목적별 AI 추천·생성 실제 로그인 세션 smoke test: 면접 / 자기소개서 / JD 분석 / 기타 추천 저장·재조회, 목적별 생성 옵션 노출, 생성 결과 확인 (`ISSUE-079`)
 5. AI 구조화 호출 1차 대기 UX의 실제 로그인 세션 장시간 응답 표시와 저장 성공 경로 smoke test (`ISSUE-080`)
 6. 답변 초안 스트리밍 배포 환경 버퍼링 여부와 장시간 응답 회귀 모니터링 (`ISSUE-081`)
-7. AI 요청 측정 / 취소 3차 구현: 기능, 입력 글자 수, 경험 수, 모델, 전체 시간, 스트리밍 TTFT / 완료 시간 기록
+7. AI 요청 측정 / 취소의 실제 로그인 세션 검증: 장시간 OpenAI 호출 중 취소 버튼, 서버 로그 메트릭 값, 스트리밍 TTFT / 완료 시간, 취소 후 저장 방지 확인 (`ISSUE-082`)
 8. JD 분석 실제 OpenAI 응답 품질 확인과 prompt 튜닝 (`ISSUE-079`)
 9. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
 10. 분석 부족 정보 답변 저장의 실제 로그인 세션 smoke test와 추천 반영 평가 기준 정리
@@ -174,6 +177,7 @@
 - 목적별 답변 생성은 정적 검사와 build를 통과했지만 실제 OpenAI 성공 경로와 생성 결과 품질 smoke test 필요 (`ISSUE-079`)
 - AI 구조화 호출 1차 대기 UX는 정적 검사와 기본 렌더링, 사용자 직접 로직 테스트를 완료했지만 실제 로그인 세션에서 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 smoke test 필요 (`ISSUE-080`)
 - 답변 초안 스트리밍은 정적 검사, build, 기본 렌더링과 사용자 직접 로직 테스트를 완료했지만 배포 환경의 스트림 버퍼링 여부와 장시간 응답 회귀 모니터링 필요 (`ISSUE-081`)
+- AI 요청 측정 / 취소 3차는 정적 검사, build, 기본 렌더링을 통과했지만 실제 로그인 세션의 장시간 OpenAI 취소, 서버 로그 메타데이터 확인, 외부 AI 요청 중단 시점과 비용 영향은 추가 검증 필요 (`ISSUE-082`)
 - 기록 보완 루프의 실제 OpenAI 성공 경로, Supabase migration 적용 후 저장 smoke test, 평가 기준과 회귀 사례 필요
 - 팀 테스트용 Supabase Auth 계정 9개는 생성됐지만, 각 계정에 넣을 더미 경험·활동·기록 데이터 seed는 아직 없음
 - 2026-07-17 QA 수정은 `npm run lint`, `npm run build`를 통과했지만 실제 로그인 세션에서 보완 질문 복원, 활동 삭제 cascade, 완료 활동 복원, 날짜별 기록 제한, 답변 초안 실제 OpenAI 분량 보정, 작은 화면 팝업 스크롤 회귀 확인이 아직 필요
