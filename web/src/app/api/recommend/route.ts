@@ -18,9 +18,14 @@ import {
   RECOMMENDATION_PROMPT_VERSION,
   RECOMMENDATION_SCHEMA_VERSION,
   normalizeRecommendationApiResult,
+  normalizeRecommendationJdAnalysis,
   normalizeRecommendationMatch,
   normalizeRecommendationRequirements,
 } from "@/lib/recommendationResult";
+import {
+  getRecommendationPurposeConfig,
+  normalizeRecommendationPurpose,
+} from "@/lib/recommendationPurposeConfig";
 import type {
   Experience,
   ExperienceAnalysis,
@@ -49,21 +54,14 @@ const MAX_RECOMMENDATION_ANALYSIS_COUNT = 50;
 const MAX_ANALYSIS_SUMMARY_LENGTH = 4_000;
 const MAX_ANALYSIS_LIST_ITEM_LENGTH = 1_000;
 
-const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
-  cover_letter: "자기소개서",
-  portfolio: "포트폴리오",
-  interview: "면접",
-  jd: "JD",
-  activity_application: "대외활동/지원서",
-  other: "기타",
-};
-
 const recommendationV2ResponseSchema = {
   type: "object",
   additionalProperties: false,
   required: [
     "extractedRequirements",
+    "jdAnalysis",
     "matches",
+    "noMatchReason",
     "draftSentence",
   ],
   properties: {
@@ -108,9 +106,148 @@ const recommendationV2ResponseSchema = {
         },
       },
     },
+    jdAnalysis: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "summary",
+        "responsibilities",
+        "requiredQualifications",
+        "preferredQualifications",
+        "techStack",
+        "requiredExperience",
+        "requirementMatches",
+        "emphasisPoints",
+        "gaps",
+        "overclaimRisks",
+        "finalVerdict",
+        "finalVerdictReason",
+      ],
+      properties: {
+        summary: {
+          type: "string",
+          description: "JD 핵심 요약. JD 목적이 아니면 빈 문자열",
+        },
+        responsibilities: {
+          type: "array",
+          maxItems: 12,
+          items: { type: "string" },
+          description: "담당 업무",
+        },
+        requiredQualifications: {
+          type: "array",
+          maxItems: 12,
+          items: { type: "string" },
+          description: "필수 자격요건",
+        },
+        preferredQualifications: {
+          type: "array",
+          maxItems: 12,
+          items: { type: "string" },
+          description: "우대사항",
+        },
+        techStack: {
+          type: "array",
+          maxItems: 16,
+          items: { type: "string" },
+          description: "기술 스택",
+        },
+        requiredExperience: {
+          type: "array",
+          maxItems: 12,
+          items: { type: "string" },
+          description: "요구 경험",
+        },
+        requirementMatches: {
+          type: "array",
+          maxItems: 24,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "category",
+              "requirement",
+              "status",
+              "matchedExperienceIds",
+              "evidence",
+              "missingEvidence",
+            ],
+            properties: {
+              category: {
+                type: "string",
+                enum: [
+                  "responsibility",
+                  "required_qualification",
+                  "preferred_qualification",
+                  "tech_stack",
+                  "required_experience",
+                ],
+              },
+              requirement: {
+                type: "string",
+                description: "JD에서 추출한 단일 요구사항",
+              },
+              status: {
+                type: "string",
+                enum: [
+                  "met",
+                  "partially_met",
+                  "insufficient_evidence",
+                  "not_met",
+                ],
+                description: "충족, 부분 충족, 근거 부족, 미충족 중 하나",
+              },
+              matchedExperienceIds: {
+                type: "array",
+                maxItems: 6,
+                items: { type: "string" },
+              },
+              evidence: {
+                type: "array",
+                maxItems: 6,
+                items: { type: "string" },
+                description:
+                  "원본 경험 또는 보완 답변에서 확인되는 직접 근거",
+              },
+              missingEvidence: {
+                type: "string",
+                description: "근거가 부족하거나 미충족인 이유",
+              },
+            },
+          },
+        },
+        emphasisPoints: {
+          type: "array",
+          maxItems: 10,
+          items: { type: "string" },
+          description: "지원 시 강조할 내용",
+        },
+        gaps: {
+          type: "array",
+          maxItems: 10,
+          items: { type: "string" },
+          description: "부족한 역량과 근거",
+        },
+        overclaimRisks: {
+          type: "array",
+          maxItems: 10,
+          items: { type: "string" },
+          description: "과장하면 안 되는 부분",
+        },
+        finalVerdict: {
+          type: "string",
+          enum: ["recommended", "challenge_possible", "needs_improvement"],
+          description: "지원 추천, 도전 지원 가능, 현재는 보완 필요",
+        },
+        finalVerdictReason: {
+          type: "string",
+          description: "최종 지원 판단 이유",
+        },
+      },
+    },
     matches: {
       type: "array",
-      minItems: 1,
+      minItems: 0,
       maxItems: 3,
       items: {
         type: "object",
@@ -185,7 +322,12 @@ const recommendationV2ResponseSchema = {
           },
         },
       },
-      description: "가장 적합한 경험 Top 3. 경험이 3개보다 적으면 가능한 만큼 반환",
+      description:
+        "가장 적합한 경험 최대 Top 3. 근거가 부족하면 3개를 채우지 않고 적합한 경험만 반환",
+    },
+    noMatchReason: {
+      type: "string",
+      description: "matches가 비어 있을 때 추천하지 않은 이유. 있으면 빈 문자열",
     },
     draftSentence: {
       type: "string",
@@ -228,19 +370,6 @@ function isStringArray(
         typeof item === "string" &&
         item.length <= maxItemLength,
     )
-  );
-}
-
-function isRecommendationPurpose(
-  value: unknown,
-): value is RecommendationPurpose {
-  return (
-    value === "cover_letter" ||
-    value === "portfolio" ||
-    value === "interview" ||
-    value === "jd" ||
-    value === "activity_application" ||
-    value === "other"
   );
 }
 
@@ -368,6 +497,15 @@ function createExperiencePromptContext(
   experience: Experience,
   analysis?: ExperienceAnalysis | null,
 ) {
+  const followupAnswers =
+    analysis?.evidenceGaps
+      .filter((gap) => gap.answer.trim())
+      .map((gap) => ({
+        title: gap.title,
+        question: gap.question,
+        answer: gap.answer,
+      })) ?? [];
+
   return {
     id: experience.id,
     title: experience.title,
@@ -389,6 +527,17 @@ function createExperiencePromptContext(
           isStale: analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
         }
       : null,
+    directEvidenceSources: {
+      originalExperienceFields: {
+        title: experience.title,
+        period: experience.period,
+        role: experience.role,
+        description: experience.description,
+        achievements: experience.achievements,
+        relatedLinks: experience.relatedLinks.map((link) => link.description),
+      },
+      followupAnswers,
+    },
   };
 }
 
@@ -396,55 +545,76 @@ function createRecommendationPrompt(body: RecommendRequest): string {
   const analysesByExperienceId = new Map(
     body.analyses.map((analysis) => [analysis.experienceId, analysis]),
   );
-  const topMatchCount = Math.min(3, body.experiences.length);
+  const purposeConfig = getRecommendationPurposeConfig(body.purpose);
 
   return JSON.stringify(
     {
       instruction:
-        "사용자의 자기소개서 문항, 면접 질문, JD, 지원서 원문에서 요구사항을 구조화하고 저장된 경험 중 가장 적합한 경험 Top 3를 추천해주세요.",
+        "사용자의 입력을 역량, 기술, 행동, 역할, 성과로 분해하고 저장된 경험 중 직접 근거가 있는 경험만 최대 Top 3로 추천해주세요.",
       schemaMetadata: {
         schemaVersion: RECOMMENDATION_SCHEMA_VERSION,
         promptVersion: RECOMMENDATION_PROMPT_VERSION,
         model: RECOMMENDATION_MODEL,
       },
+      purposeGuidelines: {
+        purpose: body.purpose,
+        label: purposeConfig.inputLabel,
+        recommendationOnly:
+          "이번 단계에서는 추천과 분석만 수행합니다. 자기소개서, 면접 답변, 지원 전략, 포트폴리오 문단 같은 결과물은 생성하지 않습니다.",
+      },
       requirementGuidelines: [
         "입력 전체에서 필수 역량, 우대 역량, 핵심 키워드, 답변 의도, 제약 조건을 먼저 추출합니다.",
-        "JD나 지원서 원문이 길어도 질문의 핵심 의도와 요구 역량을 우선합니다.",
+        "질문이나 JD를 역량, 기술, 행동, 역할, 성과 단위로 분해합니다.",
+        "JD나 긴 원문은 담당 업무, 필수 자격요건, 우대사항, 기술 스택, 요구 경험을 구분합니다.",
         "제약 조건에는 분량, 형식, 직무 조건, 금지사항처럼 답변 전략에 영향을 주는 내용을 넣습니다.",
       ],
+      jdGuidelines: [
+        "purpose가 jd이면 jdAnalysis를 반드시 채웁니다.",
+        "JD 요구사항별 status는 met, partially_met, insufficient_evidence, not_met 중 하나만 사용합니다.",
+        "status 판단의 evidence는 원본 경험 또는 보완 답변에서 확인되는 직접 근거만 씁니다.",
+        "finalVerdict는 recommended, challenge_possible, needs_improvement 중 하나만 사용합니다.",
+        "purpose가 jd가 아니면 jdAnalysis의 문자열은 빈 문자열, 배열은 빈 배열로 둡니다.",
+      ],
       matchingGuidelines: [
-        `matches는 정확히 ${topMatchCount}개를 반환합니다. 경험이 3개 이상이면 반드시 3개입니다.`,
+        "matches는 최대 3개만 반환합니다. 적합한 경험이 1~2개뿐이면 1~2개만 반환합니다.",
+        "직접 근거가 부족한 경험으로 억지로 3개를 채우지 않습니다.",
+        "저장된 경험 전체에서 직접 근거가 있는 후보가 하나도 없으면 matches는 빈 배열로 두고 noMatchReason에 이유를 씁니다.",
         "rank는 1부터 시작하며 중복하지 않습니다.",
         "fitLevel은 score 기준으로만 정합니다. score >= 75는 high, score >= 45는 medium, 그 미만은 low입니다.",
         "제목 유사도만 보지 말고 목적, 질문, 역할, 원본 성과, 분석 요약, STAR, 주요 성과, 키워드, 부족 정보의 보완 답변을 함께 판단합니다.",
-        "분석 v2가 있으면 summary, star, achievements, evidenceGaps, keywords를 우선 활용합니다.",
-        "evidenceGaps에 answer가 있으면 사용자가 보완한 사실로 보고 추천 근거에 반영합니다. 단, 원본 경험에 원래 있던 내용처럼 표현하지 않습니다.",
+        "분석 v2의 summary, star, achievements, keywords는 경험 이해를 위한 참고 자료입니다. 사실 근거로 단독 사용하지 않습니다.",
+        "evidenceGaps에 answer가 있으면 사용자가 보완한 사실로 보고 직접 근거에 반영합니다. 단, 원본 경험에 원래 있던 내용처럼 표현하지 않습니다.",
         "분석이 없거나 오래되었으면 원본 description, achievements, role, relatedLinks 설명을 fallback 근거로 사용합니다.",
-        "matchedEvidence에는 입력 원본 또는 분석 결과에서 실제 확인되는 근거만 씁니다.",
+        "matchReason은 AI의 해석과 추천 이유입니다.",
+        "matchedEvidence에는 원본 경험 필드 또는 보완 답변에서 실제 확인되는 직접 근거만 씁니다.",
         "근거가 약하거나 빠진 부분은 missingEvidence에 분리하고, 사실처럼 보강하지 않습니다.",
         "기록에 없는 성과, 수치, 리더십, 협업 규모, 사용 기술, 결과를 넣고 싶어지는 지점은 overclaimRisks에 분리합니다.",
         "suggestedAngle은 활용 관점만 제안하고, 긴 자기소개서 문단을 생성하지 않습니다.",
-        "draftSentence는 1순위 경험만 근거로 한 짧은 참고 문장 1개로 제한합니다.",
+        "draftSentence는 1순위 경험만 근거로 한 짧은 참고 문장 1개로 제한합니다. matches가 비어 있으면 빈 문자열입니다.",
         "experienceId는 반드시 experiences 배열에 있는 id 중 하나를 그대로 사용합니다.",
         "experienceTitle은 해당 id의 제목을 사용합니다. 서버가 실제 제목으로 다시 검증합니다.",
       ],
       sourceRules: [
-        "원본 경험이나 분석 결과에 없는 프로젝트명, 서비스명, 수치, 성과, 역할을 만들지 않습니다.",
+        "사실 근거는 원본 경험과 보완 답변만 사용합니다.",
+        "기존 AI 분석 결과는 참고 자료로만 사용합니다.",
+        "원본 경험이나 보완 답변에 없는 프로젝트명, 서비스명, 기술명, 수치, 사용자 수, 성과, 역할을 만들지 않습니다.",
         "관련 링크 설명은 사용자가 적은 참고 정보로만 사용하며 링크 내용을 직접 열람하거나 검증했다고 가정하지 않습니다.",
         "사용자 기록의 약점을 숨기지 말고 부족 근거와 과장 위험으로 분리합니다.",
-        "답변 초안 생성, 300자/700자 본문 작성, 기록 보완 질문 생성은 이번 결과에 포함하지 않습니다.",
+        "답변 초안 생성, 면접 답변 작성, JD 지원 전략 작성, 기록 보완 질문 생성은 이번 결과에 포함하지 않습니다.",
       ],
       outputGuidelines: {
         extractedRequirements:
           "요구사항 구조화 결과를 간결한 한국어 배열과 문장으로 반환",
+        jdAnalysis:
+          "JD 목적일 때 JD 핵심 요약, 요구사항 분류, 요구사항별 경험 매칭, 강조점, 부족 역량, 과장 주의점, 최종 지원 판단을 반환",
         matches:
-          "Top 3 경험을 비교할 수 있게 matchReason, matchedEvidence, missingEvidence, overclaimRisks, suggestedAngle을 모두 작성",
+          "최대 Top 3 경험을 비교할 수 있게 matchReason, matchedEvidence, missingEvidence, overclaimRisks, suggestedAngle을 모두 작성",
         draftSentence:
           "긴 문단이 아니라 1문장 참고 문장만 작성하고 원본에 없는 사실은 넣지 않음",
       },
       userInput: {
         purpose: body.purpose,
-        purposeLabel: PURPOSE_LABELS[body.purpose],
+        purposeLabel: purposeConfig.inputLabel,
         prompt: body.prompt,
       },
       experiences: body.experiences.map((experience) => {
@@ -613,10 +783,22 @@ function uniqueStringList(values: string[], maxItems: number): string[] {
     .slice(0, maxItems);
 }
 
+type ParsedRecommendationV2Result =
+  | {
+      ok: true;
+      recommendation: RecommendationApiResult;
+    }
+  | {
+      ok: false;
+      reason: "no_match";
+      message: string;
+    };
+
 function parseRecommendationV2Result(
   rawOutput: string,
   experiences: Experience[],
-): RecommendationApiResult | null {
+  purpose: RecommendationPurpose,
+): ParsedRecommendationV2Result | null {
   try {
     const parsed = JSON.parse(stripJsonFence(rawOutput)) as Record<
       string,
@@ -656,12 +838,33 @@ function parseRecommendationV2Result(
         };
       });
 
+    if (matches.length === 0) {
+      const noMatchReason =
+        typeof parsed.noMatchReason === "string"
+          ? parsed.noMatchReason.trim()
+          : "";
+
+      return {
+        ok: false,
+        reason: "no_match",
+        message:
+          noMatchReason ||
+          "저장된 경험에서 직접 근거가 충분한 추천 후보를 찾지 못했습니다.",
+      };
+    }
+
     const draftSentence =
       typeof parsed.draftSentence === "string"
         ? parsed.draftSentence.trim()
         : "";
 
-    if (matches.length === 0 || !draftSentence) {
+    if (!draftSentence) {
+      return null;
+    }
+
+    const jdAnalysis = normalizeRecommendationJdAnalysis(parsed.jdAnalysis);
+
+    if (purpose === "jd" && !jdAnalysis) {
       return null;
     }
 
@@ -672,11 +875,12 @@ function parseRecommendationV2Result(
       return null;
     }
 
-    return normalizeRecommendationApiResult({
+    const recommendation = normalizeRecommendationApiResult({
       schemaVersion: RECOMMENDATION_SCHEMA_VERSION,
       promptVersion: RECOMMENDATION_PROMPT_VERSION,
       model: RECOMMENDATION_MODEL,
       extractedRequirements,
+      jdAnalysis: purpose === "jd" ? jdAnalysis : null,
       matches,
       recommendedExperienceId: topExperience.id,
       recommendedExperienceTitle: topExperience.title,
@@ -695,6 +899,13 @@ function parseRecommendationV2Result(
       usageDirection: topMatch.suggestedAngle,
       draftSentence,
     });
+
+    return recommendation
+      ? {
+          ok: true,
+          recommendation,
+        }
+      : null;
   } catch {
     return null;
   }
@@ -713,9 +924,10 @@ async function readRequestBody(
     const candidate = body as Record<string, unknown>;
     const rawExperiences = candidate.experiences;
     const rawAnalyses = candidate.analyses;
+    const purpose = normalizeRecommendationPurpose(candidate.purpose);
 
     if (
-      !isRecommendationPurpose(candidate.purpose) ||
+      !purpose ||
       !hasTextWithinLimit(candidate.prompt, MAX_RECOMMENDATION_PROMPT_LENGTH) ||
       !Array.isArray(rawExperiences) ||
       !Array.isArray(rawAnalyses)
@@ -747,7 +959,7 @@ async function readRequestBody(
     }
 
     return {
-      purpose: candidate.purpose,
+      purpose,
       prompt: candidate.prompt.trim(),
       experiences,
       analyses,
@@ -807,11 +1019,11 @@ export async function POST(request: Request) {
     const recommendationOutput = await requestOpenAiStructuredOutput({
       apiKey,
       systemContent:
-        "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 문항/JD 요구사항을 구조화하고, 사용자가 저장한 경험과 분석 v2 근거만으로 경험 Top 3를 추천합니다. 원본에 없는 사실은 만들지 않고 부족 근거와 과장 위험을 분리합니다.",
+        "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 문항/JD 요구사항을 구조화하고, 사용자가 저장한 원본 경험과 보완 답변을 사실 근거로 삼아 적합한 경험만 최대 Top 3로 추천합니다. 기존 AI 분석은 참고 자료로만 사용하고, 원본에 없는 사실은 만들지 않으며 추천 이유와 직접 근거, 부족 근거, 과장 위험을 분리합니다.",
       userContent: createRecommendationPrompt(body),
       schemaName: "campuslog_experience_recommendation_v2",
       schema: recommendationV2ResponseSchema,
-      maxOutputTokens: 2400,
+      maxOutputTokens: 4200,
       logLabel: "recommendation-v2",
       signal: openAiAbortController.signal,
     });
@@ -829,6 +1041,7 @@ export async function POST(request: Request) {
     const recommendation = parseRecommendationV2Result(
       recommendationOutput.outputText,
       body.experiences,
+      body.purpose,
     );
 
     if (!recommendation) {
@@ -839,9 +1052,17 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!recommendation.ok) {
+      return createErrorResponse(
+        "INSUFFICIENT_INPUT",
+        `${recommendation.message} 경험 내용을 보완하거나 질문을 더 구체적으로 입력해 주세요.`,
+        422,
+      );
+    }
+
     return NextResponse.json<RecommendResponse>({
       ok: true,
-      recommendation,
+      recommendation: recommendation.recommendation,
     });
   } catch {
     if (didOpenAiRequestTimeOut) {

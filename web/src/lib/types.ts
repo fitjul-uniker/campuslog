@@ -2,10 +2,8 @@ export type AnalysisStatus = "unanalyzed" | "analyzed" | "needs_reanalysis";
 
 export type RecommendationPurpose =
   | "cover_letter"
-  | "portfolio"
   | "interview"
   | "jd"
-  | "activity_application"
   | "other";
 
 export type SortOption = "updated_desc" | "created_asc" | "period_desc";
@@ -228,6 +226,48 @@ export type RecommendationExtractedRequirements = {
   constraints: string[];
 };
 
+export type JdRequirementCategory =
+  | "responsibility"
+  | "required_qualification"
+  | "preferred_qualification"
+  | "tech_stack"
+  | "required_experience";
+
+export type JdRequirementStatus =
+  | "met"
+  | "partially_met"
+  | "insufficient_evidence"
+  | "not_met";
+
+export type JdFinalVerdict =
+  | "recommended"
+  | "challenge_possible"
+  | "needs_improvement";
+
+export type RecommendationJdRequirementMatch = {
+  category: JdRequirementCategory;
+  requirement: string;
+  status: JdRequirementStatus;
+  matchedExperienceIds: string[];
+  evidence: string[];
+  missingEvidence: string;
+};
+
+export type RecommendationJdAnalysis = {
+  summary: string;
+  responsibilities: string[];
+  requiredQualifications: string[];
+  preferredQualifications: string[];
+  techStack: string[];
+  requiredExperience: string[];
+  requirementMatches: RecommendationJdRequirementMatch[];
+  emphasisPoints: string[];
+  gaps: string[];
+  overclaimRisks: string[];
+  finalVerdict: JdFinalVerdict;
+  finalVerdictReason: string;
+};
+
 export type RecommendationMatch = {
   experienceId: string;
   experienceTitle: string;
@@ -250,6 +290,7 @@ export type RecommendationResult = {
   promptVersion: string;
   model: string;
   extractedRequirements: RecommendationExtractedRequirements;
+  jdAnalysis: RecommendationJdAnalysis | null;
   matches: RecommendationMatch[];
   recommendedExperienceId: string;
   recommendedExperienceTitle: string;
@@ -283,9 +324,30 @@ export type RecommendResponse =
 export type AnswerDraftSchemaVersion = "v1";
 
 export type AnswerDraftType =
+  | "cover_letter_300"
   | "cover_letter_500"
-  | "cover_letter_800"
   | "cover_letter_1000"
+  | "interview_30s"
+  | "interview_60s"
+  | "interview_followups"
+  | "jd_strategy"
+  | "custom"
+  | "cover_letter_800"
+  | "interview"
+  | "portfolio";
+
+export type ActiveAnswerDraftType =
+  | "cover_letter_300"
+  | "cover_letter_500"
+  | "cover_letter_1000"
+  | "interview_30s"
+  | "interview_60s"
+  | "interview_followups"
+  | "jd_strategy"
+  | "custom";
+
+export type LegacyAnswerDraftType =
+  | "cover_letter_800"
   | "interview"
   | "portfolio";
 
@@ -311,7 +373,7 @@ export type AnswerDraftResult = {
 };
 
 export type AnswerDraftsRequest = {
-  draftType: AnswerDraftType;
+  draftType: ActiveAnswerDraftType;
   recommendation: RecommendationResult;
   match: RecommendationMatch;
   experience: Experience;

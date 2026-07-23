@@ -132,12 +132,13 @@ type ExperienceAnalysisRow = {
 
 type RecommendationRow = {
   id: string;
-  purpose: RecommendationResult["purpose"];
+  purpose: string;
   prompt: string;
   schema_version?: RecommendationResult["schemaVersion"];
   prompt_version?: string | null;
   model?: string | null;
   extracted_requirements?: unknown;
+  jd_analysis?: unknown;
   matches?: unknown;
   recommended_experience_id: string;
   recommended_experience_title: string;
@@ -292,6 +293,17 @@ function throwIfError(error: RepositoryError | null) {
   }
 }
 
+function isMissingSchemaColumnError(
+  error: RepositoryError | null,
+  columnName: string,
+) {
+  return Boolean(
+    error &&
+      error.code === "PGRST204" &&
+      error.message?.includes(`'${columnName}' column`),
+  );
+}
+
 function toExperience(row: ExperienceRow): Experience {
   return {
     id: row.id,
@@ -370,6 +382,7 @@ function toRecommendation(row: RecommendationRow): RecommendationResult {
     promptVersion: row.prompt_version ?? "",
     model: row.model ?? "",
     extractedRequirements: row.extracted_requirements,
+    jdAnalysis: row.jd_analysis,
     matches: row.matches,
     recommendedExperienceId: row.recommended_experience_id,
     recommendedExperienceTitle: row.recommended_experience_title,
@@ -789,28 +802,44 @@ function createSupabaseCampusLogRepository(
         return ((data ?? []) as RecommendationRow[]).map(toRecommendation);
       },
       async save(result) {
+        const recommendationPayload = {
+          id: result.id,
+          purpose: result.purpose,
+          prompt: result.prompt,
+          schema_version: result.schemaVersion,
+          prompt_version: result.promptVersion,
+          model: result.model,
+          extracted_requirements: result.extractedRequirements,
+          matches: result.matches,
+          recommended_experience_id: result.recommendedExperienceId,
+          recommended_experience_title: result.recommendedExperienceTitle,
+          reason: result.reason,
+          related_tags: result.relatedTags,
+          highlighted_achievement: result.highlightedAchievement,
+          usage_direction: result.usageDirection,
+          draft_sentence: result.draftSentence,
+          generated_at: result.generatedAt,
+          ...(result.jdAnalysis ? { jd_analysis: result.jdAnalysis } : {}),
+        };
         const { data, error } = await supabase
           .from("recommendations")
-          .upsert({
-            id: result.id,
-            purpose: result.purpose,
-            prompt: result.prompt,
-            schema_version: result.schemaVersion,
-            prompt_version: result.promptVersion,
-            model: result.model,
-            extracted_requirements: result.extractedRequirements,
-            matches: result.matches,
-            recommended_experience_id: result.recommendedExperienceId,
-            recommended_experience_title: result.recommendedExperienceTitle,
-            reason: result.reason,
-            related_tags: result.relatedTags,
-            highlighted_achievement: result.highlightedAchievement,
-            usage_direction: result.usageDirection,
-            draft_sentence: result.draftSentence,
-            generated_at: result.generatedAt,
-          })
+          .upsert(recommendationPayload)
           .select("*")
           .single();
+
+        if (isMissingSchemaColumnError(error, "jd_analysis")) {
+          const fallbackPayload = { ...recommendationPayload };
+          delete fallbackPayload.jd_analysis;
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from("recommendations")
+            .upsert(fallbackPayload)
+            .select("*")
+            .single();
+
+          throwIfError(fallbackError);
+          return toRecommendation(fallbackData as RecommendationRow);
+        }
+
         throwIfError(error);
         return toRecommendation(data as RecommendationRow);
       },

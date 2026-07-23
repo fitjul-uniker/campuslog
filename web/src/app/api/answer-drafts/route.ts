@@ -21,6 +21,11 @@ import {
   normalizeAnswerDraftResult,
 } from "@/lib/answerDraftResult";
 import {
+  getRecommendationPurposeConfig,
+  isActiveAnswerDraftType,
+  isDraftTypeAllowedForPurpose,
+} from "@/lib/recommendationPurposeConfig";
+import {
   MAX_RELATED_LINK_DESCRIPTION_LENGTH,
   MAX_RELATED_LINKS,
   MAX_RELATED_LINK_URL_LENGTH,
@@ -31,11 +36,11 @@ import {
   normalizeRecommendationResult,
 } from "@/lib/recommendationResult";
 import type {
+  ActiveAnswerDraftType,
   AnswerDraft,
   AnswerDraftResult,
   AnswerDraftsRequest,
   AnswerDraftsResponse,
-  AnswerDraftType,
   Experience,
   ExperienceAnalysis,
   RecommendationMatch,
@@ -165,8 +170,8 @@ function isAnalysisStatus(value: unknown): value is Experience["analysisStatus"]
   );
 }
 
-function isAnswerDraftType(value: unknown): value is AnswerDraftType {
-  return ANSWER_DRAFT_TYPES.includes(value as AnswerDraftType);
+function isAnswerDraftType(value: unknown): value is ActiveAnswerDraftType {
+  return isActiveAnswerDraftType(value);
 }
 
 function areRelatedLinksWithinLimit(links: RelatedLink[]): boolean {
@@ -421,6 +426,9 @@ function mergeNotes(primary: string[], secondary: string[]): string[] {
 
 function createDraftPromptContext(body: AnswerDraftsRequest) {
   const characterLimit = getAnswerDraftCharacterLimit(body.draftType);
+  const purposeConfig = getRecommendationPurposeConfig(
+    body.recommendation.purpose,
+  );
   const selectedDraftType = {
     type: body.draftType,
     label: ANSWER_DRAFT_TYPE_LABELS[body.draftType],
@@ -430,13 +438,18 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
 
   return {
     instruction:
-      "추천 v2에서 선택한 경험과 분석 v2 근거를 바탕으로 사용자가 선택한 답변 초안 1개를 작성해주세요.",
+      "추천 v2에서 선택한 경험과 사용자가 선택한 생성 옵션에 맞는 결과물 1개만 작성해주세요.",
     schemaMetadata: {
       schemaVersion: ANSWER_DRAFT_SCHEMA_VERSION,
       promptVersion: ANSWER_DRAFT_PROMPT_VERSION,
       model: ANSWER_DRAFT_MODEL,
     },
     selectedDraftType,
+    selectedPurpose: {
+      purpose: body.recommendation.purpose,
+      label: purposeConfig.inputLabel,
+      primaryActionLabel: purposeConfig.primaryActionLabel,
+    },
     selectedRecommendation: {
       id: body.recommendation.id,
       purpose: body.recommendation.purpose,
@@ -469,13 +482,15 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
     sourceRules: [
       "selectedRecommendation.prompt는 초안이 직접 답해야 하는 원 질문/문항/JD/면접 질문입니다.",
       "selectedRecommendation.extractedRequirements는 원 질문에서 추출한 요구사항이며, 본문은 이 요구사항에 맞춰 선택 경험을 풀어야 합니다.",
-      "본문에는 experience 원본, selectedMatch.matchedEvidence, analysis 안에서 확인되는 사실만 사용합니다.",
+      "본문에는 experience 원본, selectedMatch.matchedEvidence, analysis.evidenceGaps의 보완 답변에서 확인되는 사실만 사용합니다.",
+      "analysis의 summary, star, achievements, keywords는 참고 자료일 뿐 원본에 없는 사실을 새로 확정하는 근거가 아닙니다.",
       "원본 기록에 없는 성과, 수치, 역할, 협업 규모, 사용 기술명, 수상명, 프로젝트명, 결과를 만들지 않습니다.",
       "요구사항 키워드는 답변 방향을 잡는 데만 쓰고, 기록 근거가 없으면 사용자가 그 역량을 입증했다고 단정하지 않습니다.",
       "근거가 부족한 내용은 본문에 넣지 말고 missingEvidenceNotes에 분리합니다.",
       "과장하기 쉬운 지점은 cautions에 분리합니다.",
       "usedEvidence는 반드시 evidenceOptions 중 실제 사용한 문장을 그대로 복사합니다.",
       "답변은 최종본이 아니라 사용자가 수정할 초안이라는 톤을 유지하되, 본문 안에 사용법 안내 문장은 넣지 않습니다.",
+      "선택된 활용 목적과 관련 없는 결과물은 만들지 않습니다.",
     ],
     outputRules: [
       `draft.type은 반드시 ${body.draftType}입니다.`,
@@ -485,9 +500,15 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
         ? `draft.content는 공백, 문장부호, 줄바꿈을 포함해 ${characterLimit.min}자 이상 ${characterLimit.max}자 이하로 작성합니다.`
         : "draft.content는 targetGuide에 맞는 분량으로 작성합니다.",
       "글자 수는 JavaScript Array.from(draft.content).length 기준입니다.",
-      "자기소개서 초안은 selectedRecommendation.prompt의 문항에 직접 답하는 글로 작성합니다.",
-      "면접 답변은 selectedRecommendation.prompt가 면접 질문이라고 보고 45~60초 안에 말할 수 있는 구어체 한국어로 작성합니다.",
-      "포트폴리오 설명은 selectedRecommendation.prompt의 목적/JD 요구사항을 고려해 프로젝트/활동 설명용으로 간결하게 작성합니다.",
+      "cover_letter_300, cover_letter_500, cover_letter_1000은 selectedRecommendation.prompt의 문항에 직접 답하는 자기소개서 초안으로 작성합니다.",
+      "자기소개서 초안은 목표 글자 수보다 약간 작게 작성해 사용자가 직접 수정할 여백을 남깁니다.",
+      "자기소개서 초안의 missingEvidenceNotes에는 추가하면 좋은 정보와 축약하거나 수정할 부분을 함께 분리합니다.",
+      "interview_30s와 interview_60s는 핵심 답변, 상황, 본인의 역할과 행동, 결과, 배운 점 또는 직무 연결 흐름을 따릅니다.",
+      "interview_30s는 30초 안에 말할 수 있게 짧게 작성합니다.",
+      "interview_60s는 1분 이상 말할 수 있게 STAR 구조를 더 충분히 작성합니다.",
+      "interview_followups는 본문을 답변 문단이 아니라 예상 꼬리 질문 목록 중심으로 작성합니다.",
+      "jd_strategy는 JD 핵심 요약, 강조할 경험, 부족한 역량, 자기소개서/면접 활용 방향, 최종 지원 판단을 중심으로 작성합니다.",
+      "custom은 사용자의 질문이 단순 경험 추천이면 새 글을 과하게 생성하지 말고 추천 분석을 정리하는 맞춤 결과로 작성합니다.",
       "긴 한 문장보다 모바일에서 읽기 쉬운 짧은 문단을 사용합니다.",
     ],
     evidenceOptions: createEvidenceOptions(
@@ -742,7 +763,7 @@ type AnswerDraftLengthIssue = {
 
 function getAnswerDraftLengthIssue(
   answerDrafts: AnswerDraftResult,
-  draftType: AnswerDraftType,
+  draftType: ActiveAnswerDraftType,
 ): AnswerDraftLengthIssue | null {
   const draft = answerDrafts.drafts.find((draft) => draft.type === draftType);
   const limit = getAnswerDraftCharacterLimit(draftType);
@@ -817,6 +838,10 @@ async function readRequestBody(
       !match ||
       !experience
     ) {
+      return null;
+    }
+
+    if (!isDraftTypeAllowedForPurpose(recommendation.purpose, draftType)) {
       return null;
     }
 
@@ -914,7 +939,7 @@ export async function POST(request: Request) {
     const draftOutput = await requestOpenAiStructuredOutput({
       apiKey,
       systemContent:
-        "당신은 CampusLog의 답변 초안 생성 도우미입니다. 추천 v2에 사용된 원 질문/문항과 분석 v2 근거만으로 사용자가 선택한 자기소개서, 면접, 포트폴리오 초안 1개를 작성합니다. 원본에 없는 성과, 수치, 역할, 협업 규모, 기술명은 만들지 않고 부족 근거와 과장 위험을 별도 필드로 분리합니다.",
+        "당신은 CampusLog의 결과물 생성 도우미입니다. 추천 v2 이후 사용자가 선택한 경험, 활용 목적, 생성 옵션에 맞는 결과물 1개만 작성합니다. 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 보며, 원본에 없는 성과, 수치, 역할, 협업 규모, 기술명은 만들지 않고 부족 근거와 과장 위험을 별도 필드로 분리합니다.",
       userContent: createAnswerDraftPrompt(body),
       schemaName: "campuslog_answer_drafts_v1",
       schema: answerDraftsResponseSchema,

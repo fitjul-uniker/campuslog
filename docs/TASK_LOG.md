@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - AI 추천 목적별 추천·생성 흐름 재정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog AI 추천의 활용 목적을 면접·자기소개서·JD 분석·기타로 정리하고, 추천 단계와 결과물 생성 단계를 목적별로 제한 |
+| 수정한 파일 | `web/src/lib/types.ts`, `web/src/lib/recommendationPurposeConfig.ts`, `web/src/lib/recommendationResult.ts`, `web/src/lib/answerDraftResult.ts`, `web/src/lib/answerDraftApi.ts`, `web/src/lib/experienceFollowupResult.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/app/api/recommend/route.ts`, `web/src/app/api/answer-drafts/route.ts`, `web/src/app/recommend/history/page.tsx`, `web/src/components/ai/RecommendationForm.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/recommendations/AnimatedRecommendationList.tsx`, `web/src/app/globals.css`, `supabase/migrations/20260723000100_recommendation_jd_analysis.sql`, `supabase/migrations/20260723000200_experience_followup_answer_draft_types.sql` |
+| 변경 내용 | 추천 활용 목적 신규 생성 값을 `interview`, `cover_letter`, `jd`, `other`로 제한하고 기존 `portfolio`, `activity_application` 저장값은 `other`로 읽는 호환 레이어를 추가. 목적별 입력 제목·설명·placeholder·예시·생성 옵션·기본 CTA를 단일 설정 객체로 관리. 추천 API는 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 사용하도록 prompt를 수정했으며, 적합 경험이 부족하면 최대 3개를 채우지 않고 직접 근거가 있는 경험만 반환하도록 변경. JD 목적은 담당 업무, 필수요건, 우대사항, 기술 스택, 요구 경험, 요구사항별 충족 상태, 강조점, 부족 역량, 과장 주의점, 최종 지원 판단을 `jdAnalysis`로 반환·표시. 답변 생성 API는 목적별 허용 타입만 받도록 제한하고 자기소개서는 300자 / 500자 / 1000자, 면접은 30초 / 1분 이상 / 예상 꼬리 질문, JD는 지원 전략, 기타는 맞춤 결과만 생성. Supabase에 `recommendations.jd_analysis` 컬럼과 새 보완 답변 source draft type 허용 migration을 추가하고, schema cache가 아직 갱신되지 않은 환경에서도 JD 분석이 없는 추천 저장은 깨지지 않도록 repository fallback을 추가 |
+| 검증한 내용 | `npm run lint`, `npm run build` 통과. 외부 OpenAI 호출은 실행하지 않음. 브라우저에서는 비로그인 보호 경로 redirect와 UI preview 빈 상태까지만 확인했으며, 저장된 경험이 있는 로그인 세션의 실제 목적별 추천·생성 전체 흐름은 사용자가 Supabase SQL 적용 후 수동 확인 중 |
+| 남은 작업 | 실제 로그인 Supabase 세션에서 면접 / 자기소개서 / JD 분석 / 기타 목적별 추천 저장·재조회와 목적별 생성 옵션 노출·생성 결과를 수동 smoke test. JD 분석 품질은 실제 OpenAI 응답 사례로 추가 튜닝 필요 |
+| 관련 커밋 메시지 | `feat: refine recommendation purposes and draft generation` |
+
 ### 2026-07-23 - AI 분석 부족 정보 답변 UX 간소화
 
 | 항목 | 내용 |

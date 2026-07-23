@@ -5,10 +5,8 @@ import type { KeyboardEvent, UIEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { formatDateTime } from "@/lib/date";
-import type {
-  RecommendationPurpose,
-  RecommendationResult,
-} from "@/lib/types";
+import { getRecommendationPurposeConfig } from "@/lib/recommendationPurposeConfig";
+import type { RecommendationResult } from "@/lib/types";
 
 type AnimatedRecommendationListProps = {
   recommendations: RecommendationResult[];
@@ -18,15 +16,6 @@ type AnimatedRecommendationListProps = {
     recommendation: RecommendationResult,
     trigger: HTMLButtonElement,
   ) => void;
-};
-
-const PURPOSE_LABELS: Record<RecommendationPurpose, string> = {
-  cover_letter: "자기소개서",
-  portfolio: "포트폴리오",
-  interview: "면접",
-  jd: "JD",
-  activity_application: "대외활동/지원서",
-  other: "기타",
 };
 
 const SCROLL_FADE_DISTANCE = 48;
@@ -149,7 +138,8 @@ export function AnimatedRecommendationList({
                   onKeyDown={(event) => handleItemKeyDown(event, index)}
                 >
                   <span className="recommendation-history-row-meta">
-                    {PURPOSE_LABELS[recommendation.purpose]} ·{" "}
+                    {getRecommendationPurposeConfig(recommendation.purpose)
+                      .inputLabel} ·{" "}
                     {recommendation.recommendedExperienceTitle}
                   </span>
                   <span className="recommendation-history-row-prompt">

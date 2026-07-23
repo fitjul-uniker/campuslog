@@ -1,7 +1,7 @@
 import { normalizeAnswerDraftResult } from "@/lib/answerDraftResult";
 import type {
+  ActiveAnswerDraftType,
   AnswerDraftsResponse,
-  AnswerDraftType,
   Experience,
   ExperienceAnalysis,
   RecommendationMatch,
@@ -9,7 +9,7 @@ import type {
 } from "@/lib/types";
 
 type RequestAnswerDraftsInput = {
-  draftType: AnswerDraftType;
+  draftType: ActiveAnswerDraftType;
   recommendation: RecommendationResult;
   match: RecommendationMatch;
   experience: Experience;

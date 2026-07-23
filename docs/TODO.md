@@ -35,6 +35,7 @@
 - 2026-07-14: `feature/ai-answer-drafts`에서 `/api/answer-drafts` structured output과 prompt를 추가. 추천 v2의 선택 match, extractedRequirements, 경험 원본, 분석 v2 결과를 활용해 사용자가 고른 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 초안을 생성·저장·표시. 초안은 추천에 사용된 원 질문 / 문항 / JD / 면접 질문을 직접 답하도록 생성. 원본에 없는 사실은 본문에 넣지 않고 `missingEvidenceNotes` 또는 `cautions`로 분리. 초안은 별도 `answer_drafts` table과 `campuslog:v1:answer-drafts` localStorage key에 type별로 누적 저장해 기존 추천 v1/v2 기록 하위 호환을 유지.
 - 2026-07-14: `feature/ai-evidence-followup`에서 `/api/evidence-followups` 보완 질문 생성, `experience_followups` table / `campuslog:v1:experience-followups` 저장소, 분석 화면의 질문 생성 / 답변 저장 / 수정 / dismiss / 보완 답변 기반 재분석 CTA를 구현. 이 흐름은 2026-07-23 `ISSUE-078`에서 분석 부족 정보 카드 안 직접 답변 저장 방식으로 간소화.
 - 2026-07-23: AI 경험 분석 화면을 요약, STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 축소. 핵심 역량 태그, 역량별 근거, 원본 근거, 자소서 소재 각도와 별도 보완 질문 생성 UI는 제거. 분석 부족 정보 카드 안에서 바로 답변을 저장하고, 답변은 분석 `evidenceGaps.answer`와 기존 `experience_followups` 호환 저장소에 함께 반영하며 보완 답변만으로는 `needs_reanalysis`를 강제하지 않음. 추천 / 답변 초안 입력에는 원본 경험, 분석 요약, STAR, 주요 성과, 부족 정보 보완 답변, 키워드를 함께 전달.
+- 2026-07-23: AI 추천 활용 목적을 면접 / 자기소개서 / JD 분석 / 기타 4개 신규 생성값으로 정리하고 목적별 입력 안내·예시·생성 옵션을 단일 설정 객체로 관리. 기존 `portfolio`, `activity_application` 저장 기록은 `other`로 읽어 하위 호환. 추천 API는 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 사용하도록 prompt를 조정했으며, 직접 근거가 부족하면 억지로 Top 3를 채우지 않음. 답변 생성 API는 목적별 허용 타입만 받도록 제한. 사용자가 Supabase SQL Editor에서 `jd` purpose 허용, `recommendations.jd_analysis`, 새 answer draft type constraint migration을 적용함. 실제 OpenAI 성공 경로와 목적별 생성 결과 수동 smoke test는 남음.
 - 2026-07-17: 팀 테스트를 위해 Supabase Auth 관리자 API 기반 `npm run seed:test-users` 스크립트를 추가. 기본 계정은 `test1@campuslog.test` ~ `test9@campuslog.test`, 비밀번호는 `test1111` ~ `test9999`이며 `campuslog_profile` metadata를 함께 설정. 사용자가 실제 Supabase project에 9개 계정이 모두 `created`로 생성된 것을 확인. 더미 경험·활동 데이터 주입은 아직 수행하지 않음.
 - 2026-07-17: 진행 중 / 시작 예정 활동을 상세 화면에서 수정할 수 있게 하고, 오늘의 기록의 마무리 필요 활동도 정리 전 수정할 수 있게 함. 활동 종료 시 현재 날짜를 완료일로 저장해 예상 종료일이 미래여도 즉시 AI 초안을 생성하도록 수정. 실제 로그인 브라우저 세션 회귀 확인은 남음.
 
@@ -60,14 +61,16 @@
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 화면·신규 분석 출력 간소화 (`ISSUE-078`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
-- [ ] Supabase project에 `20260714000500_recommendation_jd_purpose.sql` 적용 후 로그인 세션에서 JD 추천 저장·재조회 smoke test (`ISSUE-060`)
-- [x] 답변 초안 생성: 500자 / 800자 / 1000자 자기소개서 + 면접 + 포트폴리오 버전 contract와 UI 구현 (`ISSUE-031`)
+- [x] Supabase project에 추천 목적 `jd`, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 (`ISSUE-060`, `ISSUE-079`)
+- [ ] 로그인 세션에서 JD 추천 저장·재조회 smoke test (`ISSUE-060`, `ISSUE-079`)
+- [x] 목적별 답변 생성: 자기소개서 300자 / 500자 / 1000자, 면접 30초 / 1분 이상 / 예상 꼬리 질문, JD 지원 전략, 기타 맞춤 결과 contract와 UI 구현 (`ISSUE-031`, `ISSUE-079`)
 - [x] 기록 보완 루프 UX 개편: 부족 정보 카드 안에서 바로 답변 저장, 질문 생성 단계 제거, 추천 즉시 반영 (`ISSUE-078`)
 
 ### Medium
 
 - [ ] AI 추천 정확도 평가 기준과 회귀 사례 정의
 - [x] AI 추천 이유·활용 방향·근거 일치 강화
+- [ ] 목적별 AI 추천·생성 실제 OpenAI 응답 품질 확인과 prompt 튜닝 (`ISSUE-079`)
 - [ ] OCR / JD 이미지 입력의 일회성 처리와 개인정보·비용 정책 정의. 텍스트 붙여넣기 흐름 안정화 전까지 Optional (`ISSUE-031`)
 - [x] AI 분석 v2 model / prompt / schema version 저장 결정 및 구현
 - [x] 추천 API의 model / prompt / schema version 저장 결정 및 구현
@@ -142,6 +145,7 @@
 - [x] AI 제한 초과 오류 code, `retryAfter`, 입력 상한과 재시도 contract 공유 (`docs/AI_API_CONTRACT.md`)
 - [x] AI 분석 v2 schema와 API response 변경에 맞춰 관련 계약 문서와 결과 화면 수정
 - [x] 추천 v2 schema와 API response 변경에 맞춰 관련 계약 문서와 결과 / 기록 화면 수정
+- [x] 추천 목적별 입력·생성 옵션과 JD 분석 응답 구조 변경에 맞춰 타입 / API / 결과 화면 수정 (`ISSUE-079`)
 - [x] 기록 보완 루프 schema와 API response 변경에 맞춰 관련 계약 문서와 분석 결과 화면 수정
 - [x] AI 분석 v2.1 간소화와 부족 정보 카드 답변 저장 흐름에 맞춰 분석 / 추천 / 초안 입력 계약 수정 (`ISSUE-078`)
 - [x] QA 안정화: 기록 보완 질문 답변 draft 보존, 질문-답변 입력 묶음 재배치, 숨긴 질문 복원 버튼 추가 (`ISSUE-045`, `ISSUE-046`, `ISSUE-047`)
