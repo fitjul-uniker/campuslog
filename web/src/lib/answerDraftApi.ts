@@ -1,4 +1,5 @@
 import { normalizeAnswerDraftResult } from "@/lib/answerDraftResult";
+import { isRequestAbortError } from "@/lib/requestCancel";
 import type {
   ActiveAnswerDraftType,
   AnswerDraftsResponse,
@@ -14,6 +15,7 @@ type RequestAnswerDraftsInput = {
   match: RecommendationMatch;
   experience: Experience;
   analysis: ExperienceAnalysis | null;
+  signal?: AbortSignal;
 };
 
 type RequestAnswerDraftsStreamInput = RequestAnswerDraftsInput & {
@@ -148,10 +150,12 @@ export async function requestAnswerDrafts({
   match,
   experience,
   analysis,
+  signal,
 }: RequestAnswerDraftsInput): Promise<AnswerDraftsResponse> {
   try {
     const response = await fetch("/api/answer-drafts", {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -180,7 +184,17 @@ export async function requestAnswerDrafts({
 
       return payload;
     }
-  } catch {
+  } catch (error) {
+    if (isRequestAbortError(error)) {
+      return {
+        ok: false,
+        error: {
+          code: "REQUEST_CANCELLED",
+          message: "답변 초안 생성을 취소했습니다.",
+        },
+      };
+    }
+
     return {
       ok: false,
       error: {
@@ -210,10 +224,12 @@ export async function requestAnswerDraftsStream({
   onStatus,
   onDelta,
   onReplace,
+  signal,
 }: RequestAnswerDraftsStreamInput): Promise<AnswerDraftsResponse> {
   try {
     const response = await fetch("/api/answer-drafts", {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -282,7 +298,9 @@ export async function requestAnswerDraftsStream({
             ok: false,
             error: {
               code:
-                event.error.code === "OPENAI_API_ERROR"
+                event.error.code === "REQUEST_CANCELLED"
+                  ? "REQUEST_CANCELLED"
+                  : event.error.code === "OPENAI_API_ERROR"
                   ? "OPENAI_API_ERROR"
                   : "UNKNOWN_ERROR",
               message:
@@ -350,7 +368,17 @@ export async function requestAnswerDraftsStream({
         "답변 초안 생성 스트림이 완료되지 않았습니다. 다시 시도해주세요.",
       )
     );
-  } catch {
+  } catch (error) {
+    if (isRequestAbortError(error)) {
+      return {
+        ok: false,
+        error: {
+          code: "REQUEST_CANCELLED",
+          message: "답변 초안 생성을 취소했습니다.",
+        },
+      };
+    }
+
     return {
       ok: false,
       error: {

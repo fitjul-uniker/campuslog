@@ -116,6 +116,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   const [error, setError] = useState("");
   const endActivityButtonRef = useRef<HTMLButtonElement>(null);
   const endConfirmationRef = useRef<HTMLElement>(null);
+  const synthesisAbortControllerRef = useRef<AbortController | null>(null);
 
   const loadActivity = useCallback(async () => {
     setIsLoading(true);
@@ -149,6 +150,12 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   useEffect(() => {
     loadActivity();
   }, [loadActivity]);
+
+  useEffect(() => {
+    return () => {
+      synthesisAbortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!showEndConfirmation) {
@@ -239,9 +246,33 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     }
 
     setActivity(processingActivity);
-    const response = await requestActivitySynthesis(processingActivity, logs);
+    const abortController = new AbortController();
+    synthesisAbortControllerRef.current = abortController;
+    const response = await requestActivitySynthesis(processingActivity, logs, {
+      signal: abortController.signal,
+    });
 
     if (!response.ok) {
+      if (response.error.code === "REQUEST_CANCELLED") {
+        const restoredActivity =
+          await repository.trackedActivities.setSynthesisStatus(
+            processingActivity.id,
+            sourceActivity.synthesisStatus,
+          );
+        setActivity(restoredActivity ?? {
+          ...processingActivity,
+          synthesisStatus: sourceActivity.synthesisStatus,
+        });
+        setIsSynthesizing(false);
+        setError(
+          "AI 완료 경험 생성을 취소했습니다. 활동과 날짜별 기록은 그대로 유지했어요.",
+        );
+        if (synthesisAbortControllerRef.current === abortController) {
+          synthesisAbortControllerRef.current = null;
+        }
+        return;
+      }
+
       const failedActivity = await repository.trackedActivities.setSynthesisStatus(
         processingActivity.id,
         "failed",
@@ -249,6 +280,9 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       setActivity(failedActivity ?? processingActivity);
       setIsSynthesizing(false);
       setError(response.error.message);
+      if (synthesisAbortControllerRef.current === abortController) {
+        synthesisAbortControllerRef.current = null;
+      }
       return;
     }
 
@@ -269,6 +303,9 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       setError(
         "AI 초안을 계정에 저장하지 못했습니다. 활동과 일일 기록은 그대로 보존되어 있습니다.",
       );
+      if (synthesisAbortControllerRef.current === abortController) {
+        synthesisAbortControllerRef.current = null;
+      }
       return;
     }
 
@@ -281,6 +318,13 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     setDraftDescription(savedDraft.description);
     setDraftAchievements(savedDraft.achievements.join("\n"));
     setIsSynthesizing(false);
+    if (synthesisAbortControllerRef.current === abortController) {
+      synthesisAbortControllerRef.current = null;
+    }
+  }
+
+  function handleCancelSynthesis() {
+    synthesisAbortControllerRef.current?.abort();
   }
 
   async function handleConfirmEnd() {
@@ -770,6 +814,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           skeletonVariant="activitySynthesis"
           longWaitThresholdMs={24_000}
           longWaitMessage="기록 개수나 전체 분량이 많으면 초안 근거를 확인하는 데 시간이 더 걸릴 수 있어요."
+          canCancel
+          onCancel={handleCancelSynthesis}
         />
       ) : null}
 

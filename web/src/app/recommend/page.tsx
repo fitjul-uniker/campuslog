@@ -101,6 +101,9 @@ export default function RecommendPage() {
     useState<RecommendationFormInput | null>(null);
   const recommendationResultRef = useRef<HTMLDivElement>(null);
   const lastScrolledRecommendationIdRef = useRef<string | null>(null);
+  const recommendationAbortControllerRef = useRef<AbortController | null>(
+    null,
+  );
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -177,6 +180,12 @@ export default function RecommendPage() {
     return () => window.cancelAnimationFrame(frameId);
   }, [recommendationId, shouldReduceMotion]);
 
+  useEffect(() => {
+    return () => {
+      recommendationAbortControllerRef.current?.abort();
+    };
+  }, []);
+
   async function handleRecommend(input: RecommendationFormInput) {
     if (isRecommending) {
       return;
@@ -194,37 +203,53 @@ export default function RecommendPage() {
     setRecommendation(null);
     setPendingRecommendationInput(input);
 
-    const response = await requestRecommendation({
-      ...input,
-      experiences,
-      analyses,
-    });
+    const abortController = new AbortController();
+    recommendationAbortControllerRef.current = abortController;
 
-    if (!response.ok) {
-      setRecommendationError(response.error.message);
+    try {
+      const response = await requestRecommendation({
+        ...input,
+        experiences,
+        analyses,
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        setRecommendationError(
+          response.error.code === "REQUEST_CANCELLED"
+            ? "AI 추천 요청을 취소했습니다. 입력은 그대로 유지했어요."
+            : response.error.message,
+        );
+        return;
+      }
+
+      const repository = getCampusLogRepository();
+      const savedRecommendation = await repository.recommendations.save({
+        id: createRecommendationId(),
+        purpose: input.purpose,
+        prompt: input.prompt,
+        ...response.recommendation,
+        generatedAt: createIsoTimestamp(),
+      });
+
+      if (!savedRecommendation) {
+        setRecommendationError(
+          "활동 추천 결과를 계정에 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        );
+        return;
+      }
+
+      setRecommendation(savedRecommendation);
+    } finally {
+      if (recommendationAbortControllerRef.current === abortController) {
+        recommendationAbortControllerRef.current = null;
+      }
       setIsRecommending(false);
-      return;
     }
+  }
 
-    const repository = getCampusLogRepository();
-    const savedRecommendation = await repository.recommendations.save({
-      id: createRecommendationId(),
-      purpose: input.purpose,
-      prompt: input.prompt,
-      ...response.recommendation,
-      generatedAt: createIsoTimestamp(),
-    });
-
-    if (!savedRecommendation) {
-      setRecommendationError(
-        "활동 추천 결과를 계정에 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      );
-      setIsRecommending(false);
-      return;
-    }
-
-    setRecommendation(savedRecommendation);
-    setIsRecommending(false);
+  function handleCancelRecommendation() {
+    recommendationAbortControllerRef.current?.abort();
   }
 
   const recommendedExperience = experiences?.find(
@@ -353,6 +378,8 @@ export default function RecommendPage() {
           skeletonVariant="recommendation"
           longWaitThresholdMs={22_000}
           longWaitMessage="입력한 질문이 길거나 비교할 경험이 많으면 추천 근거 정리에 시간이 더 걸릴 수 있어요."
+          canCancel
+          onCancel={handleCancelRecommendation}
         />
       ) : recommendation ? (
         <div

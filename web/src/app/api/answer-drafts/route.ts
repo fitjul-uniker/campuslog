@@ -7,6 +7,11 @@ import {
   rejectTooLargeAiApiRequest,
   requireAuthenticatedAiApiUser,
 } from "@/lib/aiApiProtection";
+import {
+  countAiInputCharacters,
+  createAiRequestMetricLogger,
+  type AiRequestMetricLogger,
+} from "@/lib/aiRequestMetrics";
 import { normalizeExperienceAnalysis } from "@/lib/analysisResult";
 import {
   ANSWER_DRAFT_PROMPT_VERSION,
@@ -529,6 +534,44 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
 
 function createAnswerDraftPrompt(body: AnswerDraftsRequest): string {
   return JSON.stringify(createDraftPromptContext(body), null, 2);
+}
+
+function getTargetCharacterCount(
+  draftType: ActiveAnswerDraftType,
+): number | undefined {
+  return getAnswerDraftCharacterLimit(draftType)?.max;
+}
+
+function countAnswerDraftInputCharacters(body: AnswerDraftsRequest): number {
+  return countAiInputCharacters([
+    body.draftType,
+    body.recommendation.purpose,
+    body.recommendation.prompt,
+    body.recommendation.extractedRequirements,
+    body.match.matchReason,
+    body.match.matchedEvidence,
+    body.match.missingEvidence,
+    body.match.overclaimRisks,
+    body.experience.title,
+    body.experience.period,
+    body.experience.role,
+    body.experience.description,
+    body.experience.achievements,
+    body.experience.relatedLinks.map((link) => link.description),
+    body.analysis
+      ? [
+          body.analysis.summary,
+          body.analysis.achievements,
+          body.analysis.keywords,
+          Object.values(body.analysis.star),
+          body.analysis.evidenceGaps.map((gap) => [
+            gap.title,
+            gap.reason,
+            gap.answer,
+          ]),
+        ]
+      : [],
+  ]);
 }
 
 type OpenAiStructuredOutputResult =
@@ -1282,6 +1325,7 @@ type CreateAnswerDraftsStreamResponseInput = {
   apiKey: string;
   body: ParsedAnswerDraftsRequest;
   evidenceOptions: string[];
+  aiMetric: AiRequestMetricLogger;
 };
 
 const answerDraftStreamEncoder = new TextEncoder();
@@ -1291,6 +1335,7 @@ function createAnswerDraftsStreamResponse({
   apiKey,
   body,
   evidenceOptions,
+  aiMetric,
 }: CreateAnswerDraftsStreamResponseInput): Response {
   let cancelOpenAiRequest: (() => void) | null = null;
   const stream = new ReadableStream<Uint8Array>({
@@ -1329,9 +1374,13 @@ function createAnswerDraftsStreamResponse({
         controller.close();
       };
 
-      request.signal.addEventListener("abort", handleClientAbort, {
-        once: true,
-      });
+      if (request.signal.aborted) {
+        handleClientAbort();
+      } else {
+        request.signal.addEventListener("abort", handleClientAbort, {
+          once: true,
+        });
+      }
 
       try {
         send({
@@ -1349,6 +1398,7 @@ function createAnswerDraftsStreamResponse({
           logLabel: "answer-drafts-v1",
           signal: openAiAbortController.signal,
           onContentDelta: (text) => {
+            aiMetric.markFirstToken();
             send({
               type: "delta",
               text,
@@ -1357,6 +1407,7 @@ function createAnswerDraftsStreamResponse({
         });
 
         if (!draftOutput.ok) {
+          aiMetric.complete({ status: "error" });
           send({
             type: "error",
             error: {
@@ -1377,6 +1428,7 @@ function createAnswerDraftsStreamResponse({
         );
 
         if (!answerDrafts) {
+          aiMetric.complete({ status: "error" });
           send({
             type: "error",
             error: {
@@ -1394,6 +1446,7 @@ function createAnswerDraftsStreamResponse({
         );
 
         if (lengthIssue) {
+          aiMetric.markRetry();
           send({
             type: "status",
             message: "목표 분량에 맞게 문장을 다듬고 있어요.",
@@ -1416,6 +1469,7 @@ function createAnswerDraftsStreamResponse({
           });
 
           if (!repairedDraftOutput.ok) {
+            aiMetric.complete({ status: "error" });
             send({
               type: "error",
               error: {
@@ -1434,6 +1488,7 @@ function createAnswerDraftsStreamResponse({
           );
 
           if (!repairedAnswerDrafts) {
+            aiMetric.complete({ status: "error" });
             send({
               type: "error",
               error: {
@@ -1481,8 +1536,10 @@ function createAnswerDraftsStreamResponse({
           type: "completed",
           answerDrafts,
         });
+        aiMetric.complete({ status: "success" });
       } catch {
         if (!request.signal.aborted) {
+          aiMetric.complete({ status: "error" });
           send({
             type: "error",
             error: {
@@ -1492,6 +1549,8 @@ function createAnswerDraftsStreamResponse({
                 : "알 수 없는 오류로 답변 초안 생성을 완료하지 못했습니다.",
             },
           });
+        } else {
+          aiMetric.complete({ status: "cancelled" });
         }
       } finally {
         clearTimeout(openAiTimeoutId);
@@ -1570,12 +1629,29 @@ export async function POST(request: Request) {
     );
   }
 
+  const aiMetric = createAiRequestMetricLogger({
+    feature: "answer_draft",
+    responseType: body.stream ? "ndjson_stream" : "structured_json",
+    inputCharacterCount: countAnswerDraftInputCharacters(body),
+    experienceCount: 1,
+    targetCharacterCount: getTargetCharacterCount(body.draftType),
+    model: ANSWER_DRAFT_MODEL,
+    retry: false,
+  });
+  const createTrackedErrorResponse = (
+    ...args: Parameters<typeof createErrorResponse>
+  ) => {
+    aiMetric.complete({ status: "error" });
+    return createErrorResponse(...args);
+  };
+
   if (body.stream) {
     return createAnswerDraftsStreamResponse({
       request,
       apiKey,
       body,
       evidenceOptions,
+      aiMetric,
     });
   }
 
@@ -1585,6 +1661,17 @@ export async function POST(request: Request) {
     didOpenAiRequestTimeOut = true;
     openAiAbortController.abort();
   }, OPENAI_REQUEST_TIMEOUT_MS);
+  const handleClientAbort = () => {
+    openAiAbortController.abort();
+  };
+
+  if (request.signal.aborted) {
+    handleClientAbort();
+  } else {
+    request.signal.addEventListener("abort", handleClientAbort, {
+      once: true,
+    });
+  }
 
   try {
     const draftOutput = await requestOpenAiStructuredOutput({
@@ -1599,7 +1686,7 @@ export async function POST(request: Request) {
     });
 
     if (!draftOutput.ok) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         draftOutput.reason === "invalid_output"
           ? "답변 초안 생성 응답을 해석하지 못했습니다. 다시 시도해주세요."
@@ -1615,7 +1702,7 @@ export async function POST(request: Request) {
     );
 
     if (!answerDrafts) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "답변 초안 생성 결과가 올바른 형식이 아닙니다. 다시 시도해주세요.",
         502,
@@ -1625,6 +1712,7 @@ export async function POST(request: Request) {
     const lengthIssue = getAnswerDraftLengthIssue(answerDrafts, body.draftType);
 
     if (lengthIssue) {
+      aiMetric.markRetry();
       const repairedDraftOutput = await requestOpenAiStructuredOutput({
         apiKey,
         systemContent: ANSWER_DRAFT_REPAIR_SYSTEM_CONTENT,
@@ -1641,7 +1729,7 @@ export async function POST(request: Request) {
       });
 
       if (!repairedDraftOutput.ok) {
-        return createErrorResponse(
+        return createTrackedErrorResponse(
           "OPENAI_API_ERROR",
           "답변 초안 분량을 맞추지 못했습니다. 다시 시도해주세요.",
           502,
@@ -1655,7 +1743,7 @@ export async function POST(request: Request) {
       );
 
       if (!repairedAnswerDrafts) {
-        return createErrorResponse(
+        return createTrackedErrorResponse(
           "OPENAI_API_ERROR",
           "답변 초안 분량을 맞추지 못했습니다. 다시 시도해주세요.",
           502,
@@ -1679,25 +1767,36 @@ export async function POST(request: Request) {
       }
     }
 
+    aiMetric.complete({ status: "success" });
     return NextResponse.json<AnswerDraftsResponse>({
       ok: true,
       answerDrafts,
     });
   } catch {
-    if (didOpenAiRequestTimeOut) {
+    if (request.signal.aborted && !didOpenAiRequestTimeOut) {
+      aiMetric.complete({ status: "cancelled" });
       return createErrorResponse(
+        "REQUEST_CANCELLED",
+        "답변 초안 생성을 취소했습니다.",
+        499,
+      );
+    }
+
+    if (didOpenAiRequestTimeOut) {
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "답변 초안 생성 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
         504,
       );
     }
 
-    return createErrorResponse(
+    return createTrackedErrorResponse(
       "UNKNOWN_ERROR",
       "알 수 없는 오류로 답변 초안 생성을 완료하지 못했습니다.",
       500,
     );
   } finally {
     clearTimeout(openAiTimeoutId);
+    request.signal.removeEventListener("abort", handleClientAbort);
   }
 }

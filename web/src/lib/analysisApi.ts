@@ -13,6 +13,7 @@ import {
   normalizeCoverLetterAngles,
   normalizeStringList,
 } from "@/lib/analysisResult";
+import { isRequestAbortError } from "@/lib/requestCancel";
 
 function parseAnalysisApiResult(value: unknown): AnalysisApiResult | null {
   if (!value || typeof value !== "object") {
@@ -94,10 +95,12 @@ function isAnalyzeResponse(value: unknown): value is AnalyzeResponse {
 export async function requestExperienceAnalysis(
   experience: Experience,
   followups: ExperienceFollowup[] = [],
+  options: { signal?: AbortSignal } = {},
 ): Promise<AnalyzeResponse> {
   try {
     const response = await fetch("/api/analyze", {
       method: "POST",
+      signal: options.signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -120,7 +123,17 @@ export async function requestExperienceAnalysis(
 
       return payload;
     }
-  } catch {
+  } catch (error) {
+    if (isRequestAbortError(error)) {
+      return {
+        ok: false,
+        error: {
+          code: "REQUEST_CANCELLED",
+          message: "AI 분석 요청을 취소했습니다.",
+        },
+      };
+    }
+
     return {
       ok: false,
       error: {

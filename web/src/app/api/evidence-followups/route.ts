@@ -11,6 +11,10 @@ import {
   requireAuthenticatedAiApiUser,
 } from "@/lib/aiApiProtection";
 import {
+  countAiInputCharacters,
+  createAiRequestMetricLogger,
+} from "@/lib/aiRequestMetrics";
+import {
   ANSWER_DRAFT_TYPES,
   normalizeAnswerDraft,
 } from "@/lib/answerDraftResult";
@@ -590,12 +594,80 @@ export async function POST(request: Request) {
     );
   }
 
+  const aiMetric = createAiRequestMetricLogger({
+    feature: "evidence_followup",
+    responseType: "structured_json",
+    inputCharacterCount: countAiInputCharacters([
+      body.source,
+      body.experience.title,
+      body.experience.period,
+      body.experience.role,
+      body.experience.description,
+      body.experience.achievements,
+      body.analysis
+        ? [
+            body.analysis.summary,
+            body.analysis.achievements,
+            body.analysis.keywords,
+            body.analysis.evidenceGaps.map((gap) => [
+              gap.title,
+              gap.reason,
+              gap.answer,
+            ]),
+          ]
+        : [],
+      body.recommendation
+        ? [
+            body.recommendation.purpose,
+            body.recommendation.prompt,
+            body.recommendation.extractedRequirements,
+          ]
+        : [],
+      body.match
+        ? [
+            body.match.matchReason,
+            body.match.matchedEvidence,
+            body.match.missingEvidence,
+            body.match.overclaimRisks,
+          ]
+        : [],
+      body.answerDraft
+        ? [
+            body.answerDraft.type,
+            body.answerDraft.content,
+            body.answerDraft.missingEvidenceNotes,
+            body.answerDraft.cautions,
+          ]
+        : [],
+    ]),
+    experienceCount: 1,
+    model: EVIDENCE_FOLLOWUP_MODEL,
+    retry: false,
+  });
+  const createTrackedErrorResponse = (
+    ...args: Parameters<typeof createErrorResponse>
+  ) => {
+    aiMetric.complete({ status: "error" });
+    return createErrorResponse(...args);
+  };
+
   const openAiAbortController = new AbortController();
   let didOpenAiRequestTimeOut = false;
   const openAiTimeoutId = setTimeout(() => {
     didOpenAiRequestTimeOut = true;
     openAiAbortController.abort();
   }, OPENAI_REQUEST_TIMEOUT_MS);
+  const handleClientAbort = () => {
+    openAiAbortController.abort();
+  };
+
+  if (request.signal.aborted) {
+    handleClientAbort();
+  } else {
+    request.signal.addEventListener("abort", handleClientAbort, {
+      once: true,
+    });
+  }
 
   try {
     const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
@@ -651,7 +723,7 @@ export async function POST(request: Request) {
         });
       }
 
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "보완 질문 생성을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
         502,
@@ -662,7 +734,7 @@ export async function POST(request: Request) {
     const outputText = extractOutputText(openAiPayload);
 
     if (!outputText) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "보완 질문 생성 응답을 해석하지 못했습니다. 다시 시도해주세요.",
         502,
@@ -672,7 +744,7 @@ export async function POST(request: Request) {
     const questions = parseFollowupQuestions(outputText);
 
     if (questions.length === 0) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "안전하게 저장할 보완 질문을 만들지 못했습니다. 원본 기록을 조금 더 구체화한 뒤 다시 시도해주세요.",
         502,
@@ -698,25 +770,36 @@ export async function POST(request: Request) {
       updatedAt: timestamp,
     };
 
+    aiMetric.complete({ status: "success" });
     return NextResponse.json<EvidenceFollowupsResponse>({
       ok: true,
       followup,
     });
   } catch {
-    if (didOpenAiRequestTimeOut) {
+    if (request.signal.aborted && !didOpenAiRequestTimeOut) {
+      aiMetric.complete({ status: "cancelled" });
       return createErrorResponse(
+        "REQUEST_CANCELLED",
+        "보완 질문 생성을 취소했습니다.",
+        499,
+      );
+    }
+
+    if (didOpenAiRequestTimeOut) {
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "보완 질문 생성 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
         504,
       );
     }
 
-    return createErrorResponse(
+    return createTrackedErrorResponse(
       "UNKNOWN_ERROR",
       "알 수 없는 오류로 보완 질문 생성을 완료하지 못했습니다.",
       500,
     );
   } finally {
     clearTimeout(openAiTimeoutId);
+    request.signal.removeEventListener("abort", handleClientAbort);
   }
 }

@@ -15,6 +15,10 @@ import {
   requireAuthenticatedAiApiUser,
 } from "@/lib/aiApiProtection";
 import {
+  countAiInputCharacters,
+  createAiRequestMetricLogger,
+} from "@/lib/aiRequestMetrics";
+import {
   hasAnsweredFollowup,
   normalizeExperienceFollowup,
 } from "@/lib/experienceFollowupResult";
@@ -701,12 +705,49 @@ export async function POST(request: Request) {
     );
   }
 
+  const aiMetric = createAiRequestMetricLogger({
+    feature: "experience_analysis",
+    responseType: "structured_json",
+    inputCharacterCount: countAiInputCharacters([
+      body.experience.title,
+      body.experience.period,
+      body.experience.role,
+      body.experience.description,
+      body.experience.achievements,
+      body.experience.relatedLinks.map((link) => link.description),
+      followups.map((followup) => [
+        followup.questions.map((question) => question.question),
+        followup.answers,
+      ]),
+    ]),
+    experienceCount: 1,
+    model: ANALYSIS_MODEL,
+    retry: false,
+  });
+  const createTrackedErrorResponse = (
+    ...args: Parameters<typeof createErrorResponse>
+  ) => {
+    aiMetric.complete({ status: "error" });
+    return createErrorResponse(...args);
+  };
+
   const openAiAbortController = new AbortController();
   let didOpenAiRequestTimeOut = false;
   const openAiTimeoutId = setTimeout(() => {
     didOpenAiRequestTimeOut = true;
     openAiAbortController.abort();
   }, OPENAI_REQUEST_TIMEOUT_MS);
+  const handleClientAbort = () => {
+    openAiAbortController.abort();
+  };
+
+  if (request.signal.aborted) {
+    handleClientAbort();
+  } else {
+    request.signal.addEventListener("abort", handleClientAbort, {
+      once: true,
+    });
+  }
 
   try {
     const openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
@@ -762,7 +803,7 @@ export async function POST(request: Request) {
         });
       }
 
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "AI 분석 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
         502,
@@ -773,7 +814,7 @@ export async function POST(request: Request) {
     const outputText = extractOutputText(openAiPayload);
 
     if (!outputText) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "AI 분석 응답을 해석하지 못했습니다. 다시 시도해주세요.",
         502,
@@ -783,32 +824,43 @@ export async function POST(request: Request) {
     const analysis = parseAnalysisResult(outputText, body.experience);
 
     if (!analysis) {
-      return createErrorResponse(
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "입력된 경험에서 분석에 필요한 단서를 충분히 찾지 못했습니다. 활동에서 맡은 일, 직접 한 행동, 결과나 배운 점을 조금 더 구체적으로 기록한 뒤 다시 요청해주세요.",
         502,
       );
     }
 
+    aiMetric.complete({ status: "success" });
     return NextResponse.json<AnalyzeResponse>({
       ok: true,
       analysis,
     });
   } catch {
-    if (didOpenAiRequestTimeOut) {
+    if (request.signal.aborted && !didOpenAiRequestTimeOut) {
+      aiMetric.complete({ status: "cancelled" });
       return createErrorResponse(
+        "REQUEST_CANCELLED",
+        "AI 분석 요청을 취소했습니다.",
+        499,
+      );
+    }
+
+    if (didOpenAiRequestTimeOut) {
+      return createTrackedErrorResponse(
         "OPENAI_API_ERROR",
         "AI 분석 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
         504,
       );
     }
 
-    return createErrorResponse(
+    return createTrackedErrorResponse(
       "UNKNOWN_ERROR",
       "알 수 없는 오류로 AI 분석을 완료하지 못했습니다.",
       500,
     );
   } finally {
     clearTimeout(openAiTimeoutId);
+    request.signal.removeEventListener("abort", handleClientAbort);
   }
 }

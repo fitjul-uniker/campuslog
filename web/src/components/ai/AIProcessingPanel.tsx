@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Sparkles } from "lucide-react";
+import { Clock3, Sparkles, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type AIProcessingContextItem = {
@@ -28,6 +28,9 @@ type AIProcessingPanelProps = {
   skeletonVariant: AISkeletonVariant;
   longWaitThresholdMs?: number;
   longWaitMessage?: string;
+  canCancel?: boolean;
+  cancelLabel?: string;
+  onCancel?: () => void;
   className?: string;
 };
 
@@ -118,6 +121,9 @@ export function AIProcessingPanel({
   skeletonVariant,
   longWaitThresholdMs = 18_000,
   longWaitMessage = "입력 내용이 많거나 결과 형식 검증에 시간이 걸리면 평소보다 조금 더 걸릴 수 있어요.",
+  canCancel = false,
+  cancelLabel = "요청 취소",
+  onCancel,
   className = "",
 }: AIProcessingPanelProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -151,6 +157,16 @@ export function AIProcessingPanel({
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
+        {canCancel ? (
+          <button
+            className="ai-processing-cancel-button"
+            type="button"
+            onClick={onCancel}
+          >
+            <XCircle aria-hidden="true" />
+            {cancelLabel}
+          </button>
+        ) : null}
       </div>
 
       <div

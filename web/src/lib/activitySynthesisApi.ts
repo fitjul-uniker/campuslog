@@ -1,4 +1,5 @@
 import { ACTIVITY_SYNTHESIS_LIMITS } from "@/lib/activitySynthesisLimits";
+import { isRequestAbortError } from "@/lib/requestCancel";
 import type {
   ActivitySynthesisApiResult,
   ApiErrorCode,
@@ -36,6 +37,7 @@ function isApiErrorCode(value: unknown): value is ApiErrorCode {
     value === "INSUFFICIENT_INPUT" ||
     value === "PAYLOAD_TOO_LARGE" ||
     value === "RATE_LIMITED" ||
+    value === "REQUEST_CANCELLED" ||
     value === "OPENAI_API_ERROR" ||
     value === "MISSING_API_KEY" ||
     value === "UNKNOWN_ERROR"
@@ -109,6 +111,7 @@ function isSynthesizeActivityResponse(
 export async function requestActivitySynthesis(
   activity: TrackedActivity,
   dailyLogs: DailyLog[],
+  options: { signal?: AbortSignal } = {},
 ): Promise<SynthesizeActivityResponse> {
   const requestBody: SynthesizeActivityRequest = {
     activity,
@@ -121,6 +124,13 @@ export async function requestActivitySynthesis(
     didRequestTimeOut = true;
     abortController.abort();
   }, ACTIVITY_SYNTHESIS_REQUEST_TIMEOUT_MS);
+  const abortExternalRequest = () => {
+    abortController.abort();
+  };
+
+  options.signal?.addEventListener("abort", abortExternalRequest, {
+    once: true,
+  });
 
   try {
     const response = await fetch("/api/synthesize-activity", {
@@ -137,7 +147,17 @@ export async function requestActivitySynthesis(
     if (isSynthesizeActivityResponse(payload, validDailyLogIds)) {
       return payload;
     }
-  } catch {
+  } catch (error) {
+    if (options.signal?.aborted || isRequestAbortError(error)) {
+      return {
+        ok: false,
+        error: {
+          code: "REQUEST_CANCELLED",
+          message: "AI 완료 경험 생성 요청을 취소했습니다.",
+        },
+      };
+    }
+
     if (didRequestTimeOut) {
       return {
         ok: false,
@@ -159,6 +179,7 @@ export async function requestActivitySynthesis(
     };
   } finally {
     clearTimeout(timeoutId);
+    options.signal?.removeEventListener("abort", abortExternalRequest);
   }
 
   return {
