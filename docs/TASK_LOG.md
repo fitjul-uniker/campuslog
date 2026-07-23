@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - AI 추천 입력 선별·압축 구현
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 / 분석 누적 수가 많아질 때 `/api/recommend` 요청 본문 상한을 초과하지 않도록 추천 후보 context를 선별·압축 |
+| 수정한 파일 | `web/src/lib/recommendationInputCompaction.ts`, `web/src/app/recommend/page.tsx`, `web/src/app/api/recommend/route.ts`, `docs/AI_API_CONTRACT.md`, `docs/CURRENT_PHASE.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 추천 요청 직전에 활용 목적과 입력 문항 / JD 기준으로 후보 경험을 점수화하고, 실패·문제·협업·기술 등 의도 신호, 최신 수정일, 분석 / 보완 답변 보유 여부를 반영해 상위 후보만 선택. 선택 후보의 설명·성과·분석 요약·STAR·키워드·부족 정보 답변을 72KB 요청 예산 안에서 압축해 `/api/recommend`에 전송하고, 로딩 패널에는 선별된 후보 수 / 전체 경험 수를 표시. 서버 프롬프트는 전체 저장 경험이 아니라 전달된 후보 경험 context 기준으로 추천하도록 문구를 수정. 원본 경험과 저장된 분석은 repository에 그대로 보존하며 추천 결과 저장과 답변 초안 생성은 기존 원본 데이터를 계속 사용 |
+| 검증한 내용 | `npx tsc --noEmit`, `npm run lint`, `npm run build`, `git diff --check` 통과. 100개 더미 경험 / 분석과 실패 경험 자기소개서 문항 기준으로 18개 후보, 약 52KB 요청으로 압축되는 것을 Node 기반 변환 검증으로 확인 |
+| 남은 작업 | 실제 로그인 세션의 장기 누적 데이터에서 후보 선별 품질, OpenAI 추천 결과 품질, 추천 저장·재조회 smoke test 확인 |
+| 관련 커밋 메시지 | `fix: compact recommendation request context` |
+
 ### 2026-07-23 - 구조화 AI 호출 이벤트 스트리밍 구현
 
 | 항목 | 내용 |

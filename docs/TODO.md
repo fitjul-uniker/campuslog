@@ -41,6 +41,7 @@
 - 2026-07-23: 답변 초안 생성 2차 스트리밍 UX를 구현. `/api/answer-drafts`의 기존 strict JSON 응답은 유지하고, `stream: true` 요청에서만 서버가 OpenAI structured output 스트림을 내부 누적한 뒤 `draft.content` 문자열만 NDJSON `delta` 이벤트로 전달. 최종 `completed` 이벤트의 정규화된 `AnswerDraftResult`만 기존 저장소에 저장하며, 분량 교정이 발생하면 `replace` 이벤트로 최종 본문을 교체. 화면은 첫 토큰 전 1차 `AIProcessingPanel`을 유지하고, 첫 본문 조각 이후 점진 렌더링 / 커서 / 글자 수 / 부분 실패 재시도를 표시. `git diff --check`, `npm run lint`, `npm run build`, UI preview 기본 렌더링 확인을 완료했고 사용자가 직접 로직 테스트를 완료. 구조화 이벤트 스트리밍은 후속 단계로 유지.
 - 2026-07-23: AI 요청 측정 / 취소 3차를 구현. `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`, `/api/evidence-followups`, `/api/answer-drafts`에서 기능 종류, 응답 유형, 입력 글자 수, 경험 수, 목표 글자 수, 모델, 스트리밍 TTFT, 전체 완료 시간, 성공 / 실패 / 취소, 재시도 여부만 서버 `console.info` 메타데이터로 기록. 클라이언트 AI helper에 AbortSignal을 전달하고, 경험 분석 / 추천 / 활동 완료 경험 합성 / 답변 초안 스트리밍 화면에 취소 버튼을 연결. 취소 시 기존 입력과 기존 결과를 유지하고, 답변 초안은 부분 텍스트를 저장하지 않은 채 화면에 남겨 같은 조건 재시도를 제공. 실제 장시간 OpenAI 호출의 외부 비용 중단 여부와 배포 로그 수집 방식은 후속 검증으로 남음.
 - 2026-07-23: 구조화 호출 4차 이벤트 스트리밍을 구현. `/api/analyze`, `/api/recommend`, `/api/synthesize-activity`는 기존 JSON 응답을 유지하고 `stream: true` 요청에서만 서버가 `status` SSE 이벤트를 보낸 뒤 최종 정규화 JSON만 `completed` 또는 `error` 이벤트로 전달. raw JSON 토큰이나 부분 구조화 결과는 화면에 노출하지 않고, 경험 분석 / 추천 / 활동 완료 경험 합성 화면의 기존 `AIProcessingPanel` 문구만 서버 상태 이벤트로 갱신. 저장 구조와 모델 호출 횟수는 변경하지 않음. `npm run lint`, `npm run build` 통과. 실제 로그인 세션에서 장시간 OpenAI 호출 중 상태 이벤트 수신과 배포 환경 SSE 버퍼링 여부는 후속 확인 필요.
+- 2026-07-23: AI 추천 입력 선별·압축을 구현. 추천 요청 직전에 활용 목적과 입력 문항 / JD 기준으로 후보 경험을 점수화하고, 72KB 요청 예산 안에서 상위 후보의 설명·성과·분석 요약·STAR·키워드·부족 정보 답변만 압축해 `/api/recommend`로 전송. 원본 경험과 저장된 분석은 repository에 그대로 보존하며 추천 결과 저장과 답변 초안 생성은 선택된 경험 id로 원본 데이터를 다시 사용. 100개 더미 경험 / 분석 기준 18개 후보, 약 52KB 요청으로 압축되는 것을 확인.
 - 2026-07-17: 팀 테스트를 위해 Supabase Auth 관리자 API 기반 `npm run seed:test-users` 스크립트를 추가. 기본 계정은 `test1@campuslog.test` ~ `test9@campuslog.test`, 비밀번호는 `test1111` ~ `test9999`이며 `campuslog_profile` metadata를 함께 설정. 사용자가 실제 Supabase project에 9개 계정이 모두 `created`로 생성된 것을 확인. 더미 경험·활동 데이터 주입은 아직 수행하지 않음.
 - 2026-07-17: 진행 중 / 시작 예정 활동을 상세 화면에서 수정할 수 있게 하고, 오늘의 기록의 마무리 필요 활동도 정리 전 수정할 수 있게 함. 활동 종료 시 현재 날짜를 완료일로 저장해 예상 종료일이 미래여도 즉시 AI 초안을 생성하도록 수정. 실제 로그인 브라우저 세션 회귀 확인은 남음.
 
@@ -64,6 +65,7 @@
 - [ ] DailyLog write와 AI 합성 상태 무효화를 transaction 또는 멱등 부분 성공 contract로 정리 (`ISSUE-039`)
 - [x] AI API 보호 foundation: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용 (`ISSUE-024`)
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
+- [x] AI 추천 입력 선별·압축으로 경험 수 증가 시 `/api/recommend` 본문 상한 초과를 방지 (`ISSUE-084`)
 - [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 화면·신규 분석 출력 간소화 (`ISSUE-078`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
 - [x] Supabase project에 추천 목적 `jd`, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 (`ISSUE-060`, `ISSUE-079`)
@@ -160,6 +162,7 @@
 - [x] AI 분석 v2.1 간소화와 부족 정보 카드 답변 저장 흐름에 맞춰 분석 / 추천 / 초안 입력 계약 수정 (`ISSUE-078`)
 - [x] AI 요청 측정 / 취소 contract 적용: 민감 원문 없이 메타데이터만 로그 기록, AbortSignal 전달, 취소 error code 공유 (`ISSUE-082`)
 - [x] 구조화 AI SSE contract 적용: raw JSON 토큰 노출 없이 `status` / `completed` / `error` 이벤트로 최종 JSON만 전달 (`ISSUE-083`)
+- [x] AI 추천 입력 선별·압축 contract 적용: 전체 원문 전송 대신 목적 / 문항 기반 후보 context만 `/api/recommend`에 전달하고 원본 데이터는 저장소에서 재조회 (`ISSUE-084`)
 - [x] QA 안정화: 기록 보완 질문 답변 draft 보존, 질문-답변 입력 묶음 재배치, 숨긴 질문 복원 버튼 추가 (`ISSUE-045`, `ISSUE-046`, `ISSUE-047`)
 - [x] QA 안정화: 답변 초안 자기소개서 분량을 선택 범위 안으로 보정하고 실제 글자 수 표시 기준 정리 (`ISSUE-048`)
 - [x] QA 안정화: 완료 활동 복원, 활동 상태별 삭제, 과거 종료 활동 상태·기록 가능 날짜·타임라인 날짜 표시·종료일 보존 흐름 수정 (`ISSUE-049`~`ISSUE-054`)
