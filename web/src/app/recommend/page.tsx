@@ -17,6 +17,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { createIsoTimestamp } from "@/lib/date";
+import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { requestRecommendation } from "@/lib/recommendationApi";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
@@ -109,9 +110,16 @@ export default function RecommendPage() {
       ]);
       const storedAnalyses = (
         await Promise.all(
-          storedExperiences.map((experience) =>
-            repository.analyses.getByExperienceId(experience.id),
-          ),
+          storedExperiences.map(async (experience) => {
+            const [analysis, followups] = await Promise.all([
+              repository.analyses.getByExperienceId(experience.id),
+              repository.experienceFollowups.listByExperienceId(experience.id),
+            ]);
+
+            return analysis
+              ? mergeAnalysisGapAnswersIntoAnalysis(analysis, followups)
+              : null;
+          }),
         )
       ).filter((analysis): analysis is ExperienceAnalysis => Boolean(analysis));
 

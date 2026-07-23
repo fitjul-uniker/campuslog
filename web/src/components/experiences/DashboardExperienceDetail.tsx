@@ -52,12 +52,9 @@ export function DashboardExperienceDetail({
   const shouldReduceMotion = useReducedMotion();
   const titleId = `${DASHBOARD_EXPERIENCE_DETAIL_ID}-title`;
   const isFullscreen = variant === "fullscreen";
-  const needsFreshAnalysis =
-    experience.analysisStatus === "needs_reanalysis" ||
-    Boolean(
-      analysis &&
-        analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
-    );
+  const needsFreshAnalysis = Boolean(
+    analysis && analysis.sourceExperienceUpdatedAt !== experience.updatedAt,
+  );
   const canRequestAnalysis =
     Boolean(onAnalyze) && (!analysis || needsFreshAnalysis);
   const analyzeLabel = needsFreshAnalysis ? "다시 분석하기" : "AI 분석 요청";
@@ -256,10 +253,10 @@ export function DashboardExperienceDetail({
                   </p>
                 ) : null}
                 <p>{analysis.summary}</p>
-                {analysis.competencyTags.length > 0 ? (
-                  <div className="dashboard-detail-tags" aria-label="핵심 역량">
-                    {analysis.competencyTags.map((tag, index) => (
-                      <span key={`${tag}-${index}`}>{tag}</span>
+                {analysis.keywords.length > 0 ? (
+                  <div className="dashboard-detail-tags" aria-label="활용 키워드">
+                    {analysis.keywords.slice(0, 4).map((keyword, index) => (
+                      <span key={`${keyword}-${index}`}>{keyword}</span>
                     ))}
                   </div>
                 ) : null}

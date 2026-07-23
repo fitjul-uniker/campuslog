@@ -11,7 +11,7 @@ const STATUS_CONFIG: Record<AnalysisStatus, { label: string; className: string }
     className: "status-badge-analyzed",
   },
   needs_reanalysis: {
-    label: "재분석 필요",
+    label: "업데이트 필요",
     className: "status-badge-needs_reanalysis",
   },
 };

@@ -9,7 +9,7 @@ import type {
 } from "@/lib/types";
 
 export const ANALYSIS_SCHEMA_VERSION = "v2" as const;
-export const ANALYSIS_PROMPT_VERSION = "analysis-v2.0";
+export const ANALYSIS_PROMPT_VERSION = "analysis-v2.1";
 
 export const ANALYSIS_EVIDENCE_SOURCES = [
   "title",
@@ -38,6 +38,38 @@ export function isAnalysisEvidenceSource(
 
 function normalizeText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function hashText(value: string): string {
+  let hash = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) | 0;
+  }
+
+  return Math.abs(hash).toString(36);
+}
+
+function createStableGapId(
+  candidate: Record<string, unknown>,
+  index: number,
+): string {
+  const explicitId = normalizeText(candidate.id);
+
+  if (explicitId) {
+    return explicitId.slice(0, 96);
+  }
+
+  const seed = [
+    normalizeText(candidate.category),
+    normalizeText(candidate.title),
+    normalizeText(candidate.topic),
+    normalizeText(candidate.question),
+  ]
+    .filter(Boolean)
+    .join(":");
+
+  return `gap-${index + 1}-${hashText(seed || String(index))}`;
 }
 
 export function normalizeStringList(
@@ -114,25 +146,48 @@ export function normalizeAnalysisEvidenceGaps(
   }
 
   return value
-    .map((item) => {
+    .map((item, index) => {
       if (!item || typeof item !== "object") {
         return null;
       }
 
       const candidate = item as Record<string, unknown>;
-      const topic = normalizeText(candidate.topic);
+      const category =
+        normalizeText(candidate.category) ||
+        normalizeText(candidate.targetEvidenceType) ||
+        normalizeText(candidate.topic) ||
+        "other";
+      const title =
+        normalizeText(candidate.title) ||
+        normalizeText(candidate.topic) ||
+        category;
+      const topic = normalizeText(candidate.topic) || title;
       const reason = normalizeText(candidate.reason);
       const question = normalizeText(candidate.question);
+      const answer = normalizeText(candidate.answer);
+      const answeredAt = normalizeText(candidate.answeredAt);
+      const updatedAt = normalizeText(candidate.updatedAt);
 
-      if (!topic || !reason || !question) {
+      if (!title || !reason || !question) {
         return null;
       }
 
-      return {
+      const gap: ExperienceAnalysisEvidenceGap = {
+        id: createStableGapId(candidate, index),
+        category,
+        title,
         topic,
         reason,
         question,
-      } satisfies ExperienceAnalysisEvidenceGap;
+        answer,
+        updatedAt,
+      };
+
+      if (answeredAt) {
+        gap.answeredAt = answeredAt;
+      }
+
+      return gap;
     })
     .filter((item): item is ExperienceAnalysisEvidenceGap => item !== null)
     .slice(0, maxItems);

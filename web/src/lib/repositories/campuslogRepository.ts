@@ -25,6 +25,7 @@ import {
   getTrackedActivityById,
   linkGeneratedExperience,
   restoreExperienceFollowup,
+  saveAnalysisGapAnswer,
   saveAnalysisResult,
   saveAnswerDraftResult,
   saveExperienceFollowup,
@@ -201,6 +202,11 @@ export type CampusLogRepository = {
   analyses: {
     getByExperienceId(experienceId: string): Promise<ExperienceAnalysis | null>;
     save(result: AnalysisApiResult): Promise<ExperienceAnalysis | null>;
+    saveGapAnswer(
+      experienceId: string,
+      gapId: string,
+      answer: string,
+    ): Promise<ExperienceAnalysis | null>;
   };
   recommendations: {
     list(): Promise<RecommendationResult[]>;
@@ -735,6 +741,43 @@ function createSupabaseCampusLogRepository(
 
         return toAnalysis(data as ExperienceAnalysisRow);
       },
+      async saveGapAnswer(experienceId, gapId, answer) {
+        const existingAnalysis = await this.getByExperienceId(experienceId);
+
+        if (!existingAnalysis) {
+          return null;
+        }
+
+        const timestamp = new Date().toISOString();
+        let didUpdate = false;
+        const evidenceGaps = existingAnalysis.evidenceGaps.map((gap) => {
+          if (gap.id !== gapId) {
+            return gap;
+          }
+
+          didUpdate = true;
+          return {
+            ...gap,
+            answer,
+            answeredAt: gap.answeredAt || timestamp,
+            updatedAt: timestamp,
+          };
+        });
+
+        if (!didUpdate) {
+          return null;
+        }
+
+        const { data, error } = await supabase
+          .from("experience_analyses")
+          .update({ evidence_gaps: evidenceGaps })
+          .eq("id", existingAnalysis.id)
+          .select("*")
+          .single();
+        throwIfError(error);
+
+        return toAnalysis(data as ExperienceAnalysisRow);
+      },
     },
     recommendations: {
       async list() {
@@ -937,25 +980,6 @@ function createSupabaseCampusLogRepository(
           .select("*")
           .single();
         throwIfError(error);
-
-        const repository = createSupabaseCampusLogRepository(supabase);
-        const [experience, analysis] = await Promise.all([
-          repository.experiences.getById(currentFollowup.experienceId),
-          repository.analyses.getByExperienceId(currentFollowup.experienceId),
-        ]);
-
-        if (
-          experience &&
-          (analysis ||
-            experience.analysisStatus === "analyzed" ||
-            experience.analysisStatus === "needs_reanalysis")
-        ) {
-          const { error: experienceError } = await supabase
-            .from("experiences")
-            .update({ analysis_status: "needs_reanalysis" })
-            .eq("id", currentFollowup.experienceId);
-          throwIfError(experienceError);
-        }
 
         return toExperienceFollowup(data as ExperienceFollowupRow);
       },
@@ -1469,6 +1493,8 @@ export function createLocalCampusLogRepository(): CampusLogRepository {
       getByExperienceId: async (experienceId) =>
         getAnalysisByExperienceId(experienceId),
       save: async (result) => saveAnalysisResult(result),
+      saveGapAnswer: async (experienceId, gapId, answer) =>
+        saveAnalysisGapAnswer(experienceId, gapId, answer),
     },
     recommendations: {
       list: async () => getRecommendationResults(),

@@ -5,7 +5,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
-import { ExperienceFollowupPanel } from "@/components/ai/ExperienceFollowupPanel";
 import {
   RippleButton,
   RippleButtonRipples,
@@ -23,7 +22,6 @@ type DashboardAnalysisSplitPanelProps = {
   analysisError?: string;
   onClose: () => void;
   onReanalyze: () => void;
-  onFollowupsChanged: () => void;
 };
 
 export function DashboardAnalysisSplitPanel({
@@ -33,7 +31,6 @@ export function DashboardAnalysisSplitPanel({
   analysisError = "",
   onClose,
   onReanalyze,
-  onFollowupsChanged,
 }: DashboardAnalysisSplitPanelProps) {
   const shouldReduceMotion = useReducedMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -83,14 +80,6 @@ export function DashboardAnalysisSplitPanel({
           experience={experience}
           analysis={analysis}
           variant="embedded"
-        />
-
-        <ExperienceFollowupPanel
-          experience={experience}
-          analysis={analysis}
-          isAnalyzing={isAnalyzing}
-          onReanalyze={onReanalyze}
-          onFollowupsChanged={onFollowupsChanged}
         />
 
         {analysisError ? (

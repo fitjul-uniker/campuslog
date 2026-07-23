@@ -2,26 +2,27 @@
 
 ## 상태
 
-- 브랜치: `feature/ai-evidence-followup`
-- 범위: `/api/analyze` AI 경험 분석 v2 schema 유지와 보완 답변 입력 확장, `/api/recommend` 추천 v2 schema / prompt / Top 3 매칭 / 저장 호환성, `/api/answer-drafts` 답변 초안 v1 schema / prompt / 저장 호환성, `/api/evidence-followups` 보완 질문 생성 v1, `/api/synthesize-activity` 보호 foundation 유지
+- 브랜치: `feature/ai-analysis-gap-answers`
+- 범위: `/api/analyze` AI 경험 분석 v2.1 간소화 schema, `/api/recommend` 추천 v2 schema / prompt / Top 3 매칭 / 보완 답변 입력 연결, `/api/answer-drafts` 답변 초안 v1 schema / prompt / 보완 답변 근거 연결, 레거시 `/api/evidence-followups` 호환, `/api/synthesize-activity` 보호 foundation 유지
 - 제외: OCR / 이미지 입력
 
 ## 후속 AI 고도화 순서
 
 현재 문서는 AI API 보호 foundation, AI 경험 분석 v2, 추천 v2, 답변 초안 v1의 계약입니다. 후속 AI 결과 구조 고도화는 아래 순서로 별도 작은 PR에서 진행합니다.
 
-1. AI 경험 분석 v2 — 구현 완료
-   - STAR, 원본 근거, 부족한 정보, 자소서 소재 각도 추가
-   - 기존 분석 결과와 새 분석 결과를 `schemaVersion`으로 구분
+1. AI 경험 분석 v2.1 — 구현 완료
+   - 요약, STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 신규 분석 출력 간소화
+   - 기존 저장 결과와 새 분석 결과를 `schemaVersion`과 `promptVersion`으로 구분
 2. 추천 v2 — 구현 완료
    - 자기소개서 문항 / JD 요구사항 추출
    - 경험 Top 3 매칭, 부족 근거, 과장 위험 표시
 3. 답변 초안 생성 — 구현 완료
    - 사용자가 선택한 500자 / 800자 / 1000자 자기소개서, 면접 답변, 포트폴리오 설명 중 1개 버전
    - 기록에 없는 사실은 생성하지 않고 부족 근거를 `missingEvidenceNotes` 또는 `cautions`로 분리
-4. 기록 보완 루프 — 구현 완료
-   - AI 보완 질문, 사용자 답변 별도 저장, 보완 답변 포함 분석 재생성
-   - 원본 경험 자동 수정 없이 기존 분석 / 추천 / 답변 초안 stale 가능성 표시
+4. 기록 보완 루프 v2.1 — 구현 완료
+   - 분석의 부족 정보 카드 안에서 바로 답변 저장
+   - 원본 경험 자동 수정 없이 추천 / 답변 초안 입력에 보완 답변 즉시 반영
+   - 원본 경험이 분석 이후 수정된 경우에만 분석 화면에서 업데이트 필요 표시
 5. OCR / JD 이미지 입력
    - 텍스트 붙여넣기 흐름 안정화 후 Optional
    - 원본 이미지 저장 없이 일회성 입력을 기본값으로 검토
@@ -80,13 +81,13 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
 
 `Content-Length`가 없는 요청은 본문 크기 guard를 통과할 수 있으므로 route별 필드 상한을 함께 적용합니다.
 
-## `/api/analyze` v2 응답 계약
+## `/api/analyze` v2.1 응답 계약
 
-`/api/analyze`는 OpenAI Responses API structured output의 schema name `campuslog_experience_analysis_v2`를 사용합니다. 서버는 응답을 다시 파싱하며, `evidence.quote`, `coverLetterAngles.supportingEvidence`, `competencyEvidence.evidence`가 입력 필드의 원본 문구 또는 별도 보완 답변에 근거하지 않으면 저장 결과에서 제외합니다.
+`/api/analyze`는 OpenAI Responses API structured output의 schema name `campuslog_experience_analysis_v2`를 유지하되, 신규 prompt version은 `analysis-v2.1`입니다. 신규 분석 결과는 화면과 추천 입력에 필요한 핵심 필드만 생성합니다.
 
-요청은 기존 `experience`만 보내는 형태를 유지하며, 선택적으로 `followups`를 함께 보낼 수 있습니다. 서버는 같은 `experienceId`의 dismiss되지 않은 보완 답변만 사용하고, 보완 답변을 근거로 쓴 evidence는 `source: "followupAnswers"`로 구분합니다.
+요청은 기존 `experience`만 보내는 형태를 유지하며, 선택적으로 `followups`를 함께 보낼 수 있습니다. 서버는 같은 `experienceId`의 dismiss되지 않은 보완 답변을 분석 참고 context로 사용할 수 있지만, 신규 응답에서 원본 근거 목록을 별도 생성하지 않습니다.
 
-성공 응답은 기존 네 필드와 v2 필드를 함께 반환합니다.
+성공 응답은 하위 호환 필드를 포함하되, 신규 생성 대상은 `summary`, `achievements`, `keywords`, `star`, `evidenceGaps`입니다.
 
 ```json
 {
@@ -94,63 +95,45 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
   "analysis": {
     "experienceId": "experience-id",
     "schemaVersion": "v2",
-    "promptVersion": "analysis-v2.0",
+    "promptVersion": "analysis-v2.1",
     "model": "gpt-4.1-mini",
     "summary": "2~3문장 요약",
-    "competencyTags": ["문제 해결력"],
-    "achievements": ["원본에서 확인된 성과"],
-    "keywords": ["키워드"],
+    "competencyTags": [],
+    "achievements": ["원본에서 확인된 성과, 최대 4개"],
+    "keywords": ["키워드, 최대 10개"],
     "star": {
       "situation": "상황",
       "task": "과제",
       "action": "행동",
       "result": "결과"
     },
-    "evidence": [
-      {
-        "source": "description",
-        "quote": "원본 문구",
-        "note": "분석과 연결되는 이유"
-      },
-      {
-        "source": "followupAnswers",
-        "quote": "사용자 보완 답변 문구",
-        "note": "보완 답변에서 확인된 근거"
-      }
-    ],
+    "evidence": [],
     "evidenceGaps": [
       {
-        "topic": "성과 수치",
+        "id": "gap-result-metric",
+        "category": "성과 수치",
+        "title": "정량 성과",
         "reason": "현재 기록에 정량 결과가 없음",
-        "question": "결과를 숫자나 비교 기준으로 설명할 수 있나요?"
+        "question": "실제로 확인한 조회수, 반응 수, 비교 전후 변화가 있었나요?",
+        "answer": "",
+        "updatedAt": ""
       }
     ],
-    "coverLetterAngles": [
-      {
-        "title": "문제 해결 경험",
-        "angle": "지원서에서 풀어낼 관점",
-        "supportingEvidence": ["원본 문구"],
-        "caution": "없는 수치를 추가하지 않기"
-      }
-    ],
-    "competencyEvidence": [
-      {
-        "competency": "문제 해결력",
-        "evidence": ["원본 문구"],
-        "explanation": "역량과 연결되는 이유"
-      }
-    ]
+    "coverLetterAngles": [],
+    "competencyEvidence": []
   }
 }
 ```
 
 하위 호환:
 
-- 기존 `summary`, `competencyTags`, `achievements`, `keywords`는 계속 반환하고 저장합니다.
-- 기존 저장 결과는 `schemaVersion: "v1"`로 보정해 읽으며 v2 전용 배열은 빈 값으로 표시합니다.
+- 기존 `summary`, `competencyTags`, `achievements`, `keywords` 필드는 타입과 저장 호환을 위해 유지합니다. 신규 분석에서 `competencyTags`, `evidence`, `coverLetterAngles`, `competencyEvidence`는 빈 배열로 반환합니다.
+- 기존 저장 결과는 `schemaVersion: "v1"` 또는 과거 v2 형태로 보정해 읽으며 화면에서는 더 이상 핵심 역량 태그, 역량별 근거, 원본 근거, 자소서 소재 각도를 표시하지 않습니다.
 - STAR에서 확인되지 않는 항목은 빈 문자열로 두고, 억지로 채우지 않습니다.
-- 원본에 없는 성과, 수치, 역할, 협업 여부, 리더십은 사실처럼 생성하지 않고 `evidenceGaps` 또는 `caution`으로 분리합니다.
-- 보완 답변은 원본 경험을 자동 수정하지 않으며, 분석 evidence에서 `followupAnswers` 출처로만 드러납니다.
+- 원본에 없는 날짜, 종료월, 성과, 수치, 역할, 협업 여부, 리더십은 사실처럼 생성하지 않고 `evidenceGaps`의 `question`으로 분리합니다. 신규 `evidenceGaps` 항목은 `id`, `category`, `title`, `reason`, `question`, `answer`, `updatedAt`을 포함하고, 답변 전 `answer`와 `updatedAt`은 빈 문자열입니다. 현재 진행 중인 활동은 종료일을 임의 추론하지 않고 `현재`로 유지합니다.
+- `achievements`는 최대 4개, `keywords`는 최대 10개로 제한합니다.
+- STAR의 상황, 과제, 행동, 결과는 같은 문장을 반복하지 않고 서로 다른 역할을 갖도록 작성합니다.
+- 보완 답변은 원본 경험을 자동 수정하지 않으며, 저장 즉시 추천 / 답변 초안 입력 context에 반영됩니다. 요약과 STAR까지 갱신하려면 사용자가 명시적으로 다시 분석합니다.
 
 ## `/api/recommend` v2 응답 계약
 
@@ -205,7 +188,7 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
 - 기존 v1 필드 `recommendedExperienceId`, `recommendedExperienceTitle`, `reason`, `relatedTags`, `highlightedAchievement`, `usageDirection`, `draftSentence`는 계속 반환하고 저장합니다.
 - 기존 저장 결과는 `schemaVersion: "v1"`로 보정해 읽으며 `matches`는 1순위 1개로 변환합니다.
 - `draftSentence`는 하위 호환용 짧은 참고 문장만 유지합니다. 긴 답변 초안은 `/api/answer-drafts` v1에서 별도로 생성하고 저장합니다.
-- 분석 v2가 있으면 STAR, 원본 evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 우선 사용합니다. 분석이 없거나 오래되었으면 원본 경험 내용을 fallback으로 사용합니다.
+- 분석 v2.1이 있으면 STAR, 주요 성과, 키워드, `evidenceGaps.answer`를 우선 사용합니다. 분석이 없거나 오래되었으면 원본 경험 내용을 fallback으로 사용합니다.
 - 근거가 약한 내용은 `missingEvidence`, 기록 밖으로 과장하기 쉬운 내용은 `overclaimRisks`로 분리합니다.
 - 원본에 없는 성과, 수치, 역할, 협업 규모, 사용 기술은 사실처럼 생성하지 않습니다.
 
@@ -258,12 +241,12 @@ AI API Route는 모두 아래 순서로 요청을 처리합니다.
 - 추천 v1/v2 저장 row는 수정하지 않고, 초안은 별도 `answer_drafts` 저장소에 `(recommendationId, experienceId)` 기준으로 연결합니다.
 - 같은 추천 / 경험에서 여러 type을 순차 생성하면 저장소의 `drafts` 배열에 생성된 버전들이 누적됩니다.
 - 추천 v1 기록도 정규화된 1개 match와 원본 경험이 있으면 초안 생성 대상이 될 수 있습니다. 원본 경험이 삭제된 경우 생성 버튼 대신 기존 추천 기록 화면만 유지합니다.
-- 분석 v2가 있으면 STAR, evidence, evidenceGaps, coverLetterAngles, competencyEvidence를 우선 활용하고, 없으면 원본 experience 필드와 추천 match 근거를 사용합니다.
-- 보완 답변 때문에 선택 경험의 분석 상태가 `needs_reanalysis`이면 추천 / 답변 초안 화면에서 stale 가능성을 표시합니다.
+- 분석 v2.1이 있으면 STAR, 주요 성과, 키워드, `evidenceGaps.answer`를 우선 활용하고, 없으면 원본 experience 필드와 추천 match 근거를 사용합니다.
+- 원본 경험이 분석 이후 수정된 경우에만 업데이트 필요 가능성을 표시합니다. 보완 답변만 추가된 경우에는 추천 / 답변 초안 입력에 즉시 반영됩니다.
 
-## `/api/evidence-followups` v1 응답 계약
+## 레거시 `/api/evidence-followups` v1 응답 계약
 
-`/api/evidence-followups`는 OpenAI Responses API structured output의 schema name `campuslog_evidence_followups_v1`를 사용합니다. 입력은 보완 대상 `Experience`, `source`, 그리고 source에 따라 `analysis`, `recommendation`, `match`, `answerDraft` 중 필요한 context입니다. route는 질문 생성만 담당하고 저장은 repository의 `experienceFollowups` 저장소가 담당합니다.
+`/api/evidence-followups`는 OpenAI Responses API structured output의 schema name `campuslog_evidence_followups_v1`를 사용합니다. 기존 데이터와 직접 호출 호환을 위해 route는 유지하지만, 신규 AI 분석 화면은 별도 질문 생성 단계를 사용하지 않습니다. 분석 부족 정보의 `question`을 카드 안에 바로 표시하고, 답변 저장은 분석 `evidenceGaps.answer`와 repository의 `experienceFollowups` 호환 저장소에 함께 반영합니다.
 
 `source` 값은 아래 중 하나입니다.
 

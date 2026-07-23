@@ -2198,6 +2198,189 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.analysis-info-notice {
+  border: 1px solid rgba(36, 34, 31, 0.12);
+  border-radius: 8px;
+  background: rgba(247, 246, 242, 0.86);
+  padding: 14px;
+}
+
+.analysis-info-notice p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.analysis-gap-answer-block {
+  display: grid;
+  gap: 14px;
+}
+
+.analysis-gap-answer-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid rgba(36, 34, 31, 0.14);
+  border-radius: 8px;
+  background: rgba(247, 246, 242, 0.86);
+  padding: 14px;
+}
+
+.analysis-gap-answer-intro svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--color-brand);
+}
+
+.analysis-gap-answer-intro p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.analysis-gap-answer-list {
+  display: grid;
+  gap: 14px;
+}
+
+.analysis-gap-answer-card {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 16px;
+}
+
+.analysis-gap-answer-card[data-answered="true"] {
+  border-color: rgba(67, 121, 84, 0.3);
+  background: rgba(248, 252, 248, 0.96);
+}
+
+.analysis-gap-answer-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.analysis-gap-answer-card-header > div {
+  min-width: 0;
+}
+
+.analysis-gap-answer-card-header span {
+  display: inline-flex;
+  margin-bottom: 6px;
+  border-radius: 999px;
+  background: rgba(36, 34, 31, 0.08);
+  color: var(--color-text-soft);
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.analysis-gap-answer-card-header h4 {
+  margin: 0;
+  color: var(--color-brand-strong);
+  font-size: 0.98rem;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.analysis-gap-answer-card-header svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--color-text-soft);
+}
+
+.analysis-gap-answer-card[data-answered="true"]
+  .analysis-gap-answer-card-header
+  svg {
+  color: #35764a;
+}
+
+.analysis-gap-reason,
+.analysis-gap-question {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.analysis-gap-question {
+  color: var(--color-brand-strong);
+  font-weight: 760;
+}
+
+.analysis-gap-saved-answer {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-muted);
+  padding: 12px;
+}
+
+.analysis-gap-saved-answer strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-brand-strong);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.analysis-gap-saved-answer p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.analysis-gap-answer-input {
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 31px,
+      rgba(36, 34, 31, 0.08) 31px 32px
+    ),
+    #ffffff;
+  color: var(--color-text);
+  padding: 12px 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.analysis-gap-answer-input:focus {
+  border-color: var(--color-brand);
+  outline: 3px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.analysis-gap-answer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.analysis-gap-answer-actions span {
+  color: var(--color-text-soft);
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
 .followup-panel {
   display: grid;
   gap: 18px;
@@ -2766,6 +2949,15 @@ h2 {
 
   .analysis-star-grid {
     grid-template-columns: 1fr;
+  }
+
+  .analysis-gap-answer-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .analysis-gap-answer-card-header {
+    flex-direction: column;
   }
 
   .followup-actions,

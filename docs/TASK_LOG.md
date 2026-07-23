@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-23 - AI 분석 부족 정보 답변 UX 간소화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | AI 경험 분석 화면을 요약·STAR·성과·부족 정보 답변·키워드 중심으로 간소화하고 보완 답변을 추천 입력에 즉시 반영 |
+| 수정한 파일 | `web/src/app/api/analyze/route.ts`, `web/src/app/api/recommend/route.ts`, `web/src/app/api/answer-drafts/route.ts`, `web/src/app/recommend/page.tsx`, `web/src/components/ai/AnalysisResult.tsx`, `web/src/components/ai/AnalysisGapAnswerList.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/ai/ExperienceFollowupPanel.tsx`, `web/src/components/experiences/*`, `web/src/lib/analysisResult.ts`, `web/src/lib/analysisGapAnswers.ts`, `web/src/lib/analysisApi.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/lib/storage.ts`, `web/src/lib/types.ts`, `web/src/app/globals.css`, 관련 문서 |
+| 변경 내용 | 핵심 역량 태그, 역량별 근거, 원본 근거, 자소서 소재 각도, 별도 보완 질문 생성 UI를 분석 화면에서 제거. 신규 분석 prompt / structured output은 주요 성과 최대 4개, 키워드 최대 10개, STAR 반복 방지, 부족 정보 질문 포함으로 조정. 부족 정보 카드 안에서 답변 없음 / 작성 중 / 저장 중 / 저장 완료 / 저장 실패 / 기존 답변 수정 상태를 처리하고, 답변은 원본 경험을 자동 수정하지 않는 분석 `evidenceGaps.answer`와 `experience_followups` 호환 저장소에 저장. 답변 저장만으로 `needs_reanalysis`를 강제하지 않으며 추천 / 답변 초안 입력에 원본 경험, 요약, STAR, 주요 성과, 부족 정보 보완 답변, 키워드를 함께 전달 |
+| 검증한 내용 | `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. UI preview용 카카오 AI 앰배서더 fixture로 분석 화면에 요약, STAR, 주요 성과, 부족 정보 답변 textarea, 키워드가 표시되고 제거 대상 섹션 문구가 사라진 것을 브라우저 DOM에서 확인. 앱 브라우저 preview 컨텍스트에서 localStorage 접근이 제한되어 저장 성공 / 새로고침 유지의 실제 성공 경로는 자동 검증하지 못했으며, 저장 실패 상태 노출은 확인 |
+| 남은 작업 | 실제 로그인 Supabase 세션에서 부족 정보 답변 저장, 수정, 새로고침 유지, 추천 반영 흐름을 smoke test |
+| 관련 커밋 메시지 | `feat: simplify analysis gap answer flow` |
+
 ### 2026-07-23 - 활동 추가 닫힘 사각 잔상 제거
 
 | 항목 | 내용 |

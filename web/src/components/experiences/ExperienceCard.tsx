@@ -15,10 +15,9 @@ function getPreviewText(experience: Experience) {
 }
 
 export function ExperienceCard({ experience, analysis }: ExperienceCardProps) {
-  const aiTags = [
-    ...(analysis?.competencyTags ?? []),
-    ...(analysis?.keywords ?? []),
-  ].filter((tag, index, tags) => tags.indexOf(tag) === index);
+  const aiTags = (analysis?.keywords ?? []).filter(
+    (tag, index, tags) => tags.indexOf(tag) === index,
+  );
   const visibleTags = aiTags.slice(0, 4);
   const hiddenTagCount = Math.max(aiTags.length - visibleTags.length, 0);
   const hasBeenEdited = experience.createdAt !== experience.updatedAt;
@@ -51,7 +50,7 @@ export function ExperienceCard({ experience, analysis }: ExperienceCardProps) {
         ) : null}
 
         {visibleTags.length > 0 ? (
-          <div className="experience-tags" aria-label="AI 역량 태그">
+          <div className="experience-tags" aria-label="AI 활용 키워드">
             {visibleTags.map((tag) => (
               <span key={tag}>{tag}</span>
             ))}

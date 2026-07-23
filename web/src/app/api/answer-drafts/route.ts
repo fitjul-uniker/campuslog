@@ -336,6 +336,11 @@ function createEvidenceOptions(
     Object.entries(analysis.star).forEach(([key, value]) => {
       addOption(`STAR ${key}`, value);
     });
+    analysis.evidenceGaps.forEach((gap) => {
+      if (gap.answer.trim()) {
+        addOption("부족 정보 보완 답변", `${gap.title}: ${gap.answer}`);
+      }
+    });
     analysis.evidence.forEach((item) => {
       addOption("분석 원본 근거", item.quote);
     });
@@ -452,18 +457,13 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
       ? {
           schemaVersion: body.analysis.schemaVersion,
           summary: body.analysis.summary,
-          competencyTags: body.analysis.competencyTags,
           achievements: body.analysis.achievements,
           keywords: body.analysis.keywords,
           star: body.analysis.star,
-          evidence: body.analysis.evidence.slice(0, 8),
           evidenceGaps: body.analysis.evidenceGaps.slice(0, 6),
-          coverLetterAngles: body.analysis.coverLetterAngles.slice(0, 4),
-          competencyEvidence: body.analysis.competencyEvidence.slice(0, 6),
           isStale:
             body.analysis.sourceExperienceUpdatedAt !==
-              body.experience.updatedAt ||
-            body.experience.analysisStatus === "needs_reanalysis",
+            body.experience.updatedAt,
         }
       : null,
     sourceRules: [
@@ -673,7 +673,7 @@ function parseAnswerDraftsResult(
     const fallbackMissingEvidence = [
       ...body.match.missingEvidence,
       ...(body.analysis?.evidenceGaps.map(
-        (gap) => `${gap.topic}: ${gap.reason}`,
+        (gap) => `${gap.title}: ${gap.reason}`,
       ) ?? []),
     ];
     const fallbackCautions = [

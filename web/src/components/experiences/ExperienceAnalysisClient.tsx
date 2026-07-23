@@ -5,7 +5,6 @@ import { ArrowLeft, BookOpenText, RefreshCcw, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
-import { ExperienceFollowupPanel } from "@/components/ai/ExperienceFollowupPanel";
 import {
   RippleButton,
   RippleButtonRipples,
@@ -166,7 +165,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
         <div>
           <h1>분석 결과</h1>
           <p className="page-description">
-            특정 활동 경험에 연결된 요약, STAR, 근거, 보완할 정보를
+            특정 활동 경험에 연결된 요약, STAR, 성과와 보완할 정보를
             확인합니다.
           </p>
         </div>
@@ -175,13 +174,6 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       {analysis ? (
         <>
           <AnalysisResult experience={experience} analysis={analysis} />
-          <ExperienceFollowupPanel
-            experience={experience}
-            analysis={analysis}
-            isAnalyzing={isAnalyzing}
-            onReanalyze={handleAnalyze}
-            onFollowupsChanged={refreshExperience}
-          />
           {analysisError ? (
             <p className="form-error" role="alert">
               {analysisError}
@@ -261,13 +253,6 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
               </Link>
             </div>
           </section>
-          <ExperienceFollowupPanel
-            experience={experience}
-            analysis={analysis}
-            isAnalyzing={isAnalyzing}
-            onReanalyze={handleAnalyze}
-            onFollowupsChanged={refreshExperience}
-          />
         </>
       )}
     </div>

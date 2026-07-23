@@ -22,8 +22,8 @@ import {
   getAnswerDraftCharacterLimit,
 } from "@/lib/answerDraftResult";
 import { requestAnswerDrafts } from "@/lib/answerDraftApi";
+import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { formatDateTime } from "@/lib/date";
-import { requestEvidenceFollowupQuestions } from "@/lib/evidenceFollowupApi";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   AnswerDraft,
@@ -33,7 +33,6 @@ import type {
   RecommendationMatch,
   RecommendationPurpose,
   RecommendationResult as Result,
-  ExperienceFollowupSource,
 } from "@/lib/types";
 
 type RecommendationResultProps = {
@@ -112,8 +111,6 @@ function AnswerDraftViewer({
   onSelectType,
   isGenerating,
   onGenerate,
-  isGeneratingFollowup,
-  onGenerateFollowup,
 }: {
   draftResult?: AnswerDraftResult;
   experienceId: string;
@@ -121,8 +118,6 @@ function AnswerDraftViewer({
   onSelectType: (type: AnswerDraftType) => void;
   isGenerating: boolean;
   onGenerate: (type: AnswerDraftType) => void;
-  isGeneratingFollowup: boolean;
-  onGenerateFollowup: (draft: AnswerDraft) => void;
 }) {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const activeDraft = findDraftByType(draftResult, selectedType);
@@ -270,25 +265,12 @@ function AnswerDraftViewer({
         {activeDraft &&
         (hasListContent(activeDraft.missingEvidenceNotes) ||
           hasListContent(activeDraft.cautions)) ? (
-          <div className="answer-draft-followup-actions">
-            <RippleButton
-              className="button button-secondary"
-              type="button"
-              disabled={isGeneratingFollowup}
-              onClick={() => onGenerateFollowup(activeDraft)}
-            >
-              {isGeneratingFollowup
-                ? "질문 생성 중..."
-                : "초안 근거로 질문 만들기"}
-              <RippleButtonRipples />
-            </RippleButton>
-            <Link
-              href={`/experiences/${experienceId}/analysis`}
-              className="recommendation-match-link answer-draft-followup-link"
-            >
-              보완 답변 보기
-            </Link>
-          </div>
+          <Link
+            href={`/experiences/${experienceId}/analysis`}
+            className="recommendation-match-link answer-draft-followup-link"
+          >
+            분석 보완하기
+          </Link>
         ) : null}
       </div>
     </div>
@@ -314,14 +296,6 @@ export function RecommendationResult({
   const [answerDraftError, setAnswerDraftError] = useState<
     Record<string, string>
   >({});
-  const [generatingFollowupKey, setGeneratingFollowupKey] =
-    useState<string | null>(null);
-  const [followupMessages, setFollowupMessages] = useState<
-    Record<string, string>
-  >({});
-  const [followupErrors, setFollowupErrors] = useState<Record<string, string>>(
-    {},
-  );
   const isEmbedded = variant === "embedded";
   const requirements = result.extractedRequirements;
   const hasRequirements =
@@ -388,8 +362,6 @@ export function RecommendationResult({
     setAnswerDraftsByExperienceId({});
     setSelectedDraftTypes({});
     setAnswerDraftError({});
-    setFollowupMessages({});
-    setFollowupErrors({});
     loadAnswerDrafts().catch(() => {
       if (isMounted) {
         setAnswerDraftsByExperienceId({});
@@ -425,15 +397,18 @@ export function RecommendationResult({
 
     try {
       const repository = getCampusLogRepository();
-      const analysis = await repository.analyses.getByExperienceId(
-        match.experienceId,
-      );
+      const [analysis, followups] = await Promise.all([
+        repository.analyses.getByExperienceId(match.experienceId),
+        repository.experienceFollowups.listByExperienceId(match.experienceId),
+      ]);
       const response = await requestAnswerDrafts({
         draftType,
         recommendation: result,
         match,
         experience: matchedExperience,
-        analysis,
+        analysis: analysis
+          ? mergeAnalysisGapAnswersIntoAnalysis(analysis, followups)
+          : null,
       });
 
       if (!response.ok) {
@@ -476,175 +451,6 @@ export function RecommendationResult({
       }));
     } finally {
       setGeneratingDraftKey(null);
-    }
-  }
-
-  async function handleGenerateMatchFollowup(
-    match: RecommendationMatch,
-    source: Extract<
-      ExperienceFollowupSource,
-      "recommendation_missing_evidence" | "recommendation_overclaim_risk"
-    >,
-  ) {
-    const matchedExperience = experiencesById.get(match.experienceId);
-    const followupKey = `${match.experienceId}:${source}:${match.rank}`;
-
-    if (!matchedExperience) {
-      setFollowupErrors((currentErrors) => ({
-        ...currentErrors,
-        [match.experienceId]:
-          "선택한 경험 원본을 찾지 못해 보완 질문을 만들 수 없습니다.",
-      }));
-      return;
-    }
-
-    setGeneratingFollowupKey(followupKey);
-    setFollowupErrors((currentErrors) => ({
-      ...currentErrors,
-      [match.experienceId]: "",
-    }));
-    setFollowupMessages((currentMessages) => ({
-      ...currentMessages,
-      [match.experienceId]: "",
-    }));
-
-    try {
-      const repository = getCampusLogRepository();
-      const analysis = await repository.analyses.getByExperienceId(
-        match.experienceId,
-      );
-      const response = await requestEvidenceFollowupQuestions({
-        experience: matchedExperience,
-        analysis,
-        recommendation: result,
-        match,
-        source,
-      });
-
-      if (!response.ok) {
-        setFollowupErrors((currentErrors) => ({
-          ...currentErrors,
-          [match.experienceId]: response.error.message,
-        }));
-        return;
-      }
-
-      const savedFollowup = await repository.experienceFollowups.save(
-        response.followup,
-      );
-
-      if (!savedFollowup) {
-        setFollowupErrors((currentErrors) => ({
-          ...currentErrors,
-          [match.experienceId]:
-            "보완 질문을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        }));
-        return;
-      }
-
-      setFollowupMessages((currentMessages) => ({
-        ...currentMessages,
-        [match.experienceId]:
-          "보완 질문을 만들었습니다. 활동 분석 화면에서 답변할 수 있습니다.",
-      }));
-    } catch (error) {
-      console.error("CampusLog recommendation followup generation failed", error);
-      setFollowupErrors((currentErrors) => ({
-        ...currentErrors,
-        [match.experienceId]: getErrorMessage(
-          error,
-          "보완 질문 생성 중 문제가 발생했습니다. 다시 시도해 주세요.",
-        ),
-      }));
-    } finally {
-      setGeneratingFollowupKey(null);
-    }
-  }
-
-  async function handleGenerateDraftFollowup(
-    match: RecommendationMatch,
-    draft: AnswerDraft,
-  ) {
-    const matchedExperience = experiencesById.get(match.experienceId);
-    const hasMissingEvidence = hasListContent(draft.missingEvidenceNotes);
-    const source: Extract<
-      ExperienceFollowupSource,
-      "answer_draft_missing_evidence" | "answer_draft_caution"
-    > = hasMissingEvidence
-      ? "answer_draft_missing_evidence"
-      : "answer_draft_caution";
-    const followupKey = `${match.experienceId}:${source}:${draft.type}`;
-
-    if (!matchedExperience) {
-      setFollowupErrors((currentErrors) => ({
-        ...currentErrors,
-        [match.experienceId]:
-          "선택한 경험 원본을 찾지 못해 보완 질문을 만들 수 없습니다.",
-      }));
-      return;
-    }
-
-    setGeneratingFollowupKey(followupKey);
-    setFollowupErrors((currentErrors) => ({
-      ...currentErrors,
-      [match.experienceId]: "",
-    }));
-    setFollowupMessages((currentMessages) => ({
-      ...currentMessages,
-      [match.experienceId]: "",
-    }));
-
-    try {
-      const repository = getCampusLogRepository();
-      const analysis = await repository.analyses.getByExperienceId(
-        match.experienceId,
-      );
-      const response = await requestEvidenceFollowupQuestions({
-        experience: matchedExperience,
-        analysis,
-        recommendation: result,
-        match,
-        answerDraft: draft,
-        source,
-      });
-
-      if (!response.ok) {
-        setFollowupErrors((currentErrors) => ({
-          ...currentErrors,
-          [match.experienceId]: response.error.message,
-        }));
-        return;
-      }
-
-      const savedFollowup = await repository.experienceFollowups.save(
-        response.followup,
-      );
-
-      if (!savedFollowup) {
-        setFollowupErrors((currentErrors) => ({
-          ...currentErrors,
-          [match.experienceId]:
-            "보완 질문을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        }));
-        return;
-      }
-
-      setFollowupMessages((currentMessages) => ({
-        ...currentMessages,
-        [match.experienceId]:
-          "초안 근거에서 보완 질문을 만들었습니다. 활동 분석 화면에서 답변할 수 있습니다.",
-      }));
-    } catch (error) {
-      console.error("CampusLog answer draft followup generation failed", error);
-      setFollowupErrors((currentErrors) => ({
-        ...currentErrors,
-        [match.experienceId]: getErrorMessage(
-          error,
-          "보완 질문 생성 중 문제가 발생했습니다. 다시 시도해 주세요.",
-        ),
-      }));
-    } finally {
-      setGeneratingFollowupKey(null);
     }
   }
 
@@ -790,14 +596,9 @@ export function RecommendationResult({
               generatingDraftKey ===
               `${match.experienceId}:${selectedDraftType}`;
             const draftError = answerDraftError[match.experienceId];
-            const followupMessage = followupMessages[match.experienceId];
-            const followupError = followupErrors[match.experienceId];
             const hasFollowupSignal =
               hasListContent(match.missingEvidence) ||
               hasListContent(match.overclaimRisks);
-            const isStaleFromFollowups =
-              matchedExperience?.analysisStatus === "needs_reanalysis";
-
             return (
               <article
                 className="recommendation-match-card"
@@ -819,16 +620,6 @@ export function RecommendationResult({
                 </div>
 
                 <p>{match.matchReason}</p>
-
-                {isStaleFromFollowups ? (
-                  <div className="analysis-notice recommendation-stale-notice" role="status">
-                    <AlertTriangle aria-hidden="true" />
-                    <p>
-                      이 경험에 보완 답변이나 수정 내용이 있어 기존 추천과
-                      초안이 최신 분석 기준이 아닐 수 있습니다.
-                    </p>
-                  </div>
-                ) : null}
 
                 {hasListContent(match.relatedCompetencies) ? (
                   <div className="experience-tags">
@@ -910,57 +701,8 @@ export function RecommendationResult({
                         href={`/experiences/${matchedExperience.id}/analysis`}
                         className="recommendation-match-link"
                       >
-                        보완 답변 보기
+                        분석 보완하기
                       </Link>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {matchedExperience && hasFollowupSignal ? (
-                  <div className="recommendation-followup-actions">
-                    {hasListContent(match.missingEvidence) ? (
-                      <RippleButton
-                        className="button button-secondary"
-                        type="button"
-                        disabled={
-                          generatingFollowupKey ===
-                          `${match.experienceId}:recommendation_missing_evidence:${match.rank}`
-                        }
-                        onClick={() =>
-                          handleGenerateMatchFollowup(
-                            match,
-                            "recommendation_missing_evidence",
-                          )
-                        }
-                      >
-                        {generatingFollowupKey ===
-                        `${match.experienceId}:recommendation_missing_evidence:${match.rank}`
-                          ? "질문 생성 중..."
-                          : "부족 근거 질문 만들기"}
-                        <RippleButtonRipples />
-                      </RippleButton>
-                    ) : null}
-                    {hasListContent(match.overclaimRisks) ? (
-                      <RippleButton
-                        className="button button-secondary"
-                        type="button"
-                        disabled={
-                          generatingFollowupKey ===
-                          `${match.experienceId}:recommendation_overclaim_risk:${match.rank}`
-                        }
-                        onClick={() =>
-                          handleGenerateMatchFollowup(
-                            match,
-                            "recommendation_overclaim_risk",
-                          )
-                        }
-                      >
-                        {generatingFollowupKey ===
-                        `${match.experienceId}:recommendation_overclaim_risk:${match.rank}`
-                          ? "질문 생성 중..."
-                          : "과장 주의 질문 만들기"}
-                        <RippleButtonRipples />
-                      </RippleButton>
                     ) : null}
                   </div>
                 ) : null}
@@ -976,17 +718,6 @@ export function RecommendationResult({
                     {draftError}
                   </p>
                 ) : null}
-                {followupMessage ? (
-                  <p className="copy-status answer-draft-status" role="status">
-                    {followupMessage}
-                  </p>
-                ) : null}
-                {followupError ? (
-                  <p className="form-error answer-draft-error" role="alert">
-                    {followupError}
-                  </p>
-                ) : null}
-
                 {matchedExperience ? (
                   <AnswerDraftViewer
                     draftResult={answerDrafts}
@@ -1001,15 +732,6 @@ export function RecommendationResult({
                     isGenerating={isGeneratingDraft}
                     onGenerate={(draftType) =>
                       handleGenerateAnswerDrafts(match, draftType)
-                    }
-                    isGeneratingFollowup={
-                      generatingFollowupKey ===
-                        `${match.experienceId}:answer_draft_missing_evidence:${selectedDraftType}` ||
-                      generatingFollowupKey ===
-                        `${match.experienceId}:answer_draft_caution:${selectedDraftType}`
-                    }
-                    onGenerateFollowup={(draft) =>
-                      handleGenerateDraftFollowup(match, draft)
                     }
                   />
                 ) : null}
