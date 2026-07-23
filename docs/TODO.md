@@ -36,6 +36,7 @@
 - 2026-07-14: `feature/ai-evidence-followup`에서 `/api/evidence-followups` 보완 질문 생성, `experience_followups` table / `campuslog:v1:experience-followups` 저장소, 분석 화면의 질문 생성 / 답변 저장 / 수정 / dismiss / 보완 답변 기반 재분석 CTA를 구현. 이 흐름은 2026-07-23 `ISSUE-078`에서 분석 부족 정보 카드 안 직접 답변 저장 방식으로 간소화.
 - 2026-07-23: AI 경험 분석 화면을 요약, STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 축소. 핵심 역량 태그, 역량별 근거, 원본 근거, 자소서 소재 각도와 별도 보완 질문 생성 UI는 제거. 분석 부족 정보 카드 안에서 바로 답변을 저장하고, 답변은 분석 `evidenceGaps.answer`와 기존 `experience_followups` 호환 저장소에 함께 반영하며 보완 답변만으로는 `needs_reanalysis`를 강제하지 않음. 추천 / 답변 초안 입력에는 원본 경험, 분석 요약, STAR, 주요 성과, 부족 정보 보완 답변, 키워드를 함께 전달.
 - 2026-07-23: AI 추천 활용 목적을 면접 / 자기소개서 / JD 분석 / 기타 4개 신규 생성값으로 정리하고 목적별 입력 안내·예시·생성 옵션을 단일 설정 객체로 관리. 기존 `portfolio`, `activity_application` 저장 기록은 `other`로 읽어 하위 호환. 추천 API는 원본 경험과 보완 답변만 사실 근거로 사용하고 기존 AI 분석은 참고 자료로만 사용하도록 prompt를 조정했으며, 직접 근거가 부족하면 억지로 Top 3를 채우지 않음. 답변 생성 API는 목적별 허용 타입만 받도록 제한. 사용자가 Supabase SQL Editor에서 `jd` purpose 허용, `recommendations.jd_analysis`, 새 answer draft type constraint migration을 적용함. 실제 OpenAI 성공 경로와 목적별 생성 결과 수동 smoke test는 남음.
+- 2026-07-23: AI 추천 화면의 목적별 예시 문항을 실제 채용·지원 상황에서 입력할 법한 문장으로 교체. JD 분석 첫 예시는 버튼 문구와 실제 입력값을 분리해, 선택 시 백엔드 개발자 JD 샘플 전문이 입력되도록 조정. 긴 예시 문항의 모바일 줄바꿈도 보정. `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과했고 사용자가 예시 선택 입력 반영 등 직접 로직 테스트를 완료.
 - 2026-07-17: 팀 테스트를 위해 Supabase Auth 관리자 API 기반 `npm run seed:test-users` 스크립트를 추가. 기본 계정은 `test1@campuslog.test` ~ `test9@campuslog.test`, 비밀번호는 `test1111` ~ `test9999`이며 `campuslog_profile` metadata를 함께 설정. 사용자가 실제 Supabase project에 9개 계정이 모두 `created`로 생성된 것을 확인. 더미 경험·활동 데이터 주입은 아직 수행하지 않음.
 - 2026-07-17: 진행 중 / 시작 예정 활동을 상세 화면에서 수정할 수 있게 하고, 오늘의 기록의 마무리 필요 활동도 정리 전 수정할 수 있게 함. 활동 종료 시 현재 날짜를 완료일로 저장해 예상 종료일이 미래여도 즉시 AI 초안을 생성하도록 수정. 실제 로그인 브라우저 세션 회귀 확인은 남음.
 
@@ -112,6 +113,7 @@
 - [x] 경험 분석·추천 AI 실행 CTA에 colorful Border Beam 적용 (`ISSUE-059`)
 - [x] 추천 활용 목적에 `JD`를 추가하고 실행 CTA를 `AI 분석`으로 정리 (`ISSUE-060`)
 - [x] 추천 활용 목적을 날짜별 기록과 같은 검색 없는 선택 목록으로 통일 (`ISSUE-075`)
+- [x] AI 추천 목적별 예시 문항을 실제 채용·지원 상황에 가까운 문장으로 교체하고 JD 샘플 입력을 지원 (`ISSUE-079`)
 - [x] 활동 추가를 접근 가능한 Expandable Screen으로 전환하고 공용 Checkbox·CopyButton·프로필 드롭다운 통합 (`ISSUE-041`)
 - [x] 활동 추가의 시작일·예상 종료일 입력 상단선과 `미정` 체크 옵션 크기·위치 정리 (`ISSUE-074`)
 - [x] 활동 추가 닫힘 마지막 프레임의 사각 표면 잔상 제거 (`ISSUE-077`)

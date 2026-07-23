@@ -133,19 +133,24 @@ export function RecommendationForm({
         className="recommendation-example-list"
         aria-label={`${selectedConfig.label} 예시 문항`}
       >
-        {selectedConfig.examples.map((example) => (
-          <button
-            key={example}
-            type="button"
-            disabled={isLoading}
-            onClick={() => {
-              setPrompt(example);
-              setErrorMessage("");
-            }}
-          >
-            {example}
-          </button>
-        ))}
+        {selectedConfig.examples.map((example) => {
+          const label = typeof example === "string" ? example : example.label;
+          const input = typeof example === "string" ? example : example.input;
+
+          return (
+            <button
+              key={label}
+              type="button"
+              disabled={isLoading}
+              onClick={() => {
+                setPrompt(input);
+                setErrorMessage("");
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {errorMessage ? (
