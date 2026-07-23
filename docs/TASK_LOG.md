@@ -30,6 +30,214 @@
 
 ## 작업 로그
 
+### 2026-07-24 - 부족 정보 Focus Stage 시도 취소
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 선택한 부족 정보 질문을 목록 상단으로 이동하는 focus stage 시도를 사용자 요청에 따라 취소하고 기존 Anchored Morph를 유지 |
+| 수정한 파일 | `web/src/components/ai/AnalysisGapAnswerList.tsx`, `web/src/components/ai/AnalysisGapAnswerList.structure.test.mjs`, `web/src/components/ui/MorphSurface.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | focus stage용 선택 질문 재정렬, position layout, 고정 높이 stage, stage 내부 스크롤과 전용 회귀 테스트를 제거. 질문은 원래 순서와 위치를 유지하고 표면 상단이 고정된 기존 `height: 0 ↔ auto` reveal로 복구. 시도 과정에서 추가한 전용 설계·계획 문서도 제거하고 활성 문서를 Anchored Morph 기준으로 되돌림 |
+| 검증한 내용 | focus stage 전용 식별자와 문서가 남지 않았음을 검색으로 확인. Anchored Morph 관련 구조 테스트 12개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 개발 서버의 분석 상세 경로 재컴파일 완료 |
+| 남은 작업 | 기존 TODO와 동일하게 Anchored Morph의 390px 실제 브라우저 모션과 reduced motion 강제 에뮬레이션은 미검증 |
+| 관련 커밋 메시지 | 별도 기능 변경이 남지 않은 취소 작업이므로 없음 |
+
+### 2026-07-24 - AI 분석 부족 정보 Anchored Morph 전환
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 부족 정보 질문의 아래 방향 확장 감각과 인접 질문 겹침을 Cult UI MorphSurface 방향의 anchored reveal로 수정 |
+| 수정한 파일 | `web/src/components/ui/MorphSurface.tsx`, `web/src/components/ui/MorphSurface.structure.test.mjs`, `web/src/components/ai/AnalysisGapAnswerList.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-analysis-gap-anchored-morph-design.md`, `docs/superpowers/plans/2026-07-24-analysis-gap-anchored-morph.md`, `audit/analysis-gap-motion/**` |
+| 변경 내용 | 질문 목록 gap 12px과 열린 표면 y -12px가 상쇄되어 이전 질문과 맞닿고 root layout spring이 인접 질문을 scale하는 원인을 측정. 루트 translate와 layout morph를 제거하고 표면 상단을 고정. reveal wrapper를 height 0↔auto로 전환하며 내부 본문은 y 12→0으로 올라오게 변경. 새 열림에만 60ms 지연을 두고 질문 간격을 16px로 확대했으며 모바일 추가 translate를 제거. API·repository·schema·저장 상태 계약은 유지 |
+| 검증한 내용 | 구현 전 대상 구조 테스트 3건이 의도대로 실패했고 구현 후 관련 테스트 12개가 통과. `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. 실제 로그인 독립 분석 화면에서 두 번째 질문의 이전 카드 하단 314px·열린 카드 상단 330px으로 16px 간격, 모든 표면 transform `none`, 열린 질문 1개를 측정하고 질문 전환 캡처에서 겹침이 없음을 확인 |
+| 남은 작업 | in-app browser가 viewport resize를 제공하지 않아 새 anchored reveal의 390px 실제 브라우저 캡처와 reduced motion 강제 에뮬레이션은 수행하지 못함. 모바일 추가 translate 제거와 reduced motion 분기는 구조 테스트·typecheck로 확인 |
+| 관련 커밋 메시지 | `fix: stabilize analysis gap morph transitions` |
+
+### 2026-07-24 - AI 분석 부족 정보 하단 메타 간소화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 열린 부족 정보 질문 하단에서 기본 상태와 노출형 키보드 안내를 제거 |
+| 수정한 파일 | `web/src/components/ai/AnalysisGapAnswerList.tsx`, `web/src/components/ai/AnalysisGapAnswerList.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-analysis-gap-meta-simplification-design.md`, `docs/superpowers/plans/2026-07-24-analysis-gap-meta-simplification.md` |
+| 변경 내용 | 기본 상태의 `statusText`를 빈 값으로 바꾸고 상태 문구를 조건부 렌더링해 `답변 없음`을 숨김. 화면의 `⌘/Ctrl + Enter` 안내 span을 제거하고 글자 수와 저장 버튼은 유지. 저장 중·실패·작성 중·완료·마지막 저장 상태와 실제 Command/Ctrl+Enter 저장 handler, repository·API·schema 계약은 변경하지 않음 |
+| 검증한 내용 | 구현 전 구조 테스트가 기대한 이유로 1건 실패하고 구현 후 관련 테스트 10개 통과. 실제 로그인 독립 분석 화면을 새로고침한 뒤 열린 질문 하단이 `0/1600답변 저장`만 포함하고 `답변 없음`, `⌘/Ctrl + Enter`가 없으며 가로 overflow가 없음을 확인 |
+| 남은 작업 | 실제 답변 저장 성공은 사용자 데이터 변경을 피하기 위해 실행하지 않음 |
+| 관련 커밋 메시지 | `refactor: simplify analysis gap answer metadata` |
+
+### 2026-07-24 - AI 분석 부족 정보 White Command Surface 정교화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 질문별 MorphSurface를 선택한 White Command Surface 시안에 맞춰 흰색·상향 부상 구조로 정교화 |
+| 수정한 파일 | `web/src/components/ui/MorphSurface.tsx`, `web/src/components/ui/MorphSurface.structure.test.mjs`, `web/src/components/ai/AnalysisGapAnswerList.tsx`, `web/src/components/ai/AnalysisGapAnswerList.structure.test.mjs`, `web/src/app/globals.css`, `design-qa.md`, `design-qa-implementation.png`, `design-qa-comparison.png`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-analysis-gap-white-lift-morph-design.md`, `docs/superpowers/plans/2026-07-24-analysis-gap-white-lift-morph.md` |
+| 변경 내용 | 닫힌 질문을 원형 상태 아이콘·작은 분류·한 줄 질문·상태·Chevron의 58px 흰색 command bar로 정리하고, 열린 표면은 아래 중심을 기준으로 데스크톱 12px·모바일 순수 8px 위로 부상하도록 변경. 본문은 음의 y축에서 나타나고 전체 질문·이유·깨끗한 textarea·상태/글자 수/키보드 안내·차콜 저장 액션을 같은 표면에 배치. 베이지 채움·입력 줄무늬·저장 아이콘은 제거. 자동 textarea 초점과 Escape 후 trigger 초점 복귀에 `preventScroll`을 적용하고 기존 보완 답변 저장·repository·API 계약은 유지 |
+| 검증한 내용 | 관련 구조 테스트 10개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 실제 로그인 `/experiences` 분석 스플릿뷰에서 질문 간 단일 전환, 위쪽 부상, textarea 초점, Escape 시 질문만 닫기와 trigger 초점 복귀, 바깥 클릭 닫기, 빈 답변 Command/Ctrl+Enter 오류 유지 확인. 390×844에서 가로 overflow 없음, 모바일 순수 부상량 8px, 전체 폭 저장 액션을 확인. 선택 시안과 구현 캡처를 나란히 비교한 `design-qa.md`에서 P0/P1/P2 없음으로 판정 |
+| 남은 작업 | 사용자 데이터를 변경하는 실제 답변 저장 성공 smoke test와 reduced motion 브라우저 강제 에뮬레이션은 수행하지 않음. 성공 후 닫기와 reduced motion 분기는 구조 테스트·typecheck로 확인. 실행 중 개발 서버와 충돌을 피하기 위해 production build는 이번 정교화 단계에서 재실행하지 않음 |
+| 관련 커밋 메시지 | `feat: refine analysis gap morph surfaces` |
+
+### 2026-07-24 - AI 분석 부족 정보 질문별 MorphSurface 전환
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | AI 분석의 항상 펼쳐진 부족 정보 답변 카드를 질문별 단일 열림 MorphSurface로 전환 |
+| 수정한 파일 | `web/src/components/ui/MorphSurface.tsx`, `web/src/components/ui/MorphSurface.structure.test.mjs`, `web/src/components/ai/AnalysisGapAnswerList.tsx`, `web/src/components/ai/AnalysisGapAnswerList.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-analysis-gap-morph-surface-design.md`, `docs/superpowers/plans/2026-07-24-analysis-gap-morph-surface.md` |
+| 변경 내용 | Cult UI MorphSurface의 spring morph·공유 indicator·질문별 축약 trigger 구조를 현재 `motion/react`으로 구현. 한 번에 질문 하나만 열고 열림 시 textarea 초점, 바깥 클릭·Escape 닫기와 trigger 초점 복귀, Command/Ctrl+Enter 저장을 지원. 기존 보완 답변 repository·호환 저장 순서는 유지하고 저장 성공 뒤에만 닫으며 오류 시 입력과 열린 상태 유지. 100% 유동 폭·44px 이상 trigger·focus-visible·reduced motion 적용. 기존 dependency로 구현해 새 패키지는 추가하지 않음 |
+| 검증한 내용 | 구현 전 구조 테스트 RED와 구현 후 관련 테스트 7개 GREEN 확인. 실제 로그인 분석 스플릿뷰에서 질문 전환 시 열린 표면 1개, textarea 자동 초점, Escape 시 분석 패널 유지와 trigger 초점 복귀, 바깥 클릭 닫기, 빈 답변 Command/Ctrl+Enter 오류 안내와 입력 상태 유지 확인. 390px 모바일에서 고정 폭·가로 overflow 없이 긴 질문 줄바꿈과 저장 액션 노출 확인, browser console error 0건 확인. 최종 `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과 |
+| 남은 작업 | 사용자 데이터 변경을 피하기 위해 실제 답변 저장 성공 smoke test는 수행하지 않았으며 기존 repository 저장 계약과 성공 분기는 구조 테스트·typecheck로 확인 |
+| 관련 커밋 메시지 | `feat: morph analysis gap questions` |
+
+### 2026-07-24 - AI 추천 취소 피드백과 취소 액션 간소화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천 요청 취소를 오류처럼 표시하지 않고 공용 로딩 화면의 취소 액션을 아이콘·글자 중심으로 간소화 |
+| 수정한 파일 | `web/src/app/recommend/page.tsx`, `web/src/app/recommend/page.structure.test.mjs`, `web/src/components/ai/AIProcessingPanel.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-ai-loading-text-cadence-design.md`, `docs/superpowers/plans/2026-07-24-ai-loading-text-cadence.md` |
+| 변경 내용 | 추천 응답의 `REQUEST_CANCELLED` 분기에서는 오류 상태를 설정하지 않고 종료해 기존 입력만 유지. 공용 취소 버튼의 pill 배경·테두리·그림자를 제거하고 XCircle 아이콘과 `요청 취소` 글자만 표시하되 44px 클릭 영역과 focus-visible 유지. 실제 추천 오류는 기존 alert로 계속 표시 |
+| 검증한 내용 | 변경 전 추천 취소와 취소 버튼 스타일 테스트 2개가 실패하고 구현 후 관련 테스트 6개 통과. 실제 로그인 추천 화면에서 취소 액션의 계산 스타일이 투명 배경, 0px border, shadow none, 44px 높이인 것을 확인. 요청 취소 뒤 overlay 0개, alert 0개, 입력값 유지와 body overflow 복구 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: simplify AI recommendation cancellation` |
+
+### 2026-07-24 - AI 처리 문구 속도와 끝맺음 조정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | Strands 기반 공용 AI 처리 화면의 문구 전환을 조금 늦추고 말줄임 끝맺음을 통일 |
+| 수정한 파일 | `web/src/components/ai/AIProcessingPanel.tsx`, `web/src/components/ai/AIProcessingPanel.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-ai-loading-text-cadence-design.md`, `docs/superpowers/plans/2026-07-24-ai-loading-text-cadence.md` |
+| 변경 내용 | `AITextLoading` 전환 간격을 1.8초에서 2.4초로 조정. 공용 패널에 전달되는 title·status·step·description·장기 대기 문구는 표시 직전에 기존 `.`, `..`, `...`, `…`만 제거하고 `...`를 붙여 중복 없이 통일. API·SSE·NDJSON 원문과 저장 데이터는 변경하지 않음 |
+| 검증한 내용 | 변경 전 새 구조 테스트가 실패하고 구현 후 관련 테스트 6개 통과. `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 실제 로그인 분석 재요청 화면에서 여러 진행 문구가 `...`로 끝나고 Strands overlay가 유지되며 요청 완료 후 overlay와 body scroll lock이 제거되는 것을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: refine AI loading text cadence` |
+
+### 2026-07-24 - AI 처리 Strands 전체 화면 로딩 전환
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 모든 AI 분석·추천·합성·답변 생성 대기를 Strands와 AI Text Loading 중심의 전체 화면 blur overlay로 통일 |
+| 수정한 파일 | `web/package.json`, `web/package-lock.json`, `web/src/components/ui/Strands.tsx`, `web/src/components/ui/Strands.structure.test.mjs`, `web/src/components/ui/AITextLoading.tsx`, `web/src/components/ui/AITextLoading.structure.test.mjs`, `web/src/components/ai/AIProcessingPanel.tsx`, `web/src/components/ai/AIProcessingPanel.structure.test.mjs`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-ai-processing-strands-overlay-design.md`, `docs/superpowers/plans/2026-07-24-ai-processing-strands-overlay.md` |
+| 변경 내용 | React Bits 첨부 소스의 OGL shader와 `#F97316`·`#7C3AED`·`#06B6D4`, count 3, speed 0.5, glow 2.6, scale 1.5 설정을 TypeScript `Strands`로 이식하고 WebGL 실패 fallback·animation frame/resize/context cleanup·reduced motion 정지 frame을 추가. Kokonut UI AI Text Loading의 AnimatePresence·상하 전환·neutral gradient sweep를 이식하고 긴 한국어 줄바꿈과 reduced motion을 보강. 공용 `AIProcessingPanel`을 body portal fixed blur overlay로 교체해 title·SSE status·시간 문구·steps·장기 대기 안내를 순환 표시하고 기존 취소 버튼을 유지. 분석 스플릿뷰에서는 오른쪽 패널만 overlay와 취소 안내를 소유하도록 중복 렌더링 제거 |
+| 검증한 내용 | 관련 구조·로직 테스트 23개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. production build에는 기존 Supabase Edge Runtime 경고만 남음. 실제 로그인 분석 스플릿뷰 재분석에서 fixed overlay, blur 18px, 중앙 정렬, canvas 1개, portal 1개, 상태 문구와 body scroll lock을 확인. 즉시 취소 후 overlay·portal 제거, body overflow 복구, 기존 스플릿 유지와 취소 알림 1개를 확인. `npm audit --omit=dev`의 production high 3건은 기존 Next.js·PostCSS·sharp에서 발생하며 `ogl` advisory는 없음을 확인 (`ISSUE-036`) |
+| 남은 작업 | 추천·활동 완료 경험 합성·답변 초안 각 화면은 같은 공용 컴포넌트 연결과 회귀 테스트로 확인했으며, 외부 AI 중복 비용을 피하기 위해 실제 호출은 분석 재요청만 수행. 배포 환경의 SSE 버퍼링과 장시간 호출은 기존 `ISSUE-081`~`ISSUE-083` 후속 검증에 포함 |
+| 관련 커밋 메시지 | `feat: redesign AI processing with Strands overlay` |
+
+### 2026-07-24 - AI 분석 스플릿뷰 상세 이동 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 AI 분석 결과 스플릿뷰에서 독립 분석 상세 화면으로 이동하는 버튼 추가 |
+| 수정한 파일 | `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-analysis-detail-link-design.md`, `docs/superpowers/plans/2026-07-24-analysis-detail-link.md` |
+| 변경 내용 | 스플릿 패널 하단의 `다시 분석하기` 왼쪽에 `/experiences/[id]/analysis`로 이동하는 `분석 상세 보기` 링크를 추가. `활동 상세 보기`와 같은 진한 primary 프레임과 오른쪽 ArrowRight를 재사용하고, 520px 이하에서는 상세 이동과 재분석 버튼을 전체 폭 세로로 전환. 분석 요청·저장 계약은 변경하지 않음 |
+| 검증한 내용 | 링크가 없는 상태에서 구조 테스트가 실패하고 구현 후 통과. `npm run lint`, `npx tsc --noEmit`, 관련 구조 테스트 6개, `git diff --check` 통과. 실제 로그인 `/experiences`의 분석 스플릿뷰에서 `분석 상세 보기`가 `다시 분석하기` 왼쪽에 동일한 44px 높이로 배치되고 정확한 독립 분석 URL을 가리키며 1442px 화면 가로 overflow 0인 것을 DOM으로 확인 |
+| 남은 작업 | 520px 이하 세로 배치는 CSS 회귀 규칙으로 적용했으며 실제 기기 시각 확인은 미수행 |
+| 관련 커밋 메시지 | `feat: add analysis detail link to split view` |
+
+### 2026-07-24 - 독립 AI 분석 화면 액션 위계 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 독립 AI 분석 화면에서 복귀 탐색과 분석 실행의 위치를 분리해 하단 액션 정렬을 단순화 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.structure.test.mjs`, `web/src/components/ui/aiExecutionActions.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-analysis-page-actions-design.md`, `docs/superpowers/plans/2026-07-24-analysis-page-actions.md` |
+| 변경 내용 | `활동 경험 상세로 돌아가기`와 `나의 활동으로 돌아가기`를 페이지 헤더 오른쪽으로 이동. 분석 결과 하단에는 왼쪽 정렬한 `다시 분석하기`만 남기고 `AI 기반 활동 추천` 링크를 제거. 후속 화면 확인에서 결과 카드와 버튼이 붙어 보이는 문제를 해결하도록 결과가 있는 분기에만 24px 상단 여백을 추가하고, 미분석 상세 패널 내부 `AI 분석 요청`에는 중복 외부 여백을 적용하지 않음. 분석 요청 handler와 API·저장 계약은 유지 |
+| 검증한 내용 | 구조 테스트가 변경 전 상단 복귀 링크 부재와 추천 링크 잔존으로 실패하고 구현 후 통과. 기존 추천 링크 유지 회귀 테스트를 새 승인 내용에 맞게 갱신. 결과 화면 전용 24px 간격 테스트도 구현 전 실패하고 수정 후 통과. `npm run lint`, `npx tsc --noEmit`, 관련 회귀 테스트 13개, `git diff --check` 통과. 실제 로그인 독립 분석 화면에서 805px 폭의 상단 복귀 링크 2개, 결과 하단 `다시 분석하기` 버튼 1개, `AI 기반 활동 추천` 문구 0개와 가로 overflow 0을 확인. 후속 1442px 화면에서는 결과 카드와 재분석 버튼 사이 계산 간격 24px, 적용 margin 24px, 가로 overflow 0을 DOM으로 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `refactor: clarify analysis page actions` |
+
+### 2026-07-24 - AI 추천 결과 보조 정보 간소화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 현재 AI 추천 결과와 추천 기록 상세에서 활용도가 낮은 보조 정보 블록을 화면에서 제거 |
+| 수정한 파일 | `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/ai/RecommendationResult.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-24-simplify-recommendation-result-design.md`, `docs/superpowers/plans/2026-07-24-simplify-recommendation-result.md` |
+| 변경 내용 | 공용 `RecommendationResult`에서 필수 역량·키워드·제약·1순위 요약·참고 문장과 참고 문장 전용 복사 상태를 제거. 우대 역량, 추천 Top 3·추천 이유·직접 근거·부족 정보·과장 주의점·활용 방향, JD 분석, 답변 생성과 답변 초안 복사는 유지. 추천 API·schema·repository·저장 데이터는 변경하지 않음 |
+| 검증한 내용 | 제거 전 구조 테스트가 대상 필드 렌더링으로 실패하고 구현 후 2개 테스트 통과. `npm run lint`, `npx tsc --noEmit`, 관련 회귀 테스트 11개, `git diff --check` 통과. 실제 로그인 `/recommend/history`의 저장된 추천 상세에서 제거 대상 문구와 참고 문장 복사 버튼 0개, 추천 이유·직접 근거·답변 초안 유지, 가로 overflow 0을 확인 |
+| 남은 작업 | 현재 추천 결과는 같은 공용 컴포넌트를 사용하며 새 AI 호출을 발생시키지 않기 위해 저장된 추천 기록 상세로 브라우저 검증을 대체 |
+| 관련 커밋 메시지 | `refactor: simplify recommendation result details` |
+
+### 2026-07-23 - AI 실행 CTA Animated Gradient 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | AI 요청을 실제로 실행하는 버튼을 기존 상세 액션 프레임과 Magic UI Animated Gradient Text를 결합한 공통 버튼으로 통일 |
+| 수정한 파일 | `web/src/components/ui/AnimatedGradientActionButton.tsx`, `web/src/components/ui/AnimatedGradientActionButton.structure.test.mjs`, `web/src/components/ui/aiExecutionActions.structure.test.mjs`, `web/src/components/ai/RecommendationForm.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-23-ai-animated-gradient-actions-design.md`, `docs/superpowers/plans/2026-07-23-ai-animated-gradient-actions.md` |
+| 변경 내용 | `AI 분석`, `AI 분석 요청`, `다시 분석하기` 실행 CTA 외곽의 44px 높이·12px 모서리·흰색 배경·10px 14px 여백을 `AI 분석 결과`, `수정`, `삭제`와 통일. pill 형태와 inset shadow는 제거하고 1px 테두리, 기존 Sparkles·Refresh 아이콘 외곽선을 복제한 SVG stroke, 텍스트와 오른쪽 Chevron에 반 주기 차이의 주황·보라 gradient를 적용. 세로 구분선은 제외하고 결과 조회·AI 화면 이동 링크와 요청 handler·loading·disabled·`aria-busy` 계약은 유지 |
+| 검증한 내용 | 공통 컴포넌트 부재와 네 화면 미연결 상태에서 구조 테스트가 실패하는 것을 확인하고 구현 후 관련 구조 테스트를 통과. icon gradient 양쪽 stop이 같은 색으로 수렴하는 상태를 실제 렌더링에서 발견해 반 주기 지연 테스트를 추가하고 수정. 최종 외곽 규격과 gradient 테두리 테스트는 변경 전 실패한 뒤 44px·12px 프레임과 animated border 적용 후 통과. `npm run lint`, `npx tsc --noEmit`, 관련 회귀 테스트 9개, `npm run build`, `git diff --check` 통과. 화살표 gradient 추가 뒤 관련 구조 테스트 4개와 lint·typecheck를 다시 통과. 실제 로그인 `/recommend`와 `/experiences` 스플릿뷰에서 높이 44px, 모서리 12px, 10px 14px 여백, 그림자 없음, animated gradient 테두리·기존 아이콘·Chevron의 동일한 SVG gradient stroke와 가로 overflow 0을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: add animated gradient AI actions` |
+
+### 2026-07-23 - 나의 활동 인라인 상세 삭제 액션 추가
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동에서 완료 경험을 선택했을 때 오른쪽 인라인 상세 하단에 빠져 있던 삭제 액션 추가 |
+| 수정한 파일 | `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `docs/superpowers/specs/2026-07-23-inline-experience-delete-design.md`, `docs/superpowers/plans/2026-07-23-inline-experience-delete.md` |
+| 변경 내용 | 독립 경험 상세에서 이미 사용하던 삭제 확인창과 `onDelete` 계약을 인라인 분기에도 휴지통 아이콘 + `삭제` 텍스트로 표시. `ExperienceDashboard`가 repository 삭제를 실행하고 성공 시 목록·분석·요청 상태와 선택 패널을 정리하며 실패 시 상세를 유지하고 오류를 표시하도록 연결 |
+| 검증한 내용 | 구조 회귀 테스트가 구현 전 삭제 액션·핸들러 부재로 실패하고 구현 후 통과. 후속 요청에 따라 실제 로그인 `/experiences` 오른쪽 상세에서 `활동 상세 보기`, `수정`, `삭제`, `AI 분석 요청` 순서로 네 액션이 한 줄에 노출되는 것을 DOM으로 확인. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 삭제 성공은 사용자 경험 데이터를 실제로 제거하므로 자동 브라우저 검증에서 실행하지 않음 |
+| 관련 커밋 메시지 | `feat: add inline experience delete action` |
+
+### 2026-07-23 - 완료 활동 수정 안내 위치 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 정리 필요 활동을 수정한 뒤 완료 안내가 진행 중인 다른 활동 아래에 표시되는 문제 수정 |
+| 수정한 파일 | `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/TodayDashboard.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 특정 활동 ID를 갖지 않는 공통 `activityActionMessage` / `activityActionError`가 진행 활동 목록 뒤에 렌더링되던 구조를 확인. 피드백을 활동 영역 헤더 바로 아래의 `활동 처리 결과` 공통 영역으로 이동하고 기존 status / alert 접근성 역할을 유지 |
+| 검증한 내용 | 수정 전 구조 회귀 테스트가 공통 피드백이 진행 활동 목록보다 뒤에 있어 실패하는 것을 확인하고, 이동 후 통과. 실제 로그인 `/dashboard`에서 경험 정리 필요 활동을 같은 값으로 수정 저장한 뒤 `활동 정보를 수정했습니다.` status가 진행 활동·경험 정리 목록보다 먼저 표시되는 것을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: place activity feedback above activity lists` |
+
+### 2026-07-23 - 예상 종료일 경과 활동 상태 안내 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | 예상 종료일이 지났는데도 나의 활동에서 `진행 중`으로 표시되는 문제를 수정하고 종료 확인과 경험 정리 단계를 구분 |
+| 수정한 파일 | `web/src/components/activities/activityViewUtils.ts`, `web/src/components/activities/activityViewUtils.test.mjs`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/experiences/AnimatedExperienceList.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/DashboardTrackedActivityDetail.tsx`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `active` 활동의 예상 종료일이 오늘보다 이전이면 저장 데이터를 자동 완료 처리하지 않고 화면 표시 상태를 `종료 확인 필요`로 계산. 나의 활동 목록·인라인 상세·독립 활동 상세와 오늘의 기록에 같은 상태와 안내를 적용하고 새 기록 액션 대신 종료 확인 또는 기간 수정으로 유도. 실제 종료가 확정된 뒤 완료 경험 저장 전 단계는 기존 `마무리 필요` 대신 `경험 정리 필요`로 명확히 구분 |
+| 검증한 내용 | 날짜 경계 단위 테스트에서 예상 종료일 당일은 `진행 중`, 다음 날은 `종료 확인 필요`, 실제 완료 상태는 별도 `completed`로 유지되는 것을 확인. `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 실제 로그인 `/dashboard`에서 `경험 정리 필요` 문구와 `/dashboard`·`/experiences` 기본 렌더링을 확인 |
+| 남은 작업 | 테스트 계정에는 예상 종료일이 지난 진행 활동이 없어 실제 데이터 기반 `종료 확인 필요` 목록·상세·종료 확인 흐름은 추가 브라우저 확인 필요 |
+| 관련 커밋 메시지 | `fix: distinguish overdue activities from active work` |
+
+### 2026-07-23 - JD 분석 선택 후 활용 목적 변경 불가 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-23 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천에서 `JD 분석`을 선택한 뒤 활용 목적 목록이 비어 다른 목적으로 변경할 수 없는 문제 수정 |
+| 수정한 파일 | `web/src/components/ai/RecommendationForm.tsx`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 추천 활용 목적은 검색 입력이 없는 읽기 전용 선택 목록인데 Base UI Combobox의 기본 입력값 필터가 활성화되어 있었음. JD의 표시값 `JD 분석 Job Description`과 항목 검색 라벨 `JD 분석`이 달라 재오픈 시 모든 항목이 제외되므로, 추천 목적 Combobox에만 `filter={null}`을 적용해 선택된 표시값과 관계없이 네 목적을 항상 제공하도록 수정 |
+| 검증한 내용 | 수정 전 실제 로그인 `/recommend`에서 JD 선택 후 목록은 `expanded=true`지만 option 0개로 재현. 수정 후 JD 선택 → 목록 재오픈 시 면접·자기소개서·JD 분석·기타 4개 option 표시 → 면접 선택 후 표시값과 입력 안내가 면접용으로 변경됨을 확인. 브라우저 error 0건, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: keep recommendation purpose options available` |
+
 ### 2026-07-23 - AI 추천 입력 선별·압축 구현
 
 | 항목 | 내용 |

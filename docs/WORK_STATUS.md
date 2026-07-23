@@ -28,10 +28,20 @@
 - [x] AI 추천 목적별 예시 문항을 실제 채용·지원 문항에 가깝게 교체하고, JD 분석 첫 예시 선택 시 백엔드 개발자 JD 샘플이 입력되도록 조정 (`ISSUE-079`)
 - [x] 답변 생성 목적별 제한: 추천 v2 선택 경험 기반 자기소개서 300자 / 500자 / 1000자, 면접 30초 / 1분 이상 / 예상 꼬리 질문, JD 지원 전략, 기타 맞춤 결과 단일 초안 schema / 저장 / 표시 구현 (`ISSUE-079`)
 - [x] AI 구조화 호출 1차 대기 UX 개선: 경험 분석 / 재분석, AI 추천 / JD 분석, 활동 완료 경험 합성, 추천 기반 답변 초안 생성에 단계형 안내, skeleton, 장기 대기 안내, 처리 대상 메타 정보와 중복 실행 방지 보강 (`ISSUE-080`)
+- [x] 공용 AI 대기 화면을 React Bits Strands와 Kokonut UI AI Text Loading 기반 전체 화면 blur overlay로 전환하고 2.4초 문구 전환·`...` 끝맺음·아이콘/글자형 취소 액션·조용한 추천 취소와 기존 상태 이벤트·저장 계약 유지 (`ISSUE-093`)
 - [x] 답변 초안 생성 2차 스트리밍 UX 구현: `/api/answer-drafts`의 기존 JSON 계약을 유지하면서 `stream: true` NDJSON 이벤트 계약, 본문 delta 미리보기, 분량 교정 replace, 완료 후 최종 저장 적용 (`ISSUE-081`)
 - [x] AI 요청 측정 / 취소 3차 구현: 민감 원문 없이 기능·분량·모델·TTFT·전체 시간·성공 / 실패 / 취소·재시도 여부를 서버 로그로 기록하고, 경험 분석 / 추천 / 활동 합성 / 답변 초안 스트리밍에 AbortController 기반 취소 UI 적용 (`ISSUE-082`)
 - [x] 구조화 호출 4차 이벤트 스트리밍 구현: 경험 분석 / AI 추천 / 활동 완료 경험 합성에 `status` SSE 이벤트와 최종 JSON `completed` / `error` 이벤트를 적용하고 raw JSON 토큰과 부분 구조화 결과 노출은 제외 (`ISSUE-083`)
 - [x] AI 추천 입력 선별·압축 구현: 저장된 전체 경험 원문 전송 대신 목적 / 문항 기반 후보 context를 72KB 요청 예산 안에서 전송해 경험 수 증가 시 `/api/recommend` 본문 상한 초과 방지 (`ISSUE-084`)
+- [x] AI 추천의 JD 분석 표시값이 기본 Combobox 필터로 재사용되어 선택지가 사라지는 문제를 수정하고, JD 선택 후에도 네 활용 목적을 다시 열어 변경 가능하게 함 (`ISSUE-085`)
+- [x] 예상 종료일이 지난 진행 활동을 저장 상태 변경 없이 `종료 확인 필요`로 계산하고, 실제 종료 뒤의 `경험 정리 필요` 단계와 구분해 오늘의 기록·나의 활동·활동 상세에 적용 (`ISSUE-086`)
+- [x] 경험 정리 필요 활동 수정 완료 안내를 특정 활동 카드 아래가 아닌 활동 영역 공통 알림으로 이동하고 실제 로그인 저장 흐름에서 위치 확인 (`ISSUE-087`)
+- [x] 나의 활동 완료 경험 인라인 상세에 아이콘과 텍스트를 갖는 삭제 액션을 추가하고 삭제 성공·실패 상태 정리 연결 (`ISSUE-088`)
+- [x] AI 분석·분석 요청·재분석 실행 CTA를 기존 상세 액션과 같은 크기·모서리·여백으로 통일하고 gradient 테두리·text·기존 아이콘 stroke와 reduced motion 상태 적용 (`ISSUE-089`)
+- [x] 현재 추천과 추천 기록의 공용 결과 화면에서 보조 분석·1순위 요약·참고 문장 블록을 제거하고 핵심 Top 3 비교·JD 분석·답변 생성 흐름 유지 (`ISSUE-090`)
+- [x] 독립 AI 분석 화면의 복귀 탐색은 상단에 모으고 하단에는 재분석 실행만 유지해 액션 위계 정리 (`ISSUE-091`)
+- [x] AI 분석 스플릿뷰 하단에 활동 상세와 같은 위계의 독립 분석 상세 이동 버튼 추가 (`ISSUE-092`)
+- [x] AI 분석 부족 정보 답변을 질문별 단일 열림 흰색 MorphSurface로 전환하고 command bar 위계·겹침 없는 anchored reveal·기본 상태/단축키 안내 제거·초점·닫기·저장 성공/실패 상태·모바일 유동 폭 적용 (`ISSUE-094`)
 - [x] Supabase project에 `jd` purpose 허용, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 완료. 실제 로그인 세션 smoke test는 남음 (`ISSUE-060`, `ISSUE-079`)
 - [x] 기록 보완 루프: 부족 정보 카드 안 직접 답변 저장, 추천 / 답변 초안 즉시 반영, 명시적 재분석 흐름 구현
 - [x] QA 버그 안정화: 보완 질문 draft 보존·복원, 답변 초안 분량 보정, 활동 복원·삭제·날짜 상태, 추천 점수 등급, 오늘 한 일 팝업 스크롤 수정
@@ -45,9 +55,13 @@
 - [x] 활동 추가 Expandable Screen 닫힘 마지막 구간을 페이드해 버튼 주변 사각 잔상 제거 (`ISSUE-077`)
 - [ ] 나의 활동 제목 한 줄 고정·좁은 패널 검색 축약 구현과 UI preview 폭별 검증 완료, 실제 로그인 완료 경험의 목록·상세·분석 전환 확인 필요 (`ISSUE-066`)
 - [ ] 나의 활동 AI 분석 스플릿뷰 구현·preview 반응형 검증 완료, 실제 로그인 분석 데이터의 상호작용 회귀 확인 필요 (`ISSUE-067`, `ISSUE-078`)
-- [x] 최신 main 기준 미반영 UI 재적용: 랜딩·인증 입력, 중앙 빠른 기록 패널, AI Border Beam, JD 목적, Checkbox, 추천 기록 복사, RippleButton
+- [x] 최신 main 기준 미반영 UI 재적용: 랜딩·인증 입력, 중앙 빠른 기록 패널, AI 실행 CTA, JD 목적, Checkbox, 추천 기록 복사, RippleButton
 - [x] 팀 테스트용 Supabase Auth 이메일/비밀번호 계정 9개 생성
 - [x] 진행 활동과 마무리 필요 활동 수정 경로, 미래 예정 종료일 활동의 즉시 종료 / AI 초안 생성 수정
+
+2026-07-24 AI 분석의 부족 정보 답변을 항상 펼쳐진 카드 목록에서 질문별 흰색 `MorphSurface`로 전환했습니다. 닫힌 상태는 원형 상태 아이콘·작은 분류·한 줄 질문·답변 여부·Chevron만 남긴 command bar로 정리하고, 한 번에 하나만 펼치며 열림 시 같은 표면 안에서 전체 질문·필요 이유·답변 입력·메타·차콜 저장 액션을 표시합니다. 선택 시안에 맞춰 베이지 채움과 입력 줄무늬를 제거했습니다. 후속 시각 점검에서 표면 상향 이동량이 질문 간격과 같아 이전 질문과 맞닿고 root layout spring이 질문 전환 중 scale 변형을 만드는 원인을 확인해, 표면 상단을 고정한 anchored reveal로 교체했습니다. 질문 사이는 16px을 유지하고 reveal 높이가 0에서 자연 높이로 열리며 본문은 아래 12px에서 원위치로 올라옵니다. 새 열림에는 짧은 지연을 두고 모바일 추가 translate를 제거했습니다. 기본 `답변 없음`과 화면의 Command/Ctrl+Enter 안내는 제거해 빈 답변 상태에 글자 수와 저장 버튼만 남겼으며, 저장 중·실패·작성 중·완료·마지막 저장처럼 실제 상태 변화는 계속 표시합니다. textarea 자동 초점에는 `preventScroll`을 사용하고 바깥 클릭과 Escape 닫기·trigger 초점 복귀, 화면 안내 없는 Command/Ctrl+Enter 저장, 성공 뒤에만 닫기, 오류 시 입력 유지 계약을 보존했습니다. 기존 `evidenceGaps`, `experience_followups`, repository와 API 계약은 변경하지 않았고 새 dependency도 추가하지 않았습니다. 관련 구조 테스트 12개, lint, typecheck, production build를 통과했고 실제 로그인 독립 분석 화면에서 인접 질문 16px 간격·표면 transform 없음·열린 질문 1개와 전환 중 겹침 제거를 확인했습니다. 새 모션의 390px 실제 캡처와 reduced motion 강제 에뮬레이션은 후속 시각 확인 대상입니다.
+
+2026-07-24 공용 AI 대기 UX를 카드형 progress·skeleton에서 전체 화면 near-white blur overlay로 전환했습니다. 사용자 제공 React Bits shader와 색상 설정을 OGL `Strands`로 이식하고 Kokonut UI AI Text Loading의 상태 문구 전환을 연결해 경험 분석·재분석, 추천·JD 분석, 활동 완료 경험 합성, 답변 초안 첫 결과 대기에 공통 적용했습니다. 기존 SSE / NDJSON 상태, AbortSignal 취소, 저장과 오류 계약은 바꾸지 않았고 reduced motion 정지 frame, WebGL cleanup·fallback, 중첩 body scroll 복구를 추가했습니다. 실제 로그인 분석 스플릿뷰에서 overlay·portal·canvas 각 1개, 중앙 정렬, blur, 즉시 취소 후 화면·스크롤 복구와 알림 1개를 확인했으며 관련 테스트 23개, lint, typecheck, production build, diff check를 통과했습니다. `npm audit --omit=dev`에서 기존 Next.js·PostCSS·sharp production high 3건을 재확인해 `ISSUE-036`을 갱신했고 이번 `ogl` 추가로 발생한 advisory는 없습니다.
 
 2026-07-17 `codex/reapply-unpr-ui-polish`에서는 최신 `origin/main`의 QA 안정화 변경을 보존한 채 PR에 포함되지 않았던 UI/UX 변경을 다시 구현했습니다. 랜딩 수동 재생 컨트롤을 제거하고 명사·조사 사이 2~5px 여유와 평면 인증 입력을 적용했습니다. 빠른 기록 패널은 화면 정중앙에 배치하고, AI 실행 CTA는 colorful Border Beam과 `AI 분석` 문구를 사용합니다. 실제 checkbox는 경로 모션을 갖는 공용 Radix Checkbox로 정리했으며 추천 기록의 중복 eyebrow와 복사 텍스트를 제거했습니다. 결과가 발생하는 핵심 CTA에는 공용 RippleButton을 적용하되 인증·탐색·삭제 컨트롤은 제외했습니다. 추천 목적 `JD`는 코드와 additive migration까지 작성했고, 2026-07-23 사용자가 실제 Supabase SQL Editor에서 `jd` purpose와 `jd_analysis` 관련 migration을 적용했습니다. 로그인 세션 OpenAI·DB 저장 smoke test는 아직 남아 있습니다.
 
@@ -194,6 +208,7 @@
 - 새 활동 추가 패널과 프로필 메뉴의 실제 390px 기기 시각 smoke test 미완료
 - 로그아웃 실패 안내·재시도, 세션 scope와 미저장 입력 경고 정책 미확정 (`ISSUE-043`)
 - Track 간 공통 파일 충돌과 merge 순서 관리 필요
+- 기존 Next.js 15.5.20과 전이 PostCSS·sharp에 production high advisory 3건이 남아 있어 별도 framework dependency 업데이트와 인증·API·이미지 처리 회귀 검증 필요 (`ISSUE-036`)
 
 ## Git 상태 주의
 

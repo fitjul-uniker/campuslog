@@ -16,7 +16,7 @@ import {
 import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
-import { BorderBeamButton } from "@/components/ui/BorderBeamButton";
+import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
 import {
   getRelatedLinkHostname,
   normalizeRelatedLinkUrl,
@@ -94,18 +94,16 @@ export function DashboardExperienceDetail({
     </Link>
   );
   const analysisAction = canRequestAnalysis ? (
-    <BorderBeamButton
+    <AnimatedGradientActionButton
       className="dashboard-detail-action dashboard-analysis-request"
-      wrapperClassName="dashboard-analysis-request-wrap"
-      colorVariant="colorful"
       type="button"
       onClick={onAnalyze}
       disabled={isAnalyzing}
       aria-busy={isAnalyzing}
+      icon={<Sparkles />}
     >
-      <Sparkles aria-hidden="true" />
       {isAnalyzing ? "분석 중..." : analyzeLabel}
-    </BorderBeamButton>
+    </AnimatedGradientActionButton>
   ) : analysis && isFullscreen ? (
     <Link
       href={`/experiences/${experience.id}/analysis`}
@@ -281,7 +279,7 @@ export function DashboardExperienceDetail({
         ) : null}
       </div>
 
-      {isAnalyzing ? (
+      {isAnalyzing && !isAnalysisOpen ? (
         <AIProcessingPanel
           className="analysis-ai-processing"
           title="경험을 분석하고 있어요"
@@ -322,7 +320,7 @@ export function DashboardExperienceDetail({
         />
       ) : null}
 
-      {analysisError ? (
+      {analysisError && !isAnalysisOpen ? (
         <p className="dashboard-detail-analysis-error" role="alert">
           {analysisError}
         </p>
@@ -358,6 +356,16 @@ export function DashboardExperienceDetail({
               <ArrowRight aria-hidden="true" />
             </Link>
             {editAction}
+            {onDelete ? (
+              <button
+                className="dashboard-detail-action dashboard-detail-delete"
+                type="button"
+                onClick={handleDelete}
+              >
+                <Trash2 aria-hidden="true" />
+                삭제
+              </button>
+            ) : null}
             {analysisAction}
           </>
         )}

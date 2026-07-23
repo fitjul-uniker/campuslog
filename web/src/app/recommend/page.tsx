@@ -235,11 +235,11 @@ export default function RecommendPage() {
       });
 
       if (!response.ok) {
-        setRecommendationError(
-          response.error.code === "REQUEST_CANCELLED"
-            ? "AI 추천 요청을 취소했습니다. 입력은 그대로 유지했어요."
-            : response.error.message,
-        );
+        if (response.error.code === "REQUEST_CANCELLED") {
+          return;
+        }
+
+        setRecommendationError(response.error.message);
         return;
       }
 

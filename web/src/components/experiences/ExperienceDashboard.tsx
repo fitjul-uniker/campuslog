@@ -14,6 +14,7 @@ import {
   AnimatedExperienceList,
   type MyActivityListItem,
 } from "@/components/experiences/AnimatedExperienceList";
+import { getTrackedActivityDisplayState } from "@/components/activities/activityViewUtils";
 import {
   DASHBOARD_EXPERIENCE_DETAIL_ID,
   DashboardExperienceDetail,
@@ -94,6 +95,7 @@ export function ExperienceDashboard() {
     Record<string, ExperienceAnalysis | null>
   >({});
   const [loadError, setLoadError] = useState("");
+  const [experienceDeleteError, setExperienceDeleteError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [analysisRequestByExperienceId, setAnalysisRequestByExperienceId] =
     useState<AnalysisRequestState>({});
@@ -178,6 +180,7 @@ export function ExperienceDashboard() {
         title: activity.title,
         kind: "tracked",
         updatedAt: activity.updatedAt,
+        displayState: getTrackedActivityDisplayState(activity),
       })),
     ].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }, [experiences, trackedActivities]);
@@ -244,6 +247,7 @@ export function ExperienceDashboard() {
     trigger: HTMLButtonElement,
   ) => {
     lastSelectionTriggerRef.current = trigger;
+    setExperienceDeleteError("");
     setIsAnalysisOpen(false);
     setSelectedItemKey(item.key);
 
@@ -396,6 +400,45 @@ export function ExperienceDashboard() {
     analysisAbortControllersRef.current[experienceId]?.abort();
   };
 
+  const handleDeleteExperience = async (experience: Experience) => {
+    setExperienceDeleteError("");
+    const repository = getCampusLogRepository();
+    let didDelete = false;
+
+    try {
+      didDelete = await repository.experiences.delete(experience.id);
+    } catch {
+      didDelete = false;
+    }
+
+    if (!didDelete) {
+      setExperienceDeleteError(
+        "경험을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+      return;
+    }
+
+    analysisAbortControllersRef.current[experience.id]?.abort();
+    delete analysisAbortControllersRef.current[experience.id];
+    setExperiences((currentExperiences) =>
+      currentExperiences?.filter(
+        (storedExperience) => storedExperience.id !== experience.id,
+      ) ?? currentExperiences,
+    );
+    setAnalysesByExperienceId((currentAnalyses) => {
+      const nextAnalyses = { ...currentAnalyses };
+      delete nextAnalyses[experience.id];
+      return nextAnalyses;
+    });
+    setAnalysisRequestByExperienceId((currentRequests) => {
+      const nextRequests = { ...currentRequests };
+      delete nextRequests[experience.id];
+      return nextRequests;
+    });
+    setIsAnalysisOpen(false);
+    setSelectedItemKey(null);
+  };
+
   const handleDeleteTrackedActivity = async (
     activity: TrackedActivity,
     logCount: number,
@@ -459,7 +502,10 @@ export function ExperienceDashboard() {
   }, [handleCloseAnalysis, handleCloseDetail, isAnalysisOpen, selectedItem]);
 
   const hasSelection = selectedItem !== null;
-  const activeActivityCount = trackedActivities?.length ?? 0;
+  const activeActivityCount =
+    trackedActivities?.filter(
+      (activity) => getTrackedActivityDisplayState(activity) === "active",
+    ).length ?? 0;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -610,12 +656,17 @@ export function ExperienceDashboard() {
                           ?.isLoading ?? false
                       }
                       analysisError={
+                        experienceDeleteError ||
                         analysisRequestByExperienceId[selectedExperience.id]
-                          ?.error ?? ""
+                          ?.error ||
+                        ""
                       }
                       analysisStatusMessage={
                         analysisRequestByExperienceId[selectedExperience.id]
                           ?.statusMessage ?? ""
+                      }
+                      onDelete={() =>
+                        handleDeleteExperience(selectedExperience)
                       }
                     />
                   ) : selectedTrackedActivity ? (

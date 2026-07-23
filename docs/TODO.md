@@ -135,12 +135,13 @@
 ### Medium
 
 - [ ] Button / Input / Textarea / Badge / Tabs / Dialog / Alert 상태 통일
-- [ ] Next.js / PostCSS moderate advisory를 호환 가능한 버전으로 해소 (`ISSUE-036`)
+- [ ] Next.js 15.5.20과 전이 PostCSS·sharp의 production high advisory를 호환 가능한 framework 업데이트로 해소 (`ISSUE-036`)
 - [ ] 활동 추가 Expandable Screen과 프로필 메뉴의 실제 390px 기기 시각 smoke test
 - [ ] 로그아웃 실패 안내·재시도와 현재 기기/전체 기기 scope 정책 확정 (`ISSUE-043`)
 - [ ] 모바일 상단 내비게이션과 safe area 재검증
 - [ ] loading / empty / error / success / reconnecting 상태 통일
   - [x] AI 구조화 호출의 1차 대기 UX에 단계형 문구, skeleton, 장기 대기 안내, 처리 대상 메타 정보 적용
+  - [x] 모든 AI 처리 대기를 Strands·AI Text Loading 중심의 전체 화면 blur overlay로 통일하고 2.4초 문구 전환·`...` 끝맺음·프레임 없는 취소 액션·조용한 추천 취소·상태 이벤트·reduced motion 유지 (`ISSUE-093`)
   - [x] 추천 기반 답변 초안 생성에 스트리밍 미리보기와 완료 후 최종 저장 적용
   - [x] AI 요청 취소 버튼과 메타데이터 측정 로그 적용
   - [x] 구조화 JSON 호출에 서버 status 이벤트와 최종 JSON completed / error 이벤트 계약 적용 (`ISSUE-083`)
@@ -163,6 +164,14 @@
 - [x] AI 요청 측정 / 취소 contract 적용: 민감 원문 없이 메타데이터만 로그 기록, AbortSignal 전달, 취소 error code 공유 (`ISSUE-082`)
 - [x] 구조화 AI SSE contract 적용: raw JSON 토큰 노출 없이 `status` / `completed` / `error` 이벤트로 최종 JSON만 전달 (`ISSUE-083`)
 - [x] AI 추천 입력 선별·압축 contract 적용: 전체 원문 전송 대신 목적 / 문항 기반 후보 context만 `/api/recommend`에 전달하고 원본 데이터는 저장소에서 재조회 (`ISSUE-084`)
+- [x] AI 추천에서 JD 분석 선택 후에도 검색 없는 활용 목적 4개를 다시 열고 변경할 수 있도록 Combobox 필터 비활성화 (`ISSUE-085`)
+- [x] 예상 종료일이 지난 진행 활동을 `종료 확인 필요`로 계산하고, 실제 종료 확정 뒤의 `경험 정리 필요`와 구분해 오늘의 기록·나의 활동·활동 상세에 일관되게 표시 (`ISSUE-086`)
+- [x] 경험 정리 필요 활동 수정·삭제의 공통 피드백을 활동 영역 헤더 아래로 이동해 다른 활동의 결과처럼 보이지 않도록 수정 (`ISSUE-087`)
+- [x] 나의 활동 완료 경험 인라인 상세 하단에 휴지통 아이콘과 `삭제` 액션을 추가하고 기존 삭제 확인·repository 정리 흐름 연결 (`ISSUE-088`)
+- [x] AI 실행 CTA를 기존 상세 액션과 같은 크기·모서리·여백으로 통일하고 테두리·Sparkles·Refresh 외곽선·텍스트에 animated gradient를 적용하며 조회·이동 액션은 기존 위계로 보존 (`ISSUE-089`)
+- [x] 현재 AI 추천 결과와 추천 기록 상세에서 필수 역량·키워드·제약·1순위 요약·참고 문장을 화면에서만 제거하고 추천 API·저장 데이터·답변 초안 복사는 유지 (`ISSUE-090`)
+- [x] 독립 AI 분석 화면의 복귀 링크를 상단 헤더로 이동하고 하단에는 재분석 실행만 남기며 중복 추천 이동 링크 제거 (`ISSUE-091`)
+- [x] 나의 활동 AI 분석 스플릿뷰 하단에 독립 `분석 상세 보기` 이동 버튼 추가 (`ISSUE-092`)
 - [x] QA 안정화: 기록 보완 질문 답변 draft 보존, 질문-답변 입력 묶음 재배치, 숨긴 질문 복원 버튼 추가 (`ISSUE-045`, `ISSUE-046`, `ISSUE-047`)
 - [x] QA 안정화: 답변 초안 자기소개서 분량을 선택 범위 안으로 보정하고 실제 글자 수 표시 기준 정리 (`ISSUE-048`)
 - [x] QA 안정화: 완료 활동 복원, 활동 상태별 삭제, 과거 종료 활동 상태·기록 가능 날짜·타임라인 날짜 표시·종료일 보존 흐름 수정 (`ISSUE-049`~`ISSUE-054`)
@@ -194,6 +203,8 @@
 - [x] 나의 활동 완료 경험 인라인 상세에 독립 `활동 상세 보기` 이동 액션을 복원하고 상세 슬롯 560px 이하에서도 `활동 상세 보기`·`수정`·`AI 분석 결과`를 한 줄로 유지 (`ISSUE-071`)
 - [ ] 나의 활동 제목 한 줄 고정·좁은 패널 검색 축약의 UI preview 폭별 검증 완료 후 실제 로그인 완료 경험의 목록·상세·분석 전환 확인 (`ISSUE-066`)
 - [ ] 나의 활동 AI 분석 스플릿뷰 구현 후 실제 로그인 분석 데이터로 열기·닫기·재분석·부족 정보 답변 회귀 확인 (`ISSUE-067`, `ISSUE-078`)
+- [x] AI 분석 부족 정보 답변을 질문별 단일 열림 흰색 `MorphSurface`로 전환하고 닫힌 command bar·겹침 없는 anchored reveal·기본 상태/단축키 안내 제거·데스크톱/390px 모바일의 초점·Escape·바깥 클릭·빈 답변 유지·가로 overflow를 검증 (`ISSUE-094`)
+- [ ] AI 분석 부족 정보 anchored reveal의 390px 실제 브라우저 모션과 reduced motion 강제 에뮬레이션 확인 (`ISSUE-094`)
 - [x] 활동 종료 → AI 사실 기반 초안 → 완료 경험 저장
 - [x] 나의 활동에서 완료 경험과 진행 활동 통합
 - [x] AI 경험 분석

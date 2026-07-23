@@ -1,16 +1,14 @@
 "use client";
 
-import { RefreshCcw, X } from "lucide-react";
+import { ArrowRight, RefreshCcw, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
-import {
-  RippleButton,
-  RippleButtonRipples,
-} from "@/components/animate-ui/components/buttons/ripple";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
 export const DASHBOARD_ANALYSIS_SPLIT_PANEL_ID =
@@ -137,16 +135,22 @@ export function DashboardAnalysisSplitPanel({
         ) : null}
 
         <div className="dashboard-analysis-split-footer">
-          <RippleButton
+          <Link
+            href={`/experiences/${experience.id}/analysis`}
+            className="dashboard-detail-action dashboard-detail-action-primary dashboard-analysis-detail-link"
+          >
+            분석 상세 보기
+            <ArrowRight aria-hidden="true" />
+          </Link>
+          <AnimatedGradientActionButton
             type="button"
-            className="dashboard-detail-action"
             onClick={onReanalyze}
             disabled={isAnalyzing}
+            aria-busy={isAnalyzing}
+            icon={<RefreshCcw />}
           >
-            <RefreshCcw aria-hidden="true" />
             {isAnalyzing ? "분석 중..." : "다시 분석하기"}
-            <RippleButtonRipples />
-          </RippleButton>
+          </AnimatedGradientActionButton>
         </div>
       </div>
     </motion.aside>
