@@ -6,6 +6,10 @@ import type {
 } from "@/lib/types";
 import { normalizeRecommendationApiResult } from "@/lib/recommendationResult";
 import { isRequestAbortError } from "@/lib/requestCancel";
+import {
+  isStructuredAiSseResponse,
+  readStructuredAiSseResponse,
+} from "@/lib/structuredAiStream";
 
 type RequestRecommendationInput = {
   purpose: RecommendationPurpose;
@@ -13,6 +17,8 @@ type RequestRecommendationInput = {
   experiences: Experience[];
   analyses: ExperienceAnalysis[];
   signal?: AbortSignal;
+  stream?: boolean;
+  onStatus?: (message: string) => void;
 };
 
 function isRecommendResponse(value: unknown): value is RecommendResponse {
@@ -46,6 +52,8 @@ export async function requestRecommendation({
   experiences,
   analyses,
   signal,
+  stream,
+  onStatus,
 }: RequestRecommendationInput): Promise<RecommendResponse> {
   try {
     const response = await fetch("/api/recommend", {
@@ -59,8 +67,40 @@ export async function requestRecommendation({
         prompt,
         experiences,
         analyses,
+        ...(stream ? { stream: true } : {}),
       }),
     });
+
+    if (isStructuredAiSseResponse(response)) {
+      const streamPayload = await readStructuredAiSseResponse({
+        response,
+        isResponse: isRecommendResponse,
+        onStatus,
+        fallbackResponse: {
+          ok: false,
+          error: {
+            code: "UNKNOWN_ERROR",
+            message:
+              "AI 기반 활동 추천 스트림을 해석하지 못했습니다. 다시 시도해주세요.",
+          },
+        },
+      });
+
+      if (streamPayload.ok) {
+        const recommendation = normalizeRecommendationApiResult(
+          streamPayload.recommendation,
+        );
+
+        if (recommendation) {
+          return {
+            ok: true,
+            recommendation,
+          };
+        }
+      }
+
+      return streamPayload;
+    }
 
     const payload = (await response.json()) as unknown;
 

@@ -1,5 +1,9 @@
 import { ACTIVITY_SYNTHESIS_LIMITS } from "@/lib/activitySynthesisLimits";
 import { isRequestAbortError } from "@/lib/requestCancel";
+import {
+  isStructuredAiSseResponse,
+  readStructuredAiSseResponse,
+} from "@/lib/structuredAiStream";
 import type {
   ActivitySynthesisApiResult,
   ApiErrorCode,
@@ -111,11 +115,16 @@ function isSynthesizeActivityResponse(
 export async function requestActivitySynthesis(
   activity: TrackedActivity,
   dailyLogs: DailyLog[],
-  options: { signal?: AbortSignal } = {},
+  options: {
+    signal?: AbortSignal;
+    stream?: boolean;
+    onStatus?: (message: string) => void;
+  } = {},
 ): Promise<SynthesizeActivityResponse> {
   const requestBody: SynthesizeActivityRequest = {
     activity,
     dailyLogs,
+    ...(options.stream ? { stream: true } : {}),
   };
   const validDailyLogIds = new Set(dailyLogs.map((log) => log.id));
   const abortController = new AbortController();
@@ -141,6 +150,23 @@ export async function requestActivitySynthesis(
       },
       body: JSON.stringify(requestBody),
     });
+
+    if (isStructuredAiSseResponse(response)) {
+      return readStructuredAiSseResponse({
+        response,
+        isResponse: (value): value is SynthesizeActivityResponse =>
+          isSynthesizeActivityResponse(value, validDailyLogIds),
+        onStatus: options.onStatus,
+        fallbackResponse: {
+          ok: false,
+          error: {
+            code: "UNKNOWN_ERROR",
+            message:
+              "AI 완료 경험 생성 스트림을 해석하지 못했습니다. 다시 시도해주세요.",
+          },
+        },
+      });
+    }
 
     const payload = (await response.json()) as unknown;
 

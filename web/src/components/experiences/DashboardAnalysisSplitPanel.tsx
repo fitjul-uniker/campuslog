@@ -21,6 +21,7 @@ type DashboardAnalysisSplitPanelProps = {
   analysis: ExperienceAnalysis;
   isAnalyzing: boolean;
   analysisError?: string;
+  analysisStatusMessage?: string;
   onClose: () => void;
   onReanalyze: () => void;
   onCancelAnalysis?: () => void;
@@ -31,6 +32,7 @@ export function DashboardAnalysisSplitPanel({
   analysis,
   isAnalyzing,
   analysisError = "",
+  analysisStatusMessage = "",
   onClose,
   onReanalyze,
   onCancelAnalysis,
@@ -119,6 +121,7 @@ export function DashboardAnalysisSplitPanel({
                 text: "부족한 정보와 활용 키워드를 확인하고 있어요.",
               },
             ]}
+            statusMessage={analysisStatusMessage || undefined}
             skeletonVariant="analysis"
             longWaitThresholdMs={20_000}
             longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."

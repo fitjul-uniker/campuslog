@@ -35,6 +35,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
   const [analysis, setAnalysis] = useState<ExperienceAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const [analysisStatusMessage, setAnalysisStatusMessage] = useState("");
   const analysisAbortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
 
     setIsAnalyzing(true);
     setAnalysisError("");
+    setAnalysisStatusMessage("");
 
     const abortController = new AbortController();
     analysisAbortControllerRef.current = abortController;
@@ -98,6 +100,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       await repository.experienceFollowups.listByExperienceId(experience.id);
     const response = await requestExperienceAnalysis(experience, followups, {
       signal: abortController.signal,
+      stream: true,
+      onStatus: setAnalysisStatusMessage,
     });
 
     if (!response.ok) {
@@ -107,6 +111,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
           : response.error.message,
       );
       setIsAnalyzing(false);
+      setAnalysisStatusMessage("");
       if (analysisAbortControllerRef.current === abortController) {
         analysisAbortControllerRef.current = null;
       }
@@ -120,6 +125,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
         "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해주세요.",
       );
       setIsAnalyzing(false);
+      setAnalysisStatusMessage("");
       if (analysisAbortControllerRef.current === abortController) {
         analysisAbortControllerRef.current = null;
       }
@@ -130,6 +136,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
 
     setAnalysis(savedAnalysis);
     setIsAnalyzing(false);
+    setAnalysisStatusMessage("");
     if (analysisAbortControllerRef.current === abortController) {
       analysisAbortControllerRef.current = null;
     }
@@ -178,6 +185,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
           text: "부족한 정보와 활용 키워드를 확인하고 있어요.",
         },
       ]}
+      statusMessage={analysisStatusMessage || undefined}
       skeletonVariant="analysis"
       longWaitThresholdMs={20_000}
       longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."

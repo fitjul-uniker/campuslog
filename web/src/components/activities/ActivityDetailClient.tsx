@@ -109,6 +109,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   const [draftAchievements, setDraftAchievements] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [synthesisStatusMessage, setSynthesisStatusMessage] = useState("");
   const [isSavingExperience, setIsSavingExperience] = useState(false);
   const [isEditingActivity, setIsEditingActivity] = useState(false);
   const [isUpdatingActivity, setIsUpdatingActivity] = useState(false);
@@ -232,6 +233,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     }
 
     setError("");
+    setSynthesisStatusMessage("");
     setIsSynthesizing(true);
     const repository = getCampusLogRepository();
     const processingActivity = await repository.trackedActivities.setSynthesisStatus(
@@ -250,6 +252,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     synthesisAbortControllerRef.current = abortController;
     const response = await requestActivitySynthesis(processingActivity, logs, {
       signal: abortController.signal,
+      stream: true,
+      onStatus: setSynthesisStatusMessage,
     });
 
     if (!response.ok) {
@@ -264,6 +268,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           synthesisStatus: sourceActivity.synthesisStatus,
         });
         setIsSynthesizing(false);
+        setSynthesisStatusMessage("");
         setError(
           "AI 완료 경험 생성을 취소했습니다. 활동과 날짜별 기록은 그대로 유지했어요.",
         );
@@ -279,6 +284,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       );
       setActivity(failedActivity ?? processingActivity);
       setIsSynthesizing(false);
+      setSynthesisStatusMessage("");
       setError(response.error.message);
       if (synthesisAbortControllerRef.current === abortController) {
         synthesisAbortControllerRef.current = null;
@@ -300,6 +306,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       );
       setActivity(failedActivity ?? processingActivity);
       setIsSynthesizing(false);
+      setSynthesisStatusMessage("");
       setError(
         "AI 초안을 계정에 저장하지 못했습니다. 활동과 일일 기록은 그대로 보존되어 있습니다.",
       );
@@ -318,6 +325,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     setDraftDescription(savedDraft.description);
     setDraftAchievements(savedDraft.achievements.join("\n"));
     setIsSynthesizing(false);
+    setSynthesisStatusMessage("");
     if (synthesisAbortControllerRef.current === abortController) {
       synthesisAbortControllerRef.current = null;
     }
@@ -811,6 +819,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               text: "초안에 쓸 수 있는 성과와 부족한 정보를 확인하고 있어요.",
             },
           ]}
+          statusMessage={synthesisStatusMessage || undefined}
           skeletonVariant="activitySynthesis"
           longWaitThresholdMs={24_000}
           longWaitMessage="기록 개수나 전체 분량이 많으면 초안 근거를 확인하는 데 시간이 더 걸릴 수 있어요."

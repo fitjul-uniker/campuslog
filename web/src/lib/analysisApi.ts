@@ -14,6 +14,16 @@ import {
   normalizeStringList,
 } from "@/lib/analysisResult";
 import { isRequestAbortError } from "@/lib/requestCancel";
+import {
+  isStructuredAiSseResponse,
+  readStructuredAiSseResponse,
+} from "@/lib/structuredAiStream";
+
+type RequestExperienceAnalysisOptions = {
+  signal?: AbortSignal;
+  stream?: boolean;
+  onStatus?: (message: string) => void;
+};
 
 function parseAnalysisApiResult(value: unknown): AnalysisApiResult | null {
   if (!value || typeof value !== "object") {
@@ -95,7 +105,7 @@ function isAnalyzeResponse(value: unknown): value is AnalyzeResponse {
 export async function requestExperienceAnalysis(
   experience: Experience,
   followups: ExperienceFollowup[] = [],
-  options: { signal?: AbortSignal } = {},
+  options: RequestExperienceAnalysisOptions = {},
 ): Promise<AnalyzeResponse> {
   try {
     const response = await fetch("/api/analyze", {
@@ -104,8 +114,41 @@ export async function requestExperienceAnalysis(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ experience, followups }),
+      body: JSON.stringify({
+        experience,
+        followups,
+        ...(options.stream ? { stream: true } : {}),
+      }),
     });
+
+    if (isStructuredAiSseResponse(response)) {
+      const streamPayload = await readStructuredAiSseResponse({
+        response,
+        isResponse: isAnalyzeResponse,
+        onStatus: options.onStatus,
+        fallbackResponse: {
+          ok: false,
+          error: {
+            code: "UNKNOWN_ERROR",
+            message:
+              "AI 분석 스트림을 해석하지 못했습니다. 다시 시도해주세요.",
+          },
+        },
+      });
+
+      if (streamPayload.ok) {
+        const analysis = parseAnalysisApiResult(streamPayload.analysis);
+
+        if (analysis) {
+          return {
+            ok: true,
+            analysis,
+          };
+        }
+      }
+
+      return streamPayload;
+    }
 
     const payload = (await response.json()) as unknown;
 

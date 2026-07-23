@@ -37,6 +37,7 @@ type DashboardExperienceDetailProps = {
   onDelete?: () => void;
   isAnalyzing?: boolean;
   analysisError?: string;
+  analysisStatusMessage?: string;
 };
 
 export function DashboardExperienceDetail({
@@ -51,6 +52,7 @@ export function DashboardExperienceDetail({
   onDelete,
   isAnalyzing = false,
   analysisError = "",
+  analysisStatusMessage = "",
 }: DashboardExperienceDetailProps) {
   const shouldReduceMotion = useReducedMotion();
   const titleId = `${DASHBOARD_EXPERIENCE_DETAIL_ID}-title`;
@@ -311,6 +313,7 @@ export function DashboardExperienceDetail({
               text: "부족한 정보와 활용 키워드를 확인하고 있어요.",
             },
           ]}
+          statusMessage={analysisStatusMessage || undefined}
           skeletonVariant="analysis"
           longWaitThresholdMs={20_000}
           longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."

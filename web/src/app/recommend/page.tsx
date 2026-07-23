@@ -97,6 +97,8 @@ export default function RecommendPage() {
   );
   const [isRecommending, setIsRecommending] = useState(false);
   const [recommendationError, setRecommendationError] = useState("");
+  const [recommendationStatusMessage, setRecommendationStatusMessage] =
+    useState("");
   const [pendingRecommendationInput, setPendingRecommendationInput] =
     useState<RecommendationFormInput | null>(null);
   const recommendationResultRef = useRef<HTMLDivElement>(null);
@@ -200,6 +202,7 @@ export default function RecommendPage() {
 
     setIsRecommending(true);
     setRecommendationError("");
+    setRecommendationStatusMessage("");
     setRecommendation(null);
     setPendingRecommendationInput(input);
 
@@ -212,6 +215,8 @@ export default function RecommendPage() {
         experiences,
         analyses,
         signal: abortController.signal,
+        stream: true,
+        onStatus: setRecommendationStatusMessage,
       });
 
       if (!response.ok) {
@@ -245,6 +250,7 @@ export default function RecommendPage() {
         recommendationAbortControllerRef.current = null;
       }
       setIsRecommending(false);
+      setRecommendationStatusMessage("");
     }
   }
 
@@ -375,6 +381,7 @@ export default function RecommendPage() {
               text: "적합한 경험과 추천 근거를 정리하고 있어요.",
             },
           ]}
+          statusMessage={recommendationStatusMessage || undefined}
           skeletonVariant="recommendation"
           longWaitThresholdMs={22_000}
           longWaitMessage="입력한 질문이 길거나 비교할 경험이 많으면 추천 근거 정리에 시간이 더 걸릴 수 있어요."
