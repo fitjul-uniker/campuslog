@@ -14,7 +14,7 @@ import type {
 import { normalizeRecommendationPurpose } from "@/lib/recommendationPurposeConfig";
 
 export const RECOMMENDATION_SCHEMA_VERSION = "v2" as const;
-export const RECOMMENDATION_PROMPT_VERSION = "recommendation-v2.0";
+export const RECOMMENDATION_PROMPT_VERSION = "recommendation-v2.1";
 
 export const DEFAULT_RECOMMENDATION_REQUIREMENTS: RecommendationExtractedRequirements =
   {
@@ -338,6 +338,11 @@ export function normalizeRecommendationResult(
   const usageDirection = normalizeText(candidate.usageDirection);
   const draftSentence = normalizeText(candidate.draftSentence);
   const generatedAt = normalizeText(candidate.generatedAt);
+  const inputSource =
+    candidate.inputSource === "image" ||
+    candidate.inputSource === "text_and_image"
+      ? candidate.inputSource
+      : "text";
 
   if (
     !id ||
@@ -365,6 +370,7 @@ export function normalizeRecommendationResult(
     id,
     purpose,
     prompt,
+    inputSource,
     schemaVersion,
     promptVersion: normalizeText(candidate.promptVersion),
     model: normalizeText(candidate.model),

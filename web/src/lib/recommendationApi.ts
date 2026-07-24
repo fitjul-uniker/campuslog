@@ -1,6 +1,7 @@
 import type {
   Experience,
   ExperienceAnalysis,
+  RecommendationImageInput,
   RecommendationPurpose,
   RecommendResponse,
 } from "@/lib/types";
@@ -14,6 +15,7 @@ import {
 type RequestRecommendationInput = {
   purpose: RecommendationPurpose;
   prompt: string;
+  images: RecommendationImageInput[];
   experiences: Experience[];
   analyses: ExperienceAnalysis[];
   signal?: AbortSignal;
@@ -29,7 +31,11 @@ function isRecommendResponse(value: unknown): value is RecommendResponse {
   const candidate = value as Record<string, unknown>;
 
   if (candidate.ok === true) {
-    return normalizeRecommendationApiResult(candidate.recommendation) !== null;
+    return (
+      normalizeRecommendationApiResult(candidate.recommendation) !== null &&
+      typeof candidate.resolvedPrompt === "string" &&
+      candidate.resolvedPrompt.trim().length > 0
+    );
   }
 
   if (candidate.ok === false) {
@@ -49,6 +55,7 @@ function isRecommendResponse(value: unknown): value is RecommendResponse {
 export async function requestRecommendation({
   purpose,
   prompt,
+  images,
   experiences,
   analyses,
   signal,
@@ -65,6 +72,7 @@ export async function requestRecommendation({
       body: JSON.stringify({
         purpose,
         prompt,
+        images,
         experiences,
         analyses,
         ...(stream ? { stream: true } : {}),
@@ -95,6 +103,7 @@ export async function requestRecommendation({
           return {
             ok: true,
             recommendation,
+            resolvedPrompt: streamPayload.resolvedPrompt,
           };
         }
       }
@@ -114,6 +123,7 @@ export async function requestRecommendation({
           return {
             ok: true,
             recommendation,
+            resolvedPrompt: payload.resolvedPrompt,
           };
         }
       }

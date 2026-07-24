@@ -19,6 +19,7 @@ type AiRequestMetricInput = {
   experienceCount: number;
   model: string;
   targetCharacterCount?: number;
+  imageCount?: number;
   retry: boolean;
 };
 
@@ -93,6 +94,7 @@ export function createAiRequestMetricLogger(
         inputCharacterCount: input.inputCharacterCount,
         experienceCount: input.experienceCount,
         targetCharacterCount: input.targetCharacterCount ?? null,
+        imageCount: input.imageCount ?? 0,
         model: input.model,
         timeToFirstTokenMs,
         totalDurationMs,

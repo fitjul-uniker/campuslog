@@ -15,3 +15,10 @@ test("AI 추천 취소는 오류 알림을 만들지 않고 실제 실패만 표
   );
   assert.match(source, /setRecommendationError\(response\.error\.message\)/);
 });
+
+test("AI 추천은 이미지와 정규화된 문항을 전달하고 이미지 출처를 저장한다", () => {
+  assert.match(source, /images:\s*input\.images/);
+  assert.match(source, /prompt:\s*response\.resolvedPrompt/);
+  assert.match(source, /inputSource:/);
+  assert.match(source, /첨부 이미지/);
+});

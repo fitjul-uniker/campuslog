@@ -5006,6 +5006,162 @@ h2 {
   opacity: 0.55;
 }
 
+.recommendation-image-fieldset {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.recommendation-image-fieldset legend {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.recommendation-image-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recommendation-image-add,
+.recommendation-image-remove {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--color-text-muted);
+  font: inherit;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.recommendation-image-add {
+  gap: 7px;
+  padding: 9px 13px;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.recommendation-image-add svg,
+.recommendation-image-remove svg {
+  width: 17px;
+  height: 17px;
+}
+
+.recommendation-image-add:hover:not(:disabled),
+.recommendation-image-remove:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: #f4f4f1;
+  color: var(--color-text);
+}
+
+.recommendation-image-add:active:not(:disabled),
+.recommendation-image-remove:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.recommendation-image-add:focus-visible,
+.recommendation-image-remove:focus-visible {
+  outline: 2px solid #1d1d1f;
+  outline-offset: 2px;
+}
+
+.recommendation-image-toolbar > span {
+  flex: 0 0 auto;
+  color: var(--color-text-soft);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.recommendation-image-help,
+.recommendation-image-error {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.recommendation-image-error {
+  color: var(--color-danger-text);
+  font-weight: 700;
+}
+
+.recommendation-image-list {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommendation-image-item {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 64px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e2e2dd;
+  border-radius: 8px;
+  background: #fafaf8;
+  padding: 8px;
+}
+
+.recommendation-image-preview {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #e1e1dc;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.recommendation-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recommendation-image-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recommendation-image-copy strong {
+  overflow: hidden;
+  color: #353533;
+  font-size: 0.84rem;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommendation-image-copy span {
+  color: #858580;
+  font-size: 0.72rem;
+}
+
+.recommendation-image-remove {
+  width: 44px;
+  padding: 0;
+}
+
 .combobox-input-group {
   position: relative;
   display: flex;
@@ -6335,12 +6491,40 @@ h2 {
   padding-bottom: 22px;
 }
 
-.recommendation-result .recommendation-result-kicker {
+.recommendation-result-kicker-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 9px;
+}
+
+.recommendation-result .recommendation-result-kicker {
+  margin-bottom: 0;
   color: #8b8b86;
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+.recommendation-image-source {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #deded9;
+  border-radius: 6px;
+  background: #f7f7f4;
+  color: #595954;
+  padding: 4px 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.recommendation-image-source svg {
+  width: 14px;
+  height: 14px;
 }
 
 .recommendation-result .detail-header h2 {
@@ -7185,6 +7369,10 @@ h2 {
   .recommendation-header-actions .button {
     width: auto;
     flex: 0 0 auto;
+  }
+
+  .recommendation-image-toolbar {
+    align-items: center;
   }
 
   .product-surface .form-panel,

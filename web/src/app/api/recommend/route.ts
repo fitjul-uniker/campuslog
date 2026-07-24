@@ -31,6 +31,11 @@ import {
   getRecommendationPurposeConfig,
   normalizeRecommendationPurpose,
 } from "@/lib/recommendationPurposeConfig";
+import {
+  createRecommendationOpenAiContent,
+  parseRecommendationImageInputs,
+  type RecommendationOpenAiContent,
+} from "@/lib/recommendationImageInput";
 import type {
   Experience,
   ExperienceAnalysis,
@@ -74,8 +79,14 @@ const recommendationV2ResponseSchema = {
     "matches",
     "noMatchReason",
     "draftSentence",
+    "resolvedPrompt",
   ],
   properties: {
+    resolvedPrompt: {
+      type: "string",
+      description:
+        "텍스트와 첨부 이미지에서 읽은 질문/JD/요구사항을 합친 원문. 이미지 글자를 읽지 못하면 빈 문자열",
+    },
     extractedRequirements: {
       type: "object",
       additionalProperties: false,
@@ -496,7 +507,7 @@ type OpenAiStructuredOutputResult =
 type OpenAiStructuredOutputInput = {
   apiKey: string;
   systemContent: string;
-  userContent: string;
+  userContent: string | RecommendationOpenAiContent[];
   schemaName: string;
   schema: unknown;
   maxOutputTokens: number;
@@ -579,6 +590,12 @@ function createRecommendationPrompt(body: RecommendRequest): string {
         "JD나 긴 원문은 담당 업무, 필수 자격요건, 우대사항, 기술 스택, 요구 경험을 구분합니다.",
         "제약 조건에는 분량, 형식, 직무 조건, 금지사항처럼 답변 전략에 영향을 주는 내용을 넣습니다.",
       ],
+      imageGuidelines: [
+        "첨부 이미지가 있으면 표시된 순서대로 모든 이미지의 질문, JD, 요구사항, 우대사항을 읽습니다.",
+        "사용자가 직접 입력한 텍스트와 이미지 내용을 하나의 요청으로 합쳐 resolvedPrompt에 정리합니다.",
+        "resolvedPrompt는 후속 답변 초안의 원문으로 사용되므로 핵심 문항, 요구사항, 분량 조건을 빠뜨리지 않습니다.",
+        "흐리거나 잘린 부분처럼 읽을 수 없는 내용은 추측하지 않고, 핵심 내용을 읽지 못했다면 resolvedPrompt를 빈 문자열로 둡니다.",
+      ],
       jdGuidelines: [
         "purpose가 jd이면 jdAnalysis를 반드시 채웁니다.",
         "JD 요구사항별 status는 met, partially_met, insufficient_evidence, not_met 중 하나만 사용합니다.",
@@ -614,6 +631,8 @@ function createRecommendationPrompt(body: RecommendRequest): string {
         "답변 초안 생성, 면접 답변 작성, JD 지원 전략 작성, 기록 보완 질문 생성은 이번 결과에 포함하지 않습니다.",
       ],
       outputGuidelines: {
+        resolvedPrompt:
+          "직접 입력과 이미지에서 읽은 질문/JD를 합쳐 후속 답변에도 쓸 수 있는 하나의 원문으로 정리",
         extractedRequirements:
           "요구사항 구조화 결과를 간결한 한국어 배열과 문장으로 반환",
         jdAnalysis:
@@ -626,7 +645,8 @@ function createRecommendationPrompt(body: RecommendRequest): string {
       userInput: {
         purpose: body.purpose,
         purposeLabel: purposeConfig.inputLabel,
-        prompt: body.prompt,
+        typedPrompt: body.prompt,
+        imageCount: body.images.length,
       },
       experiences: body.experiences.map((experience) => {
         const analysis = analysesByExperienceId.get(experience.id);
@@ -798,10 +818,11 @@ type ParsedRecommendationV2Result =
   | {
       ok: true;
       recommendation: RecommendationApiResult;
+      resolvedPrompt: string;
     }
   | {
       ok: false;
-      reason: "no_match";
+      reason: "no_match" | "image_unreadable";
       message: string;
     };
 
@@ -809,6 +830,8 @@ function parseRecommendationV2Result(
   rawOutput: string,
   experiences: Experience[],
   purpose: RecommendationPurpose,
+  typedPrompt: string,
+  imageCount: number,
 ): ParsedRecommendationV2Result | null {
   try {
     const parsed = JSON.parse(stripJsonFence(rawOutput)) as Record<
@@ -821,6 +844,24 @@ function parseRecommendationV2Result(
     const extractedRequirements = normalizeRecommendationRequirements(
       parsed.extractedRequirements,
     );
+    const extractedPrompt =
+      typeof parsed.resolvedPrompt === "string"
+        ? parsed.resolvedPrompt.trim()
+        : "";
+    const resolvedPrompt = imageCount > 0 ? extractedPrompt : typedPrompt;
+
+    if (
+      !resolvedPrompt ||
+      resolvedPrompt.length > MAX_RECOMMENDATION_PROMPT_LENGTH
+    ) {
+      return {
+        ok: false,
+        reason: "image_unreadable",
+        message:
+          "이미지의 텍스트를 읽지 못했어요. 더 선명한 이미지나 직접 입력을 사용해 주세요.",
+      };
+    }
+
     const rawMatches = Array.isArray(parsed.matches) ? parsed.matches : [];
     const seenExperienceIds = new Set<string>();
     const matches = rawMatches
@@ -915,6 +956,7 @@ function parseRecommendationV2Result(
       ? {
           ok: true,
           recommendation,
+          resolvedPrompt,
         }
       : null;
   } catch {
@@ -936,10 +978,16 @@ async function readRequestBody(
     const rawExperiences = candidate.experiences;
     const rawAnalyses = candidate.analyses;
     const purpose = normalizeRecommendationPurpose(candidate.purpose);
+    const images = parseRecommendationImageInputs(candidate.images);
+    const prompt =
+      typeof candidate.prompt === "string" ? candidate.prompt.trim() : "";
 
     if (
       !purpose ||
-      !hasTextWithinLimit(candidate.prompt, MAX_RECOMMENDATION_PROMPT_LENGTH) ||
+      images === null ||
+      typeof candidate.prompt !== "string" ||
+      candidate.prompt.length > MAX_RECOMMENDATION_PROMPT_LENGTH ||
+      (!prompt && images.length === 0) ||
       !Array.isArray(rawExperiences) ||
       !Array.isArray(rawAnalyses)
     ) {
@@ -971,7 +1019,8 @@ async function readRequestBody(
 
     return {
       purpose,
-      prompt: candidate.prompt.trim(),
+      prompt,
+      images,
       experiences,
       analyses,
       stream: candidate.stream === true,
@@ -1047,6 +1096,7 @@ export async function POST(request: Request) {
     ]),
     experienceCount: parsedBody.experiences.length,
     model: RECOMMENDATION_MODEL,
+    imageCount: parsedBody.images.length,
     retry: false,
   });
   const createTrackedErrorResult = (
@@ -1090,13 +1140,19 @@ export async function POST(request: Request) {
 
     try {
       sendStatus?.("질문과 활용 목적을 확인했어요.");
+      if (parsedBody.images.length > 0) {
+        sendStatus?.("첨부 이미지의 질문과 요구사항을 읽고 있어요.");
+      }
       sendStatus?.("선별된 후보 경험과 분석 결과를 함께 비교하고 있어요.");
 
       const recommendationOutput = await requestOpenAiStructuredOutput({
         apiKey: openAiApiKey,
         systemContent:
-          "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 문항/JD 요구사항을 구조화하고, 전달된 후보 경험 context와 보완 답변을 사실 근거로 삼아 적합한 경험만 최대 Top 3로 추천합니다. 기존 AI 분석은 참고 자료로만 사용하고, 원본에 없는 사실은 만들지 않으며 추천 이유와 직접 근거, 부족 근거, 과장 위험을 분리합니다.",
-        userContent: createRecommendationPrompt(parsedBody),
+          "당신은 CampusLog의 AI 추천 v2 도우미입니다. 입력 텍스트와 첨부 이미지의 문항/JD 요구사항을 구조화하고, 전달된 후보 경험 context와 보완 답변을 사실 근거로 삼아 적합한 경험만 최대 Top 3로 추천합니다. 이미지에서 읽을 수 없는 내용은 추측하지 않습니다. 기존 AI 분석은 참고 자료로만 사용하고, 원본에 없는 사실은 만들지 않으며 추천 이유와 직접 근거, 부족 근거, 과장 위험을 분리합니다.",
+        userContent: createRecommendationOpenAiContent(
+          createRecommendationPrompt(parsedBody),
+          parsedBody.images,
+        ),
         schemaName: "campuslog_experience_recommendation_v2",
         schema: recommendationV2ResponseSchema,
         maxOutputTokens: 4200,
@@ -1119,6 +1175,8 @@ export async function POST(request: Request) {
         recommendationOutput.outputText,
         parsedBody.experiences,
         parsedBody.purpose,
+        parsedBody.prompt,
+        parsedBody.images.length,
       );
 
       if (!recommendation) {
@@ -1132,7 +1190,9 @@ export async function POST(request: Request) {
       if (!recommendation.ok) {
         return createTrackedErrorResult(
           "INSUFFICIENT_INPUT",
-          `${recommendation.message} 경험 내용을 보완하거나 질문을 더 구체적으로 입력해 주세요.`,
+          recommendation.reason === "image_unreadable"
+            ? recommendation.message
+            : `${recommendation.message} 경험 내용을 보완하거나 질문을 더 구체적으로 입력해 주세요.`,
           422,
         );
       }
@@ -1143,6 +1203,7 @@ export async function POST(request: Request) {
         response: {
           ok: true,
           recommendation: recommendation.recommendation,
+          resolvedPrompt: recommendation.resolvedPrompt,
         },
       };
     } catch {

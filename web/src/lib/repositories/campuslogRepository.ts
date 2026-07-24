@@ -152,6 +152,7 @@ type RecommendationRow = {
   id: string;
   purpose: string;
   prompt: string;
+  input_source?: RecommendationResult["inputSource"] | null;
   schema_version?: RecommendationResult["schemaVersion"];
   prompt_version?: string | null;
   model?: string | null;
@@ -432,6 +433,7 @@ function toRecommendation(row: RecommendationRow): RecommendationResult {
     id: row.id,
     purpose: row.purpose,
     prompt: row.prompt,
+    inputSource: row.input_source,
     schemaVersion: row.schema_version,
     promptVersion: row.prompt_version ?? "",
     model: row.model ?? "",
@@ -1041,6 +1043,7 @@ function createSupabaseCampusLogRepository(
           id: result.id,
           purpose: result.purpose,
           prompt: result.prompt,
+          input_source: result.inputSource,
           schema_version: result.schemaVersion,
           prompt_version: result.promptVersion,
           model: result.model,
@@ -1056,27 +1059,39 @@ function createSupabaseCampusLogRepository(
           generated_at: result.generatedAt,
           ...(result.jdAnalysis ? { jd_analysis: result.jdAnalysis } : {}),
         };
-        const { data, error } = await supabase
-          .from("recommendations")
-          .upsert(recommendationPayload)
-          .select("*")
-          .single();
+        const fallbackPayload: Record<string, unknown> = {
+          ...recommendationPayload,
+        };
+        const optionalColumns = ["input_source", "jd_analysis"] as const;
+        let lastError: RepositoryError | null = null;
 
-        if (isMissingSchemaColumnError(error, "jd_analysis")) {
-          const fallbackPayload = { ...recommendationPayload };
-          delete fallbackPayload.jd_analysis;
-          const { data: fallbackData, error: fallbackError } = await supabase
+        for (let attempt = 0; attempt <= optionalColumns.length; attempt += 1) {
+          const { data, error } = await supabase
             .from("recommendations")
             .upsert(fallbackPayload)
             .select("*")
             .single();
 
-          throwIfError(fallbackError);
-          return toRecommendation(fallbackData as RecommendationRow);
+          if (!error) {
+            return toRecommendation(data as RecommendationRow);
+          }
+
+          lastError = error;
+          const missingColumn = optionalColumns.find(
+            (column) =>
+              column in fallbackPayload &&
+              isMissingSchemaColumnError(error, column),
+          );
+
+          if (!missingColumn) {
+            break;
+          }
+
+          delete fallbackPayload[missingColumn];
         }
 
-        throwIfError(error);
-        return toRecommendation(data as RecommendationRow);
+        throwIfError(lastError);
+        return null;
       },
       async deleteByExperienceId(experienceId) {
         const { error } = await supabase

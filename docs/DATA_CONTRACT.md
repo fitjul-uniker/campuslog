@@ -2,10 +2,10 @@
 
 ## 상태
 
-- 적용 상태: `main`에 반영된 PR #30 + AI 분석 v2.1 간소화 + 추천 v2 확장 + 답변 초안 v1 확장 + 분석 부족 정보 답변 저장 호환성
-- 범위: 사용자별 Supabase Postgres schema, RLS, private Storage, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, localStorage 자동 이전·자동 삭제 금지 정책, 완료 경험 첨부 저장, AI 경험 분석 v2.1 저장 호환성, 추천 v2 저장 호환성, 답변 초안 v1 저장 호환성, 분석 부족 정보 답변 저장 호환성
+- 적용 상태: `main`에 반영된 PR #30 + AI 분석 v2.1 간소화 + 추천 v2 확장 + 답변 초안 v1 확장 + 분석 부족 정보 답변 저장 호환성 + 추천 이미지 입력
+- 범위: 사용자별 Supabase Postgres schema, RLS, private Storage, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, localStorage 자동 이전·자동 삭제 금지 정책, 완료 경험 첨부 저장, AI 경험 분석 v2.1 저장 호환성, 추천 v2 저장 호환성, 답변 초안 v1 저장 호환성, 분석 부족 정보 답변 저장 호환성, 추천 입력 출처 저장
 - 기준: v1.1 UI/UX와 기존 도메인 타입을 유지하고, DB 전환은 작은 PR로 단계적으로 진행
-- 제외: OCR / 이미지 입력
+- 제외: 추천 입력 이미지 원본 영구 저장
 
 ## 현재 localStorage 모델
 
@@ -41,7 +41,7 @@ Migrations:
 | `daily_logs` | `DailyLog` | `user_id` | `(user_id, id)` | `(user_id, activity_id)`가 `tracked_activities`를 참조하고 활동 삭제 시 cascade |
 | `experience_synthesis_drafts` | `ExperienceSynthesisDraft` | `user_id` | `(user_id, activity_id)` | 활동별 초안 1개만 upsert. 활동 삭제 시 cascade |
 | `experience_analyses` | `ExperienceAnalysis` | `user_id` | `(user_id, id)`, unique `(user_id, experience_id)` | 경험별 최신 분석 1개를 upsert. v2/v2.1 분석은 `schema_version`, `prompt_version`, `model`, `star`, `evidence`, `evidence_gaps`, `cover_letter_angles`, `competency_evidence`를 함께 저장하되 신규 v2.1은 표시하지 않는 레거시 배열을 빈 값으로 저장 |
-| `recommendations` | `RecommendationResult` | `user_id` | `(user_id, id)` | 1순위 추천 경험 삭제 시 추천 기록 cascade. v2 추천은 `schema_version`, `prompt_version`, `model`, `extracted_requirements`, `matches`를 함께 저장 |
+| `recommendations` | `RecommendationResult` | `user_id` | `(user_id, id)` | 1순위 추천 경험 삭제 시 추천 기록 cascade. v2 추천은 `schema_version`, `prompt_version`, `model`, `extracted_requirements`, `matches`, `input_source`를 함께 저장 |
 | `answer_drafts` | `AnswerDraftResult` | `user_id` | `(user_id, recommendation_id, experience_id)` | 추천 기록과 선택 경험별 최신 초안 묶음 1개를 upsert. 추천 또는 경험 삭제 시 cascade. 생성된 초안 type들을 `drafts` JSONB 배열로 저장 |
 | `experience_followups` | `ExperienceFollowup` | `user_id` | `(user_id, id)` | 경험별 보완 질문 / 답변을 별도 저장. 경험 삭제 시 cascade. 원본 `Experience.description` / `achievements`를 자동 수정하지 않음 |
 | `experience_attachments` | `ExperienceAttachment` | `user_id` | `(user_id, id)`, unique `(user_id, storage_path)` | `(user_id, experience_id)`가 `experiences`를 참조하며 경험 삭제 시 metadata cascade. 경험당 최대 3개 |
@@ -97,6 +97,8 @@ Migrations:
 
 - `RecommendationResult`는 기존 v1 필드 `recommendedExperienceId`, `recommendedExperienceTitle`, `reason`, `relatedTags`, `highlightedAchievement`, `usageDirection`, `draftSentence`를 유지합니다.
 - `purpose`는 `cover_letter`, `portfolio`, `interview`, `jd`, `activity_application`, `other` 중 하나입니다. 기존 row는 변경하지 않고 `20260714000500_recommendation_jd_purpose.sql`에서 Supabase check constraint에 `jd`만 추가하며 실제 project 적용 전에는 JD 저장 smoke test를 완료로 간주하지 않습니다.
+- `inputSource`는 `text`, `image`, `text_and_image` 중 하나이며 기존 row와 migration 미적용 fallback은 `text`로 읽습니다. `20260724000200_recommendation_image_input.sql`은 `recommendations.input_source`만 추가하고 이미지 binary나 data URL column은 만들지 않습니다.
+- 추천 요청의 `images`는 JPG·PNG·WebP data URL 최대 3개로 제한하며 서버가 형식, MIME, base64, 장당 준비 크기를 다시 검증합니다. OpenAI 응답의 `resolvedPrompt`는 추천 기록 `prompt`로 저장해 후속 답변 초안이 이미지에서 읽은 문항을 참조할 수 있게 합니다.
 - v2 추천은 `schemaVersion`, `promptVersion`, `model`, `extractedRequirements`, `matches`를 추가로 저장합니다.
 - `extractedRequirements`는 문항 / 면접 질문 / JD / 지원서 원문에서 추출한 필수 역량, 우대 역량, 키워드, 답변 의도, 제약 조건입니다.
 - `matches`는 최대 3개 추천 경험의 `rank`, `score`, `fitLevel`, `matchReason`, `matchedEvidence`, `missingEvidence`, `overclaimRisks`, `suggestedAngle`, `relatedCompetencies`를 포함합니다.
@@ -148,4 +150,5 @@ Migrations:
 - 추천 v2 migration `20260714000200_ai_recommendation_v2.sql`은 Supabase project 적용 후 로그인 세션에서 추천 저장 smoke test가 필요합니다.
 - 답변 초안 migration `20260714000300_ai_answer_drafts.sql`은 Supabase project 적용 후 로그인 세션에서 초안 저장 smoke test가 필요합니다.
 - 기록 보완 migration `20260714000400_experience_followups.sql`은 Supabase project 적용 후 로그인 세션에서 분석 부족 정보 답변 저장, 수정, 새로고침 유지, 추천 반영 smoke test가 필요합니다.
+- 추천 이미지 입력 migration `20260724000200_recommendation_image_input.sql`은 Supabase project 적용 후 이미지 기반 추천 저장·재조회와 출처 배지 유지 smoke test가 필요합니다.
 - SQL-level 또는 자동화된 select / insert / update / delete RLS 정책 검증은 아직 별도 hardening 작업으로 남아 있습니다.

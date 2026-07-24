@@ -233,6 +233,11 @@ export type RecommendationSchemaVersion = "v1" | "v2";
 
 export type RecommendationFitLevel = "high" | "medium" | "low";
 
+export type RecommendationInputSource =
+  | "text"
+  | "image"
+  | "text_and_image";
+
 export type RecommendationExtractedRequirements = {
   requiredCompetencies: string[];
   preferredCompetencies: string[];
@@ -301,6 +306,7 @@ export type RecommendationResult = {
   id: string;
   purpose: RecommendationPurpose;
   prompt: string;
+  inputSource: RecommendationInputSource;
   schemaVersion: RecommendationSchemaVersion;
   promptVersion: string;
   model: string;
@@ -319,12 +325,19 @@ export type RecommendationResult = {
 
 export type RecommendationApiResult = Omit<
   RecommendationResult,
-  "id" | "generatedAt" | "purpose" | "prompt"
+  "id" | "generatedAt" | "purpose" | "prompt" | "inputSource"
 >;
+
+export type RecommendationImageInput = {
+  name: string;
+  mediaType: "image/jpeg" | "image/png" | "image/webp";
+  dataUrl: string;
+};
 
 export type RecommendRequest = {
   purpose: RecommendationPurpose;
   prompt: string;
+  images: RecommendationImageInput[];
   experiences: Experience[];
   analyses: ExperienceAnalysis[];
   stream?: boolean;
@@ -334,6 +347,7 @@ export type RecommendResponse =
   | {
       ok: true;
       recommendation: RecommendationApiResult;
+      resolvedPrompt: string;
     }
   | ApiErrorResponse;
 

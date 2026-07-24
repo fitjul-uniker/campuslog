@@ -33,6 +33,7 @@
 - [x] AI 요청 측정 / 취소 3차 구현: 민감 원문 없이 기능·분량·모델·TTFT·전체 시간·성공 / 실패 / 취소·재시도 여부를 서버 로그로 기록하고, 경험 분석 / 추천 / 활동 합성 / 답변 초안 스트리밍에 AbortController 기반 취소 UI 적용 (`ISSUE-082`)
 - [x] 구조화 호출 4차 이벤트 스트리밍 구현: 경험 분석 / AI 추천 / 활동 완료 경험 합성에 `status` SSE 이벤트와 최종 JSON `completed` / `error` 이벤트를 적용하고 raw JSON 토큰과 부분 구조화 결과 노출은 제외 (`ISSUE-083`)
 - [x] AI 추천 입력 선별·압축 구현: 저장된 전체 경험 원문 전송 대신 목적 / 문항 기반 후보 context를 72KB 요청 예산 안에서 전송해 경험 수 증가 시 `/api/recommend` 본문 상한 초과 방지 (`ISSUE-084`)
+- [x] AI 추천에 텍스트·질문/JD 캡쳐 이미지 최대 3장 단독·혼합 입력과 추천 폼 안 클립보드 이미지 붙여넣기를 추가하고, 기존 `gpt-4.1-mini` 단일 vision 호출·SSE 대기·추천 저장 흐름과 원본 이미지 비저장 정책 유지 (`ISSUE-096`)
 - [x] AI 추천의 JD 분석 표시값이 기본 Combobox 필터로 재사용되어 선택지가 사라지는 문제를 수정하고, JD 선택 후에도 네 활용 목적을 다시 열어 변경 가능하게 함 (`ISSUE-085`)
 - [x] 예상 종료일이 지난 진행 활동을 저장 상태 변경 없이 `종료 확인 필요`로 계산하고, 실제 종료 뒤의 `경험 정리 필요` 단계와 구분해 오늘의 기록·나의 활동·활동 상세에 적용 (`ISSUE-086`)
 - [x] 경험 정리 필요 활동 수정 완료 안내를 특정 활동 카드 아래가 아닌 활동 영역 공통 알림으로 이동하고 실제 로그인 저장 흐름에서 위치 확인 (`ISSUE-087`)
@@ -60,6 +61,9 @@
 - [x] 진행 활동과 마무리 필요 활동 수정 경로, 미래 예정 종료일 활동의 즉시 종료 / AI 초안 생성 수정
 - [x] 완료 경험 사진·PDF 첨부 UI, private Storage/RLS, AI 입력 분리 구현
 - [ ] Supabase migration 적용과 실제 로그인 업로드·조회·삭제 smoke test (`ISSUE-095`)
+- [ ] 추천 입력 출처 migration 적용과 실제 로그인 이미지 추천·저장·재조회 smoke test (`ISSUE-096`)
+
+2026-07-24 AI 추천 이미지 입력은 기존 추천 폼에 JPG·PNG·WebP 최대 3장 선택, 개수, 64px 미리보기, 파일명·크기, 개별 삭제를 추가했습니다. 파일 선택뿐 아니라 추천 폼 안에서 `Cmd/Ctrl+V`로 클립보드 이미지를 같은 목록에 추가하며, 이미지가 없는 일반 텍스트 붙여넣기는 기존 textarea 동작을 유지합니다. 텍스트와 이미지는 각각 단독 또는 함께 제출할 수 있고, 원본 파일당 5MB를 검증한 뒤 큰 이미지는 브라우저에서 장당 약 750KB 이하 WebP로 준비합니다. `/api/recommend`는 이미지 형식·MIME·base64·개수·준비 크기를 다시 검증하고 기존 경험 context와 이미지를 현재 `gpt-4.1-mini` Responses API structured output 한 번에 전달합니다. 별도 OCR 확인·수정 화면과 추가 AI 호출은 없으며 기존 SSE 상태·취소 UX를 유지합니다. 핵심 문구를 읽지 못하면 재첨부 또는 직접 입력을 안내하고, 성공 결과에는 `이미지에서 추출된 내용 기반` 배지를 표시합니다. 원본 이미지와 data URL은 저장하지 않고 요청 뒤 폐기하며, 추천 기록에는 후속 답변 초안을 위한 추출 문장과 `text` / `image` / `text_and_image` 출처만 저장합니다. 관련 자동 테스트 65개, lint, typecheck, production build를 통과했고 1440px·390px UI preview에서 선택·붙여넣기·삭제·가로 overflow 0·콘솔 오류 0건을 확인했습니다. 실제 Supabase migration과 로그인 OpenAI 호출·저장·재조회는 남았습니다.
 
 2026-07-24 완료 경험 첨부 기능은 새 경험·수정 폼에 `사진 첨부`, `자료 첨부`를 추가하고 선택 사진 썸네일, 파일명·크기, 삭제를 현재 폼 위계 안에 배치했습니다. 사진은 JPG·PNG·WebP, 자료는 PDF만 허용하며 경험당 3개, 파일당 5MB와 빈 파일 차단을 UI·Storage bucket·DB constraint에서 적용합니다. 원본 object는 사용자 ID 경로의 private `experience-attachments` bucket, metadata는 RLS가 적용된 `experience_attachments` table에 저장합니다. 인라인·독립 상세에서 1시간 signed URL로 열고 독립 상세에서 개별 삭제할 수 있습니다. 첨부 타입과 repository를 `Experience`와 분리해 AI 분석·추천 입력에는 포함하지 않으며, 첨부만 추가한 수정은 경험 원문과 분석 상태를 갱신하지 않습니다. 전체 테스트 49개, lint, typecheck, production build와 1440px·390px UI preview를 통과했으며 실제 Supabase project migration과 로그인 세션 Storage smoke test는 남았습니다.
 

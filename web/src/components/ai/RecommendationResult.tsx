@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FileText,
   Loader2,
+  ScanText,
   X,
   XCircle,
 } from "lucide-react";
@@ -779,9 +780,17 @@ export function RecommendationResult({
     >
       <div className="detail-header">
         <div>
-          <p className="experience-meta recommendation-result-kicker">
-            AI 기반 활동 추천 결과
-          </p>
+          <div className="recommendation-result-kicker-row">
+            <p className="experience-meta recommendation-result-kicker">
+              AI 기반 활동 추천 결과
+            </p>
+            {result.inputSource !== "text" ? (
+              <span className="recommendation-image-source">
+                <ScanText aria-hidden="true" />
+                이미지에서 추출된 내용 기반
+              </span>
+            ) : null}
+          </div>
           <h2 id="recommendation-title">
             {result.recommendedExperienceTitle}
           </h2>
