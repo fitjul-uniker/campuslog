@@ -47,6 +47,12 @@ import {
   normalizeExperienceFollowup,
 } from "@/lib/experienceFollowupResult";
 import { normalizeRecommendationResult } from "@/lib/recommendationResult";
+import {
+  EXPERIENCE_ATTACHMENTS_BUCKET,
+  getAttachmentKind,
+  getStorageFileExtension,
+  validateAttachmentSelection,
+} from "@/lib/experienceAttachments";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
   ActivityStatus,
@@ -57,6 +63,7 @@ import type {
   DailyLogInput,
   Experience,
   ExperienceAnalysis,
+  ExperienceAttachment,
   ExperienceFollowup,
   ExperienceFormInput,
   ExperienceSynthesisDraft,
@@ -86,6 +93,17 @@ type ExperienceRow = {
   analysis_status: Experience["analysisStatus"];
   created_at: string;
   updated_at: string;
+};
+
+type ExperienceAttachmentRow = {
+  id: string;
+  experience_id: string;
+  storage_path: string;
+  file_name: string;
+  mime_type: string;
+  file_size: number;
+  attachment_kind: ExperienceAttachment["kind"];
+  created_at: string;
 };
 
 type TrackedActivityRow = {
@@ -200,6 +218,14 @@ export type CampusLogRepository = {
       input: ExperienceFormInput,
     ): Promise<Experience | null>;
   };
+  attachments: {
+    listByExperienceId(experienceId: string): Promise<ExperienceAttachment[]>;
+    upload(
+      experienceId: string,
+      files: File[],
+    ): Promise<ExperienceAttachment[]>;
+    delete(attachment: ExperienceAttachment): Promise<boolean>;
+  };
   analyses: {
     getByExperienceId(experienceId: string): Promise<ExperienceAnalysis | null>;
     save(result: AnalysisApiResult): Promise<ExperienceAnalysis | null>;
@@ -304,6 +330,17 @@ function isMissingSchemaColumnError(
   );
 }
 
+function isMissingSchemaTableError(
+  error: RepositoryError | null,
+  tableName: string,
+) {
+  return Boolean(
+    error &&
+      error.code === "PGRST205" &&
+      error.message?.includes(`'public.${tableName}'`),
+  );
+}
+
 function toExperience(row: ExperienceRow): Experience {
   return {
     id: row.id,
@@ -316,6 +353,23 @@ function toExperience(row: ExperienceRow): Experience {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     analysisStatus: row.analysis_status,
+  };
+}
+
+function toExperienceAttachment(
+  row: ExperienceAttachmentRow,
+  viewUrl = "",
+): ExperienceAttachment {
+  return {
+    id: row.id,
+    experienceId: row.experience_id,
+    storagePath: row.storage_path,
+    fileName: row.file_name,
+    mimeType: row.mime_type,
+    fileSize: row.file_size,
+    kind: row.attachment_kind,
+    createdAt: row.created_at,
+    viewUrl,
   };
 }
 
@@ -486,6 +540,18 @@ function normalizeExperienceInput(input: ExperienceFormInput) {
   };
 }
 
+function createAttachmentStoragePath(
+  userId: string,
+  experienceId: string,
+  file: File,
+): string {
+  const attachmentId = createId("attachment");
+  const extension = getStorageFileExtension(file);
+  const safeExperienceId = experienceId.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+  return `${userId}/${safeExperienceId}/${attachmentId}.${extension}`;
+}
+
 function normalizeActivityInput(input: TrackedActivityInput) {
   return {
     title: input.title.trim(),
@@ -644,6 +710,20 @@ function createSupabaseCampusLogRepository(
         return toExperience(data as ExperienceRow);
       },
       async delete(id) {
+        const { data: attachmentData, error: attachmentListError } = await supabase
+          .from("experience_attachments")
+          .select("storage_path")
+          .eq("experience_id", id);
+        if (
+          attachmentListError &&
+          !isMissingSchemaTableError(
+            attachmentListError,
+            "experience_attachments",
+          )
+        ) {
+          throwIfError(attachmentListError);
+        }
+
         const { error: activityError } = await supabase
           .from("tracked_activities")
           .update({
@@ -655,6 +735,17 @@ function createSupabaseCampusLogRepository(
 
         const { error } = await supabase.from("experiences").delete().eq("id", id);
         throwIfError(error);
+
+        const attachmentPaths = (
+          (attachmentData ?? []) as Pick<ExperienceAttachmentRow, "storage_path">[]
+        ).map((attachment) => attachment.storage_path);
+
+        if (attachmentPaths.length > 0) {
+          await supabase.storage
+            .from(EXPERIENCE_ATTACHMENTS_BUCKET)
+            .remove(attachmentPaths);
+        }
+
         return true;
       },
       async createFromActivity(activityId, input) {
@@ -688,6 +779,150 @@ function createSupabaseCampusLogRepository(
 
         await repository.synthesisDrafts.delete(activityId);
         return createdExperience;
+      },
+    },
+    attachments: {
+      async listByExperienceId(experienceId) {
+        const { data, error } = await supabase
+          .from("experience_attachments")
+          .select("*")
+          .eq("experience_id", experienceId)
+          .order("created_at", { ascending: true });
+        if (isMissingSchemaTableError(error, "experience_attachments")) {
+          return [];
+        }
+        throwIfError(error);
+
+        return Promise.all(
+          ((data ?? []) as ExperienceAttachmentRow[]).map(async (row) => {
+            const { data: signedUrlData, error: signedUrlError } =
+              await supabase.storage
+                .from(EXPERIENCE_ATTACHMENTS_BUCKET)
+                .createSignedUrl(row.storage_path, 60 * 60);
+            throwIfError(signedUrlError);
+
+            return toExperienceAttachment(row, signedUrlData?.signedUrl ?? "");
+          }),
+        );
+      },
+      async upload(experienceId, files) {
+        if (files.length === 0) {
+          return [];
+        }
+
+        const { count, error: countError } = await supabase
+          .from("experience_attachments")
+          .select("*", { count: "exact", head: true })
+          .eq("experience_id", experienceId);
+        if (isMissingSchemaTableError(countError, "experience_attachments")) {
+          throw new Error(
+            "첨부 파일 저장소 준비가 필요합니다. 관리자에게 문의해 주세요.",
+          );
+        }
+        throwIfError(countError);
+
+        const validation = validateAttachmentSelection(count ?? 0, files);
+
+        if (validation.error) {
+          throw new Error(validation.error);
+        }
+
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        throwIfError(userError);
+
+        if (!user) {
+          throw new Error("첨부 파일을 저장하려면 로그인이 필요합니다.");
+        }
+
+        const uploadedPaths: string[] = [];
+        const insertedIds: string[] = [];
+
+        try {
+          const attachments: ExperienceAttachment[] = [];
+
+          for (const file of files) {
+            const kind = getAttachmentKind(file);
+
+            if (!kind) {
+              throw new Error("지원하지 않는 첨부 파일 형식입니다.");
+            }
+
+            const storagePath = createAttachmentStoragePath(
+              user.id,
+              experienceId,
+              file,
+            );
+            const { error: uploadError } = await supabase.storage
+              .from(EXPERIENCE_ATTACHMENTS_BUCKET)
+              .upload(storagePath, file, {
+                cacheControl: "3600",
+                contentType: file.type,
+                upsert: false,
+              });
+            throwIfError(uploadError);
+            uploadedPaths.push(storagePath);
+
+            const { data: rowData, error: rowError } = await supabase
+              .from("experience_attachments")
+              .insert({
+                experience_id: experienceId,
+                storage_path: storagePath,
+                file_name: file.name,
+                mime_type: file.type,
+                file_size: file.size,
+                attachment_kind: kind,
+              })
+              .select("*")
+              .single();
+            throwIfError(rowError);
+
+            const row = rowData as ExperienceAttachmentRow;
+            insertedIds.push(row.id);
+
+            const { data: signedUrlData, error: signedUrlError } =
+              await supabase.storage
+                .from(EXPERIENCE_ATTACHMENTS_BUCKET)
+                .createSignedUrl(storagePath, 60 * 60);
+            throwIfError(signedUrlError);
+
+            attachments.push(
+              toExperienceAttachment(row, signedUrlData?.signedUrl ?? ""),
+            );
+          }
+
+          return attachments;
+        } catch (error) {
+          if (insertedIds.length > 0) {
+            await supabase
+              .from("experience_attachments")
+              .delete()
+              .in("id", insertedIds);
+          }
+
+          if (uploadedPaths.length > 0) {
+            await supabase.storage
+              .from(EXPERIENCE_ATTACHMENTS_BUCKET)
+              .remove(uploadedPaths);
+          }
+
+          throw error;
+        }
+      },
+      async delete(attachment) {
+        const { error: storageError } = await supabase.storage
+          .from(EXPERIENCE_ATTACHMENTS_BUCKET)
+          .remove([attachment.storagePath]);
+        throwIfError(storageError);
+
+        const { error } = await supabase
+          .from("experience_attachments")
+          .delete()
+          .eq("id", attachment.id);
+        throwIfError(error);
+        return true;
       },
     },
     analyses: {
@@ -1517,6 +1752,13 @@ export function createLocalCampusLogRepository(): CampusLogRepository {
       delete: async (id) => deleteExperience(id),
       createFromActivity: async (activityId, input) =>
         createExperienceFromActivity(activityId, input),
+    },
+    attachments: {
+      listByExperienceId: async () => [],
+      upload: async () => {
+        throw new Error("첨부 파일 저장은 Supabase 로그인 환경에서만 지원합니다.");
+      },
+      delete: async () => false,
     },
     analyses: {
       getByExperienceId: async (experienceId) =>

@@ -22,6 +22,7 @@
 
 | 이슈 ID | 상태 | 우선순위 | 유형 | 내용 | 결정 필요 사항 | 해결 내용 | 담당자 | 기록일 | 해결일 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ISSUE-095 | In Progress | High | Decision | 완료 경험의 활동 사진·증빙 사진·PDF 자료를 AI 입력과 분리해 보관할 저장 구조가 필요 | 무료 범위의 파일 형식·개수·용량, 사용자별 접근, 경험 삭제 연동, 조회·삭제 UX 결정 | 사진은 JPG·PNG·WebP, 자료는 PDF만 허용하고 경험당 3개·파일당 5MB로 제한. private `experience-attachments` bucket의 사용자 ID 경로와 RLS metadata table을 사용하며 1시간 signed URL로 조회. 첨부는 `Experience`와 별도 repository에 두어 AI 분석·추천 입력에서 제외. 코드·UI·migration 구현과 자동/preview 검증은 완료했고 실제 project migration과 로그인 Storage smoke test는 남음 | 사용자 + Codex | 2026-07-24 | - |
 | ISSUE-001 | Resolved | High | Decision | MVP 기능 범위 최종 확정 필요 | 10주 MVP에서 반드시 구현할 기능과 제외할 기능 확정 | 1차 MVP 범위를 활동 경험 기록, AI 경험 분석, AI 경험 추천 및 활용으로 확정. 로그인 / 회원가입, DB, Supabase, 파일 업로드, 개인 Backend Portfolio Edition용 별도 백엔드 스택은 1차 MVP에서 제외 | Codex | 2026-06-30 | 2026-07-01 |
 | ISSUE-002 | Resolved | Medium | Decision | USER_FLOW.md 파일명 정리 완료 | 사용자 흐름 문서 파일명 정리 | 운영진 요구 파일명에 맞춰 FLOW.md를 USER_FLOW.md로 변경 | Codex | 2026-06-30 | 2026-06-30 |
 | ISSUE-003 | Resolved | Medium | Decision | 추천 결과 저장 기능 우선순위 결정 | 추천 결과 저장을 첫 구현에 포함할지, 복사 기능 이후 낮은 우선순위로 둘지 결정 | 추천 결과 저장은 1차 MVP 범위에 포함하되, 첫 구현에서는 복사 기능보다 낮은 우선순위로 둠 | Codex | 2026-06-30 | 2026-07-03 |

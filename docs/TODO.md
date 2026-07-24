@@ -23,6 +23,7 @@
 
 진행 메모:
 
+- 2026-07-24: `feature/experience-attachments`에서 완료 경험에 사진(JPG·PNG·WebP)과 PDF 자료를 합계 3개, 파일당 5MB까지 추가하는 private Supabase Storage / metadata RLS migration과 별도 repository를 구현. 새 경험·수정 폼의 첨부 선택, 나의 활동 인라인·독립 상세 조회, 독립 상세 개별 삭제를 연결하고 첨부를 AI 입력에서 분리. 코드 검증은 완료했으며 실제 Supabase project migration 적용과 로그인 업로드 smoke test는 남음.
 - 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback과 로그아웃 복귀를 확인했습니다. 2026-07-14 UX 결정에 따라 로그아웃 완료 알림은 제거하고 `/` 로그인 영역으로 바로 복귀합니다. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요합니다.
 - 2026-07-13: `feature/database-schema`에서 최신 main 확인 후 사용자별 Supabase schema / RLS migration, localStorage 모델 매핑, repository 경계, localStorage → DB 이전 정책 문서를 추가. 이어서 주요 화면의 read/write를 Supabase repository로 전환해 로그인 계정별 DB 데이터를 사용하도록 변경. 사용자가 Supabase SQL Editor에서 migration 실행 성공과 Table Editor 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료.
 - 2026-07-13: 정식 사용자는 계정별 DB부터 새로 시작하므로 localStorage → 계정 DB 이전 UX / upsert 구현은 High 필수 범위에서 제외하고 Deferred / Optional로 전환. localStorage 원본은 자동 이전하거나 자동 삭제하지 않으며, 로그인 세션에서는 계정 DB 데이터를 기본으로 사용.
@@ -66,6 +67,7 @@
 - [x] AI API 보호 foundation: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용 (`ISSUE-024`)
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [x] AI 추천 입력 선별·압축으로 경험 수 증가 시 `/api/recommend` 본문 상한 초과를 방지 (`ISSUE-084`)
+- [ ] 완료 경험 사진·PDF 첨부 코드 구현 완료, Supabase migration 적용과 로그인 업로드·조회·삭제 smoke test 수행 (`ISSUE-095`)
 - [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 화면·신규 분석 출력 간소화 (`ISSUE-078`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
 - [x] Supabase project에 추천 목적 `jd`, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 (`ISSUE-060`, `ISSUE-079`)

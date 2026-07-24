@@ -42,6 +42,18 @@ export type ExperienceFormInput = {
   relatedLinks: RelatedLink[];
 };
 
+export type ExperienceAttachment = {
+  id: string;
+  experienceId: string;
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  kind: "photo" | "material";
+  createdAt: string;
+  viewUrl: string;
+};
+
 export type ActivityStatus = "planned" | "active" | "completed";
 
 export type ActivitySynthesisStatus =

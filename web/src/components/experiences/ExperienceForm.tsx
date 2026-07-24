@@ -11,6 +11,7 @@ import {
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
 import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
+import { ExperienceAttachmentPicker } from "@/components/experiences/ExperienceAttachmentPicker";
 import {
   MAX_RELATED_LINK_DESCRIPTION_LENGTH,
   MAX_RELATED_LINKS,
@@ -29,7 +30,12 @@ type ExperienceFormProps = {
   mode: ExperienceFormMode;
   initialValue?: Experience;
   cancelHref: string;
-  onSubmit: (input: ExperienceFormInput) => void | Promise<void>;
+  attachmentCount?: number;
+  attachmentsEnabled?: boolean;
+  onSubmit: (
+    input: ExperienceFormInput,
+    attachmentFiles: File[],
+  ) => void | Promise<void>;
 };
 
 type PeriodFields = {
@@ -261,6 +267,8 @@ export function ExperienceForm({
   mode,
   initialValue,
   cancelHref,
+  attachmentCount = 0,
+  attachmentsEnabled = true,
   onSubmit,
 }: ExperienceFormProps) {
   const [formValue, setFormValue] = useState<ExperienceFormInput>(() =>
@@ -277,6 +285,7 @@ export function ExperienceForm({
   >({});
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const nextRelatedLinkId = useRef(initialValue?.relatedLinks.length ?? 0);
   const relatedLinkInputRefs = useRef(new Map<string, HTMLInputElement>());
   const addRelatedLinkButtonRef = useRef<HTMLButtonElement>(null);
@@ -288,6 +297,7 @@ export function ExperienceForm({
     setRelatedLinkErrors({});
     setErrorMessage("");
     setIsSubmitting(false);
+    setAttachmentFiles([]);
     nextRelatedLinkId.current = initialValue?.relatedLinks.length ?? 0;
   }, [initialValue]);
 
@@ -475,12 +485,19 @@ export function ExperienceForm({
     setIsSubmitting(true);
 
     try {
-      await onSubmit({
-        ...normalizedFormValue,
-        relatedLinks: relatedLinkValidation.links,
-      });
-    } catch {
-      setErrorMessage("저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+      await onSubmit(
+        {
+          ...normalizedFormValue,
+          relatedLinks: relatedLinkValidation.links,
+        },
+        attachmentFiles,
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -692,6 +709,13 @@ export function ExperienceForm({
           </p>
         )}
       </fieldset>
+
+      <ExperienceAttachmentPicker
+        existingCount={attachmentCount}
+        files={attachmentFiles}
+        onFilesChange={setAttachmentFiles}
+        disabled={!attachmentsEnabled || isSubmitting}
+      />
 
       {errorMessage ? (
         <p className="form-error" role="alert">

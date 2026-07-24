@@ -15,11 +15,27 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
+import { isDevelopmentUiPreview } from "@/lib/supabase/env";
 import type { Experience, ExperienceFormInput } from "@/lib/types";
 
 type EditExperienceClientProps = {
   id: string;
 };
+
+function hasExperienceContentChanges(
+  experience: Experience,
+  input: ExperienceFormInput,
+): boolean {
+  return (
+    experience.title !== input.title.trim() ||
+    experience.period !== input.period.trim() ||
+    experience.role !== input.role.trim() ||
+    experience.description !== input.description.trim() ||
+    experience.achievements !== input.achievements.trim() ||
+    JSON.stringify(experience.relatedLinks) !==
+      JSON.stringify(input.relatedLinks)
+  );
+}
 
 export function EditExperienceClient({ id }: EditExperienceClientProps) {
   const router = useRouter();
@@ -27,6 +43,8 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
     undefined,
   );
   const [errorMessage, setErrorMessage] = useState("");
+  const [attachmentCount, setAttachmentCount] = useState(0);
+  const [attachmentsReady, setAttachmentsReady] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,13 +53,27 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
       try {
         const repository = getCampusLogRepository();
         const storedExperience = await repository.experiences.getById(id);
+        let storedAttachmentCount = 0;
+        let canAttach =
+          repository.source === "supabase" || isDevelopmentUiPreview();
+
+        try {
+          const storedAttachments =
+            await repository.attachments.listByExperienceId(id);
+          storedAttachmentCount = storedAttachments.length;
+        } catch {
+          canAttach = false;
+        }
 
         if (isMounted) {
           setExperience(storedExperience);
+          setAttachmentCount(storedAttachmentCount);
+          setAttachmentsReady(canAttach);
         }
       } catch {
         if (isMounted) {
           setExperience(null);
+          setAttachmentsReady(false);
         }
       }
     }
@@ -53,13 +85,32 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
     };
   }, [id]);
 
-  async function handleSubmit(input: ExperienceFormInput) {
+  async function handleSubmit(
+    input: ExperienceFormInput,
+    attachmentFiles: File[],
+  ) {
+    if (!experience) {
+      throw new Error("수정할 경험을 찾을 수 없어요.");
+    }
+
     const repository = getCampusLogRepository();
-    const updatedExperience = await repository.experiences.update(id, input);
+    const updatedExperience = hasExperienceContentChanges(experience, input)
+      ? await repository.experiences.update(id, input)
+      : experience;
 
     if (!updatedExperience) {
       setErrorMessage("경험을 저장하지 못했습니다. 입력값을 다시 확인해주세요.");
       return;
+    }
+
+    if (attachmentFiles.length > 0) {
+      try {
+        await repository.attachments.upload(id, attachmentFiles);
+      } catch {
+        throw new Error(
+          "경험 내용은 저장했지만 첨부 파일을 저장하지 못했어요. 파일을 확인한 뒤 다시 시도해 주세요.",
+        );
+      }
     }
 
     router.push(`/experiences/${updatedExperience.id}`);
@@ -137,6 +188,8 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
           mode="edit"
           initialValue={experience}
           cancelHref={`/experiences/${experience.id}`}
+          attachmentCount={attachmentCount}
+          attachmentsEnabled={attachmentsReady}
           onSubmit={handleSubmit}
         />
       </section>
