@@ -1,9 +1,10 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import type { FormEvent } from "react";
+import type { ClipboardEvent, FormEvent } from "react";
 import { useState } from "react";
 
+import { RecommendationImagePicker } from "@/components/ai/RecommendationImagePicker";
 import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
 import {
   Combobox,
@@ -17,11 +18,18 @@ import {
   ACTIVE_RECOMMENDATION_PURPOSES,
   getRecommendationPurposeConfig,
 } from "@/lib/recommendationPurposeConfig";
+import {
+  getRecommendationClipboardImages,
+  prepareRecommendationImage,
+  type RecommendationImageInput,
+  validateRecommendationImageSelection,
+} from "@/lib/recommendationImageInput";
 import type { RecommendationPurpose } from "@/lib/types";
 
 type RecommendationFormInput = {
   purpose: RecommendationPurpose;
   prompt: string;
+  images: RecommendationImageInput[];
 };
 
 type RecommendationFormProps = {
@@ -47,29 +55,81 @@ export function RecommendationForm({
   const [purpose, setPurpose] =
     useState<RecommendationPurpose>("cover_letter");
   const [prompt, setPrompt] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [isPreparingImages, setIsPreparingImages] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const isInputDisabled = isLoading || isPreparingImages;
   const selectedPurpose =
     PURPOSE_OPTIONS.find((option) => option.value === purpose) ??
     PURPOSE_OPTIONS[0];
   const selectedConfig = getRecommendationPurposeConfig(purpose);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!prompt.trim()) {
-      setErrorMessage("추천받을 내용을 입력해 주세요.");
+    if (!prompt.trim() && images.length === 0) {
+      setErrorMessage("추천받을 내용을 입력하거나 이미지를 첨부해 주세요.");
       return;
     }
 
     setErrorMessage("");
-    onSubmit({
-      purpose,
-      prompt: prompt.trim(),
-    });
+    setIsPreparingImages(true);
+
+    try {
+      const preparedImages = await Promise.all(
+        images.map(prepareRecommendationImage),
+      );
+
+      onSubmit({
+        purpose,
+        prompt: prompt.trim(),
+        images: preparedImages,
+      });
+    } catch {
+      setErrorMessage(
+        "이미지를 준비하지 못했어요. 더 선명한 이미지나 직접 입력을 사용해 주세요.",
+      );
+    } finally {
+      setIsPreparingImages(false);
+    }
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLFormElement>) {
+    if (isInputDisabled) {
+      return;
+    }
+
+    const clipboardImages = getRecommendationClipboardImages(
+      Array.from(event.clipboardData.items),
+    );
+
+    if (clipboardImages.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const validation = validateRecommendationImageSelection(
+      images.length,
+      clipboardImages,
+    );
+
+    if (validation.error) {
+      setErrorMessage(validation.error);
+      return;
+    }
+
+    setImages([...images, ...validation.accepted]);
+    setErrorMessage("");
   }
 
   return (
-    <form className="experience-form" onSubmit={handleSubmit} noValidate>
+    <form
+      className="experience-form"
+      onSubmit={handleSubmit}
+      onPaste={handlePaste}
+      noValidate
+    >
       <Field className="recommendation-purpose-field">
         <label id="recommendation-purpose-label">활용 목적</label>
         <Combobox
@@ -91,7 +151,7 @@ export function RecommendationForm({
             readOnly
             triggerAriaLabel="활용 목적 목록 열기"
             aria-labelledby="recommendation-purpose-label"
-            disabled={isLoading}
+            disabled={isInputDisabled}
           />
           <ComboboxContent>
             <ComboboxList>
@@ -121,14 +181,22 @@ export function RecommendationForm({
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           aria-invalid={Boolean(errorMessage && !prompt.trim())}
-          disabled={isLoading}
+          disabled={isInputDisabled}
           placeholder={selectedConfig.placeholder}
-          required
         />
         <p className="period-help">
           {selectedConfig.promptDescription}
         </p>
       </div>
+
+      <RecommendationImagePicker
+        files={images}
+        onFilesChange={(nextImages) => {
+          setImages(nextImages);
+          setErrorMessage("");
+        }}
+        disabled={isInputDisabled}
+      />
 
       <div
         className="recommendation-example-list"
@@ -142,7 +210,7 @@ export function RecommendationForm({
             <button
               key={label}
               type="button"
-              disabled={isLoading}
+              disabled={isInputDisabled}
               onClick={() => {
                 setPrompt(input);
                 setErrorMessage("");
@@ -164,11 +232,15 @@ export function RecommendationForm({
         <AnimatedGradientActionButton
           className="recommendation-analysis-request"
           type="submit"
-          disabled={isLoading}
-          aria-busy={isLoading}
+          disabled={isInputDisabled}
+          aria-busy={isInputDisabled}
           icon={<Sparkles />}
         >
-          {isLoading ? "AI 분석 중..." : "AI 분석"}
+          {isPreparingImages
+            ? "이미지 준비 중..."
+            : isLoading
+              ? "AI 분석 중..."
+              : "AI 분석"}
         </AnimatedGradientActionButton>
       </div>
     </form>

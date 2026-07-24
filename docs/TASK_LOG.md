@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-24 - AI 추천 캡쳐 이미지 입력
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 자기소개서 문항·면접 질문·JD 캡쳐를 별도 OCR 확인 없이 기존 AI 추천으로 바로 처리하는 일회성 vision 입력 구현 |
+| 수정한 파일 | `web/src/lib/recommendationImageInput.ts`, `web/src/components/ai/RecommendationImagePicker.tsx`, `web/src/components/ai/RecommendationForm.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/api/recommend/route.ts`, 추천 API·결과·repository·타입·스타일, `supabase/migrations/20260724000200_recommendation_image_input.sql`, 관련 테스트와 활성 문서 |
+| 변경 내용 | JPG·PNG·WebP 최대 3장·원본 장당 5MB를 파일 선택 또는 추천 폼 안 `Cmd/Ctrl+V` 붙여넣기로 받고, 큰 이미지는 브라우저에서 약 750KB 이하로 준비해 현재 `gpt-4.1-mini` structured 추천 요청 한 번에 전달. 일반 텍스트 붙여넣기, 텍스트·이미지 단독/혼합 입력, 기존 SSE 상태·취소, 읽기 실패 안내, 결과 출처 배지, 추출 문장·입력 출처 저장을 연결하고 원본 이미지와 data URL은 저장하지 않음 |
+| 검증한 내용 | `node --test` 65개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. UI preview에서 유효·빈 이미지 검증, 파일 선택·클립보드 붙여넣기·삭제, 1440px·390px 배치, 모바일 가로 overflow 0, 브라우저 console error 0건 확인 |
+| 남은 작업 | Supabase project에 `20260724000200_recommendation_image_input.sql` 적용 후 실제 로그인 세션에서 이미지 기반 OpenAI 추천·저장·새로고침 재조회 smoke test |
+| 권장 커밋 메시지 | `feat: add image input to AI recommendations` (아직 commit하지 않음) |
+
 ### 2026-07-24 - 완료 경험 사진·PDF 첨부
 
 | 항목 | 내용 |

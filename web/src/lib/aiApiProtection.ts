@@ -14,7 +14,7 @@ export const AI_API_REQUEST_LIMITS = {
     },
   },
   recommend: {
-    maxRequestBytes: 96_000,
+    maxRequestBytes: 3_500_000,
     openAiTimeoutMs: 60_000,
     rateLimit: {
       maxRequests: 12,

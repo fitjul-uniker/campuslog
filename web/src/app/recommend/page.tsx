@@ -29,6 +29,8 @@ import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   Experience,
   ExperienceAnalysis,
+  RecommendationImageInput,
+  RecommendationInputSource,
   RecommendationPurpose,
   RecommendationResult as Recommendation,
 } from "@/lib/types";
@@ -36,6 +38,7 @@ import type {
 type RecommendationFormInput = {
   purpose: RecommendationPurpose;
   prompt: string;
+  images: RecommendationImageInput[];
 };
 
 const RECOMMENDATION_PAGE_DESCRIPTION =
@@ -90,6 +93,16 @@ function createRecommendationId(): string {
   return `recommendation-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 10)}`;
+}
+
+function getRecommendationInputSource(
+  input: RecommendationFormInput,
+): RecommendationInputSource {
+  if (input.images.length === 0) {
+    return "text";
+  }
+
+  return input.prompt ? "text_and_image" : "image";
 }
 
 export default function RecommendPage() {
@@ -215,7 +228,8 @@ export default function RecommendPage() {
     setPendingRecommendationInput(input);
 
     const recommendationContext = createRecommendationRequestContext({
-      ...input,
+      purpose: input.purpose,
+      prompt: input.prompt,
       experiences,
       analyses,
     });
@@ -227,6 +241,7 @@ export default function RecommendPage() {
     try {
       const response = await requestRecommendation({
         ...input,
+        images: input.images,
         experiences: recommendationContext.experiences,
         analyses: recommendationContext.analyses,
         signal: abortController.signal,
@@ -247,7 +262,8 @@ export default function RecommendPage() {
       const savedRecommendation = await repository.recommendations.save({
         id: createRecommendationId(),
         purpose: input.purpose,
-        prompt: input.prompt,
+        prompt: response.resolvedPrompt,
+        inputSource: getRecommendationInputSource(input),
         ...response.recommendation,
         generatedAt: createIsoTimestamp(),
       });
@@ -266,6 +282,7 @@ export default function RecommendPage() {
       }
       setIsRecommending(false);
       setRecommendationStatusMessage("");
+      setPendingRecommendationInput(null);
     }
   }
 
@@ -373,6 +390,10 @@ export default function RecommendPage() {
             {
               label: "입력 글자 수",
               value: pendingRecommendationInput?.prompt.length ?? 0,
+            },
+            {
+              label: "첨부 이미지",
+              value: `${pendingRecommendationInput?.images.length ?? 0}장`,
             },
             {
               label: "비교 후보",

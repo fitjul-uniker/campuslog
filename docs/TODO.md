@@ -23,6 +23,7 @@
 
 진행 메모:
 
+- 2026-07-24: `feature/ai-image-input`에서 AI 추천 입력에 JPG·PNG·WebP 캡쳐 이미지를 최대 3장 추가. 파일 선택과 추천 폼 안 `Cmd/Ctrl+V` 붙여넣기를 지원하고 일반 텍스트 붙여넣기는 유지. 텍스트·이미지 단독 또는 혼합 입력을 브라우저에서 장당 약 750KB 이하로 준비해 기존 `gpt-4.1-mini` vision structured output 한 번으로 처리하며, 별도 OCR 확인 화면 없이 현재 SSE 대기 UX와 추천 저장 흐름을 유지. 원본 이미지는 저장하지 않으며 추출 문장과 입력 출처만 추천 기록에 저장. 자동·반응형 UI 검증은 완료했고 Supabase migration 적용과 실제 로그인 OpenAI 저장·재조회 smoke test는 남음.
 - 2026-07-24: `feature/experience-attachments`에서 완료 경험에 사진(JPG·PNG·WebP)과 PDF 자료를 합계 3개, 파일당 5MB까지 추가하는 private Supabase Storage / metadata RLS migration과 별도 repository를 구현. 새 경험·수정 폼의 첨부 선택, 나의 활동 인라인·독립 상세 조회, 독립 상세 개별 삭제를 연결하고 첨부를 AI 입력에서 분리. 코드 검증은 완료했으며 실제 Supabase project migration 적용과 로그인 업로드 smoke test는 남음.
 - 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback과 로그아웃 복귀를 확인했습니다. 2026-07-14 UX 결정에 따라 로그아웃 완료 알림은 제거하고 `/` 로그인 영역으로 바로 복귀합니다. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요합니다.
 - 2026-07-13: `feature/database-schema`에서 최신 main 확인 후 사용자별 Supabase schema / RLS migration, localStorage 모델 매핑, repository 경계, localStorage → DB 이전 정책 문서를 추가. 이어서 주요 화면의 read/write를 Supabase repository로 전환해 로그인 계정별 DB 데이터를 사용하도록 변경. 사용자가 Supabase SQL Editor에서 migration 실행 성공과 Table Editor 테이블 생성을 확인했고, 서로 다른 Google 계정으로 계정별 데이터 분리 수동 smoke test를 완료.
@@ -80,7 +81,8 @@
 - [ ] AI 추천 정확도 평가 기준과 회귀 사례 정의
 - [x] AI 추천 이유·활용 방향·근거 일치 강화
 - [ ] 목적별 AI 추천·생성 실제 OpenAI 응답 품질 확인과 prompt 튜닝 (`ISSUE-079`)
-- [ ] OCR / JD 이미지 입력의 일회성 처리와 개인정보·비용 정책 정의. 텍스트 붙여넣기 흐름 안정화 전까지 Optional (`ISSUE-031`)
+- [x] 질문 / JD 캡쳐 이미지 최대 3장을 파일 선택·클립보드 붙여넣기로 받아 원본 저장 없이 기존 단일 vision 추천 요청으로 처리하고 결과 출처 표시 (`ISSUE-096`)
+- [ ] Supabase migration 적용 후 실제 로그인 세션에서 이미지 기반 OpenAI 추천·저장·재조회 smoke test (`ISSUE-096`)
 - [x] AI 분석 v2 model / prompt / schema version 저장 결정 및 구현
 - [x] 추천 API의 model / prompt / schema version 저장 결정 및 구현
 - [ ] 합성 API의 model / prompt version 기록 여부 결정
