@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-07-24 - 완료 경험 사진·PDF 첨부
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-24 |
+| 작업자 | Codex |
+| 작업 요약 | 완료 경험에 사진과 PDF 자료를 첨부하고 나의 활동 상세에서 다시 확인하는 private Storage 흐름 구현 |
+| 수정한 파일 | `supabase/migrations/20260724000100_experience_attachments.sql`, `web/src/lib/experienceAttachments.ts`, `web/src/lib/types.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/components/experiences/ExperienceAttachmentPicker.tsx`, `web/src/components/experiences/ExperienceAttachmentsSection.tsx`, 경험 작성·수정·상세 컴포넌트, `web/src/app/globals.css`, 관련 테스트와 활성 문서 |
+| 변경 내용 | JPG·PNG·WebP 사진과 PDF 자료를 경험당 3개·파일당 5MB로 제한하고 private bucket, metadata RLS, signed URL 조회, 묶음 실패 정리, 경험 삭제 object 정리, 독립 상세 개별 삭제를 구현. 첨부 repository와 타입은 `Experience`에서 분리해 AI 입력에 포함하지 않음 |
+| 검증한 내용 | `node --test` 49개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. UI preview에서 실제 WebP 선택 후 1440px·390px 배치와 모바일 가로 overflow 0을 확인했으며, preview 기본 렌더링에서 콘솔 오류가 없음을 확인 |
+| 남은 작업 | Supabase project에 migration 적용 후 실제 로그인 세션에서 업로드·새로고침 조회·signed URL 열기·개별 삭제·경험 삭제 Storage 정리 smoke test |
+| 권장 커밋 메시지 | `feat: add private experience attachments` (아직 commit하지 않음) |
+
 ### 2026-07-24 - 부족 정보 Focus Stage 시도 취소
 
 | 항목 | 내용 |

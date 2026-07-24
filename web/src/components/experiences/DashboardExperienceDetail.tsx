@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
+import { ExperienceAttachmentsSection } from "@/components/experiences/ExperienceAttachmentsSection";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
@@ -248,6 +249,12 @@ export function DashboardExperienceDetail({
             <p className="is-muted">등록된 링크가 없습니다.</p>
           )}
         </section>
+
+        <ExperienceAttachmentsSection
+          experienceId={experience.id}
+          canDelete={isFullscreen}
+          headingLevel={isFullscreen ? "h2" : "h3"}
+        />
 
         {!isAnalysisOpen ? (
           <section>

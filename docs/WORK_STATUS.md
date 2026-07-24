@@ -58,6 +58,10 @@
 - [x] 최신 main 기준 미반영 UI 재적용: 랜딩·인증 입력, 중앙 빠른 기록 패널, AI 실행 CTA, JD 목적, Checkbox, 추천 기록 복사, RippleButton
 - [x] 팀 테스트용 Supabase Auth 이메일/비밀번호 계정 9개 생성
 - [x] 진행 활동과 마무리 필요 활동 수정 경로, 미래 예정 종료일 활동의 즉시 종료 / AI 초안 생성 수정
+- [x] 완료 경험 사진·PDF 첨부 UI, private Storage/RLS, AI 입력 분리 구현
+- [ ] Supabase migration 적용과 실제 로그인 업로드·조회·삭제 smoke test (`ISSUE-095`)
+
+2026-07-24 완료 경험 첨부 기능은 새 경험·수정 폼에 `사진 첨부`, `자료 첨부`를 추가하고 선택 사진 썸네일, 파일명·크기, 삭제를 현재 폼 위계 안에 배치했습니다. 사진은 JPG·PNG·WebP, 자료는 PDF만 허용하며 경험당 3개, 파일당 5MB와 빈 파일 차단을 UI·Storage bucket·DB constraint에서 적용합니다. 원본 object는 사용자 ID 경로의 private `experience-attachments` bucket, metadata는 RLS가 적용된 `experience_attachments` table에 저장합니다. 인라인·독립 상세에서 1시간 signed URL로 열고 독립 상세에서 개별 삭제할 수 있습니다. 첨부 타입과 repository를 `Experience`와 분리해 AI 분석·추천 입력에는 포함하지 않으며, 첨부만 추가한 수정은 경험 원문과 분석 상태를 갱신하지 않습니다. 전체 테스트 49개, lint, typecheck, production build와 1440px·390px UI preview를 통과했으며 실제 Supabase project migration과 로그인 세션 Storage smoke test는 남았습니다.
 
 2026-07-24 AI 분석의 부족 정보 답변을 항상 펼쳐진 카드 목록에서 질문별 흰색 `MorphSurface`로 전환했습니다. 닫힌 상태는 원형 상태 아이콘·작은 분류·한 줄 질문·답변 여부·Chevron만 남긴 command bar로 정리하고, 한 번에 하나만 펼치며 열림 시 같은 표면 안에서 전체 질문·필요 이유·답변 입력·메타·차콜 저장 액션을 표시합니다. 선택 시안에 맞춰 베이지 채움과 입력 줄무늬를 제거했습니다. 후속 시각 점검에서 표면 상향 이동량이 질문 간격과 같아 이전 질문과 맞닿고 root layout spring이 질문 전환 중 scale 변형을 만드는 원인을 확인해, 표면 상단을 고정한 anchored reveal로 교체했습니다. 질문 사이는 16px을 유지하고 reveal 높이가 0에서 자연 높이로 열리며 본문은 아래 12px에서 원위치로 올라옵니다. 새 열림에는 짧은 지연을 두고 모바일 추가 translate를 제거했습니다. 기본 `답변 없음`과 화면의 Command/Ctrl+Enter 안내는 제거해 빈 답변 상태에 글자 수와 저장 버튼만 남겼으며, 저장 중·실패·작성 중·완료·마지막 저장처럼 실제 상태 변화는 계속 표시합니다. textarea 자동 초점에는 `preventScroll`을 사용하고 바깥 클릭과 Escape 닫기·trigger 초점 복귀, 화면 안내 없는 Command/Ctrl+Enter 저장, 성공 뒤에만 닫기, 오류 시 입력 유지 계약을 보존했습니다. 기존 `evidenceGaps`, `experience_followups`, repository와 API 계약은 변경하지 않았고 새 dependency도 추가하지 않았습니다. 관련 구조 테스트 12개, lint, typecheck, production build를 통과했고 실제 로그인 독립 분석 화면에서 인접 질문 16px 간격·표면 transform 없음·열린 질문 1개와 전환 중 겹침 제거를 확인했습니다. 새 모션의 390px 실제 캡처와 reduced motion 강제 에뮬레이션은 후속 시각 확인 대상입니다.
 

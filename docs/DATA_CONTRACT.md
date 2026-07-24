@@ -3,7 +3,7 @@
 ## 상태
 
 - 적용 상태: `main`에 반영된 PR #30 + AI 분석 v2.1 간소화 + 추천 v2 확장 + 답변 초안 v1 확장 + 분석 부족 정보 답변 저장 호환성
-- 범위: 사용자별 Supabase Postgres schema, RLS, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, localStorage 자동 이전·자동 삭제 금지 정책, AI 경험 분석 v2.1 저장 호환성, 추천 v2 저장 호환성, 답변 초안 v1 저장 호환성, 분석 부족 정보 답변 저장 호환성
+- 범위: 사용자별 Supabase Postgres schema, RLS, private Storage, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, localStorage 자동 이전·자동 삭제 금지 정책, 완료 경험 첨부 저장, AI 경험 분석 v2.1 저장 호환성, 추천 v2 저장 호환성, 답변 초안 v1 저장 호환성, 분석 부족 정보 답변 저장 호환성
 - 기준: v1.1 UI/UX와 기존 도메인 타입을 유지하고, DB 전환은 작은 PR로 단계적으로 진행
 - 제외: OCR / 이미지 입력
 
@@ -32,6 +32,7 @@ Migrations:
 - `supabase/migrations/20260714000200_ai_recommendation_v2.sql`
 - `supabase/migrations/20260714000300_ai_answer_drafts.sql`
 - `supabase/migrations/20260714000400_experience_followups.sql`
+- `supabase/migrations/20260724000100_experience_attachments.sql`
 
 | 테이블 | 기존 타입 | 소유권 | PK / 멱등성 | 주요 관계 |
 | --- | --- | --- | --- | --- |
@@ -43,6 +44,7 @@ Migrations:
 | `recommendations` | `RecommendationResult` | `user_id` | `(user_id, id)` | 1순위 추천 경험 삭제 시 추천 기록 cascade. v2 추천은 `schema_version`, `prompt_version`, `model`, `extracted_requirements`, `matches`를 함께 저장 |
 | `answer_drafts` | `AnswerDraftResult` | `user_id` | `(user_id, recommendation_id, experience_id)` | 추천 기록과 선택 경험별 최신 초안 묶음 1개를 upsert. 추천 또는 경험 삭제 시 cascade. 생성된 초안 type들을 `drafts` JSONB 배열로 저장 |
 | `experience_followups` | `ExperienceFollowup` | `user_id` | `(user_id, id)` | 경험별 보완 질문 / 답변을 별도 저장. 경험 삭제 시 cascade. 원본 `Experience.description` / `achievements`를 자동 수정하지 않음 |
+| `experience_attachments` | `ExperienceAttachment` | `user_id` | `(user_id, id)`, unique `(user_id, storage_path)` | `(user_id, experience_id)`가 `experiences`를 참조하며 경험 삭제 시 metadata cascade. 경험당 최대 3개 |
 | `local_data_migration_batches` | migration ledger | `user_id` | unique `(user_id, client_migration_id)` | 사용자 확인 기반 이전 작업 단위 |
 | `local_data_migration_items` | migration ledger | `user_id` | unique `(user_id, entity_type, local_id)` | 재시도 시 동일 로컬 항목 중복 이전 방지 |
 
@@ -56,6 +58,16 @@ Migrations:
 - `insert`와 `update`에는 `with check (auth.uid() = user_id)`를 적용해 클라이언트가 다른 `user_id`를 넣는 요청을 차단합니다.
 - `service_role` key는 현재 앱 코드와 브라우저 환경에서 사용하지 않습니다.
 - 서버 repository가 생겨도 클라이언트 입력의 `user_id`를 신뢰하지 않고 Supabase session의 사용자로 소유권을 확인합니다.
+- `experience-attachments` bucket은 public URL을 제공하지 않습니다. Storage object 경로 첫 segment가 현재 `auth.uid()`와 같은 경우에만 select / insert / delete를 허용하고 1시간 signed URL로 조회합니다.
+
+## 완료 경험 첨부 계약
+
+- 사진은 `image/jpeg`, `image/png`, `image/webp`, 자료는 `application/pdf`만 허용합니다.
+- 파일당 최대 크기는 5MB, 경험당 첨부 수는 합계 3개이며 UI, bucket, metadata constraint와 insert trigger에서 중복 제한합니다.
+- Storage object는 `{userId}/{experienceId}/{attachmentId}.{extension}` 경로에 저장하고 원래 파일명은 metadata에만 보존합니다.
+- 첨부 업로드 묶음이 중간에 실패하면 이번 요청에서 만든 metadata와 object를 정리합니다.
+- `ExperienceAttachment`는 `Experience`와 별도 repository 영역에 있으며 분석·추천·답변 초안 API 입력에 병합하지 않습니다.
+- localStorage fallback에는 파일 본문을 저장하지 않습니다.
 
 ## Repository 전환 원칙
 
