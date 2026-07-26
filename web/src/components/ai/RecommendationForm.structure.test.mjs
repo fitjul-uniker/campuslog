@@ -24,9 +24,8 @@ test("추천 폼은 텍스트 또는 이미지 중 하나만 있어도 바로 �
   assert.doesNotMatch(formSource, /OCR|추출된 텍스트.*수정/);
 });
 
-test("추천 이미지 선택기는 최대 3장과 선명한 캡쳐 안내를 제공한다", () => {
+test("추천 이미지 선택기는 최대 개수와 삭제 접근성 계약을 제공한다", () => {
   assert.match(pickerSource, /RECOMMENDATION_IMAGE_MAX_COUNT/);
-  assert.match(pickerSource, /선명한 캡쳐일수록 정확해요/);
   assert.match(pickerSource, /aria-label=.*이미지.*삭제/);
   assert.match(pickerSource, /accept=\{RECOMMENDATION_IMAGE_ACCEPT\}/);
 });
@@ -36,20 +35,34 @@ test("추천 폼은 이미지 붙여넣기를 첨부로 처리하고 일반 텍�
   assert.match(formSource, /getRecommendationClipboardImages/);
   assert.match(formSource, /if \(clipboardImages\.length === 0\) \{\s*return;/);
   assert.match(formSource, /event\.preventDefault\(\)/);
-  assert.match(pickerSource, /복사해 붙여넣/);
 });
 
-test("추천 이미지 목록은 고정된 미리보기와 모바일 한 줄 정보를 유지한다", () => {
+test("추천 이미지 입력은 빈 업로드 안내에서 선택 Gallery로 전환한다", () => {
+  assert.match(
+    pickerSource,
+    /<legend className="sr-only">이미지 첨부<\/legend>/,
+  );
+  assert.match(pickerSource, /files\.length === 0/);
+  assert.match(pickerSource, /질문 또는 JD 이미지를 추가하세요/);
+  assert.match(
+    pickerSource,
+    /JPG, PNG, WebP · 최대 3장 · 장당 5MB 이하/,
+  );
+  assert.match(pickerSource, /className="recommendation-image-add-tile"/);
+  assert.match(pickerSource, /전체 삭제/);
+  assert.match(pickerSource, /이미지 크게 보기/);
+  assert.match(pickerSource, /<dialog/);
+  assert.match(
+    pickerSource,
+    /onCancel=\{\(event\) => \{[\s\S]*event\.preventDefault\(\);[\s\S]*onClose\(\);/,
+  );
+  assert.doesNotMatch(pickerSource, /recommendation-image-help/);
   assert.match(
     styles,
-    /\.recommendation-image-item\s*\{[\s\S]*grid-template-columns:\s*64px minmax\(0, 1fr\) 44px/,
+    /\.recommendation-image-list\s*\{[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/,
   );
   assert.match(
     styles,
-    /\.recommendation-image-preview\s*\{[\s\S]*width:\s*64px;[\s\S]*height:\s*64px/,
-  );
-  assert.match(
-    styles,
-    /@media \(max-width: 640px\)[\s\S]*\.recommendation-image-toolbar/,
+    /@media \(max-width: 640px\)[\s\S]*\.recommendation-image-list\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/,
   );
 });

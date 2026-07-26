@@ -39,6 +39,35 @@ test("textarea는 포커스와 키보드 제출 계약을 유지한다", () => {
   assert.match(source, /role="alert"/);
 });
 
+test("보완 이유는 빈 답변 입력창 아래 warning alert로 표시한다", () => {
+  assert.match(
+    source,
+    /import \{ Alert, AlertDescription \} from "@\/components\/reui\/alert";/,
+  );
+  assert.match(source, /AlertTriangleIcon/);
+  assert.match(source, /<Alert variant="warning" role="note">/);
+  assert.doesNotMatch(source, /<AlertTitle>/);
+  assert.doesNotMatch(source, /보완이 필요한 이유/);
+  assert.match(
+    source,
+    /<AlertDescription>\{item\.reason\}<\/AlertDescription>/,
+  );
+  assert.doesNotMatch(
+    source,
+    /placeholder="실제로 기억하거나 기록에서 확인할 수 있는 내용만 적어주세요\."/,
+  );
+
+  const textareaIndex = source.indexOf("<textarea");
+  const warningIndex = source.indexOf('<Alert variant="warning" role="note">');
+  const actionsIndex = source.indexOf(
+    '<div className="analysis-gap-answer-actions">',
+  );
+
+  assert.ok(textareaIndex >= 0);
+  assert.ok(warningIndex > textareaIndex);
+  assert.ok(actionsIndex > warningIndex);
+});
+
 test("부족 정보 질문은 흰색 command surface와 간결한 편집 액션을 사용한다", () => {
   assert.match(source, /triggerMeta=\{getCategoryLabel\(item\.category\)\}/);
   assert.match(source, /analysis-gap-answer-meta/);
