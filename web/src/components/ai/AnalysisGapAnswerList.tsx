@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle2, HelpCircle } from "lucide-react";
+import { AlertTriangleIcon, CheckCircle2, HelpCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { Alert, AlertDescription } from "@/components/reui/alert";
 import { MorphSurface } from "@/components/ui/MorphSurface";
 import { formatDateTime } from "@/lib/date";
 import {
@@ -284,7 +285,6 @@ export function AnalysisGapAnswerList({
             >
               <div className="analysis-gap-morph-heading">
                 <p className="analysis-gap-question">{item.question}</p>
-                <p className="analysis-gap-reason">{item.reason}</p>
               </div>
 
               <label className="sr-only" htmlFor={`gap-answer-${item.id}`}>
@@ -296,7 +296,6 @@ export function AnalysisGapAnswerList({
                 value={draftAnswer}
                 rows={4}
                 maxLength={1600}
-                placeholder="실제로 기억하거나 기록에서 확인할 수 있는 내용만 적어주세요."
                 onKeyDown={(event) => {
                   if (
                     event.key === "Enter" &&
@@ -322,6 +321,11 @@ export function AnalysisGapAnswerList({
                   }));
                 }}
               />
+
+              <Alert variant="warning" role="note">
+                <AlertTriangleIcon aria-hidden="true" />
+                <AlertDescription>{item.reason}</AlertDescription>
+              </Alert>
 
               <div className="analysis-gap-answer-actions">
                 <div className="analysis-gap-answer-meta">

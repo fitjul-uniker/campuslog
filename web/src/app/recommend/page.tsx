@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpenText, History } from "lucide-react";
+import { History } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -35,14 +35,16 @@ import type {
   RecommendationResult as Recommendation,
 } from "@/lib/types";
 
+import {
+  RECOMMENDATION_PAGE_DESCRIPTION,
+  getRecommendationEmptyStatePresentation,
+} from "./recommendationPagePresentation";
+
 type RecommendationFormInput = {
   purpose: RecommendationPurpose;
   prompt: string;
   images: RecommendationImageInput[];
 };
-
-const RECOMMENDATION_PAGE_DESCRIPTION =
-  "적합한 경험 Top 3를 근거와 함께 비교합니다.";
 
 function RecommendationPageBreadcrumb() {
   return (
@@ -311,34 +313,19 @@ export default function RecommendPage() {
   }
 
   if (experiences.length === 0) {
+    const emptyStatePresentation =
+      getRecommendationEmptyStatePresentation(trackedActivityCount);
+
     return (
       <div className="page-stack page-stack-narrow recommendation-page primary-page">
         <RecommendationPageBreadcrumb />
         <RecommendationPageHeader />
 
         <EmptyState
-          title={
-            trackedActivityCount > 0
-              ? "등록한 활동을 완료 경험으로 정리하면 AI 기반 활동 추천을 받을 수 있어요"
-              : "먼저 활동을 시작해야 AI 기반 활동 추천을 받을 수 있어요"
-          }
-          description={
-            trackedActivityCount > 0
-              ? "오늘의 기록에서 활동 상태와 쌓인 내용을 확인한 뒤 완료 경험으로 정리해 주세요."
-              : "활동을 추가해 한 일을 쌓거나, 과거 활동을 직접 기록해 주세요."
-          }
-          icon={<BookOpenText />}
-          primaryAction={{
-            href: trackedActivityCount > 0 ? "/dashboard" : "/activities/new",
-            label:
-              trackedActivityCount > 0
-                ? "등록한 활동 확인하기"
-                : "활동 추가",
-          }}
-          secondaryAction={{
-            href: "/experiences/new",
-            label: "과거 활동 기록하기",
-          }}
+          title={emptyStatePresentation.title}
+          description={emptyStatePresentation.description}
+          primaryAction={emptyStatePresentation.primaryAction}
+          secondaryAction={emptyStatePresentation.secondaryAction}
         />
       </div>
     );

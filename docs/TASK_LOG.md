@@ -30,6 +30,84 @@
 
 ## 작업 로그
 
+### 2026-07-26 - AI 분석 부족 정보 Warning Alert
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-26 |
+| 작업자 | Codex |
+| 작업 요약 | 부족 정보의 분석 사유를 답변 입력창 아래 Warning Alert로 재배치하고 textarea 안내 문구 제거 |
+| 수정한 파일 | `web/src/components/reui/alert.tsx`, `web/src/components/ai/AnalysisGapAnswerList.tsx`, `web/src/components/ai/AnalysisGapAnswerList.structure.test.mjs`, `web/src/app/globals.css`, 관련 활성 문서·설계·구현 계획 |
+| 변경 내용 | ReUI 합성 방식을 참고한 `Alert`, `AlertTitle`, `AlertDescription`과 warning variant를 추가. 열린 MorphSurface를 질문 → 빈 textarea → 제목 없는 사유 Alert → 글자 수·저장 액션 순서로 변경하고 기존 reason 일반 문단과 textarea placeholder 제거. 실제 화면은 `AlertTriangleIcon`, `AlertDescription`, `role="note"`만 사용 |
+| 검증한 내용 | 기존 5개 구조 테스트 기준선 통과 후 새 배치 테스트 RED→6개 GREEN. 전체 테스트 71개, lint, typecheck, production build, diff check 통과. 로그인 test1의 네스트넷 역할 범위 토글에서 textarea placeholder·Alert 제목 없음, 정확한 분석 사유, textarea→Alert→action 순서, 1084×789·390×844 가로 overflow 0, runtime overlay·console error 0 확인 |
+| 남은 작업 | 없음. 실제 답변 저장은 사용자 데이터를 변경하므로 이번 표시 변경 QA에서는 실행하지 않음 |
+| 권장 커밋 메시지 | `refactor: clarify analysis gap answer guidance` (아직 commit하지 않음) |
+
+### 2026-07-26 - AI 추천 페이지 시각 밀도 개선
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-26 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천 빈 상태 문구·큰 표면과 이미지 업로드 중복 제목을 사용자 행동 중심의 절제된 `/recommend` 한정 표현으로 정리 |
+| 수정한 파일 | `web/src/app/recommend/page.tsx`, `web/src/app/recommend/recommendationPagePresentation.ts`, 관련 동작 테스트, `web/src/app/globals.css`, `design-qa.md`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, 관련 설계·구현 계획 |
+| 변경 내용 | 페이지 설명과 활동 없음·진행 활동 있음 빈 상태를 지원 문항/JD 활용 상황과 다음 행동 중심으로 교체하고 책 아이콘 제거. 빈 상태·입력·결과·로딩 큰 표면을 `/recommend` 안에서만 16px 무그림자로 조정. 처음 시도한 아이콘 없는 우측 `추천 기록`은 사용자 재확인에 따라 기존 History 아이콘·ghost 링크·반응형 배치로 원복. 이미지 Gallery 위의 중복 `이미지 첨부` legend는 화면에서만 숨기고 접근성 이름은 유지. 공용 EmptyState·내부 Gallery 동작·추천 로직·API·schema·repository·데이터는 유지 |
+| 검증한 내용 | presentation 모듈 부재로 실패하는 테스트 RED를 확인한 뒤 3개 동작 테스트 GREEN. 이미지 legend 시각 숨김 구조 테스트도 기존 visible legend에서 실패하는 RED를 확인한 뒤 GREEN 전환. 전체 테스트 70개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 서버 재시작 뒤 1280×720 로그인 추천 화면에서 History 아이콘·ghost 링크, 44px 조작 영역, 시각적으로 숨긴 1×1px clipped legend, 입력 표면 16px·무그림자, 가로 overflow 0, 런타임 오류 overlay 없음 확인 |
+| 남은 작업 | 현재 테스트 계정에 완료 경험이 있어 새 빈 상태 자체는 브라우저 캡처하지 못했으며 두 상태 문구·경로는 동작 테스트로 확인. 저장 경험이 없는 계정에서 빈 상태의 왼쪽 정렬을 추가 smoke test할 수 있음 |
+| 권장 커밋 메시지 | `refactor: simplify recommendation page presentation` (아직 commit하지 않음) |
+
+### 2026-07-26 - AI 추천 적응형 Gallery 이미지 첨부
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-26 |
+| 작업자 | Codex |
+| 작업 요약 | ReUI `Gallery file upload`를 참고해 AI 추천 이미지 첨부를 사용자 선택의 적응형 empty→Gallery 구조로 전환 |
+| 수정한 파일 | `web/src/components/ai/RecommendationImagePicker.tsx`, `web/src/components/ai/RecommendationForm.structure.test.mjs`, `web/src/app/globals.css`, `design-qa.md`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, 관련 설계·구현 계획 |
+| 변경 내용 | empty 상태는 중앙 정렬 아이콘·제목·drag 안내·`JPG, PNG, WebP · 최대 3장 · 장당 5MB 이하`·차콜 `이미지 선택`을 한 번만 표시. 첫 파일 뒤에는 제목·현재 개수·총 용량·전체 삭제, 3열 정사각형 Gallery와 추가 타일로 교체하고 타일 안에 파일명·용량·44px 확대·삭제를 배치. native dialog에 닫기·배경·명시적 cancel 처리를 제공하고 640px 이하 2열·hover 없는 장치·reduced motion을 적용. 기본 샘플 이미지와 API·schema·repository·Storage 변경은 없음 |
+| 검증한 내용 | Adaptive Gallery 구조 테스트 RED→GREEN, 브라우저 QA에서 발견한 dialog `Esc` cancel 재현 테스트 RED→GREEN. 전체 테스트 67개, `npm run lint`, `npx tsc --noEmit` 통과. 로그인된 1440×900 `/recommend`에서 empty·2장 Gallery·`2/3 · 총 170KB`·추가 타일·확대 dialog·닫기 초점·깨진 이미지 0·가로 overflow 없음·console warning/error 0건과 ReUI/구현 나란히 비교를 확인. 390×844에서는 새로고침 뒤 저장 경험이 비어 selected 상태 대신 페이지 가로 overflow 없음만 재확인 |
+| 남은 작업 | 저장 경험이 있는 로그인 계정에서 모바일 selected 2열, 3장 추가 타일 제거, 개별 삭제·전체 삭제, 실제 `Esc` 닫기와 기존 `ISSUE-096`의 OpenAI 추천·저장·재조회 smoke test |
+| 권장 커밋 메시지 | `style: refine recommendation image gallery` (아직 commit하지 않음) |
+
+### 2026-07-26 - AI 추천 이미지 첨부 도움말 간소화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-26 |
+| 작업자 | Codex |
+| 작업 요약 | 이미지 첨부 도움말을 지원 형식·개수·용량 제한 중심으로 간소화 |
+| 수정한 파일 | `web/src/components/ai/RecommendationImagePicker.tsx`, 관련 구조 테스트, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, 관련 설계 문서 |
+| 변경 내용 | `선명한 캡쳐` 설명을 제거하고 도움말을 `JPG, PNG, WebP 이미지는 최대 3장, 장당 5MB 이하로 첨부할 수 있어요.`로 교체. 파일 선택·drag and drop·붙여넣기와 검증·API·저장 계약은 유지 |
+| 검증한 내용 | 관련 구조·이미지 입력 테스트 10개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 로그인된 `/recommend` 기본 화면을 새로고침해 새 도움말 노출과 기존 `선명한 캡쳐` 문구 제거를 확인 |
+| 남은 작업 | 없음 |
+| 권장 커밋 메시지 | `copy: simplify recommendation image limits` (아직 commit하지 않음) |
+
+### 2026-07-25 - AI 추천 이미지 첨부 ReUI File Upload
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-25 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천 이미지 첨부를 ReUI Basic drag and drop과 Gallery 구조로 정리 |
+| 수정한 파일 | `web/src/components/ai/RecommendationImagePicker.tsx`, `web/src/components/ai/recommendationImagePresentation.ts`, 관련 테스트, `web/src/app/globals.css`, `design-qa.md`, 디자인·화면·단계·기록 문서 |
+| 변경 내용 | 빈 상태를 점선 dropzone 안의 차콜 `이미지 추가`·드래그 안내·개수 구조로 바꾸고 drag enter/leave/drop 상태를 연결. 선택 뒤에는 제목·총 용량, 최대 660px 3열 정사각형 Gallery, 파일명·개별 용량, 44px 삭제 버튼을 표시하며 640px 이하 2열과 인라인 오류 Alert를 적용. 기존 이미지 검증·붙여넣기·API·저장·원본 비저장 계약은 변경하지 않음 |
+| 검증한 내용 | 표시 요약 helper를 테스트 먼저 추가해 RED→GREEN 확인. 전체 테스트 67개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. ReUI 기준과 구현을 나란히 비교하고 로그인 추천 화면에서 3장 선택·개수/총 용량·개별 삭제·빈 파일 오류·정상 재선택과 1440×900·390×844 반응형, 모바일 가로 overflow 없음, console warning/error 0건을 확인. `design-qa.md` 결과 Passed |
+| 남은 작업 | 실제 OpenAI 이미지 추천·저장·재조회 smoke test는 기존 `ISSUE-096` 범위로 유지 |
+| 권장 커밋 메시지 | `style: refine recommendation image upload` (아직 commit하지 않음) |
+
+### 2026-07-25 - 오늘의 기록 진행 활동 Item 목록
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-25 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록의 현재 진행 활동을 ReUI `Item` 참고 제목 중심 목록으로 정리 |
+| 수정한 파일 | `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/activeActivityItemPresentation.ts`, 관련 테스트, `web/src/app/globals.css`, 디자인·화면·단계·기록 문서 |
+| 변경 내용 | 활동 상세 링크를 제목+Chevron Item으로 만들고 상시 삭제 버튼을 44px `···` 메뉴 안으로 이동. 데스크톱 2열·860px 이하 1열, 위치 이동 없는 hover·focus-within, 활동명을 포함한 상세·메뉴·삭제 접근성 라벨을 적용. API·schema·repository와 기존 삭제 확인은 변경하지 않음 |
+| 검증한 내용 | 상세 경로·접근성 라벨 테스트 RED→GREEN. ReUI 기준 화면과 구현을 나란히 비교하고 로그인 데이터에 진행 활동이 없는 계정에서 비영속 미리보기 2건으로 1440×900 데스크톱 2열, 390×844 모바일 1열·가로 overflow 없음, 활동 메뉴와 삭제 `menuitem`, 브라우저 console warning/error 0건을 확인한 뒤 미리보기 데이터를 제거. 전체 `node --test` 66개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. `design-qa.md` 결과 Passed |
+| 남은 작업 | 실제 진행 활동 데이터가 있는 로그인 계정에서 상세 이동과 기존 삭제 확인 dialog까지 smoke test |
+| 권장 커밋 메시지 | `style: refine active activity items` (아직 commit하지 않음) |
+
 ### 2026-07-24 - AI 추천 캡쳐 이미지 입력
 
 | 항목 | 내용 |

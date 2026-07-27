@@ -3,9 +3,11 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  ChevronRight,
   Edit3,
   FileCheck2,
   Loader2,
+  MoreHorizontal,
   Plus,
   Save,
   Sparkles,
@@ -24,6 +26,7 @@ import {
 import { ActivityCreateScreen } from "@/components/activities/ActivityCreateScreen";
 import { ActivityCreateForm } from "@/components/activities/ActivityCreateForm";
 import { ActivityCalendar } from "@/components/activities/ActivityCalendar";
+import { getActiveActivityItemPresentation } from "@/components/activities/activeActivityItemPresentation";
 import {
   formatDateKey,
   getLocalDateKey,
@@ -45,6 +48,12 @@ import {
 import { Field } from "@/components/ui/field";
 import { FloatingPanel } from "@/components/ui/floating-panel";
 import { ExpandableScreen } from "@/components/ui/expandable-screen";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -702,24 +711,49 @@ export function TodayDashboard() {
 
         {activeActivities.length > 0 ? (
           <ul className="activity-summary-list activity-active-list">
-            {activeActivities.map((activity) => (
-              <li key={activity.id}>
-                <Link href={`/activities/${activity.id}`}>
-                  <strong className="activity-summary-title">
-                    {activity.title}
-                  </strong>
-                </Link>
-                <button
-                  type="button"
-                  className="activity-summary-delete-button"
-                  onClick={() => handleDeleteActivity(activity)}
-                  aria-label={`${activity.title} 활동 삭제`}
-                >
-                  <Trash2 aria-hidden="true" />
-                  삭제
-                </button>
-              </li>
-            ))}
+            {activeActivities.map((activity) => {
+              const item =
+                getActiveActivityItemPresentation(activity);
+
+              return (
+                <li key={activity.id} className="activity-active-item">
+                  <Link
+                    href={item.href}
+                    className="activity-active-item-link"
+                    aria-label={item.openLabel}
+                  >
+                    <strong className="activity-summary-title">
+                      {item.title}
+                    </strong>
+                    <ChevronRight aria-hidden="true" />
+                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="activity-active-item-menu-trigger"
+                        aria-label={item.menuLabel}
+                      >
+                        <MoreHorizontal aria-hidden="true" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="activity-active-item-menu"
+                    >
+                      <DropdownMenuItem
+                        className="activity-active-item-delete"
+                        aria-label={item.deleteLabel}
+                        onSelect={() => handleDeleteActivity(activity)}
+                      >
+                        <Trash2 aria-hidden="true" />
+                        <span>삭제</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <div className="activity-overview-empty">

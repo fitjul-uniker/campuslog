@@ -119,6 +119,7 @@
 - [x] React Bits Stepper 기반 이름·닉네임 회원가입 UX와 모바일·reduced motion 적용 (`ISSUE-037`)
 - [ ] 인증 확인 중 / 세션 만료 / 접근 불가 상태 설계
 - [x] 오늘의 기록 핵심 작성 흐름을 CTA → 플로팅 패널로 고도화하고 입력 보존·모바일·키보드 동작 검증 (`ISSUE-038`)
+- [x] 오늘의 기록의 현재 진행 활동을 제목 중심 Item 목록과 trailing 삭제 메뉴로 재구성 (`ISSUE-097`)
 - [x] 빠른 기록 작성 패널을 visual viewport·safe area 기준 화면 정중앙에 배치 (`ISSUE-058`)
 - [x] 경험 분석·추천 AI 실행 CTA에 colorful Border Beam 적용 (`ISSUE-059`)
 - [x] 추천 활용 목적에 `JD`를 추가하고 실행 CTA를 `AI 분석`으로 정리 (`ISSUE-060`)
@@ -135,6 +136,10 @@
 - [ ] CampusLog AI 입력·결과·추천 기록 위계 개선
   - [x] 추천 화면 반복 탭 제거와 `추천 기록` / `새 추천 받기` 교차 이동 액션 정리 (`ISSUE-040`)
   - [x] 확장 화면 추천 입력·결과 패널을 공통 페이지 콘텐츠 폭에 정렬 (`ISSUE-073`)
+  - [x] 이미지 첨부를 ReUI Gallery 참고 적응형 empty→Gallery 구조, 전체 삭제·확대 dialog·추가 타일로 정리하고 기존 CampusLog 토큰·입력 계약 유지 (`ISSUE-098`)
+  - [x] 이미지 제한을 최대 3장·장당 5MB 한 줄로 간소화하고 별도 도움말 반복 제거 (`ISSUE-099`)
+  - [x] 사용자 행동 중심 빈 상태·16px 무그림자 큰 표면을 `/recommend`에만 적용하고 `추천 기록`은 사용자 요청에 따라 기존 아이콘·배치 유지 (`ISSUE-100`)
+  - [x] 이미지 업로드 위 중복 `이미지 첨부` 제목을 화면에서 숨기고 접근성 legend 유지 (`ISSUE-101`)
 
 ### Medium
 
@@ -208,6 +213,7 @@
 - [ ] 나의 활동 제목 한 줄 고정·좁은 패널 검색 축약의 UI preview 폭별 검증 완료 후 실제 로그인 완료 경험의 목록·상세·분석 전환 확인 (`ISSUE-066`)
 - [ ] 나의 활동 AI 분석 스플릿뷰 구현 후 실제 로그인 분석 데이터로 열기·닫기·재분석·부족 정보 답변 회귀 확인 (`ISSUE-067`, `ISSUE-078`)
 - [x] AI 분석 부족 정보 답변을 질문별 단일 열림 흰색 `MorphSurface`로 전환하고 닫힌 command bar·겹침 없는 anchored reveal·기본 상태/단축키 안내 제거·데스크톱/390px 모바일의 초점·Escape·바깥 클릭·빈 답변 유지·가로 overflow를 검증 (`ISSUE-094`)
+- [x] 부족 정보 분석 사유를 placeholder 없는 답변 입력창 아래 제목 없는 ReUI 참고 Warning Alert로 표시 (`ISSUE-102`)
 - [ ] AI 분석 부족 정보 anchored reveal의 390px 실제 브라우저 모션과 reduced motion 강제 에뮬레이션 확인 (`ISSUE-094`)
 - [x] 활동 종료 → AI 사실 기반 초안 → 완료 경험 저장
 - [x] 나의 활동에서 완료 경험과 진행 활동 통합
