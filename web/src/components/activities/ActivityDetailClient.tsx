@@ -599,7 +599,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           <p>{activity.description}</p>
         </div>
 
-        <div className="activity-detail-primary-actions">
+        <div className="activity-detail-primary-actions liquid-control-group">
           {canEditActivity ? (
             <button
               type="button"
@@ -694,7 +694,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
         </div>
       </header>
 
-      <dl className="activity-detail-meta">
+      <dl className="activity-detail-meta liquid-content-plate">
         <div>
           <dt>활동 기간</dt>
           <dd>{getActivityDateRange(activity)}</dd>
@@ -710,7 +710,10 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       </dl>
 
       {isEditingActivity && !isCompleted ? (
-        <section className="activity-edit-section" aria-labelledby="activity-edit-title">
+        <section
+          className="activity-edit-section liquid-workspace"
+          aria-labelledby="activity-edit-title"
+        >
           <div className="activity-edit-heading">
             <h2 id="activity-edit-title">진행 활동 수정</h2>
             <p>
@@ -860,7 +863,10 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       ) : null}
 
       {draft && !activity.generatedExperienceId ? (
-        <section className="activity-synthesis-draft" aria-labelledby="synthesis-draft-title">
+        <section
+          className="activity-synthesis-draft liquid-workspace"
+          aria-labelledby="synthesis-draft-title"
+        >
           <header>
             <div className="activity-draft-heading">
               <span>
@@ -962,7 +968,10 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
         </section>
       ) : null}
 
-      <section className="activity-timeline" aria-labelledby="activity-timeline-title">
+      <section
+        className="activity-timeline liquid-section"
+        aria-labelledby="activity-timeline-title"
+      >
         <header>
           <div>
             <p className="activity-section-kicker">날짜별로 쌓인 근거</p>

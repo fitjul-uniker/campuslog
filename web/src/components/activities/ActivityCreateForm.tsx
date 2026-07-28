@@ -208,7 +208,7 @@ export function ActivityCreateForm({
 
   return (
     <form
-      className="activity-create-form"
+      className="activity-create-form liquid-form"
       data-variant={variant}
       onSubmit={handleSubmit}
       noValidate

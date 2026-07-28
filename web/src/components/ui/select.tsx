@@ -60,7 +60,7 @@ export function SelectContent({
         sideOffset={sideOffset}
       >
         <SelectPrimitive.Popup
-          className={cn("select-popup", className)}
+          className={cn("select-popup glass-popover-surface", className)}
           {...props}
         >
           <SelectPrimitive.List className="select-list">

@@ -504,7 +504,11 @@ export function ExperienceForm({
   }
 
   return (
-    <form className="experience-form" onSubmit={handleSubmit} noValidate>
+    <form
+      className="experience-form liquid-form"
+      onSubmit={handleSubmit}
+      noValidate
+    >
       <div className="form-field">
         <label htmlFor="experience-title">제목</label>
         <input

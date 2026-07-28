@@ -49,3 +49,11 @@ test("분석 스플릿뷰가 열리면 왼쪽 상세는 중복 로딩 오버레�
   assert.match(detailSource, /\{isAnalyzing && !isAnalysisOpen \? \(/);
   assert.match(detailSource, /\{analysisError && !isAnalysisOpen \? \(/);
 });
+
+test("나의 활동 목록과 상세는 서로 다른 Liquid Glass 계층을 사용한다", () => {
+  assert.match(
+    dashboardSource,
+    /dashboard-experience-list-pane liquid-workspace/,
+  );
+  assert.match(detailSource, /dashboard-experience-detail liquid-section/);
+});

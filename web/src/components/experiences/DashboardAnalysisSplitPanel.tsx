@@ -9,6 +9,7 @@ import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
 export const DASHBOARD_ANALYSIS_SPLIT_PANEL_ID =
@@ -36,6 +37,7 @@ export function DashboardAnalysisSplitPanel({
   onCancelAnalysis,
 }: DashboardAnalysisSplitPanelProps) {
   const shouldReduceMotion = useReducedMotion();
+  const handleTransientScroll = useTransientScrollbar<HTMLElement>();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleId = `${DASHBOARD_ANALYSIS_SPLIT_PANEL_ID}-title`;
   const sourceCharacterCount =
@@ -51,8 +53,10 @@ export function DashboardAnalysisSplitPanel({
   return (
     <motion.aside
       id={DASHBOARD_ANALYSIS_SPLIT_PANEL_ID}
-      className="dashboard-analysis-split-panel"
+      className="dashboard-analysis-split-panel liquid-section"
+      data-transient-scrollbar="true"
       aria-labelledby={titleId}
+      onScroll={handleTransientScroll}
       initial={
         shouldReduceMotion ? false : { opacity: 0, x: 28, scale: 0.985 }
       }

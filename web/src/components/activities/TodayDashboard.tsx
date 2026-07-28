@@ -658,7 +658,10 @@ export function TodayDashboard() {
         </div>
       ) : null}
 
-      <section className="activity-overview" aria-labelledby="activity-overview-title">
+      <section
+        className="activity-overview liquid-workspace"
+        aria-labelledby="activity-overview-title"
+      >
         <div className="activity-overview-heading">
           <div>
             <h2 id="activity-overview-title">현재 진행 중인 활동</h2>
@@ -670,7 +673,7 @@ export function TodayDashboard() {
             <RippleButton
               ref={overviewActivityCreateTriggerRef}
               type="button"
-              className="activity-primary-button"
+              className="activity-primary-button activity-create-expanding-button"
               onClick={(event) => openActivityCreateScreen(event.currentTarget)}
               aria-haspopup="dialog"
               aria-expanded={
@@ -678,8 +681,11 @@ export function TodayDashboard() {
                 activityCreateAnchor === overviewActivityCreateTriggerRef.current
               }
             >
-              <Plus aria-hidden="true" />
-              활동 추가
+              <Plus
+                aria-hidden="true"
+                className="activity-create-expanding-icon"
+              />
+              <span className="activity-create-expanding-label">활동 추가</span>
               <RippleButtonRipples />
             </RippleButton>
           </div>
@@ -917,7 +923,7 @@ export function TodayDashboard() {
         />
 
         <section
-          className="activity-day-records activity-calendar-event-panel"
+          className="activity-day-records activity-calendar-event-panel liquid-section"
           aria-labelledby="day-records-title"
         >
           <header className="activity-calendar-event-header">

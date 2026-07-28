@@ -41,7 +41,7 @@ export function NewActivityClient() {
       </header>
 
       <section
-        className="activity-form-surface"
+        className="activity-form-surface liquid-workspace"
         aria-labelledby="activity-form-title"
       >
         <div className="activity-form-intro">

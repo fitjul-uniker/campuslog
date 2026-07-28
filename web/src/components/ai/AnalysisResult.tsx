@@ -31,7 +31,11 @@ export function AnalysisResult({
 
   return (
     <section
-      className={`detail-panel analysis-result${isEmbedded ? " is-embedded" : ""}`}
+      className={`detail-panel analysis-result ${
+        isEmbedded
+          ? "is-embedded liquid-content-plate"
+          : "liquid-section"
+      }`}
       aria-label={isEmbedded ? "상세 AI 분석 결과" : undefined}
       aria-labelledby={isEmbedded ? undefined : "analysis-result-title"}
     >

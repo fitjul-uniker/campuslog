@@ -18,7 +18,7 @@ export function ActivityCreateScreen({
   return (
     <div className="activity-create-expanded-layout">
       <section
-        className="activity-create-expanded-card"
+        className="activity-create-expanded-card liquid-workspace"
         aria-labelledby="activity-create-expanded-heading"
       >
         <header>

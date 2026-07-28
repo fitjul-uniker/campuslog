@@ -30,6 +30,305 @@
 
 ## 작업 로그
 
+### 2026-07-29 - 서비스 전체 Liquid Glass 레거시 투톤 마감
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-29 |
+| 작업자 | Codex |
+| 작업 요약 | AI 분석 결과·한 일 남기기 등 주요 제품 화면을 순회해 남은 웜톤, 중첩 투톤 카드와 구형 아이콘 plate를 공통 Liquid Glass 계층으로 정리 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/ui/expandable-screen.module.css`, `web/src/app/LiquidGlassLegacyCleanup.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 폼·분석·추천 결과·추천 기록 상세·활동 완료 초안은 외곽 near-solid 콘텐츠 표면 하나만 유지하고 내부 메타·본문·근거·답변·관련 링크를 transparent+hairline으로 평탄화. 한 일 남기기 FloatingPanel과 활동 추가 ExpandableScreen은 body portal에서도 쿨 뉴트럴 토큰을 직접 사용하며 body/footer 재질을 공유. 진행 활동 링크의 이중 흰 배경과 활동 요약·이미지 업로드·분석 보완 상태의 장식용 아이콘 plate를 제거하고, 이미지 첨부는 바깥 점선 하나만 유지 |
+| 검증한 내용 | 로그인 브라우저에서 `/dashboard`, 두 `/activities/[id]`, `/experiences/[id]/edit`, `/recommend`, `/recommend/history`, 나의 활동 AI 분석 스플릿과 한 일 남기기·활동 추가 오버레이를 확인. 주요 과거 웜톤 computed background 0건, 전 확인 경로 가로 overflow 0. 전체 구조 테스트 123개, `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과 |
+| 남은 작업 | 실제 OS의 reduced transparency / increased contrast / forced colors 강제 시각 확인과 390px 실기기 회귀는 후속 QA 대상 |
+| 권장 커밋 메시지 | `fix: unify legacy liquid glass surfaces` (아직 commit하지 않음) |
+
+### 2026-07-29 - 즐겨찾기 행 전체 상태와 목록 끝 마감 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-29 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동과 추천 기록의 즐겨찾기 selected·hover를 제목·별 전체 표면으로 확장하고 목록 끝의 뿌연 fade 제거 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/pinned-list.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 두 목록의 `.pinned-list-item`에 selected 상태를 전달해 외곽 행이 selected·hover 배경과 border를 소유하고 내부 제목 버튼은 transparent를 유지하도록 공통화. 제목 또는 별을 가리킬 때 동일한 전체 행 재질과 제목 들여쓰기를 사용하며 본문 선택과 별 토글 동작은 분리 유지. 상하단 흰색 gradient fade span·상태·ResizeObserver와 CSS를 제거하고 실제 여백·transient scrollbar만 유지 |
+| 검증한 내용 | 즐겨찾기 공통 구조 테스트 6개와 전체 테스트 119개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 로그인 `/experiences`에서 선택된 외곽 행 275px 전체 배경, 내부 제목 transparent, 44px 별의 동일 행 포함, fade 요소 0개와 가로 overflow 0을 확인 |
+| 남은 작업 | 브라우저 자동화가 CSS `:hover` pseudo state를 강제로 재현하지 못해 사용자의 실제 포인터 hover 감각 확인만 남음 |
+| 권장 커밋 메시지 | `fix: extend favorite row hover surface` (아직 commit하지 않음) |
+
+### 2026-07-29 - CampusLog 전체 쿨 뉴트럴 Liquid Glass 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-29 |
+| 작업자 | Codex |
+| 작업 요약 | 첫 화면과 인증을 포함한 CampusLog 전체 서비스에서 과거 웜화이트·크림 hover·혼재된 표면 색을 공통 쿨 뉴트럴 Liquid Glass 체계로 통일 |
+| 수정한 파일 | `web/src/components/layout/AppShell.tsx`, `web/src/components/layout/AppShell.structure.test.mjs`, `web/src/app/globals.css`, `web/src/app/LiquidGlassFoundation.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | ProductShell의 semantic 색과 hover·active·selected·disabled·divider 토큰을 쿨 뉴트럴로 재정의하고 목록·상세·폼·추천·첨부·활동 상태의 과거 크림색을 공통 상태 토큰으로 보정. `/`, 로그인·회원가입·온보딩에도 Liquid Glass scope를 연결해 쿨 실버 canvas를 공유하고 공개 인증 패널은 frosted 외곽과 near-solid 입력을 사용. 기능 계층의 blur와 읽기 표면의 near-solid 구분, 즐겨찾기·성공·경고·오류 의미색은 유지 |
+| 검증한 내용 | 전체 테스트 117개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 로그인된 1280×720 브라우저에서 `/dashboard`, `/experiences` 목록·상세, `/recommend`, `/recommend/history`, `/`의 쿨 뉴트럴 캔버스·표면 연결과 가로 overflow 없음, 계산된 `--color-surface #f8f9fb`, `--color-surface-muted #eef1f5`, `--liquid-app-background #eef1f6`을 확인. 로그인 세션 때문에 비로그인 인증 폼의 실제 브라우저 화면은 직접 확인하지 못하고 구조·CSS fallback으로 확인 |
+| 남은 작업 | 실제 OS forced-colors·reduced-transparency와 비로그인 인증 화면의 별도 수동 smoke test는 후속 접근성 확인 범위 |
+| 권장 커밋 메시지 | `style: unify cool neutral liquid glass surfaces` (아직 commit하지 않음) |
+
+### 2026-07-29 - 진행 활동 즐겨찾기와 별 시각 단순화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-29 |
+| 작업자 | Codex |
+| 작업 요약 | 진행 중인 활동도 즐겨찾기할 수 있게 확장하고 별의 원형·아이콘 외곽선을 제거 |
+| 수정한 파일 | `web/src/components/experiences/AnimatedExperienceList.tsx`, `web/src/app/globals.css`, `web/src/components/pinned-list.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 진행 활동은 `tracked:{id}` 키로 기존 완료 경험 즐겨찾기와 충돌 없이 저장하고 같은 상단 구획으로 이동. 별 버튼의 원형 border·배경·shadow와 별 stroke를 제거하고 비선택 회색·선택 노란색의 단색 채움만 유지. 44px 조작 영역·`aria-pressed`·focus-visible·저장 중·실패 rollback은 보존 |
+| 검증한 내용 | 진행 활동의 즐겨찾기 키와 모든 활동 행의 별 렌더링, 44px 무테 버튼·`stroke:none` 채움형 아이콘을 구조 테스트에 추가. 전체 테스트 117개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 로그인 `/experiences`에서 진행 활동 `LG AI`를 즐겨찾기·해제해 상단 이동과 원상 복귀를 확인하고 테스트 전 저장 상태로 복원했으며 `/recommend/history`에서도 동일한 무테 채움형 별을 시각 확인 |
+| 남은 작업 | 즐겨찾기는 사용자별 브라우저 환경설정으로 다른 기기와 자동 동기화되지 않음 |
+| 권장 커밋 메시지 | `feat: extend favorites to active activities` (아직 commit하지 않음) |
+
+### 2026-07-29 - 즐겨찾기 노란 별 전환
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-29 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동과 추천 기록의 즐겨찾기 Pin을 노란 별 토글로 변경 |
+| 수정한 파일 | `web/src/components/experiences/AnimatedExperienceList.tsx`, `web/src/components/recommendations/AnimatedRecommendationList.tsx`, `web/src/app/globals.css`, `web/src/components/pinned-list.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 상단 즐겨찾기 구획·실제 위치 이동·사용자별 저장 로직은 유지하고 두 목록의 Pin 아이콘을 Star로 교체. 비선택은 중립 외곽선, 선택은 옅은 노란 Glass와 채워진 `#FFD84D` 별로 표시하며 기존 44px 조작 영역·`aria-pressed`·focus-visible·저장 중 상태를 보존 |
+| 검증한 내용 | 구조 테스트에 두 목록의 Star import, Pin import 부재, 선택 별 채움 색 검증을 추가. 전체 테스트 116개, `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. 로그인 데스크톱 `/experiences`와 `/recommend/history`에서 선택 별의 노란 채움·비선택 외곽선·44px 조작 영역·구획 배치를 시각 확인 |
+| 남은 작업 | 즐겨찾기는 현재 사용자별 브라우저 환경설정이라 다른 기기와 동기화되지 않음 |
+| 권장 커밋 메시지 | `style: use yellow stars for favorites` (아직 commit하지 않음) |
+
+### 2026-07-28 - 나의 활동·추천 기록 즐겨찾기
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | unlumen UI `Pinned List`를 참고해 나의 활동 완료 경험과 추천 기록을 상단 즐겨찾기 구획으로 이동하는 공통 인터랙션 구현 |
+| 수정한 파일 | `web/src/lib/pinnedItems.ts`, `web/src/hooks/use-pinned-items.ts`, `web/src/components/experiences/AnimatedExperienceList.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/recommendations/AnimatedRecommendationList.tsx`, `web/src/app/recommend/history/page.tsx`, `web/src/app/globals.css`, `web/src/components/pinned-list.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 완료 경험과 추천 기록의 본문 선택 버튼 옆에 44px 독립 Pin을 추가. 첫 고정 시 `즐겨찾기`와 `모든 활동` / `모든 기록` heading을 만들고 Motion LayoutGroup으로 항목을 복제 없이 이동. near-white 고정 행·차콜 활성 Pin·`aria-pressed`·저장 중·실패 rollback·reduced motion을 제공. 로그인 사용자별 localStorage에는 entity id와 고정 시각만 저장 |
+| 검증한 내용 | 구조 테스트 RED→GREEN. 로그인 `test1` 데스크톱과 390×844에서 두 화면의 고정·해제·새로고침 유지, 구획 출현, Pin이 상세를 열지 않는 분리 구조, 모바일 가독성·가로 overflow 없음, 브라우저 warning/error 0건 확인. 전체 테스트 116개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 즐겨찾기는 현재 사용자별 브라우저 환경설정이라 다른 기기와 동기화되지 않음. 계정 간 동기화가 필요해지면 Track A와 별도 DB 계약·migration을 먼저 결정 |
+| 권장 커밋 메시지 | `feat: add pinned favorites to activity and recommendation lists` (아직 commit하지 않음) |
+
+### 2026-07-28 - 오늘의 기록 활동 추가 확장 CTA
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | ReUI `Expanding button from icon to label`을 기존 Liquid Glass와 활동 추가 Expandable Screen 계약에 맞게 적용 |
+| 수정한 파일 | `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/TodayDashboard.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | fine pointer에서는 44px 원형 `+`가 hover·`focus-visible`·열림 상태에서 우측 고정 118px `활동 추가` capsule로 확장. 터치·coarse pointer는 전체 라벨을 유지하고 기존 RippleButton·Expandable Screen·초점·차콜 Primary 재질을 보존 |
+| 검증한 내용 | 구조 테스트 RED→GREEN, 1280×720 로그인 화면에서 접힘 44×44px·확장 118×44px·라벨 opacity 0→1·우측 여백 유지·dialog 연결·가로 overflow 0 확인. 전체 테스트 113개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 iOS/Android 기기의 coarse pointer에서 상시 라벨과 safe area를 확인하는 수동 smoke test는 기존 반응형 후속 범위로 유지 |
+| 권장 커밋 메시지 | `feat: add expanding activity create action` (아직 commit하지 않음) |
+
+### 2026-07-28 - 오늘의 기록 화면 전환 안정화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동·CampusLog AI에서 오늘의 기록으로 이동할 때 보이던 이중 선택 capsule, scrollbar 재질 변화와 부드러운 문서 스크롤 제거 |
+| 수정한 파일 | `web/src/components/layout/Navigation.tsx`, `web/src/components/layout/AppShell.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/globals.css`, `web/src/components/layout/AppShell.structure.test.mjs`, `web/src/hooks/use-transient-scrollbar.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 메뉴 클릭 시 목적지 capsule을 즉시 단일 활성 상태로 표시하고 URL 의미의 `aria-current`는 실제 경로가 바뀔 때까지 유지. 페이지 transient scrollbar hook을 인증 ProductShell로 옮겨 모든 제품 화면의 root scrollbar를 실제 스크롤 중에만 표시하고, 전역 `scroll-behavior: smooth`를 제거 |
+| 검증한 내용 | 구조 테스트를 RED에서 확인한 뒤 GREEN. 1280×720 로그인 화면에서 스크롤된 `/experiences` → `/dashboard` 클릭 직후 목적지 1개만 활성, 완료 후 `scrollY=0`, `scroll-behavior=auto`, 유휴 root thumb transparent, 가로 overflow 0, 브라우저 warning/error 0을 확인. 전체 테스트 112개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS 확대·브라우저 텍스트 확대 조합의 수동 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: stabilize dashboard route transition` (아직 commit하지 않음) |
+
+### 2026-07-28 - Breadcrumb 화면 전환 서브픽셀 안정화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록·나의 활동·CampusLog AI 전환 때 남아 있던 Breadcrumb·H1의 미세한 좌우 흔들림 제거 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/LiquidGlassFoundation.structure.test.mjs`, `web/src/hooks/use-transient-scrollbar.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | `/experiences`에만 있던 10px WebKit·`thin` 루트 스크롤바 폭을 인증 Liquid Glass 제품 라우트 공통 selector로 이동. 나의 활동 전용 selector에는 실제 스크롤 중 thumb를 표시하는 색·상태만 남겨 화면별 콘텐츠 폭과 내비게이션 레일을 고정 |
+| 검증한 내용 | 구조 테스트를 RED에서 확인한 뒤 GREEN. 1280×720 로그인 화면에서 `/dashboard`, `/experiences`, `/recommend` 모두 `clientWidth=1269px`, 예약 폭 11px, Breadcrumb `x=304.953125px`·`y=42px`, H1 `x=304.953125px`·`y=76px`, 가로 overflow 0으로 일치. 전체 테스트 112개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS 확대·브라우저 텍스트 확대 조합의 수동 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: stabilize breadcrumb layout across routes` (아직 commit하지 않음) |
+
+### 2026-07-28 - 공통 Breadcrumb 내비게이션 레일 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | 인증 제품 화면의 상위·하위 페이지마다 달랐던 Breadcrumb과 H1 시작점을 하나의 공통 내비게이션 레일로 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/LiquidGlassFoundation.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 861px 이상에서 `.primary-page`와 `.sub-page`가 모두 최대 1200px 프레임과 `clamp(24px,3.2vw,48px)` gutter를 사용하도록 Liquid Glass 공통 selector를 확장. 920px 읽기 폭 본문과 860px 이하 기존 공통 gutter·top은 유지 |
+| 검증한 내용 | 구조 테스트를 RED에서 확인한 뒤 GREEN. 1280px 로그인 화면에서 `/dashboard`, `/experiences`, `/recommend`, `/recommend/history`, `/activities/new`, `/experiences/new` Breadcrumb 시작점 약 304.5px·y 42px, H1 y 76px 일치와 전 화면 가로 overflow 없음을 확인. 전체 테스트 111개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS 확대·브라우저 텍스트 확대 조합의 수동 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: align breadcrumb navigation rail` (아직 commit하지 않음) |
+
+### 2026-07-28 - 추천 실행 CTA·이미지 첨부 Liquid Glass 마감
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | `/recommend`의 `AI 분석`을 활동 상세 `다시 분석하기`와 같은 기존 실행 CTA로 복원하고 이미지 첨부의 외곽선·전체 삭제 Glass 위계를 정리 |
+| 수정한 파일 | `web/src/components/ai/RecommendationForm.tsx`, `web/src/components/ai/RecommendationImagePicker.tsx`, `web/src/components/ai/RecommendationForm.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 추천 `AI 분석`의 검은 `liquid-prominent-action` class를 제거해 공통 44px 흰 프레임·12px 모서리·gradient 테두리/텍스트/아이콘을 복원. 이미지 fieldset에 파일 유무 상태를 추가해 빈 상태는 바깥 1px 점선만 사용하고 내부 dropzone border·배경을 제거. Gallery `전체 삭제`는 clear Glass capsule·hairline·blur·edge highlight를 적용 |
+| 검증한 내용 | 구조 테스트를 RED에서 확인한 뒤 GREEN. 로그인 `/recommend`에서 CTA 117.40625×44px·흰 배경·12px radius·gradient border 표시, 빈 첨부 fieldset 바깥 dashed border·내부 border 0·가로 overflow 0을 확인. 전체 테스트 110개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors와 reduced-transparency 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: polish recommendation input actions` (아직 commit하지 않음) |
+
+### 2026-07-28 - 나의 활동 차콜 Gooey 검색 복원
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | `/experiences` 검색 버튼을 Liquid Glass clear capsule 적용 전의 차콜 Gooey 설계로 복원 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/ExperienceDashboard.structure.test.mjs`, `web/src/app/recommend/history/page.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 나의 활동 `GooeyInput`에서 `liquid-capsule` class를 제거해 기존 검은 surface, 흰 검색 아이콘·입력값, SVG Gooey filter와 원형→검색 필드 morph를 복원. 추천 기록 검색은 clear Glass capsule을 유지해 화면별 기존 의도를 분리 |
+| 검증한 내용 | 구조 테스트를 RED에서 확인한 뒤 GREEN. 상세 선택 상태에서 닫힌 검색은 44×42px 차콜 원형, 흰 20px 아이콘, 열린 검색은 218×42px 차콜 필드와 44px 원형, 입력 자동 초점, Gooey filter 적용, body 가로 overflow 없음 확인. 전체 테스트 110개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: restore charcoal activity search` (아직 commit하지 않음) |
+
+### 2026-07-28 - 추천 기록 상세 Liquid Glass·가독성 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | `/recommend/history` 우측 추천 상세의 이중 Glass를 제거하고 현재 작업 탭 재질과 읽기 위계에 맞게 정리 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/recommend/history/page.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 상세 외곽을 목록과 같은 54% frosted Glass·28px blur로 통일하고 내부 `RecommendationResult`의 border·background·shadow·blur를 제거. 헤더는 상단 도구 행과 전체 폭 제목으로 재배치하고 메타는 기간/생성일 2열+역할 전체 폭, 모바일 1열로 조정. 일반 섹션은 투명+hairline, 추천 카드·근거·답변 초안은 92% content plate로 제한하고 좁은 상세의 근거 3열을 1열로 변경. 8px scrollbar 채널 안 4px thumb를 사용 |
+| 검증한 내용 | 구조 테스트를 RED에서 확인한 뒤 GREEN. 로그인 1280px `/recommend/history`에서 외곽 `rgba(255,255,255,.54)`·28px blur, 내부 transparent/no-border/no-shadow/no-blur, 정보 plate `rgba(255,255,255,.92)`, 제목 4줄→2줄, 근거 3열→1열, body 가로 overflow 0과 H1/H2·닫기·활동 링크 접근성 구조를 확인. 전체 테스트 109개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: refine recommendation history detail glass` (아직 commit하지 않음) |
+
+### 2026-07-28 - 추천 기록 제목 규격과 나의 활동 탭 재질 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 기록 H1을 다른 주요 화면과 같은 위치·크기로 맞추고 나의 활동 좌우 패널을 전역 작업 탭과 같은 frosted Glass로 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/recommend/history/page.structure.test.mjs`, `web/src/components/experiences/ExperienceDashboard.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 추천 기록 sub-page를 최대 1200px 프레임·`clamp(24px,3.2vw,48px)` gutter로 변경해 공통 주요 화면 H1 규격에 정렬. 나의 활동 좌측 목록과 우측 상세는 함께 `--liquid-frosted-fill`·28px blur로 변경해 대시보드·추천 기록 작업 탭과 일치시키고, 좌우 동일 색·선택 상태·내부 투명 구획은 유지 |
+| 검증한 내용 | 구현 전 추천 기록 H1 left 327.25px와 다른 주요 화면 304.4765625px 차이, 나의 활동 92%/24px와 다른 탭 54%/28px 차이를 계산값으로 확인. 구현 뒤 H1 left·top·font-size 일치와 나의 활동 좌우 배경 `rgba(255,255,255,.54)`, blur 28px, border·shadow 일치, 가로 overflow 0 확인. 전체 테스트 108개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: align page headings and glass panels` (아직 commit하지 않음) |
+
+### 2026-07-28 - 추천 기록 페이지/목록 위계 분리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | `/recommend/history`의 페이지 제목·설명을 목록 Glass 밖으로 분리해 `나의 활동`과 같은 정보 위계 적용 |
+| 수정한 파일 | `web/src/app/recommend/history/page.tsx`, `web/src/app/recommend/history/page.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | H1 `추천 기록`과 설명을 공통 페이지 헤더로 분리하고 목록 Glass는 H2 `전체 기록`, 저장 개수와 검색으로 시작하도록 변경. 기존 Breadcrumb·`새 추천 받기`, 목록·상세 선택/닫기·검색·저장 데이터 계약은 유지 |
+| 검증한 내용 | 구조 테스트를 RED에서 확인한 뒤 GREEN. 로그인 `/recommend/history`에서 H1/H2 접근성 구조, 페이지 헤더와 목록의 왼쪽 정렬, 1280px 가로 overflow 0을 확인. 전체 테스트 107개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: separate recommendation history heading` (아직 commit하지 않음) |
+
+### 2026-07-28 - 나의 활동 좌우 외곽 표면 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | `/experiences`의 좌측 활동 목록과 우측 완료 경험 상세를 같은 near-white Liquid Glass 재료로 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/experiences/ExperienceDashboard.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 좌측 목록의 54% frosted 배경과 28px blur를 우측 상세와 같은 `--liquid-content-fill`, 24px blur로 교체. 기존 hairline·외곽 그림자는 이미 같아 그대로 유지하고, 목록 선택 차콜 틴트·2px 인디케이터, 양쪽 radius, 반응형 배치와 사용자 흐름은 변경하지 않음 |
+| 검증한 내용 | 로그인 `/experiences`에서 완료 경험을 선택하고 계산값으로 양쪽 배경 `rgba(255,255,255,.92)`, blur `24px`, border `rgba(43,48,56,.1)`, 외곽 shadow 일치를 확인. 전체 테스트 107개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: align experience workspace surfaces` (아직 commit하지 않음) |
+
+### 2026-07-28 - 나의 활동 스크롤바 시각 언어 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | `/experiences`의 페이지·목록·상세·분석 scrollbar를 얇고 자연스러운 한 시각 언어로 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/hooks/use-transient-scrollbar.ts`, `web/src/hooks/use-transient-scrollbar.structure.test.mjs`, `web/src/components/experiences/AnimatedExperienceList.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `docs/qa-artifacts/experiences-natural-scrollbar-390x844.png`, `docs/qa-artifacts/experiences-natural-scrollbar-1400x900.png`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 페이지는 10px, 목록·상세·분석은 8px의 조작 채널을 유지하면서 투명 border와 `background-clip: padding-box`로 실제 보이는 thumb를 4px 캡슐로 통일하고 트랙을 제거. 사용자 피드백에 따라 모든 유휴 thumb와 영역·thumb hover 표시를 transparent로 변경하고 페이지 window scroll, 목록 자체 scroll, 상세·분석 scroll에 공용 900ms transient 상태를 연결. 실제 scroll 중에만 44%와 280ms 자연 감속을 적용하고 stable gutter·reduced motion·forced-colors fallback은 유지 |
+| 검증한 내용 | 브라우저 계산값으로 페이지·목록·상세 유휴 transparent를 확인하고 실제 상세에서 transparent→scroll 44%→980ms 후 transparent 복귀를 확인. 390×844·860×800·861×800·1400×900에서 가로 overflow 0 확인. 전체 테스트 105개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: polish experience scrollbars` (아직 commit하지 않음) |
+
+### 2026-07-28 - 나의 활동 상세 단일 표면 보정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | 우측 완료 경험 상세 안의 서로 다른 흰색 Glass 중첩을 제거하고 한 색의 near-white 표면으로 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, `docs/superpowers/specs/2026-07-28-experiences-detail-single-surface-design.md`, `docs/superpowers/plans/2026-07-28-experiences-detail-single-surface.md`, `docs/qa-artifacts/experiences-detail-single-surface-before.png`, `docs/qa-artifacts/experiences-detail-single-surface-after.png`, `docs/qa-artifacts/experiences-detail-single-surface-comparison.png`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 상세 외곽을 `--liquid-content-fill`로 통일하고 내부 메타·본문 섹션·액션을 transparent·no-shadow·no-blur로 변경. 기존 hairline·외곽 shadow·버튼·scrollbar는 유지하고 같은 규칙에 묶여 있던 AI 분석 패널 selector를 분리해 기존 재료를 보존 |
+| 검증한 내용 | 구현 전 계산값에서 상세 64%, 내부 92%, 액션 44%와 각 shadow/blur 차이를 RED로 확인한 뒤 상세 92%·내부 transparent·shadow none·blur none으로 GREEN 확인. 동일 크기 전후 화면 비교, 상세 닫기·재선택·분석 열기·닫기, 분석 패널 64%/92% 유지, scrollbar 18%→52%→18%, 390×844·860×800·861×800·1024×800·1400×900 가로 overflow 0 확인. 전체 테스트 103개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: unify experience detail surface` (아직 commit하지 않음) |
+
+### 2026-07-28 - 나의 활동 선택 행과 스크롤바 연속성 보정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-28 |
+| 작업자 | Codex |
+| 작업 요약 | 선택 활동의 흰 카드·그림자 중첩을 제거하고 상세·분석 scrollbar가 갑자기 사라지지 않도록 유휴 상태를 보존 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/hooks/transient-scrollbar-controller.ts`, `web/src/hooks/use-transient-scrollbar.test.mjs`, `web/src/hooks/use-transient-scrollbar.structure.test.mjs`, `docs/superpowers/specs/2026-07-28-experiences-selection-scrollbar-polish-design.md`, `docs/superpowers/plans/2026-07-28-experiences-selection-scrollbar-polish.md`, `docs/qa-artifacts/experiences-selection-scrollbar-polish-390x844.png`, `docs/qa-artifacts/experiences-selection-scrollbar-polish-1400x900.png`, `docs/qa-artifacts/experiences-selection-scrollbar-polish-comparison.png`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 선택 행 Liquid Glass override의 거의 불투명한 흰 배경과 이중 그림자를 `5.5%` 차콜 틴트·no-shadow·2px 왼쪽 인디케이터로 교체하고 모바일 안쪽 여백을 보정. 공용 scrollbar controller 활성 유지 시간을 700ms에서 900ms로 늘리고 idle `18%`·active `52%` thumb와 200ms 색 전환, reduced motion 80ms를 적용. 기존 selected semantic·focus-visible, timer reset·cleanup, stable gutter·forced-colors와 브라우저 페이지·왼쪽 목록 scrollbar는 유지 |
+| 검증한 내용 | 구현 전 실제 브라우저에서 선택 행 `rgba(255,255,255,.92)`·이중 그림자·indicator 없음과 scrollbar transparent→56%→700ms transparent를 확인. controller 테스트를 900ms 기대값으로 변경해 `700 !== 900` RED 뒤 GREEN으로 전환. 전체 테스트 103개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 390×844·860×800·861×800·1024×800·1400×900에서 가로 overflow 0, 모바일 indicator 2×22px·제목 간격 11px·배지 내부 유지, 데스크톱 2×24px·12px 간격 확인. 실제 상세 패널은 clientWidth 379px, 분석 패널은 475px를 유지한 idle 18%→active 52%→930ms 뒤 idle 18% 전환을 각각 확인하고 1385×890 전후 화면을 나란히 비교 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 접근성 후속 범위로 유지 |
+| 권장 커밋 메시지 | `fix: refine experience selection and scrollbars` (아직 commit하지 않음) |
+
+### 2026-07-27 - 나의 활동 헤더 위계와 우측 스크롤바 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-27 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 페이지 헤더를 목록 Glass에서 분리하고 우측 상세·분석 내부 스크롤바를 사용 중에만 표시 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/hooks/transient-scrollbar-controller.ts`, `web/src/hooks/use-transient-scrollbar.ts`, 관련 테스트, `web/src/app/globals.css`, `docs/superpowers/specs/2026-07-27-experiences-header-scrollbar-design.md`, `docs/superpowers/plans/2026-07-27-experiences-header-scrollbar.md`, `docs/qa-artifacts/**`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 페이지 H1 `나의 활동`과 설명을 목록 Glass 밖의 공통 헤더로 이동하고 목록 내부는 H2 `전체 활동`, 전체·진행 중 개수와 검색으로 시작하도록 변경. 상세와 분석 패널에는 공용 transient scrollbar controller/hook을 연결해 스크롤 중 thumb를 표시하고 마지막 이벤트 700ms 뒤 숨김. stable gutter와 forced-colors fallback을 유지하고 브라우저 페이지·왼쪽 목록 스크롤바, 검색·선택·상세·분석·API·저장 계약은 변경하지 않음 |
+| 검증한 내용 | 신규 헤더 구조 테스트와 scrollbar 동작·연결 테스트를 RED에서 확인한 뒤 GREEN. 전체 테스트 103개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 390×844, 860×800, 861×800, 1024×800, 1400×900에서 H1/H2 분리와 가로 overflow 0 확인. 실제 상세·분석 패널에서 기본 투명, 스크롤 중 `data-scrolling=true`와 가시 thumb, 700ms 뒤 제거, clientWidth 유지 확인. 같은 1367×780 캡처의 전후 비교를 시각 검토 |
+| 남은 작업 | 실제 OS forced-colors 강제 시각 smoke test는 기존 Liquid Glass 접근성 후속 범위로 유지. 개발 서버 hot reload 중 webpack cache rename 경고는 production build와 무관하며 build는 정상 통과 |
+| 권장 커밋 메시지 | `fix: separate experiences header and refine scrolling` (아직 commit하지 않음) |
+
+### 2026-07-27 - Liquid Glass 사이드바 폭과 워드마크 중심 안정화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-27 |
+| 작업자 | Codex |
+| 작업 요약 | 브라우저 폭 변경 시 어긋나던 CampusLog 워드마크를 inset 사이드바 중심에 고정하고 데스크톱 메뉴 폭을 확장 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/layout/AppShell.structure.test.mjs`, `docs/superpowers/specs/2026-07-27-sidebar-width-wordmark-centering-design.md`, `docs/superpowers/plans/2026-07-27-sidebar-width-wordmark-centering.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`, `design-qa.md` |
+| 변경 내용 | 1180px 이상 사이드바를 224px, 861~1179px를 200px로 확장. 데스크톱 워드마크가 사이드바와 동일한 left·width를 사용하고 flex 중앙 정렬되도록 변경. 메인 콘텐츠는 기존 CSS 변수 계산으로 함께 이동하며 860px 이하 모바일 앱 바는 유지 |
+| 검증한 내용 | 신규 구조 테스트가 기존 204px·188px와 offset 폭에서 실패하는 것을 확인한 뒤 통과. 전체 테스트 99개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 1400×900, 1024×800, 861×800에서 워드마크와 사이드바 중심 좌표 일치, 860×800 모바일 전환, 네 viewport 가로 overflow 0 확인 |
+| 남은 작업 | 기존 페이지 reload에서 발생하는 Next.js `missing-data-scroll-behavior` 개발 경고는 이번 사이드바 변경과 무관하며 별도 범위에서 정리 필요 |
+| 권장 커밋 메시지 | `fix: stabilize liquid glass sidebar layout` (아직 commit하지 않음) |
+
+### 2026-07-27 - Liquid Glass 전 화면 안정화와 반응형 재검증
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-27 |
+| 작업자 | Codex |
+| 작업 요약 | 대시보드에 편중돼 보이던 Liquid Glass 계층을 활동·분석·추천·추천 기록까지 연결하고 작은 화면 결함과 검색 대비를 안정화 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/ui/glass-surface.tsx`, `web/src/components/ui/glass-surface.module.css`, `web/src/components/layout/AppShell.tsx`, 공용 popover·overlay 컴포넌트, 활동·경험·분석·추천 화면 컴포넌트, `web/src/app/recommend/history/page.tsx`, `web/src/lib/recommendationPurposeConfig.ts`, 관련 구조 테스트, `design-qa.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 인증 상·하위 페이지의 개별 웜화이트 배경을 제거해 공통 쿨 실버 canvas를 드러내고 폼·목록·상세·결과만 near-solid 작업 공간으로 유지. 나의 활동과 추천 기록 검색을 같은 clear Glass capsule로 통일하고 어두운 아이콘·텍스트를 복구하며 SVG gooey filter 제거. 추천 목적별 예시는 실제 입력 문장은 유지하고 화면 chip만 짧게 정리. 데스크톱 master-detail, 모바일 세로 상세·분석, 활동 추가와 추천 Gallery의 기존 사용자 흐름은 보존 |
+| 검증한 내용 | 전체 구조·동작 테스트 98개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 개발 서버를 완전히 재시작한 뒤 `/dashboard`, `/experiences`, `/recommend`, `/recommend/history`를 360×800에서 직접 진입해 올바른 화면과 가로 overflow 0을 확인. 390×844와 1487×1058에서 활동 추가, 진행 활동, 완료 경험, AI 분석·부족 정보 토글, 추천, 추천 기록·상세·검색을 확인하고 재시작 뒤 browser warning/error 0건을 확인. 선택 시안과 최종 추천 화면을 나란히 비교해 `design-qa.md`에 기록 |
+| 남은 작업 | 실제 OS의 reduced transparency / increased contrast / forced colors 강제 시각 smoke test. 사용자 데이터를 변경하는 보완 답변 저장·AI 외부 호출 성공 경로는 기존 Track A 이슈 범위로 유지 |
+| 권장 커밋 메시지 | `style: stabilize liquid glass product surfaces` (아직 commit하지 않음) |
+
+### 2026-07-26 - CampusLog Liquid Glass foundation
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-26 |
+| 작업자 | Codex |
+| 작업 요약 | Apple 공식 Liquid Glass 계층 원칙을 기존 CampusLog 제품 화면의 내비게이션·popover·overlay에 적용 |
+| 수정한 파일 | `web/src/components/ui/glass-surface.tsx`, `web/src/components/ui/glass-surface.module.css`, `web/src/components/layout/AppShell.tsx`, `web/src/components/layout/ProfileMenu.module.css`, `web/src/components/ui/dropdown-menu.tsx`, `web/src/components/ui/select.tsx`, `web/src/components/ui/combobox.tsx`, `web/src/components/ui/floating-panel.tsx`, `web/src/components/ui/expandable-screen.tsx`, `web/src/components/ui/expandable-screen.module.css`, `web/src/app/globals.css`, 관련 구조 테스트, `design-qa.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 쿨뉴트럴 `#f5f5f7` 제품 배경과 공용 `GlassSurface` variant·shape·elevation 계약을 추가. 데스크톱 inset 사이드바, 860px 이하 단일 모바일 앱 바, 프로필·DropdownMenu·Select·Combobox popover, FloatingPanel·ExpandableScreen 외곽을 같은 기능 재료로 통합. 폼·캘린더·목록·AI 결과는 불투명 흰색으로 유지하고 blur 미지원, reduced transparency, increased contrast, forced colors, reduced motion fallback 제공. 861px 대시보드 캘린더 압축은 861~1179px 한 열 전환으로 수정. 기존 랜딩·인증, API·schema·repository·사용자 데이터는 변경하지 않음 |
+| 검증한 내용 | 전체 테스트 82개, `npm run lint`, 순차 재실행한 `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. Chrome 360·390·860·861·1024·1440px에서 `/dashboard`, `/experiences`, `/recommend` 가로 overflow 0 확인. 계정 메뉴·연도 Select·활동 추가 ExpandableScreen·진행 활동 필요 FloatingPanel의 열림, `Escape`, 초점 복귀와 브라우저 warning/error 0건 확인 |
+| 남은 작업 | 실제 OS의 reduced transparency / increased contrast / forced colors 시각 smoke test와 실제 기기 390px 확인. 제품 전체 Button / Input / Alert 상태 통일은 기존 TODO 범위로 유지 |
+| 권장 커밋 메시지 | `style: apply liquid glass foundation` (아직 commit하지 않음) |
+
 ### 2026-07-26 - AI 분석 부족 정보 Warning Alert
 
 | 항목 | 내용 |

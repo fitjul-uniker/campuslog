@@ -28,7 +28,8 @@ type OriginGeometry = {
 
 const EXPANDED_SCREEN_INSET = 8;
 const EXPANDED_SCREEN_RADIUS = 28;
-const EXPANDED_SCREEN_COLOR = "#f8f7f3";
+const EXPANDED_SCREEN_COLOR = "#f5f5f7";
+const EXPANDED_GLASS_COLOR = "rgba(255, 255, 255, 0.78)";
 const TRIGGER_SCREEN_COLOR = "#242321";
 
 type ExpandableScreenProps = {
@@ -353,7 +354,7 @@ export function ExpandableScreen({
                 scaleX: 1,
                 scaleY: 1,
                 borderRadius: EXPANDED_SCREEN_RADIUS,
-                backgroundColor: EXPANDED_SCREEN_COLOR,
+                backgroundColor: EXPANDED_GLASS_COLOR,
                 opacity: 1,
               }}
               exit={surfaceExit}

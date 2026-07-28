@@ -177,7 +177,10 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
         </div>
       </section>
 
-      <section className="form-panel" aria-labelledby="edit-form-title">
+      <section
+        className="form-panel liquid-workspace"
+        aria-labelledby="edit-form-title"
+      >
         <h2 id="edit-form-title">경험 정보</h2>
         {errorMessage ? (
           <p className="form-error" role="alert">

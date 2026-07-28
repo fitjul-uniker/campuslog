@@ -38,6 +38,7 @@ import type {
 } from "@/lib/types";
 import { CountUp } from "@/components/ui/CountUp";
 import { GooeyInput } from "@/components/ui/GooeyInput";
+import { usePinnedItems } from "@/hooks/use-pinned-items";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -86,6 +87,7 @@ function createTrackedActivityDeleteConfirmMessage(
 }
 
 export function ExperienceDashboard() {
+  const experiencePins = usePinnedItems("experience");
   const [experiences, setExperiences] = useState<Experience[] | null>(null);
   const [trackedActivities, setTrackedActivities] = useState<
     TrackedActivity[] | null
@@ -526,6 +528,13 @@ export function ExperienceDashboard() {
           </BreadcrumbList>
         </Breadcrumb>
 
+        <header className="dashboard-experience-heading primary-page-heading">
+          <h1 id="dashboard-experience-heading">나의 활동</h1>
+          <p className="primary-page-description">
+            진행 중인 활동과 완료된 경험을 한곳에서 확인합니다.
+          </p>
+        </header>
+
         <LayoutGroup id="dashboard-experience-layout">
           <motion.div
             layout
@@ -536,14 +545,14 @@ export function ExperienceDashboard() {
           >
             <motion.section
               layout="position"
-              className="dashboard-experience-list-pane"
-              aria-labelledby="dashboard-experience-heading"
+              className="dashboard-experience-list-pane liquid-workspace"
+              aria-labelledby="dashboard-experience-list-heading"
               transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
             >
-              <header className="dashboard-experience-heading primary-page-heading">
+              <header className="dashboard-experience-section-heading">
                 <div className="dashboard-experience-heading-row">
                   <div className="dashboard-experience-title-group">
-                    <h1 id="dashboard-experience-heading">나의 활동</h1>
+                    <h2 id="dashboard-experience-list-heading">전체 활동</h2>
                     {activityItems && !loadError ? (
                       <span className="dashboard-experience-count">
                         <CountUp to={activityItems.length} duration={0.75} />
@@ -572,15 +581,21 @@ export function ExperienceDashboard() {
                     />
                   ) : null}
                 </div>
-                <p className="primary-page-description">
-                  진행 중인 활동과 완료된 경험을 한곳에서 확인합니다.
-                </p>
                 {normalizedSearchQuery && filteredActivityItems ? (
                   <p className="master-detail-search-feedback" role="status">
                     {filteredActivityItems.length}개의 활동을 찾았습니다.
                   </p>
                 ) : null}
               </header>
+
+              {experiencePins.error ? (
+                <div className="pinned-list-error" role="alert">
+                  <span>{experiencePins.error}</span>
+                  <button type="button" onClick={experiencePins.clearError}>
+                    닫기
+                  </button>
+                </div>
+              ) : null}
 
               {loadError ? (
                 <div className="dashboard-list-state is-error" role="alert">
@@ -625,7 +640,10 @@ export function ExperienceDashboard() {
                   items={filteredActivityItems ?? []}
                   selectedItemKey={selectedItemKey}
                   detailId={DASHBOARD_EXPERIENCE_DETAIL_ID}
+                  pinnedItems={experiencePins.pinnedItems}
+                  pendingPinIds={experiencePins.pendingIds}
                   onSelect={handleSelectActivity}
+                  onTogglePin={experiencePins.togglePinned}
                 />
               )}
             </motion.section>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -46,14 +46,20 @@ type NavigationProps = {
 
 export function Navigation({ variant = "desktop" }: NavigationProps) {
   const pathname = usePathname();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const pendingFromPathRef = useRef(pathname);
   const navigationRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const targetsRef = useRef<number[]>([]);
   const currentRef = useRef<number[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameRef = useRef(0);
+  const visualPendingHref =
+    pendingFromPathRef.current === pathname ? pendingHref : null;
   const activeIndex = navigationItems.findIndex((item) =>
-    isActivePath(pathname, item.href),
+    visualPendingHref
+      ? item.href === visualPendingHref
+      : isActivePath(pathname, item.href),
   );
   const activeIndexRef = useRef(activeIndex);
 
@@ -196,7 +202,10 @@ export function Navigation({ variant = "desktop" }: NavigationProps) {
       onPointerLeave={variant === "desktop" ? handlePointerLeave : undefined}
     >
       {navigationItems.map((item, index) => {
-        const isActive = isActivePath(pathname, item.href);
+        const isRouteActive = isActivePath(pathname, item.href);
+        const isActive = visualPendingHref
+          ? item.href === visualPendingHref
+          : isRouteActive;
 
         return (
           <Link
@@ -206,8 +215,23 @@ export function Navigation({ variant = "desktop" }: NavigationProps) {
             }}
             href={item.href}
             className={cn("navigation-link", isActive && "is-active")}
+            onClick={(event) => {
+              if (
+                event.button !== 0 ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey ||
+                isRouteActive
+              ) {
+                return;
+              }
+
+              pendingFromPathRef.current = pathname;
+              setPendingHref(item.href);
+            }}
             aria-current={
-              isActive
+              isRouteActive
                 ? pathname === item.href
                   ? "page"
                   : "location"
