@@ -56,7 +56,7 @@ export function ComboboxContent({
         align="start"
       >
         <ComboboxPrimitive.Popup
-          className={cn("combobox-popup", className)}
+          className={cn("combobox-popup glass-popover-surface", className)}
           {...props}
         >
           {children}

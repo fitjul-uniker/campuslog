@@ -294,7 +294,10 @@ export function RecommendationImagePicker({
   }
 
   return (
-    <fieldset className="recommendation-image-fieldset">
+    <fieldset
+      className="recommendation-image-fieldset liquid-section"
+      data-has-files={files.length > 0 ? "true" : "false"}
+    >
       <legend className="sr-only">이미지 첨부</legend>
       <input
         ref={inputRef}
@@ -358,7 +361,7 @@ export function RecommendationImagePicker({
             </div>
             <button
               type="button"
-              className="recommendation-image-clear"
+              className="recommendation-image-clear liquid-capsule"
               onClick={clearFiles}
               disabled={disabled}
             >

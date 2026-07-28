@@ -22,3 +22,12 @@ test("AI 추천은 이미지와 정규화된 문항을 전달하고 이미지 �
   assert.match(source, /inputSource:/);
   assert.match(source, /첨부 이미지/);
 });
+
+test("AI 추천 페이지는 선택 시안의 Liquid Glass 작업 공간을 사용한다", () => {
+  assert.match(source, /form-panel liquid-workspace/);
+  assert.match(
+    source,
+    /button button-ghost recommendation-header-link liquid-capsule/,
+  );
+  assert.match(source, /placeholder-panel liquid-section/);
+});

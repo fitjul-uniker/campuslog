@@ -88,7 +88,10 @@ export function NewExperienceClient() {
         </div>
       </section>
 
-      <section className="form-panel" aria-labelledby="new-form-title">
+      <section
+        className="form-panel liquid-workspace"
+        aria-labelledby="new-form-title"
+      >
         <h2 id="new-form-title">경험 정보</h2>
         {errorMessage ? (
           <p className="form-error" role="alert">

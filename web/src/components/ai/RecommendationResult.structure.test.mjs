@@ -28,3 +28,11 @@ test("이미지로 생성한 추천 결과는 출처를 명확히 표시한다",
   assert.match(source, /result\.inputSource !== "text"/);
   assert.match(source, /이미지에서 추출된 내용 기반/);
 });
+
+test("추천 결과는 긴 내용을 보호하는 Liquid Glass section을 사용한다", () => {
+  assert.match(source, /recommendation-result is-embedded liquid-section/);
+  assert.match(
+    source,
+    /detail-panel recommendation-result liquid-section/,
+  );
+});

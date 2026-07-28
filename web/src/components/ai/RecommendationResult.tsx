@@ -773,8 +773,8 @@ export function RecommendationResult({
     <section
       className={
         isEmbedded
-          ? "recommendation-result is-embedded"
-          : "detail-panel recommendation-result"
+          ? "recommendation-result is-embedded liquid-section"
+          : "detail-panel recommendation-result liquid-section"
       }
       aria-labelledby="recommendation-title"
     >

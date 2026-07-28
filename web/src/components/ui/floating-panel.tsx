@@ -424,7 +424,10 @@ export function FloatingPanel({
             <motion.div
               ref={contentRef}
               id={panelId}
-              className={cn("floating-panel-content", className)}
+              className={cn(
+                "floating-panel-content glass-overlay-surface",
+                className,
+              )}
               data-placement={position?.placement}
               data-compact-height={
                 position && position.maxHeight <= 252 ? "true" : undefined

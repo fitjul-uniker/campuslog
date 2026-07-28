@@ -77,7 +77,7 @@ function RecommendationPageHeader() {
       <div className="header-actions recommendation-header-actions">
         <Link
           href="/recommend/history"
-          className="button button-ghost recommendation-header-link"
+          className="button button-ghost recommendation-header-link liquid-capsule"
         >
           <History className="button-icon" aria-hidden="true" />
           추천 기록
@@ -336,7 +336,10 @@ export default function RecommendPage() {
       <RecommendationPageBreadcrumb />
       <RecommendationPageHeader />
 
-      <section className="form-panel" aria-labelledby="recommend-form-title">
+      <section
+        className="form-panel liquid-workspace"
+        aria-labelledby="recommend-form-title"
+      >
         <div className="panel-heading">
           <div>
             <h2 id="recommend-form-title">추천 입력</h2>
@@ -433,7 +436,10 @@ export default function RecommendPage() {
           />
         </div>
       ) : (
-        <section className="placeholder-panel" aria-labelledby="ready-title">
+        <section
+          className="placeholder-panel liquid-section"
+          aria-labelledby="ready-title"
+        >
           <h2 id="ready-title">AI 기반 활동 추천 결과 대기 중</h2>
           <p className="muted-text">
             활용 목적과 질문을 입력하면 요구사항을 정리하고 적합한 활동 Top

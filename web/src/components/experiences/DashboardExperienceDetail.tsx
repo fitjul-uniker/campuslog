@@ -22,6 +22,7 @@ import {
   getRelatedLinkHostname,
   normalizeRelatedLinkUrl,
 } from "@/lib/relatedLinks";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
 export const DASHBOARD_EXPERIENCE_DETAIL_ID = "dashboard-experience-detail";
@@ -56,6 +57,7 @@ export function DashboardExperienceDetail({
   analysisStatusMessage = "",
 }: DashboardExperienceDetailProps) {
   const shouldReduceMotion = useReducedMotion();
+  const handleTransientScroll = useTransientScrollbar<HTMLElement>();
   const titleId = `${DASHBOARD_EXPERIENCE_DETAIL_ID}-title`;
   const isFullscreen = variant === "fullscreen";
   const needsFreshAnalysis = Boolean(
@@ -130,9 +132,11 @@ export function DashboardExperienceDetail({
     <motion.section
       layout
       id={DASHBOARD_EXPERIENCE_DETAIL_ID}
-      className={`dashboard-experience-detail${isFullscreen ? " is-fullscreen" : ""}`}
+      className={`dashboard-experience-detail liquid-section${isFullscreen ? " is-fullscreen" : ""}`}
+      data-transient-scrollbar="true"
       aria-labelledby={titleId}
       role={isFullscreen ? undefined : "complementary"}
+      onScroll={handleTransientScroll}
       initial={
         isFullscreen || shouldReduceMotion
           ? false

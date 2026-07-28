@@ -216,7 +216,10 @@ export function ActivityCalendar({
   }
 
   return (
-    <section className="activity-calendar" aria-labelledby="activity-calendar-title">
+    <section
+      className="activity-calendar liquid-section"
+      aria-labelledby="activity-calendar-title"
+    >
       <header className="activity-calendar-header">
         <div className="activity-calendar-period-selectors">
           <h2 id="activity-calendar-title" className="sr-only">
@@ -268,7 +271,7 @@ export function ActivityCalendar({
             </SelectContent>
           </Select>
         </div>
-        <div className="activity-calendar-navigation">
+        <div className="activity-calendar-navigation liquid-control-group">
           <button
             type="button"
             onClick={() => moveMonth(-1)}

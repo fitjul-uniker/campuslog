@@ -125,12 +125,12 @@ export function RecommendationForm({
 
   return (
     <form
-      className="experience-form"
+      className="experience-form liquid-form"
       onSubmit={handleSubmit}
       onPaste={handlePaste}
       noValidate
     >
-      <Field className="recommendation-purpose-field">
+      <Field className="recommendation-purpose-field liquid-content-field">
         <label id="recommendation-purpose-label">활용 목적</label>
         <Combobox
           items={PURPOSE_OPTIONS}
@@ -170,7 +170,7 @@ export function RecommendationForm({
         </Combobox>
       </Field>
 
-      <div className="form-field">
+      <div className="form-field liquid-content-field">
         <label htmlFor="recommendation-prompt">
           {selectedConfig.promptTitle}
         </label>
@@ -199,7 +199,7 @@ export function RecommendationForm({
       />
 
       <div
-        className="recommendation-example-list"
+        className="recommendation-example-list liquid-control-group"
         aria-label={`${selectedConfig.label} 예시 문항`}
       >
         {selectedConfig.examples.map((example) => {

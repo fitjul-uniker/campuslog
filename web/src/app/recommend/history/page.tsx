@@ -17,6 +17,7 @@ import {
 } from "@/components/animate-ui/components/buttons/ripple";
 import { AnimatedRecommendationList } from "@/components/recommendations/AnimatedRecommendationList";
 import { GooeyInput } from "@/components/ui/GooeyInput";
+import { usePinnedItems } from "@/hooks/use-pinned-items";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -42,6 +43,7 @@ function normalizeSearchValue(value: string): string {
 }
 
 export default function RecommendationHistoryPage() {
+  const recommendationPins = usePinnedItems("recommendation");
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [recommendations, setRecommendations] = useState<
     Recommendation[] | null
@@ -204,11 +206,21 @@ export default function RecommendationHistoryPage() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <Link href="/recommend" className="recommendation-history-new">
+          <Link
+            href="/recommend"
+            className="recommendation-history-new liquid-capsule"
+          >
             <Sparkles aria-hidden="true" />
             새 추천 받기
           </Link>
         </div>
+
+        <header className="recommendation-history-page-heading primary-page-heading">
+          <h1>추천 기록</h1>
+          <p className="primary-page-description">
+            저장한 질문과 추천 경험을 다시 확인할 수 있습니다.
+          </p>
+        </header>
 
         <LayoutGroup id="recommendation-history-layout">
           <motion.div
@@ -219,20 +231,21 @@ export default function RecommendationHistoryPage() {
           >
             <motion.section
               layout="position"
-              className="recommendation-history-list-pane"
+              className="recommendation-history-list-pane liquid-workspace"
               aria-labelledby="recommendation-history-heading"
               transition={{ layout: LAYOUT_TRANSITION }}
             >
-              <header className="recommendation-history-heading sub-page-heading">
+              <header className="recommendation-history-heading">
                 <div className="recommendation-history-heading-row">
                   <div>
-                    <h1 id="recommendation-history-heading">추천 기록</h1>
+                    <h2 id="recommendation-history-heading">전체 기록</h2>
                     {recommendations && !loadError ? (
                       <span>{recommendations.length}</span>
                     ) : null}
                   </div>
                   {recommendations && recommendations.length > 0 ? (
                     <GooeyInput
+                      className="recommendation-history-search liquid-capsule"
                       placeholder="검색"
                       value={searchQuery}
                       onValueChange={setSearchQuery}
@@ -240,13 +253,21 @@ export default function RecommendationHistoryPage() {
                     />
                   ) : null}
                 </div>
-                <p>저장한 질문과 추천 경험을 다시 확인할 수 있습니다.</p>
                 {normalizedSearchQuery && filteredRecommendations ? (
                   <p className="master-detail-search-feedback" role="status">
                     {filteredRecommendations.length}개의 기록을 찾았습니다.
                   </p>
                 ) : null}
               </header>
+
+              {recommendationPins.error ? (
+                <div className="pinned-list-error" role="alert">
+                  <span>{recommendationPins.error}</span>
+                  <button type="button" onClick={recommendationPins.clearError}>
+                    닫기
+                  </button>
+                </div>
+              ) : null}
 
               {loadError ? (
                 <div className="dashboard-list-state is-error" role="alert">
@@ -289,7 +310,10 @@ export default function RecommendationHistoryPage() {
                   recommendations={filteredRecommendations ?? []}
                   selectedRecommendationId={selectedRecommendationId}
                   detailId={RECOMMENDATION_DETAIL_ID}
+                  pinnedItems={recommendationPins.pinnedItems}
+                  pendingPinIds={recommendationPins.pendingIds}
                   onSelect={handleSelectRecommendation}
+                  onTogglePin={recommendationPins.togglePinned}
                 />
               )}
             </motion.section>
@@ -300,7 +324,7 @@ export default function RecommendationHistoryPage() {
                   key="recommendation-history-detail-slot"
                   layout
                   id={RECOMMENDATION_DETAIL_ID}
-                  className="recommendation-history-detail"
+                  className="recommendation-history-detail liquid-section"
                   aria-labelledby="recommendation-title"
                   initial={{ opacity: 0, x: 24, scale: 0.985 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}

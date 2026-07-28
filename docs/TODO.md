@@ -112,6 +112,25 @@
 ### High
 
 - [ ] 검정·차콜 디자인 token과 공통 컴포넌트 상태 정리
+  - [x] 인증 제품 화면의 쿨뉴트럴 Liquid Glass foundation, 공용 `GlassSurface`, inset 사이드바·모바일 앱 바, 공용 popover·overlay 재료와 접근성 fallback 적용 (`ISSUE-103`)
+  - [x] 대시보드 외 활동·추천·추천 기록·분석 화면의 페이지별 웜화이트 배경을 제거하고 공통 쿨 canvas와 near-solid 작업 공간의 계층 연결 (`ISSUE-103`)
+  - [x] 나의 활동·추천 기록 검색의 아이콘·텍스트 대비와 공통 clear Glass capsule을 복구하고 360·390·1487px 핵심 경로를 재검증 (`ISSUE-103`)
+  - [x] 데스크톱 Liquid Glass 사이드바를 224px·compact desktop을 200px로 확장하고 CampusLog 워드마크를 표면 중심에 고정 (`ISSUE-104`)
+  - [x] 인증 상위·하위 화면의 Breadcrumb과 H1을 같은 1200px/3.2vw 내비게이션 레일로 통일 (`ISSUE-116`)
+  - [x] 인증 제품 라우트의 루트 스크롤바 예약 폭을 통일해 메뉴 전환 시 Breadcrumb·H1의 서브픽셀 흔들림 제거 (`ISSUE-117`)
+  - [x] 오늘의 기록 이동 시 이중 활성 capsule·상시 scrollbar·smooth scroll 전환을 제거해 화면 전환 안정화 (`ISSUE-118`)
+  - [x] 오늘의 기록 `활동 추가`를 포인터 환경에서 44px 아이콘→118px 라벨로 확장하고 터치 환경은 전체 라벨을 유지 (`ISSUE-119`)
+  - [x] 나의 활동의 완료 경험·진행 활동과 추천 기록에 unlumen UI Pinned List 참고 즐겨찾기 구획·테두리 없는 44px 노란 별·사용자별 브라우저 저장을 적용 (`ISSUE-120`, `ISSUE-121`, `ISSUE-122`)
+  - [x] 첫 화면·인증·오늘의 기록·나의 활동·추천·추천 기록과 관련 상세/작성 화면의 웜화이트·크림 hover를 공통 쿨 뉴트럴 Liquid Glass 토큰으로 통일 (`ISSUE-123`)
+  - [x] 나의 활동·추천 기록 즐겨찾기 행의 selected·hover 배경을 제목과 별 영역 전체로 확장 (`ISSUE-124`)
+  - [x] 나의 활동·추천 기록 목록 하단의 뿌연 gradient fade를 제거하고 실제 패널 여백으로 마감 (`ISSUE-125`)
+  - [x] 한 일 남기기·활동 추가·활동 상세/합성·경험 폼·AI 분석·추천 입력/기록의 중첩 투톤과 구형 아이콘 plate를 단일 콘텐츠층·쿨 뉴트럴 control로 정리 (`ISSUE-126`)
+  - [x] 나의 활동 페이지 H1을 목록 Glass 밖으로 분리하고 목록은 `전체 활동` H2로 시작하며 우측 상세·분석 내부 스크롤바를 스크롤 중에만 표시 (`ISSUE-105`)
+  - [x] 나의 활동 선택 행의 흰 카드·그림자를 제거하고 차콜 틴트·2px 인디케이터 적용 (`ISSUE-106`)
+  - [x] 나의 활동 우측 완료 경험 상세를 단일 near-white 표면과 투명 내부 구획으로 통일하고 분석 패널 계층은 유지 (`ISSUE-107`)
+  - [x] 나의 활동 페이지·목록·상세·분석 scrollbar를 유휴·모든 hover에서 숨기고 실제 스크롤 중에만 나타나는 4px 캡슐로 통일 (`ISSUE-108`)
+  - [x] 나의 활동 좌측 목록과 우측 완료 경험 상세의 외곽 재료를 동일하게 통일 (`ISSUE-109`)
+  - [x] 나의 활동 좌우 패널을 다른 주요 작업 탭과 같은 54% frosted Glass·28px blur로 통일 (`ISSUE-112`)
 - [x] Track A 인증 contract 기반 로그인 / 회원가입 route UI와 `components/auth/**` 설계
 - [x] 좌측 상단 `CampusLog` 워드마크 + 문법에 맞는 순환 기록 문구 → 중앙 인증 카드 → 인증 후 3D 책 표지 진입 흐름 구현 (`ISSUE-035`)
 - [x] Tailwind CSS v4·shadcn/ui 기반 설정과 인증 Input·Label primitive 구성
@@ -133,21 +152,35 @@
 - [x] 핵심 실행 CTA에 접근 가능한 ripple 눌림 피드백 적용 (`ISSUE-063`)
 - [x] 프로필 드롭다운 로그아웃 제출 안정화와 실제 세션 제거·보호 경로 재차단 확인 (`ISSUE-042`)
 - [ ] 나의 활동 목록·상세 탐색 흐름 개선
+  - [x] 완료 경험을 `즐겨찾기` / `모든 활동`으로 중복 없이 이동하고 진행 활동은 기존 상태 탐색을 유지 (`ISSUE-120`)
+  - [x] 페이지 헤더·목록 섹션 위계 분리와 상세·분석 transient scrollbar 반응형 검증 (`ISSUE-105`)
+  - [x] 선택 행을 목록 재료 안의 차콜 상태로 정리하고 상세·분석 scrollbar를 18% 유휴·52% 활성·900ms 복귀로 조정 (`ISSUE-106`)
+  - [x] 우측 상세의 중첩된 64%·92%·44% 흰 표면을 단일 92% near-white 표면으로 통일하고 내부 구획은 투명 처리 (`ISSUE-107`)
+  - [x] 페이지·목록·상세·분석 scrollbar를 유휴·hover transparent·스크롤 44%·900ms 뒤 숨김으로 조정 (`ISSUE-108`)
+  - [x] 나의 활동 검색에서 clear Glass override를 제거하고 기존 차콜 Gooey 원형→검색 필드 morph 복원 (`ISSUE-114`)
 - [ ] CampusLog AI 입력·결과·추천 기록 위계 개선
+  - [x] 추천 기록을 `즐겨찾기` / `모든 기록`으로 이동하고 본문 선택과 Pin 조작·접근성 이름을 분리 (`ISSUE-120`)
   - [x] 추천 화면 반복 탭 제거와 `추천 기록` / `새 추천 받기` 교차 이동 액션 정리 (`ISSUE-040`)
   - [x] 확장 화면 추천 입력·결과 패널을 공통 페이지 콘텐츠 폭에 정렬 (`ISSUE-073`)
   - [x] 이미지 첨부를 ReUI Gallery 참고 적응형 empty→Gallery 구조, 전체 삭제·확대 dialog·추가 타일로 정리하고 기존 CampusLog 토큰·입력 계약 유지 (`ISSUE-098`)
   - [x] 이미지 제한을 최대 3장·장당 5MB 한 줄로 간소화하고 별도 도움말 반복 제거 (`ISSUE-099`)
+  - [x] 빈 이미지 첨부의 이중 경계를 바깥 점선 하나로 정리하고 Gallery `전체 삭제`를 clear Glass capsule로 통일 (`ISSUE-115`)
+  - [x] 추천 `AI 분석`을 활동 상세 `다시 분석하기`와 같은 공통 흰 프레임·gradient 실행 CTA로 복원 (`ISSUE-115`)
   - [x] 사용자 행동 중심 빈 상태·16px 무그림자 큰 표면을 `/recommend`에만 적용하고 `추천 기록`은 사용자 요청에 따라 기존 아이콘·배치 유지 (`ISSUE-100`)
   - [x] 이미지 업로드 위 중복 `이미지 첨부` 제목을 화면에서 숨기고 접근성 legend 유지 (`ISSUE-101`)
+  - [x] 추천 기록의 H1·설명을 목록 Glass 밖으로 분리하고 목록은 H2 `전체 기록`·개수·검색으로 시작 (`ISSUE-110`)
+  - [x] 추천 기록 H1을 다른 주요 화면과 같은 1200px 프레임·gutter·공통 글자 크기로 정렬 (`ISSUE-111`)
+  - [x] 추천 기록 상세의 이중 Glass를 제거하고 54% frosted 외곽·투명 구획·92% 정보 plate·1열 근거 구조로 가독성 정리 (`ISSUE-113`)
 
 ### Medium
 
 - [ ] Button / Input / Textarea / Badge / Tabs / Dialog / Alert 상태 통일
 - [ ] Next.js 15.5.20과 전이 PostCSS·sharp의 production high advisory를 호환 가능한 framework 업데이트로 해소 (`ISSUE-036`)
 - [ ] 활동 추가 Expandable Screen과 프로필 메뉴의 실제 390px 기기 시각 smoke test
+  - [x] Chrome 390×844 CSS viewport에서 Expandable Screen·프로필 메뉴·Select·FloatingPanel의 열림, `Escape`, 초점 복귀와 가로 overflow 0 확인 (`ISSUE-103`)
 - [ ] 로그아웃 실패 안내·재시도와 현재 기기/전체 기기 scope 정책 확정 (`ISSUE-043`)
 - [ ] 모바일 상단 내비게이션과 safe area 재검증
+  - [x] 360×800·390×844·860×800 CSS viewport에서 단일 Glass 앱 바와 44px 계정 진입점, 가로 overflow 0 확인 (`ISSUE-103`)
 - [ ] loading / empty / error / success / reconnecting 상태 통일
   - [x] AI 구조화 호출의 1차 대기 UX에 단계형 문구, skeleton, 장기 대기 안내, 처리 대상 메타 정보 적용
   - [x] 모든 AI 처리 대기를 Strands·AI Text Loading 중심의 전체 화면 blur overlay로 통일하고 2.4초 문구 전환·`...` 끝맺음·프레임 없는 취소 액션·조용한 추천 취소·상태 이벤트·reduced motion 유지 (`ISSUE-093`)

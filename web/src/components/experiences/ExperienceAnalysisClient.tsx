@@ -288,7 +288,10 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
         </>
       ) : (
         <>
-          <section className="detail-panel" aria-labelledby="analysis-title">
+          <section
+            className="detail-panel liquid-section"
+            aria-labelledby="analysis-title"
+          >
             <div className="detail-header">
               <div>
                 <p className="experience-meta">{experience.title}</p>
