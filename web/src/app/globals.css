@@ -336,10 +336,12 @@ select:disabled {
 }
 
 .landing-auth-section {
+  position: relative;
   display: grid;
   width: 100%;
   min-height: 100svh;
   place-items: center;
+  overflow: hidden;
   padding: clamp(72px, 10vh, 112px) 32px;
   scroll-margin-top: 20px;
 }
@@ -2553,10 +2555,10 @@ h2 {
 
 .morph-surface[data-open="true"] {
   z-index: 1;
-  border-color: rgba(24, 24, 27, 0.14);
+  border-color: rgba(24, 24, 27, 0.12);
   box-shadow:
-    0 2px 4px rgba(24, 24, 27, 0.05),
-    0 18px 48px rgba(24, 24, 27, 0.09);
+    0 1px 2px rgba(24, 24, 27, 0.04),
+    0 12px 32px rgba(24, 24, 27, 0.055);
 }
 
 .morph-surface-trigger {
@@ -2664,9 +2666,24 @@ h2 {
 .morph-surface-content {
   display: grid;
   min-width: 0;
-  gap: 14px;
+  gap: 12px;
   border-top: 1px solid rgba(24, 24, 27, 0.08);
-  padding: 0 20px 20px;
+  padding: 20px;
+}
+
+.analysis-gap-morph-heading {
+  display: grid;
+  gap: 6px;
+}
+
+.analysis-gap-question {
+  margin: 0;
+  color: #27272a;
+  font-size: 0.96rem;
+  font-weight: 720;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2678,25 +2695,6 @@ h2 {
   .morph-surface-chevron {
     transition: none;
   }
-}
-
-.analysis-gap-morph-heading {
-  display: grid;
-  gap: 8px;
-  padding-top: 20px;
-}
-
-.analysis-gap-question {
-  margin: 0;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-.analysis-gap-question {
-  color: #18181b;
-  font-size: 1.02rem;
-  font-weight: 760;
-  line-height: 1.5;
 }
 
 .reui-alert {
@@ -2748,9 +2746,9 @@ h2 {
   min-height: 132px;
   min-width: 0;
   resize: vertical;
-  border: 1px solid rgba(24, 24, 27, 0.14);
-  border-radius: 14px;
-  background: #fff;
+  border: 1px solid rgba(24, 24, 27, 0.12);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.82);
   color: #18181b;
   padding: 14px 16px;
   line-height: 1.65;
@@ -2758,6 +2756,29 @@ h2 {
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+.morph-surface-content > .reui-alert {
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0 2px;
+}
+
+.morph-surface-content > .reui-alert > svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: #7b8088;
+  stroke-width: 1.7;
+}
+
+.morph-surface-content > .reui-alert .reui-alert-description {
+  color: #6e737c;
+  font-size: 0.76rem;
+  line-height: 1.55;
 }
 
 .analysis-gap-answer-input:focus {
@@ -2796,10 +2817,10 @@ h2 {
 }
 
 .analysis-gap-save-button {
-  min-width: 112px;
+  min-width: 104px;
   min-height: 44px;
   border-color: #18181b;
-  border-radius: 12px;
+  border-radius: 999px;
   background: #18181b;
   color: #fff;
   box-shadow: 0 8px 18px rgba(24, 24, 27, 0.12);
@@ -6863,18 +6884,15 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 .dashboard-analysis-split-header {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  position: relative;
   display: flex;
   min-height: 104px;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   border-bottom: 1px solid #ededeb;
-  background: rgba(255, 255, 255, 0.94);
+  background: transparent;
   padding: 24px clamp(24px, 3vw, 36px);
-  backdrop-filter: blur(14px);
 }
 
 .dashboard-analysis-split-header > div:first-child {
@@ -11132,6 +11150,11 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 /* Shared primary page geometry */
+.product-surface :is(.primary-page, .sub-page) {
+  --product-page-heading-min-height: 78px;
+  --product-workspace-gap: 30px;
+}
+
 .product-surface .primary-page {
   --primary-page-gutter: clamp(24px, 5vw, 72px);
   --primary-page-top: clamp(76px, 9vh, 112px);
@@ -11247,7 +11270,12 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 .product-surface .primary-page-heading {
-  margin-bottom: 30px;
+  min-height: var(--product-page-heading-min-height);
+  margin-bottom: var(--product-workspace-gap);
+}
+
+.product-surface .recommendation-page {
+  gap: var(--product-workspace-gap);
 }
 
 .product-surface .recommendation-page .primary-page-heading {
@@ -11279,9 +11307,32 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
     min-height: calc(100svh - 58px);
     padding: var(--primary-page-top) var(--primary-page-gutter) 96px;
   }
+
+  .product-surface .recommendation-page-header {
+    position: relative;
+    display: block;
+  }
+
+  .product-surface .recommendation-page-header-copy {
+    padding-right: 132px;
+  }
+
+  .product-surface
+    .recommendation-page
+    .recommendation-header-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+    margin: 0;
+  }
 }
 
 @media (max-width: 640px) {
+  .product-surface :is(.primary-page, .sub-page) {
+    --product-page-heading-min-height: 99px;
+  }
+
   .product-surface .primary-page {
     --primary-page-gutter: 16px;
     --primary-page-top: 38px;
@@ -11319,6 +11370,20 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
     font-size: 0.9rem;
   }
 
+  .product-surface .recommendation-page-header-copy {
+    padding-right: 56px;
+  }
+
+  .product-surface
+    .recommendation-page
+    .recommendation-header-link {
+    width: 44px;
+    min-width: 44px;
+    flex: 0 0 44px;
+    gap: 0;
+    padding: 0;
+    font-size: 0;
+  }
 }
 
 /* Shared sub-page geometry */
@@ -11363,7 +11428,8 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 
 .product-surface .sub-page-heading {
   width: 100%;
-  margin-bottom: 30px;
+  min-height: var(--product-page-heading-min-height);
+  margin-bottom: var(--product-workspace-gap);
 }
 
 .product-surface .sub-page-heading h1,
@@ -11433,19 +11499,151 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 .product-surface .sub-page .dashboard-experience-detail.is-fullscreen {
-  width: 100%;
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 0;
+  width: min(100%, 900px);
+  margin: 0 auto;
+  overflow: visible;
+  border: 1px solid var(--liquid-hairline);
+  border-radius: 32px;
+  background: var(--liquid-frosted-fill);
+  box-shadow:
+    inset 0 1px 0 var(--liquid-edge-highlight),
+    var(--liquid-shadow-large);
+  padding: clamp(30px, 4.5vw, 48px);
+  scrollbar-gutter: auto;
+  -webkit-backdrop-filter: blur(28px) saturate(1.12);
+  backdrop-filter: blur(28px) saturate(1.12);
 }
 
 .product-surface
   .sub-page
   .dashboard-experience-detail.is-fullscreen
   .dashboard-detail-status {
-  margin: 12px 0 0;
+  margin: 0 0 14px;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-header {
+  padding-bottom: 30px;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-meta {
+  gap: clamp(24px, 5vw, 56px);
+  padding: 28px 0;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-content
+  section {
+  padding: 30px 0;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-content
+  p {
+  max-width: 72ch;
+  color: var(--liquid-text-primary);
+  font-size: 1rem;
+  line-height: 1.88;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-actions {
+  gap: 10px;
+  padding-top: 30px;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  :is(
+    .dashboard-detail-meta dt,
+    .dashboard-detail-content h2,
+    .dashboard-detail-content h3
+  ) {
+  color: var(--liquid-text-secondary);
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-meta
+  dd {
+  color: var(--liquid-text-primary);
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-content
+  .is-muted {
+  color: var(--liquid-text-secondary);
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  :is(
+    .dashboard-detail-links a,
+    .dashboard-detail-links li > span,
+    .experience-attachments-list a,
+    .experience-attachment-unavailable,
+    .dashboard-detail-tags span,
+    .dashboard-detail-action
+  ) {
+  border-color: var(--liquid-hairline);
+  background: var(--liquid-control-fill);
+  color: var(--liquid-text-primary);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 68%);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  backdrop-filter: blur(16px) saturate(1.08);
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-action {
+  border-radius: 999px;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-delete {
+  color: #76504d;
+}
+
+.product-surface
+  .sub-page
+  .dashboard-experience-detail.is-fullscreen
+  .dashboard-detail-analysis-note {
+  border-color: var(--liquid-hairline-strong);
+  background: var(--liquid-hover-fill);
+  color: var(--liquid-text-secondary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-surface
+    .sub-page
+    .dashboard-experience-detail.is-fullscreen
+    :is(
+      .dashboard-detail-links a,
+      .experience-attachments-list a,
+      .dashboard-detail-action
+    ):hover {
+    border-color: var(--liquid-hairline-strong);
+    background: var(--liquid-hover-fill);
+  }
 }
 
 @media (max-width: 860px) {
@@ -11455,6 +11653,10 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 
     min-height: calc(100svh - 58px);
     padding: var(--sub-page-top) var(--sub-page-gutter) 96px;
+  }
+
+  .product-surface .recommendation-history-page.sub-page {
+    --sub-page-gutter: 20px;
   }
 }
 
@@ -11466,6 +11668,10 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
     padding: var(--sub-page-top) var(--sub-page-gutter) 96px;
   }
 
+  .product-surface .recommendation-history-page.sub-page {
+    --sub-page-gutter: 16px;
+  }
+
   .product-surface .sub-page-heading h1,
   .product-surface
     .sub-page
@@ -11473,6 +11679,43 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
     .dashboard-detail-header
     h1 {
     font-size: 2.15rem;
+  }
+
+  .product-surface .sub-page .dashboard-experience-detail.is-fullscreen {
+    border-radius: 24px;
+    padding: 24px 20px;
+  }
+
+  .product-surface
+    .sub-page
+    .dashboard-experience-detail.is-fullscreen
+    .dashboard-detail-header {
+    padding-bottom: 24px;
+  }
+
+  .product-surface
+    .sub-page
+    .dashboard-experience-detail.is-fullscreen
+    .dashboard-detail-meta {
+    gap: 18px;
+    padding: 22px 0;
+  }
+
+  .product-surface
+    .sub-page
+    .dashboard-experience-detail.is-fullscreen
+    .dashboard-detail-content
+    section {
+    padding: 24px 0;
+  }
+
+  .product-surface
+    .sub-page
+    .dashboard-experience-detail.is-fullscreen
+    .dashboard-detail-content
+    p {
+    font-size: 0.94rem;
+    line-height: 1.78;
   }
 
   .product-surface .sub-page-heading .page-description,
@@ -11502,7 +11745,7 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   --liquid-hairline-strong: rgb(43 48 56 / 16%);
   --liquid-clear-fill: rgb(255 255 255 / 44%);
   --liquid-regular-fill: rgb(255 255 255 / 64%);
-  --liquid-frosted-fill: rgb(255 255 255 / 54%);
+  --liquid-frosted-fill: rgb(255 255 255 / 64%);
   --liquid-content-fill: rgb(255 255 255 / 92%);
   --liquid-edge-highlight: rgb(255 255 255 / 86%);
   --liquid-control-fill: rgb(255 255 255 / 78%);
@@ -13047,23 +13290,52 @@ body:has(
 }
 
 .cover-main[data-liquid-glass="true"] .landing-scroll-link {
-  border: 1px solid var(--liquid-hairline);
-  background: rgb(255 255 255 / 46%);
-  box-shadow:
-    inset 0 1px 0 var(--liquid-edge-highlight),
-    0 10px 28px rgb(51 58 69 / 7%);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
-  backdrop-filter: blur(18px) saturate(1.08);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  padding-inline: 4px;
+}
+
+.cover-main[data-liquid-glass="true"] .landing-auth-section {
+  isolation: isolate;
+}
+
+.cover-main[data-liquid-glass="true"] .landing-auth-section::before {
+  position: absolute;
+  z-index: -1;
+  width: min(82vw, 920px);
+  height: min(74vw, 760px);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 42% 35%,
+      rgb(255 255 255 / 78%),
+      rgb(231 236 244 / 42%) 46%,
+      transparent 72%
+    );
+  content: "";
+  filter: blur(18px);
+  pointer-events: none;
+  transform: translate3d(12%, 2%, 0);
 }
 
 :is(.auth-shell, .cover-main)[data-liquid-glass="true"] .auth-panel {
   border-color: var(--liquid-hairline);
-  background: rgb(255 255 255 / 72%);
+  background:
+    linear-gradient(
+      145deg,
+      rgb(255 255 255 / 78%),
+      rgb(246 248 251 / 62%)
+    );
   box-shadow:
     inset 0 1px 0 var(--liquid-edge-highlight),
-    var(--liquid-shadow-large);
-  -webkit-backdrop-filter: blur(28px) saturate(1.12);
-  backdrop-filter: blur(28px) saturate(1.12);
+    inset 0 -1px 0 rgb(255 255 255 / 34%),
+    0 28px 72px rgb(48 56 68 / 14%),
+    0 2px 8px rgb(48 56 68 / 5%);
+  -webkit-backdrop-filter: blur(32px) saturate(1.16);
+  backdrop-filter: blur(32px) saturate(1.16);
 }
 
 :is(.auth-shell, .cover-main)[data-liquid-glass="true"] :is(
@@ -13073,7 +13345,7 @@ body:has(
   .auth-feedback
 ) {
   border-color: var(--liquid-hairline);
-  background: var(--liquid-content-fill);
+  background: rgb(255 255 255 / 84%);
 }
 
 :is(.auth-shell, .cover-main)[data-liquid-glass="true"] :is(
@@ -13500,7 +13772,9 @@ body:has(
 .product-shell[data-liquid-glass="true"]
   .pinned-list-item[data-selected="true"]
   :is(.dashboard-experience-title-button, .recommendation-history-row) {
+  border-color: transparent;
   background: transparent;
+  box-shadow: none;
   color: var(--liquid-text-primary);
   padding-left: 24px;
 }
@@ -13516,8 +13790,7 @@ body:has(
   .activity-create-expanded-card.liquid-workspace,
   .activity-edit-section.liquid-workspace,
   .activity-synthesis-draft.liquid-workspace,
-  .page-stack-narrow > .form-panel.liquid-workspace,
-  .recommendation-page > .form-panel.liquid-workspace,
+  .page-stack-narrow:not(.recommendation-page) > .form-panel.liquid-workspace,
   .analysis-result.liquid-section:not(.is-embedded),
   .recommendation-result.liquid-section:not(.is-embedded),
   .recommendation-history-detail.liquid-section
@@ -13865,8 +14138,8 @@ body:has(
 .product-shell[data-liquid-glass="true"]
   .dashboard-analysis-split-header {
   border-color: var(--liquid-divider);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
-  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .product-shell[data-liquid-glass="true"]

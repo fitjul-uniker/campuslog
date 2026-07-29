@@ -30,6 +30,97 @@
 
 ## 작업 로그
 
+### 2026-07-30 - 진행 활동 작업 큐 UX 검토
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-30 |
+| 작업자 | Codex |
+| 작업 요약 | 서비스 전체 흐름을 기준으로 오늘의 기록의 `현재 진행 중인 활동` 형식 개선안을 검토·제안 |
+| 수정한 파일 | `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 구현 완료로 기록된 제목 중심 Item 목록(`ISSUE-097`)은 유지한 채, 후속 제안으로 활동명·최근 기록·활동별 `오늘 기록` 즉시 액션을 가진 단일 열 작업 큐와 `경험 정리 필요` 영역 분리를 제시. 진행률·장식 아이콘·새 API/DB schema는 제안하지 않았고, `오늘 기록` 선택 시 기존 기록 패널에 해당 활동을 미리 선택하는 UI 상태 연결만 필요하다고 정리 |
+| 검증한 내용 | `CURRENT_PHASE`, `USER_FLOW`, `IA`, `DESIGN`, `SCREEN_SPEC`, `TodayDashboard`를 대조하고 로그인된 `/dashboard`의 데스크톱과 390px 화면을 읽기 전용으로 확인. 진행 활동은 현재 제목·상세 이동·삭제 메뉴만 제공하고, 기록 패널과 완료 경험 전환은 별도 흐름임을 확인 |
+| 남은 작업 | `ISSUE-133` 사용자 승인 후 화면 명세·디자인 기준·`TodayDashboard` 구현, 데스크톱·모바일·키보드·reduced motion 검증 |
+| 관련 커밋 메시지 | 없음 — 문서 기록만 변경, 구현 미착수 |
+
+### 2026-07-30 - AI 추천 입력 패널 재질 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-30 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천 입력 패널만 다른 주요 탭보다 불투명하게 보이던 Liquid Glass 재질 차이 제거 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/LiquidGlassLegacyCleanup.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 서비스 전체 near-solid 콘텐츠 정리 규칙에서 `.recommendation-page`의 첫 입력 workspace를 제외하고 주요 작업 패널 공통 `--liquid-frosted-fill`을 달력과 같은 반투명 흰색 `rgb(255 255 255 / 64%)`로 조정. 직접적인 블루 tint 없이 쿨 canvas가 은은하게 비치며, 28px blur·hairline·외곽 그림자와 입력·선택 control의 높은 불투명도는 유지 |
+| 검증한 내용 | 로그인 브라우저에서 달력의 계산값 `rgba(255,255,255,0.64)`를 확인하고 오늘의 기록·나의 활동·AI 추천 주요 패널 배경을 같은 값으로 통일. 추천 패널 28px blur·30px radius와 가로 overflow 없음 확인. 전체 Node 테스트 128개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `style: unify recommendation workspace material` (미커밋) |
+
+### 2026-07-30 - 인증 제품 workspace anchor 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-30 |
+| 작업자 | Codex |
+| 작업 요약 | 주요·표준 작성 화면의 첫 작업 표면 왼쪽 위 좌표를 데스크톱과 모바일에서 공통화 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/LiquidGlassFoundation.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 공통 페이지 헤더 최소 높이와 30px workspace gap 토큰을 추가하고 AI 추천의 28px 예외를 제거. 860px 이하 추천 기록 이동 액션을 제목 흐름 밖에 배치하고 640px 이하 44px 아이콘으로 축약. 추천 기록 모바일 gutter의 높은 specificity 예외를 20px/16px로 교정 |
+| 검증한 내용 | 로그인 브라우저 1218px에서 오늘의 기록·나의 활동·AI 추천·추천 기록·활동 추가·경험 추가 첫 표면이 `x=302.96875`, `y=200.96875`로 일치. 390×844에서 네 주요 화면이 `x=16`, `y=259`로 일치하고 AI 추천 헤더 액션은 44px 폭을 유지. 전체 Node 테스트 128개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `style: align product workspace anchors` (미커밋) |
+
+### 2026-07-30 - 추천 기록 선택 행 표면 연결
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-30 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 기록 선택 행의 본문과 즐겨찾기 별 영역 사이에 남은 재질 경계 제거 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/pinned-list.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 외곽 pinned item만 selected 표면과 그림자를 소유하도록 내부 추천 본문 버튼의 border를 투명화하고 과거 inset·drop shadow를 제거. 배경·본문 들여쓰기·독립 별 조작과 접근성 계약은 유지 |
+| 검증한 내용 | 브라우저에서 최종 선택 행 CSS rule이 내부 `border-color: transparent`, `background: transparent`, `box-shadow: none`을 제공하는 것을 확인. 전체 Node 테스트 127개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `style: unify pinned recommendation row surface` (미커밋) |
+
+### 2026-07-30 - 독립 완료 경험 상세 Liquid Glass 재구성
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-30 |
+| 작업자 | Codex |
+| 작업 요약 | 잘린 문서처럼 보이던 독립 완료 경험 상세를 중앙 단일 Liquid Glass 읽기 표면으로 재구성 |
+| 수정한 파일 | `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 독립 상세의 무경계·무곡률·무그림자 예외를 제거하고 최대 900px, 32px 곡률, 28px blur frosted Glass를 적용. 분석 상태를 제목 위로 이동하고 본문은 투명 구획과 hairline으로 연결. 링크·첨부·태그·하단 액션은 쿨 뉴트럴 Liquid control과 capsule로 통일하고 640px 이하 전용 여백·곡률 적용 |
+| 검증한 내용 | 전체 Node 테스트 127개, `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. 로그인 브라우저 1219×1033에서 카드가 main 영역 안에 배치되고 가로 overflow 없음 확인. 390×844에서 카드 x=16·폭 347px·24px 곡률·20px 좌우 padding과 가로 overflow 없음 확인 |
+| 남은 작업 | 최종 diff check와 production build 뒤 개발 서버 재기동 |
+| 관련 커밋 메시지 | `style: refine experience detail liquid glass` (미커밋) |
+
+### 2026-07-29 - AI 분석 보완 편집 위계 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-29 |
+| 작업자 | Codex |
+| 작업 요약 | 부족 정보 MorphSurface의 반복 질문·AI 카드 인상을 줄이고 분석 스플릿 헤더 sticky 제거 |
+| 수정한 파일 | `web/src/components/ai/AnalysisGapAnswerList.tsx`, `web/src/components/ai/AnalysisGapAnswerList.structure.test.mjs`, `web/src/components/experiences/DashboardAnalysisSplitPanel.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 닫힌 부족 정보 행은 분류명·답변 상태만 표시하고 실제 질문은 열림 본문에서 한 번 표시. 열린 surface 그림자 완화, 쿨 뉴트럴 textarea, border·색면 없는 보완 이유, capsule 저장 액션 적용. 분석 스플릿 헤더의 sticky·backdrop blur 제거 |
+| 검증한 내용 | 관련 테스트 9개와 전체 Node 테스트 126개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | production build 뒤 dev server를 재시작하고 현재 로그인 브라우저에서 열림·닫힘·스크롤 최종 시각 확인 |
+| 관련 커밋 메시지 | `style: refine analysis followup editing` (미커밋) |
+
+### 2026-07-29 - 공개 인증 화면 Liquid Glass 마감
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-07-29 |
+| 작업자 | Codex |
+| 작업 요약 | 첫 화면 스크롤 안내의 capsule 장식을 제거하고 로그인·회원가입 영역을 쿨 뉴트럴 단일 Liquid Glass 카드로 정리 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/PublicAuthLiquidGlass.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 스크롤 링크의 border·background·shadow·backdrop filter를 제거하고 텍스트·화살표·44px hit area와 focus를 유지. 공개 인증 영역에는 약한 단일 radial 광원만 두고 인증 패널을 32px frosted Glass 한 장으로 조정했으며 입력·Google·가입 방식 버튼은 near-solid white로 유지. blur 미지원·투명도 감소·대비 증가 fallback 보존 |
+| 검증한 내용 | 신규 구조 테스트 2개 포함 당시 전체 Node 테스트 125개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 자동 브라우저 연결에는 이전 탭만 남아 변경 후 실화면 캡처는 미검증 |
+| 남은 작업 | 실행 중인 dev server를 production build 뒤 재시작하고 사용자가 현재 공개 화면을 새로고침해 최종 시각 확인 |
+| 관련 커밋 메시지 | `style: refine public auth liquid glass` (미커밋) |
+
 ### 2026-07-29 - 서비스 전체 Liquid Glass 레거시 투톤 마감
 
 | 항목 | 내용 |

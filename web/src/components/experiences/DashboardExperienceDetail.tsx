@@ -153,21 +153,14 @@ export function DashboardExperienceDetail({
     >
       <div className="dashboard-detail-header">
         <div>
-          {!isFullscreen ? (
-            <div className="dashboard-detail-status">
-              <StatusBadge status={experience.analysisStatus} />
-            </div>
-          ) : null}
+          <div className="dashboard-detail-status">
+            <StatusBadge status={experience.analysisStatus} />
+          </div>
           {isFullscreen ? (
             <h1 id={titleId}>{experience.title}</h1>
           ) : (
             <h2 id={titleId}>{experience.title}</h2>
           )}
-          {isFullscreen ? (
-            <div className="dashboard-detail-status">
-              <StatusBadge status={experience.analysisStatus} />
-            </div>
-          ) : null}
         </div>
         {!isFullscreen && onClose ? (
           <button
