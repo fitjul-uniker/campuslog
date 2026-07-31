@@ -6,6 +6,10 @@ const source = await readFile(
   new URL("./DashboardAnalysisSplitPanel.tsx", import.meta.url),
   "utf8",
 );
+const styles = await readFile(
+  new URL("../../app/globals.css", import.meta.url),
+  "utf8",
+);
 
 test("분석 스플릿뷰 하단에 독립 분석 상세 링크를 제공한다", () => {
   assert.match(
@@ -21,4 +25,15 @@ test("분석 스플릿뷰 하단에 독립 분석 상세 링크를 제공한다"
 
 test("분석 스플릿 패널은 상세와 나란한 Liquid Glass section을 사용한다", () => {
   assert.match(source, /dashboard-analysis-split-panel liquid-section/);
+});
+
+test("분석 스플릿 헤더는 패널 스크롤에 고정되지 않는다", () => {
+  const header =
+    styles.match(
+      /\.dashboard-analysis-split-header \{([\s\S]*?)\}/,
+    )?.[1] ?? "";
+
+  assert.match(header, /position:\s*relative/);
+  assert.doesNotMatch(header, /position:\s*sticky/);
+  assert.doesNotMatch(header, /backdrop-filter/);
 });

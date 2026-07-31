@@ -10,6 +10,10 @@ const dashboardSource = await readFile(
   new URL("./ExperienceDashboard.tsx", import.meta.url),
   "utf8",
 );
+const globalCssSource = await readFile(
+  new URL("../../app/globals.css", import.meta.url),
+  "utf8",
+);
 
 test("인라인 완료 경험 상세에 삭제 액션을 연결한다", () => {
   const actionsStart = detailSource.indexOf(
@@ -56,4 +60,37 @@ test("나의 활동 목록과 상세는 서로 다른 Liquid Glass 계층을 사
     /dashboard-experience-list-pane liquid-workspace/,
   );
   assert.match(detailSource, /dashboard-experience-detail liquid-section/);
+});
+
+test("독립 경험 상세는 상태부터 읽히는 하나의 Liquid Glass 표면을 사용한다", () => {
+  const headerStart = detailSource.indexOf(
+    '<div className="dashboard-detail-header">',
+  );
+  const headerEnd = detailSource.indexOf(
+    '<dl className="dashboard-detail-meta">',
+    headerStart,
+  );
+  const headerSource = detailSource.slice(headerStart, headerEnd);
+
+  assert.ok(
+    headerSource.indexOf("dashboard-detail-status") <
+      headerSource.indexOf("<h1"),
+    "독립 상세의 분석 상태는 제목보다 먼저 읽혀야 합니다.",
+  );
+  assert.match(
+    globalCssSource,
+    /\.product-surface\s+\.sub-page\s+\.dashboard-experience-detail\.is-fullscreen\s*\{[^}]*border:\s*1px solid var\(--liquid-hairline\)[^}]*border-radius:\s*32px[^}]*background:\s*var\(--liquid-frosted-fill\)[^}]*backdrop-filter:\s*blur\(28px\)/s,
+  );
+  assert.doesNotMatch(
+    globalCssSource,
+    /\.product-surface\s+\.sub-page\s+\.dashboard-experience-detail\.is-fullscreen\s*\{[^}]*border:\s*0[;}]/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-detail\.is-fullscreen[\s\S]*\.dashboard-detail-action\s*\{[^}]*border-radius:\s*999px/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-detail\.is-fullscreen[\s\S]*\.dashboard-detail-tags span[\s\S]*background:\s*var\(--liquid-control-fill\)/s,
+  );
 });

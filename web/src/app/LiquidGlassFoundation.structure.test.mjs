@@ -26,6 +26,10 @@ test("Liquid Glass covers product, authentication, and cover routes", async () =
   assert.match(styles, /--color-surface-muted:\s*#eef1f5/i);
   assert.match(
     styles,
+    /--liquid-frosted-fill:\s*rgb\(255 255 255 \/ 64%\)/i,
+  );
+  assert.match(
+    styles,
     /Cool-neutral Liquid Glass unification — all CampusLog routes/,
   );
 });
@@ -79,6 +83,31 @@ test("desktop primary and sub pages share one breadcrumb navigation rail", async
   assert.match(
     styles,
     /@media \(min-width: 861px\)[\s\S]*?\.product-shell\[data-liquid-glass="true"\][\s\S]*?\.product-surface[\s\S]*?:is\(\.primary-page,\s*\.sub-page\)\s*\{[^}]*--primary-page-gutter:\s*clamp\(24px,\s*3\.2vw,\s*48px\)[^}]*--sub-page-gutter:\s*clamp\(24px,\s*3\.2vw,\s*48px\)[^}]*width:\s*min\(100%,\s*1200px\)[^}]*max-width:\s*1200px/is,
+  );
+});
+
+test("authenticated page workspaces share one top-left anchor", async () => {
+  const styles = await readFile(globalsPath, "utf8");
+
+  assert.match(
+    styles,
+    /\.product-surface\s+:is\(\.primary-page,\s*\.sub-page\)\s*\{[^}]*--product-page-heading-min-height:\s*78px[^}]*--product-workspace-gap:\s*30px/is,
+  );
+  assert.match(
+    styles,
+    /\.product-surface\s+\.primary-page-heading\s*\{[^}]*min-height:\s*var\(--product-page-heading-min-height\)[^}]*margin-bottom:\s*var\(--product-workspace-gap\)/is,
+  );
+  assert.match(
+    styles,
+    /\.product-surface\s+\.recommendation-page\s*\{[^}]*gap:\s*var\(--product-workspace-gap\)/is,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 640px\)[\s\S]*?\.product-surface\s+:is\(\.primary-page,\s*\.sub-page\)\s*\{[^}]*--product-page-heading-min-height:\s*99px/is,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 640px\)[\s\S]*?\.product-surface\s+\.recommendation-history-page\.sub-page\s*\{[^}]*--sub-page-gutter:\s*16px/is,
   );
 });
 

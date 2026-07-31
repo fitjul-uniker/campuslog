@@ -68,8 +68,12 @@ test("보완 이유는 빈 답변 입력창 아래 warning alert로 표시한다
   assert.ok(actionsIndex > warningIndex);
 });
 
-test("부족 정보 질문은 흰색 command surface와 간결한 편집 액션을 사용한다", () => {
-  assert.match(source, /triggerMeta=\{getCategoryLabel\(item\.category\)\}/);
+test("부족 정보 질문은 닫힘에서 분류만, 열림에서 질문을 표시한다", () => {
+  assert.match(
+    source,
+    /triggerLabel=\{getCategoryLabel\(item\.category\)\}/,
+  );
+  assert.doesNotMatch(source, /triggerMeta=/);
   assert.match(source, /analysis-gap-answer-meta/);
   assert.match(
     source,
@@ -80,6 +84,11 @@ test("부족 정보 질문은 흰색 command surface와 간결한 편집 액션�
   assert.doesNotMatch(source, /:\s*"답변 없음";/);
   assert.match(source, /analysis-gap-save-button/);
   assert.doesNotMatch(source, /<Save /);
+  assert.match(source, /analysis-gap-morph-heading/);
+  assert.match(
+    source,
+    /<p className="analysis-gap-question">\{item\.question\}<\/p>/,
+  );
 
   const surface = styles.match(/\.morph-surface \{([\s\S]*?)\}/)?.[1] ?? "";
   const input =
@@ -88,6 +97,10 @@ test("부족 정보 질문은 흰색 command surface와 간결한 편집 액션�
   assert.match(surface, /background:\s*#fff/);
   assert.match(surface, /transform-origin:\s*50% 100%/);
   assert.doesNotMatch(input, /repeating-linear-gradient/);
+  assert.match(
+    styles,
+    /\.morph-surface-content > \.reui-alert\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s,
+  );
 });
 
 test("질문 표면은 16px 간격을 유지하고 모바일에서도 서로 겹치지 않는다", () => {

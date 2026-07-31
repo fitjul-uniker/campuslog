@@ -270,8 +270,7 @@ export function AnalysisGapAnswerList({
               surfaceId={`analysis-gap-${item.id}`}
               isOpen={isOpen}
               onOpenChange={(open) => setOpenGapId(open ? item.id : null)}
-              triggerLabel={item.question}
-              triggerMeta={getCategoryLabel(item.category)}
+              triggerLabel={getCategoryLabel(item.category)}
               statusLabel={savedAnswer ? "답변 완료" : "답변 필요"}
               isComplete={Boolean(savedAnswer)}
               triggerIcon={

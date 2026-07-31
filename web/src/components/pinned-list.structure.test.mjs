@@ -103,7 +103,7 @@ test("즐겨찾기 행 hover는 제목과 별 조작 영역을 하나의 표면�
   );
   assert.match(
     styles,
-    /\.pinned-list-item\[data-selected="true"\]\s+:is\(\.dashboard-experience-title-button,\s*\.recommendation-history-row\)\s*\{[^}]*background:\s*transparent;/is,
+    /\.pinned-list-item\[data-selected="true"\]\s+:is\(\.dashboard-experience-title-button,\s*\.recommendation-history-row\)\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/is,
   );
 });
 

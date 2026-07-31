@@ -13,12 +13,24 @@ test("long-form screens use one content layer instead of stacked glass", async (
   const cleanup = styles.slice(
     styles.indexOf("/* Service-wide Liquid Glass legacy cleanup"),
   );
+  const longFormRule = cleanup.match(
+    /\.product-shell\[data-liquid-glass="true"\]\s*:is\(([\s\S]*?)\)\s*\{[\s\S]*?background:\s*var\(--liquid-content-fill\)[\s\S]*?\}/,
+  )?.[0];
 
   assert.match(cleanup, /\.activity-synthesis-draft\.liquid-workspace/);
   assert.match(cleanup, /\.analysis-result\.liquid-section:not\(\.is-embedded\)/);
   assert.match(cleanup, /\.recommendation-history-detail\.liquid-section/);
   assert.match(cleanup, /background:\s*var\(--liquid-content-fill\)/);
   assert.match(cleanup, /backdrop-filter:\s*none/);
+  assert.ok(longFormRule);
+  assert.match(
+    longFormRule,
+    /\.page-stack-narrow:not\(\.recommendation-page\)\s*>\s*\.form-panel\.liquid-workspace/,
+  );
+  assert.doesNotMatch(
+    longFormRule,
+    /(?<!:not\()\.recommendation-page\s*>\s*\.form-panel\.liquid-workspace/,
+  );
 });
 
 test("embedded analysis and recommendation details flatten nested cards", async () => {
