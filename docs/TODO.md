@@ -23,6 +23,7 @@
 
 진행 메모:
 
+- 2026-08-02: `fix/concurrent-account-session`에서 동일 테스트 계정의 여러 기기·탭 사용을 고려해 로그아웃을 현재 세션만 종료하도록 변경하고, 브라우저 Supabase client singleton을 명시했으며, 세션 만료 감지·최신 경험 재조회·경험별 분석 결과 atomic upsert·동시 수정 감지를 구현. 상세 역할 220자가 AI API의 200자 제한에 걸려 `/api/analyze` 400이 발생한 문제는 분석·추천·답변 초안·보완 질문의 역할 상한을 입력 화면과 같은 1,000자로 통일해 해결. 동시성 저장 조건의 `related_links` JSON 직렬화 오류도 수정했고, 로그인 `test4` 계정의 한빛미디어 경험으로 `/api/analyze` 200, SSE 완료, Supabase 저장, 분석 결과 표시를 확인. 전체 테스트 135개·lint·typecheck·production build·diff check를 통과. 동일 계정 2기기에서 동시에 서로 다른 경험 입력·분석을 실행하는 end-to-end smoke test와 배포 반영은 남음 (`ISSUE-134`, `ISSUE-135`).
 - 2026-07-24: `feature/ai-image-input`에서 AI 추천 입력에 JPG·PNG·WebP 캡쳐 이미지를 최대 3장 추가. 파일 선택과 추천 폼 안 `Cmd/Ctrl+V` 붙여넣기를 지원하고 일반 텍스트 붙여넣기는 유지. 텍스트·이미지 단독 또는 혼합 입력을 브라우저에서 장당 약 750KB 이하로 준비해 기존 `gpt-4.1-mini` vision structured output 한 번으로 처리하며, 별도 OCR 확인 화면 없이 현재 SSE 대기 UX와 추천 저장 흐름을 유지. 원본 이미지는 저장하지 않으며 추출 문장과 입력 출처만 추천 기록에 저장. 자동·반응형 UI 검증은 완료했고 Supabase migration 적용과 실제 로그인 OpenAI 저장·재조회 smoke test는 남음.
 - 2026-07-24: `feature/experience-attachments`에서 완료 경험에 사진(JPG·PNG·WebP)과 PDF 자료를 합계 3개, 파일당 5MB까지 추가하는 private Supabase Storage / metadata RLS migration과 별도 repository를 구현. 새 경험·수정 폼의 첨부 선택, 나의 활동 인라인·독립 상세 조회, 독립 상세 개별 삭제를 연결하고 첨부를 AI 입력에서 분리. 코드 검증은 완료했으며 실제 Supabase project migration 적용과 로그인 업로드 smoke test는 남음.
 - 2026-07-13: `feature/auth-foundation`에서 Supabase Auth helper, 이메일/비밀번호 server action, Google OAuth 시작, OAuth callback, 로그아웃, 보호 경로 middleware, 최소 로그인/회원가입 UI, 인증 error/redirect contract 문서를 추가. 사용자가 Supabase project, 로컬/Vercel 환경 변수, Google OAuth provider를 설정했고 Google OAuth callback과 로그아웃 복귀를 확인했습니다. 2026-07-14 UX 결정에 따라 로그아웃 완료 알림은 제거하고 `/` 로그인 영역으로 바로 복귀합니다. 이메일 signup은 Supabase 기본 email provider rate limit에 걸릴 수 있어 confirm email / SMTP 정책 결정이 필요합니다.
@@ -66,10 +67,13 @@
 - [x] localStorage → 계정 데이터 마이그레이션 정책 문서화 (`ISSUE-025`)
 - [ ] DailyLog write와 AI 합성 상태 무효화를 transaction 또는 멱등 부분 성공 contract로 정리 (`ISSUE-039`)
 - [x] AI API 보호 foundation: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용 (`ISSUE-024`)
+- [x] 공유 테스트 계정 안정화 foundation: 현재 세션만 로그아웃, 세션 만료 감지, 분석 전 최신 경험 재조회, 분석 결과 atomic upsert, 경험 동시 수정 감지 구현 (`ISSUE-134`)
+- [ ] 동일 테스트 계정 2기기에서 서로 다른 경험 동시 입력·분석과 한쪽 로그아웃 후 다른 세션 유지 end-to-end smoke test (`ISSUE-134`)
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [x] AI 추천 입력 선별·압축으로 경험 수 증가 시 `/api/recommend` 본문 상한 초과를 방지 (`ISSUE-084`)
 - [ ] 완료 경험 사진·PDF 첨부 코드 구현 완료, Supabase migration 적용과 로그인 업로드·조회·삭제 smoke test 수행 (`ISSUE-095`)
 - [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 화면·신규 분석 출력 간소화 (`ISSUE-078`)
+- [x] 200자를 넘는 상세 역할 기록의 AI 입력 상한을 1,000자로 통일하고 실제 로그인 경험 분석·Supabase 저장 smoke test 완료 (`ISSUE-135`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
 - [x] Supabase project에 추천 목적 `jd`, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 (`ISSUE-060`, `ISSUE-079`)
 - [ ] 로그인 세션에서 JD 추천 저장·재조회 smoke test (`ISSUE-060`, `ISSUE-079`)

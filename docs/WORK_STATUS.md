@@ -21,8 +21,11 @@
 - [x] 활동 추가 Expandable Screen, 공용 Checkbox·CopyButton과 좌측 하단 프로필 드롭다운 통합
 - [x] 활동 추가의 날짜 입력 상단선을 맞추고 예상 종료일 `미정` 체크박스를 24px로 확대해 라벨 옆에 정렬 (`ISSUE-074`)
 - [x] 프로필 드롭다운 로그아웃 제출 안정화와 세션 제거·보호 경로 재차단 브라우저 확인
+- [x] `fix/concurrent-account-session`에서 공유 테스트 계정용 현재 세션 로그아웃, 만료 감지, 분석 전 최신 경험 재조회, 분석 결과 atomic upsert와 경험 동시 수정 충돌 감지 구현 (`ISSUE-134`)
+- [ ] 동일 테스트 계정의 2기기 동시 입력·분석과 세션 독립 유지 end-to-end smoke test (`ISSUE-134`)
 - [x] AI API 보호 foundation: 세 AI API Route의 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용
 - [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심 schema / 저장 / 표시 간소화
+- [x] 상세 역할 220자 경험의 AI API 입력 상한 불일치와 분석 저장 JSON 오류를 수정하고 로그인 브라우저에서 `/api/analyze` 200·Supabase 저장·결과 표시 확인 (`ISSUE-135`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 schema / 저장 / 표시 구현
 - [x] AI 추천 목적별 흐름 재정리: 신규 목적을 면접 / 자기소개서 / JD 분석 / 기타로 제한하고, 목적별 입력 안내·예시·생성 옵션·CTA를 단일 설정 객체로 관리 (`ISSUE-079`)
 - [x] AI 추천 목적별 예시 문항을 실제 채용·지원 문항에 가깝게 교체하고, JD 분석 첫 예시 선택 시 백엔드 개발자 JD 샘플이 입력되도록 조정 (`ISSUE-079`)
@@ -253,21 +256,22 @@
 
 ## 다음 작업 순서
 
-1. 진행 활동 / 마무리 필요 활동 수정과 미래 예정 종료일 활동의 즉시 종료 / AI 초안 생성 브라우저 회귀 확인 (`ISSUE-070`)
-2. 2026-07-17 QA 수정 범위의 실제 로그인 세션 브라우저 회귀 확인
-3. 테스트 계정별 더미 경험·활동·기록 데이터 seed 필요 여부 결정
-4. 목적별 AI 추천·생성 실제 로그인 세션 smoke test: 면접 / 자기소개서 / JD 분석 / 기타 추천 저장·재조회, 목적별 생성 옵션 노출, 생성 결과 확인 (`ISSUE-079`)
-5. AI 구조화 호출 status 이벤트의 실제 로그인 세션 검증: 장시간 OpenAI 호출 중 상태 문구 갱신, completed / error 이벤트, 저장 성공 경로 확인 (`ISSUE-083`)
-6. 답변 초안 스트리밍 배포 환경 버퍼링 여부와 장시간 응답 회귀 모니터링 (`ISSUE-081`)
-7. AI 요청 측정 / 취소의 실제 로그인 세션 검증: 장시간 OpenAI 호출 중 취소 버튼, 서버 로그 메트릭 값, 스트리밍 TTFT / 완료 시간, 취소 후 저장 방지 확인 (`ISSUE-082`)
-8. JD 분석 실제 OpenAI 응답 품질 확인과 prompt 튜닝 (`ISSUE-079`)
-9. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
-10. 분석 부족 정보 답변 저장의 실제 로그인 세션 smoke test와 추천 반영 평가 기준 정리
-11. AI API 보호 foundation 실제 세션 환경 smoke test와 durable rate limit / OpenAI spend alert 운영 결정
-12. 추천 v2 / 목적별 답변 생성 저장 smoke test
-13. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증
-14. Vercel + Supabase preview 환경 통합 확인
-15. 통합 회귀·보안·비용·접근성 검증
+1. 동일 테스트 계정 2기기에서 서로 다른 경험 동시 입력·분석, 같은 경험 동시 수정 충돌 안내, 한 기기 로그아웃 후 다른 세션 유지 확인 (`ISSUE-134`)
+2. 진행 활동 / 마무리 필요 활동 수정과 미래 예정 종료일 활동의 즉시 종료 / AI 초안 생성 브라우저 회귀 확인 (`ISSUE-070`)
+3. 2026-07-17 QA 수정 범위의 실제 로그인 세션 브라우저 회귀 확인
+4. 테스트 계정별 더미 경험·활동·기록 데이터 seed 필요 여부 결정
+5. 목적별 AI 추천·생성 실제 로그인 세션 smoke test: 면접 / 자기소개서 / JD 분석 / 기타 추천 저장·재조회, 목적별 생성 옵션 노출, 생성 결과 확인 (`ISSUE-079`)
+6. AI 구조화 호출 status 이벤트의 배포 환경 검증: 장시간 OpenAI 호출 중 status 표시와 SSE 버퍼링 확인 (`ISSUE-083`)
+7. 답변 초안 스트리밍 배포 환경 버퍼링 여부와 장시간 응답 회귀 모니터링 (`ISSUE-081`)
+8. AI 요청 측정 / 취소의 실제 로그인 세션 검증: 장시간 OpenAI 호출 중 취소 버튼, 서버 로그 메트릭 값, 스트리밍 TTFT / 완료 시간, 취소 후 저장 방지 확인 (`ISSUE-082`)
+9. JD 분석 실제 OpenAI 응답 품질 확인과 prompt 튜닝 (`ISSUE-079`)
+10. OCR / JD 이미지 입력: 텍스트 붙여넣기 흐름 안정화 후 Optional로 검토
+11. 분석 부족 정보 답변 저장의 실제 로그인 세션 smoke test와 추천 반영 평가 기준 정리
+12. AI API 보호 foundation 실제 세션 환경 smoke test와 durable rate limit / OpenAI spend alert 운영 결정
+13. 추천 v2 / 목적별 답변 생성 저장 smoke test
+14. 활동 종료 합성 초안 저장과 완료 Experience 생성 흐름을 Supabase DB 기준으로 추가 브라우저 검증
+15. Vercel + Supabase preview 환경 통합 확인
+16. 통합 회귀·보안·비용·접근성 검증
 
 ## 활성 기준 문서
 
@@ -297,21 +301,21 @@
 - DailyLog write 뒤 합성 draft·activity 상태 무효화가 단일 DB transaction이 아니어서 부분 성공을 실패로 오인할 수 있음 (`ISSUE-039`)
 - Google 계정 A/B 데이터 분리 수동 smoke test는 완료했지만 SQL-level 또는 자동화된 RLS 정책 검증은 아직 별도로 수행하지 않음
 - AI API route-level 보호와 runtime-local rate guard는 추가됐지만 Vercel 다중 인스턴스용 durable rate limit, 중복 요청 멱등성, OpenAI spend limit / alert는 후속 hardening 필요
-- AI 경험 분석 v2의 실제 OpenAI 성공 경로와 Supabase migration 적용 후 저장 smoke test 필요
+- AI 경험 분석 v2는 로그인 `test4` 계정의 상세 역할 220자 경험에서 OpenAI SSE 완료와 Supabase 저장·결과 표시를 확인. 다른 경험 형태와 배포 환경의 추가 회귀는 남음 (`ISSUE-135`)
 - 목적별 추천 v2와 JD 분석은 Supabase migration 적용과 예시 선택 입력 반영 로직 테스트는 완료됐지만 실제 로그인 세션 OpenAI 성공 경로, 저장·재조회, 결과 품질 smoke test 필요 (`ISSUE-079`)
 - AI 추천 입력 선별·압축은 100개 더미 데이터 기준 요청 크기 검증을 완료했지만 실제 로그인 세션의 장기 누적 경험 데이터에서 후보 품질과 OpenAI 추천 품질 smoke test 필요 (`ISSUE-084`)
 - 목적별 답변 생성은 정적 검사와 build를 통과했지만 실제 OpenAI 성공 경로와 생성 결과 품질 smoke test 필요 (`ISSUE-079`)
-- AI 구조화 호출 1차 대기 UX는 정적 검사와 기본 렌더링, 사용자 직접 로직 테스트를 완료했지만 실제 로그인 세션에서 장시간 OpenAI 응답 중 표시 상태와 저장 성공 경로 smoke test 필요 (`ISSUE-080`)
+- AI 구조화 호출 1차 대기 UX는 실제 로그인 경험 분석에서 단계 문구, `/api/analyze` 200, 저장 성공 경로를 확인. 추천·활동 합성·답변 초안과 배포 환경의 추가 회귀는 남음 (`ISSUE-080`)
 - 답변 초안 스트리밍은 정적 검사, build, 기본 렌더링과 사용자 직접 로직 테스트를 완료했지만 배포 환경의 스트림 버퍼링 여부와 장시간 응답 회귀 모니터링 필요 (`ISSUE-081`)
 - AI 요청 측정 / 취소 3차는 정적 검사, build, 기본 렌더링을 통과했지만 실제 로그인 세션의 장시간 OpenAI 취소, 서버 로그 메타데이터 확인, 외부 AI 요청 중단 시점과 비용 영향은 추가 검증 필요 (`ISSUE-082`)
-- 구조화 호출 4차 이벤트 스트리밍은 정적 검사와 build를 통과했지만 실제 로그인 세션의 장시간 OpenAI 호출 중 status 이벤트 표시, completed / error 처리, 배포 환경 SSE 버퍼링 여부는 추가 검증 필요 (`ISSUE-083`)
+- 구조화 호출 4차 이벤트 스트리밍은 실제 로그인 경험 분석에서 status 표시와 completed·저장 성공을 확인. error 처리와 추천·활동 합성, 배포 환경 SSE 버퍼링은 추가 검증 필요 (`ISSUE-083`)
 - 기록 보완 루프의 실제 OpenAI 성공 경로, Supabase migration 적용 후 저장 smoke test, 평가 기준과 회귀 사례 필요
 - 팀 테스트용 Supabase Auth 계정 9개는 생성됐지만, 각 계정에 넣을 더미 경험·활동·기록 데이터 seed는 아직 없음
 - 2026-07-17 QA 수정은 `npm run lint`, `npm run build`를 통과했지만 실제 로그인 세션에서 보완 질문 복원, 활동 삭제 cascade, 완료 활동 복원, 날짜별 기록 제한, 답변 초안 실제 OpenAI 분량 보정, 작은 화면 팝업 스크롤 회귀 확인이 아직 필요
 - 진행 활동 / 마무리 필요 활동 수정과 미래 예정 종료일 활동의 즉시 종료 / AI 초안 생성 수정은 `npm run lint`, `npm run build`를 통과했지만 실제 로그인 세션 브라우저에서 아직 수동 확인하지 않음
 - OCR 이미지 원본 저장 여부와 Supabase Storage 도입 범위 미확정
 - 새 활동 추가 패널과 프로필 메뉴의 실제 390px 기기 시각 smoke test 미완료
-- 로그아웃 실패 안내·재시도, 세션 scope와 미저장 입력 경고 정책 미확정 (`ISSUE-043`)
+- 현재 기기 로그아웃은 `local` scope로 구현했으나 동일 계정 2기기 유지 smoke test, 로그아웃 실패 안내·재시도와 미저장 입력 경고 정책은 남음 (`ISSUE-043`, `ISSUE-134`)
 - Track 간 공통 파일 충돌과 merge 순서 관리 필요
 - 기존 Next.js 15.5.20과 전이 PostCSS·sharp에 production high advisory 3건이 남아 있어 별도 framework dependency 업데이트와 인증·API·이미지 처리 회귀 검증 필요 (`ISSUE-036`)
 
