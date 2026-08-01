@@ -80,7 +80,25 @@ type RepositoryError = {
   details?: string;
   hint?: string;
   message?: string;
+  status?: number;
 };
+
+export class CampusLogRepositoryError extends Error {
+  constructor(
+    message: string,
+    readonly code = "REPOSITORY_ERROR",
+  ) {
+    super(message);
+    this.name = "CampusLogRepositoryError";
+  }
+}
+
+export function isRepositorySessionError(error: unknown): boolean {
+  return (
+    error instanceof CampusLogRepositoryError &&
+    error.code === "SESSION_REQUIRED"
+  );
+}
 
 type ExperienceRow = {
   id: string;
@@ -212,6 +230,7 @@ export type CampusLogRepository = {
     update(
       id: string,
       input: ExperienceFormInput,
+      expectedUpdatedAt?: string,
     ): Promise<Experience | null>;
     delete(id: string): Promise<boolean>;
     createFromActivity(
@@ -229,7 +248,10 @@ export type CampusLogRepository = {
   };
   analyses: {
     getByExperienceId(experienceId: string): Promise<ExperienceAnalysis | null>;
-    save(result: AnalysisApiResult): Promise<ExperienceAnalysis | null>;
+    save(
+      result: AnalysisApiResult,
+      expectedExperience?: Experience,
+    ): Promise<ExperienceAnalysis | null>;
     saveGapAnswer(
       experienceId: string,
       gapId: string,
@@ -312,11 +334,27 @@ function createId(prefix: string): string {
 
 function throwIfError(error: RepositoryError | null) {
   if (error) {
+    const isSessionError =
+      error.status === 401 ||
+      error.code === "PGRST301" ||
+      /(?:invalid|expired).*jwt|jwt.*(?:invalid|expired)|not authenticated/i.test(
+        error.message ?? "",
+      );
+
+    if (isSessionError) {
+      throw new CampusLogRepositoryError(
+        "로그인 세션이 만료되었습니다. 다시 로그인한 뒤 시도해 주세요.",
+        "SESSION_REQUIRED",
+      );
+    }
+
     const details = [error.message, error.details, error.hint, error.code]
       .filter(Boolean)
       .join(" ");
 
-    throw new Error(details || "CampusLog repository request failed.");
+    throw new CampusLogRepositoryError(
+      details || "CampusLog repository request failed.",
+    );
   }
 }
 
@@ -673,7 +711,7 @@ function createSupabaseCampusLogRepository(
         throwIfError(error);
         return toExperience(data as ExperienceRow);
       },
-      async update(id, input) {
+      async update(id, input, expectedUpdatedAt) {
         const normalizedInput = normalizeExperienceInput(input);
 
         if (
@@ -699,16 +737,28 @@ function createSupabaseCampusLogRepository(
           ? "needs_reanalysis"
           : currentExperience.analysisStatus;
 
-        const { data, error } = await supabase
+        let updateQuery = supabase
           .from("experiences")
           .update({
             ...normalizedInput,
             analysis_status: analysisStatus,
           })
-          .eq("id", id)
-          .select("*")
-          .single();
+          .eq("id", id);
+
+        if (expectedUpdatedAt) {
+          updateQuery = updateQuery.eq("updated_at", expectedUpdatedAt);
+        }
+
+        const { data, error } = await updateQuery.select("*").maybeSingle();
         throwIfError(error);
+
+        if (!data && expectedUpdatedAt) {
+          throw new CampusLogRepositoryError(
+            "이 경험이 다른 화면에서 먼저 수정되었습니다. 최신 내용을 다시 불러온 뒤 저장해 주세요.",
+            "CONCURRENT_UPDATE",
+          );
+        }
+
         return toExperience(data as ExperienceRow);
       },
       async delete(id) {
@@ -937,7 +987,7 @@ function createSupabaseCampusLogRepository(
         throwIfError(error);
         return data ? toAnalysis(data as ExperienceAnalysisRow) : null;
       },
-      async save(result) {
+      async save(result, expectedExperience) {
         const repository = createSupabaseCampusLogRepository(supabase);
         const sourceExperience = await repository.experiences.getById(
           result.experienceId,
@@ -947,23 +997,41 @@ function createSupabaseCampusLogRepository(
           return null;
         }
 
-        const existingAnalysis = await this.getByExperienceId(
-          result.experienceId,
-        );
+        let experienceUpdateQuery = supabase
+          .from("experiences")
+          .update({ analysis_status: "analyzed" })
+          .eq("id", result.experienceId);
+
+        if (expectedExperience) {
+          experienceUpdateQuery = experienceUpdateQuery
+            .eq("title", expectedExperience.title)
+            .eq("period", expectedExperience.period)
+            .eq("role", expectedExperience.role)
+            .eq("description", expectedExperience.description)
+            .eq("achievements", expectedExperience.achievements)
+            .eq("related_links", expectedExperience.relatedLinks);
+        }
+
         const { data: updatedExperienceData, error: experienceError } =
-          await supabase
-            .from("experiences")
-            .update({ analysis_status: "analyzed" })
-            .eq("id", result.experienceId)
-            .select("*")
-            .single();
+          await experienceUpdateQuery.select("*").maybeSingle();
         throwIfError(experienceError);
+
+        if (!updatedExperienceData && expectedExperience) {
+          throw new CampusLogRepositoryError(
+            "분석 중 경험 내용이 다른 화면에서 수정되었습니다. 최신 내용으로 다시 분석해 주세요.",
+            "CONCURRENT_UPDATE",
+          );
+        }
+
+        if (!updatedExperienceData) {
+          return null;
+        }
 
         const updatedExperience = toExperience(
           updatedExperienceData as ExperienceRow,
         );
         const analysisPayload = {
-          id: existingAnalysis?.id ?? createId("analysis"),
+          id: createId("analysis"),
           experience_id: result.experienceId,
           schema_version: result.schemaVersion,
           prompt_version: result.promptVersion,
@@ -980,13 +1048,13 @@ function createSupabaseCampusLogRepository(
           generated_at: new Date().toISOString(),
           source_experience_updated_at: updatedExperience.updatedAt,
         };
-        const query = existingAnalysis
-          ? supabase
-              .from("experience_analyses")
-              .update(analysisPayload)
-              .eq("id", existingAnalysis.id)
-          : supabase.from("experience_analyses").insert(analysisPayload);
-        const { data, error } = await query.select("*").single();
+        const { data, error } = await supabase
+          .from("experience_analyses")
+          .upsert(analysisPayload, {
+            onConflict: "user_id,experience_id",
+          })
+          .select("*")
+          .single();
         throwIfError(error);
 
         return toAnalysis(data as ExperienceAnalysisRow);

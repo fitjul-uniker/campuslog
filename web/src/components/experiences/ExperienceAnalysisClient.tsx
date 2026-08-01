@@ -17,7 +17,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { requestExperienceAnalysis } from "@/lib/analysisApi";
+import { analyzeCurrentExperience } from "@/lib/experienceAnalysisWorkflow";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
@@ -71,15 +71,6 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     };
   }, []);
 
-  async function refreshExperience() {
-    const repository = getCampusLogRepository();
-    const updatedExperience = await repository.experiences.getById(id);
-
-    if (updatedExperience) {
-      setExperience(updatedExperience);
-    }
-  }
-
   async function handleAnalyze() {
     if (!experience || isAnalyzing) {
       return;
@@ -92,10 +83,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     const abortController = new AbortController();
     analysisAbortControllerRef.current = abortController;
 
-    const repository = getCampusLogRepository();
-    const followups =
-      await repository.experienceFollowups.listByExperienceId(experience.id);
-    const response = await requestExperienceAnalysis(experience, followups, {
+    const response = await analyzeCurrentExperience(experience.id, {
       signal: abortController.signal,
       stream: true,
       onStatus: setAnalysisStatusMessage,
@@ -115,23 +103,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       return;
     }
 
-    const savedAnalysis = await repository.analyses.save(response.analysis);
-
-    if (!savedAnalysis) {
-      setAnalysisError(
-        "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해주세요.",
-      );
-      setIsAnalyzing(false);
-      setAnalysisStatusMessage("");
-      if (analysisAbortControllerRef.current === abortController) {
-        analysisAbortControllerRef.current = null;
-      }
-      return;
-    }
-
-    await refreshExperience();
-
-    setAnalysis(savedAnalysis);
+    setExperience(response.experience);
+    setAnalysis(response.analysis);
     setIsAnalyzing(false);
     setAnalysisStatusMessage("");
     if (analysisAbortControllerRef.current === abortController) {

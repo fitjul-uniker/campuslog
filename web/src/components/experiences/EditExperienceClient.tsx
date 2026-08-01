@@ -95,7 +95,7 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
 
     const repository = getCampusLogRepository();
     const updatedExperience = hasExperienceContentChanges(experience, input)
-      ? await repository.experiences.update(id, input)
+      ? await repository.experiences.update(id, input, experience.updatedAt)
       : experience;
 
     if (!updatedExperience) {

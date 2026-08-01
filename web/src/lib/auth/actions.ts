@@ -285,7 +285,8 @@ export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
 
   if (supabase) {
-    await supabase.auth.signOut();
+    // Keep other devices signed in when a shared/test account logs out here.
+    await supabase.auth.signOut({ scope: "local" });
   }
 
   redirect("/?authMode=login#auth");

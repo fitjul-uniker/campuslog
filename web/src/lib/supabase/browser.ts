@@ -11,5 +11,9 @@ export function createSupabaseBrowserClient() {
     return null;
   }
 
-  return createBrowserClient(config.url, config.anonKey);
+  return createBrowserClient(config.url, config.anonKey, {
+    // A single auth client coordinates refresh-token access across every
+    // repository consumer mounted in the same browser tab.
+    isSingleton: true,
+  });
 }
