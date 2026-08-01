@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-02 - AI 추천 목적별 대표 질문과 JD 실제형 사례 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-02 |
+| 작업자 | 사용자 + Codex |
+| 작업 요약 | AI 기반 활동 추천의 자동완성 질문을 다양한 전공의 대학생이 활용할 대표 문항으로 정리하고 JD 분석에 구체적인 채용 사례를 추가 |
+| 수정한 파일 | `web/src/lib/recommendationPurposeConfig.ts`, `web/src/components/ai/RecommendationForm.structure.test.mjs`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 면접·자기소개서·JD 분석·기타의 예시를 각각 6개로 통일. 면접과 자기소개서는 역할·성과·문제 해결·협업·주도성·성장 중심의 범용 문항으로 구성하고, 기타는 포트폴리오·이력서·1분 자기소개·대외활동·발표·전공과 직무 연결을 다룸. JD 분석은 플랫폼·결제 서버와 커머스 백엔드의 역할·지원자격·기술 스택·면접 관점을 담은 실제형 샘플 2개와 전 직무 공통 분석 질문 4개로 구성. 기존 목적 값, 생성 옵션, API·저장 계약은 변경하지 않음 |
+| 검증한 내용 | 목적별 새 예시 label과 두 JD 샘플 입력 연결, 목적별 예시 6개 고정을 구조 테스트로 확인. 전체 Node 테스트 149개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 목적별 예시 선택, 전체 문장 입력 반영, 긴 JD 샘플 적용을 직접 로직 테스트로 확인 |
+| 남은 작업 | 실제 OpenAI 추천 결과의 목적별 품질과 저장·재조회는 기존 `ISSUE-079` 범위에서 계속 확인 |
+| 관련 커밋 메시지 | `feat: refine recommendation prompt examples` |
+
 ### 2026-08-02 - PR #64 main 충돌 해결과 이슈 번호 정리
 
 | 항목 | 내용 |

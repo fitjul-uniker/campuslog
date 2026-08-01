@@ -97,26 +97,48 @@ test("추천 폼은 입력과 액션을 Liquid Glass 역할로 그룹화한다",
 
 test("목적별 예시는 짧은 선택 문구와 실제 입력 문장을 분리한다", () => {
   assert.match(purposeConfigSource, /label: "맡은 역할과 성과"/);
-  assert.match(purposeConfigSource, /label: "어려운 문제 해결"/);
-  assert.match(purposeConfigSource, /label: "기술 선택과 판단"/);
-  assert.match(purposeConfigSource, /label: "빠른 학습과 적용"/);
-  assert.match(purposeConfigSource, /label: "잘못된 판단과 대응"/);
-  assert.match(purposeConfigSource, /label: "직무 역량과 성과"/);
-  assert.match(purposeConfigSource, /label: "협업과 나의 기여"/);
-  assert.match(purposeConfigSource, /label: "문제 발견과 개선"/);
-  assert.match(purposeConfigSource, /label: "도전 목표와 실행"/);
-  assert.match(purposeConfigSource, /label: "실패와 배운 점"/);
-  assert.match(purposeConfigSource, /label: "채용공고 붙여넣기"/);
-  assert.match(purposeConfigSource, /label: "필수요건 근거 비교"/);
-  assert.match(purposeConfigSource, /label: "경험 Top 3와 활용"/);
-  assert.match(purposeConfigSource, /label: "대표 포트폴리오"/);
-  assert.match(purposeConfigSource, /label: "대외활동 지원 동기"/);
-  assert.match(purposeConfigSource, /label: "팀 기여 경험"/);
-  assert.match(purposeConfigSource, /label: "자기주도적 성장"/);
-  assert.match(purposeConfigSource, /label: "프로젝트 발표"/);
-  assert.match(purposeConfigSource, /label: "가장 크게 성장한 과정"/);
+  assert.match(purposeConfigSource, /label: "문제 해결"/);
+  assert.match(purposeConfigSource, /label: "협업과 갈등"/);
+  assert.match(purposeConfigSource, /label: "주도적인 실행"/);
+  assert.match(purposeConfigSource, /label: "실패와 성장"/);
+  assert.match(purposeConfigSource, /label: "직무 연결"/);
+  assert.match(purposeConfigSource, /label: "지원동기"/);
+  assert.match(purposeConfigSource, /label: "직무 역량"/);
+  assert.match(purposeConfigSource, /label: "협업 경험"/);
+  assert.match(purposeConfigSource, /label: "도전과 성장"/);
+  assert.match(purposeConfigSource, /label: "실패와 개선"/);
+  assert.match(purposeConfigSource, /label: "플랫폼·결제 서버 JD"/);
+  assert.match(purposeConfigSource, /label: "커머스 백엔드 JD"/);
+  assert.match(purposeConfigSource, /label: "채용공고 핵심 요약"/);
+  assert.match(purposeConfigSource, /label: "요구사항과 내 경험"/);
+  assert.match(purposeConfigSource, /label: "적합 경험 Top 3"/);
+  assert.match(purposeConfigSource, /label: "예상 면접과 지원 전략"/);
+  assert.match(purposeConfigSource, /label: "포트폴리오 대표 경험"/);
+  assert.match(purposeConfigSource, /label: "이력서 문장 정리"/);
+  assert.match(purposeConfigSource, /label: "1분 자기소개"/);
+  assert.match(purposeConfigSource, /label: "대외활동·인턴 지원"/);
+  assert.match(purposeConfigSource, /label: "프로젝트·활동 발표"/);
+  assert.match(purposeConfigSource, /label: "전공과 직무 연결"/);
   assert.match(
     purposeConfigSource,
-    /input:\s*"지원 직무와 관련된 역량을 발휘하여 구체적인 결과를 만든 경험을 작성해 주세요\."/,
+    /input:\s*PLATFORM_PAYMENT_SERVER_JD_SAMPLE/,
+  );
+  assert.match(
+    purposeConfigSource,
+    /input:\s*COMMERCE_BACKEND_JD_SAMPLE/,
+  );
+});
+
+test("면접·자기소개서·JD 분석·기타는 대표 예시를 각각 6개만 제공한다", () => {
+  const exampleGroups = [
+    ...purposeConfigSource.matchAll(
+      /examples: \[([\s\S]*?)\n    \],\n    generationOptions/g,
+    ),
+  ];
+
+  assert.equal(exampleGroups.length, 4);
+  assert.deepEqual(
+    exampleGroups.map(([, group]) => (group.match(/label: "/g) ?? []).length),
+    [6, 6, 6, 6],
   );
 });
