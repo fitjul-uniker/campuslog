@@ -38,6 +38,7 @@ import type {
 } from "@/lib/types";
 import { CountUp } from "@/components/ui/CountUp";
 import { GooeyInput } from "@/components/ui/GooeyInput";
+import { LoadingState } from "@/components/common/LoadingState";
 import { usePinnedItems } from "@/hooks/use-pinned-items";
 import {
   Breadcrumb,
@@ -532,44 +533,52 @@ export function ExperienceDashboard() {
               aria-labelledby="dashboard-experience-list-heading"
               transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
             >
-              <header className="dashboard-experience-section-heading">
-                <div className="dashboard-experience-heading-row">
-                  <div className="dashboard-experience-title-group">
-                    <h2 id="dashboard-experience-list-heading">전체 활동</h2>
-                    {activityItems && !loadError ? (
-                      <span className="dashboard-experience-count">
-                        <CountUp to={activityItems.length} duration={0.75} />
-                        <span className="sr-only">
-                          전체 활동 {activityItems.length}개
+              {activityItems !== null ? (
+                <header className="dashboard-experience-section-heading">
+                  <div className="dashboard-experience-heading-row">
+                    <div className="dashboard-experience-title-group">
+                      <h2 id="dashboard-experience-list-heading">전체 활동</h2>
+                      {activityItems && !loadError ? (
+                        <span className="dashboard-experience-count">
+                          <CountUp to={activityItems.length} duration={0.75} />
+                          <span className="sr-only">
+                            전체 활동 {activityItems.length}개
+                          </span>
                         </span>
-                      </span>
-                    ) : null}
-                    {activityItems && !loadError ? (
-                      <span className="dashboard-active-activity-count">
-                        진행 중
-                        <CountUp to={activeActivityCount} duration={0.75} />
-                        <span className="sr-only">
-                          {activeActivityCount}개
+                      ) : null}
+                      {activityItems && !loadError ? (
+                        <span className="dashboard-active-activity-count">
+                          진행 중
+                          <CountUp to={activeActivityCount} duration={0.75} />
+                          <span className="sr-only">
+                            {activeActivityCount}개
+                          </span>
                         </span>
-                      </span>
+                      ) : null}
+                    </div>
+                    {activityItems && activityItems.length > 0 ? (
+                      <GooeyInput
+                        className="dashboard-experience-search"
+                        placeholder="검색"
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                        expandedWidth={hasSelection ? 218 : 250}
+                      />
                     ) : null}
                   </div>
-                  {activityItems && activityItems.length > 0 ? (
-                    <GooeyInput
-                      className="dashboard-experience-search"
-                      placeholder="검색"
-                      value={searchQuery}
-                      onValueChange={setSearchQuery}
-                      expandedWidth={hasSelection ? 218 : 250}
-                    />
+                  {normalizedSearchQuery && filteredActivityItems ? (
+                    <p className="master-detail-search-feedback" role="status">
+                      {filteredActivityItems.length}개의 활동을 찾았습니다.
+                    </p>
                   ) : null}
-                </div>
-                {normalizedSearchQuery && filteredActivityItems ? (
-                  <p className="master-detail-search-feedback" role="status">
-                    {filteredActivityItems.length}개의 활동을 찾았습니다.
-                  </p>
-                ) : null}
-              </header>
+                </header>
+              ) : null}
+
+              {activityItems === null ? (
+                <h2 id="dashboard-experience-list-heading" className="sr-only">
+                  전체 활동
+                </h2>
+              ) : null}
 
               {experiencePins.error ? (
                 <div className="pinned-list-error" role="alert">
@@ -592,15 +601,11 @@ export function ExperienceDashboard() {
                   </RippleButton>
                 </div>
               ) : activityItems === null ? (
-                <div
-                  className="dashboard-list-loading"
-                  aria-busy="true"
-                  aria-label="나의 활동을 불러오는 중입니다"
-                >
-                  {Array.from({ length: 6 }, (_, index) => (
-                    <span key={index} aria-hidden="true" />
-                  ))}
-                </div>
+                <LoadingState
+                  variant="list"
+                  count={6}
+                  message="나의 활동을 불러오는 중입니다."
+                />
               ) : activityItems.length === 0 ? (
                 <div className="dashboard-list-state is-empty">
                   <span className="dashboard-empty-mark" aria-hidden="true">

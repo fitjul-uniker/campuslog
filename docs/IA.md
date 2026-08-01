@@ -31,7 +31,7 @@ CampusLog
     ├── [현재] 나의 활동 (`/experiences`)
     │   ├── 진행 활동과 완료 경험 통합 목록
     │   ├── 완료 경험 인라인 상세 ↔ AI 분석 결과 스플릿뷰
-    │   ├── 과거 경험 작성 (`/experiences/new`)
+    │   ├── 활동 추가 (`/experiences/new`)
     │   └── 완료 경험
     │       ├── 상세 (`/experiences/[id]`)
     │       ├── 수정 (`/experiences/[id]/edit`)
@@ -86,7 +86,7 @@ CampusLog
 ├── 완료 경험 → 인라인 활동 상세
 │   ├── 활동 상세 보기 → `/experiences/[id]`
 │   └── AI 분석 결과 → 같은 화면의 활동 상세 / 분석 결과 스플릿뷰
-└── 과거 경험 기록하기 → `/experiences/new`
+└── 활동 추가 → `/experiences/new`
 
 완료 경험 상세 (`/experiences/[id]`)
 ├── 수정 → `/experiences/[id]/edit`

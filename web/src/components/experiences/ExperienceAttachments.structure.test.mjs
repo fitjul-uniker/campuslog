@@ -35,12 +35,23 @@ const attachmentUtilsSource = await readFile(
   "utf8",
 );
 
-test("경험 작성 폼에 사진과 PDF 자료 첨부 진입점을 제공한다", () => {
+test("경험 작성 폼은 사진과 PDF를 함께 읽는 Table 첨부 패턴을 제공한다", () => {
   assert.match(formSource, /ExperienceAttachmentPicker/);
-  assert.match(pickerSource, /사진 첨부/);
-  assert.match(pickerSource, /자료 첨부/);
-  assert.match(pickerSource, /accept=\{EXPERIENCE_PHOTO_ACCEPT\}/);
-  assert.match(pickerSource, /accept=\{EXPERIENCE_MATERIAL_ACCEPT\}/);
+  assert.match(pickerSource, /사진 또는 파일을 추가하세요/);
+  assert.match(
+    pickerSource,
+    /<legend className="experience-attachment-legend">첨부 파일<\/legend>/,
+  );
+  assert.match(pickerSource, /파일 선택/);
+  assert.match(pickerSource, /accept=\{EXPERIENCE_ATTACHMENT_ACCEPT\}/);
+  assert.match(pickerSource, /onDrop=\{handleDrop\}/);
+  assert.match(pickerSource, /<table className="experience-attachment-table">/);
+  assert.match(pickerSource, /<th scope="col">파일<\/th>/);
+  assert.match(pickerSource, />\s*형식\s*</);
+  assert.match(pickerSource, />\s*용량\s*</);
+  assert.match(pickerSource, /파일 추가/);
+  assert.match(pickerSource, /전체 삭제/);
+  assert.match(pickerSource, /첨부 파일 삭제/);
   assert.match(attachmentUtilsSource, /image\/jpeg,image\/png,image\/webp/);
   assert.match(attachmentUtilsSource, /application\/pdf/);
   assert.match(pickerSource, /AI 분석에는 사용되지 않아요/);

@@ -13,18 +13,14 @@ test("추천 화면은 사용자가 경험을 고르는 상황을 설명한다",
   );
 });
 
-test("활동이 없으면 새 활동과 과거 활동 기록을 안내한다", () => {
+test("활동이 없으면 나의 활동 경험 추가만 안내한다", () => {
   assert.deepEqual(getRecommendationEmptyStatePresentation(0), {
     title: "추천에 사용할 경험이 아직 없어요",
     description:
-      "새 활동을 시작해 기록을 쌓거나, 이미 끝난 활동을 바로 등록해 주세요.",
+      "나의 활동에 경험을 등록하면 바로 추천에 활용할 수 있어요.",
     primaryAction: {
-      href: "/activities/new",
-      label: "활동 추가",
-    },
-    secondaryAction: {
       href: "/experiences/new",
-      label: "과거 활동 기록하기",
+      label: "활동 추가",
     },
   });
 });
@@ -40,7 +36,7 @@ test("진행 활동이 있으면 완료 경험 정리를 먼저 안내한다", (
     },
     secondaryAction: {
       href: "/experiences/new",
-      label: "과거 활동 기록하기",
+      label: "활동 추가",
     },
   });
 });

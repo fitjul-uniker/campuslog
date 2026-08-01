@@ -328,7 +328,7 @@ CampusLog는 기록 도구의 신뢰감과 AI 기능의 명료함을 함께 갖�
 - 텍스트 대비 WCAG AA 수준 목표
 - 상태 배지와 작은 텍스트는 색상 대비 별도 확인
 - aria-live는 저장·AI 결과처럼 중요한 비동기 상태에 제한적으로 사용
-- 일반 데이터 로딩 skeleton은 실제 레이아웃과 유사하게 구성하고 무한 로딩에 fallback을 제공합니다. AI 분석·추천·완료 경험 합성·답변 생성의 첫 결과 대기는 별도 카드 대신 viewport 전체의 near-white blur overlay를 사용하고, 중앙 React Bits Strands와 Kokonut UI AI Text Loading으로 현재 상태·확인 단계·장기 대기 문구를 순환 표시합니다.
+- 일반 데이터 로딩 skeleton은 실제 레이아웃과 유사하게 구성하고 무한 로딩에 fallback을 제공합니다. 오늘의 기록·나의 활동·CampusLog AI 사이 초기 전환은 공통 쿨 뉴트럴 shimmer·frosted surface를 사용하되 목적지의 overview·목록·폼 구조를 각각 유지하고 Breadcrumb과 페이지 제목을 skeleton으로 대체하지 않습니다. AI 분석·추천·완료 경험 합성·답변 생성의 첫 결과 대기는 별도 카드 대신 viewport 전체의 near-white blur overlay를 사용하고, 중앙 React Bits Strands와 Kokonut UI AI Text Loading으로 현재 상태·확인 단계·장기 대기 문구를 순환 표시합니다.
 - AI 처리 Strands는 `#F97316`, `#7C3AED`, `#06B6D4` 3색과 count 3, speed 0.5, glow 2.6, scale 1.5를 사용합니다. 상태 문구는 2.4초 간격으로 전환하고 화면 표시 끝맺음은 `...`로 통일합니다. 취소 가능한 요청은 중앙 하단에 최소 44px 클릭 영역을 유지하되 배경·테두리·그림자 없이 아이콘과 글자만 표시합니다. 사용자가 추천 요청을 취소하면 입력을 유지하고 별도 오류 알림은 표시하지 않습니다. reduced motion에서는 WebGL 시간 진행과 text gradient·이동 animation을 멈춥니다. body portal과 scroll lock을 사용하되 중첩 처리와 unmount에서 원래 스크롤 상태를 복구합니다.
 
 ## 9. Track 협업 규칙

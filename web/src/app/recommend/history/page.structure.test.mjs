@@ -7,6 +7,10 @@ const styles = await readFile(
   new URL("../../globals.css", import.meta.url),
   "utf8",
 );
+const recommendationResultSource = await readFile(
+  new URL("../../../components/ai/RecommendationResult.tsx", import.meta.url),
+  "utf8",
+);
 
 test("추천 기록 검색은 Liquid Glass 검색 캡슐을 사용한다", () => {
   assert.match(
@@ -66,7 +70,7 @@ test("추천 기록 제목은 다른 주요 화면과 같은 1200px 프레임과
   );
 });
 
-test("추천 기록 상세는 한 겹의 frosted Glass와 읽기용 content plate를 사용한다", () => {
+test("추천 기록 상세는 한 겹의 frosted Glass와 질문 중심 읽기 흐름을 사용한다", () => {
   assert.match(
     styles,
     /\.recommendation-history-detail\.liquid-section\s*\{[^}]*background:\s*var\(--liquid-frosted-fill\)[^}]*backdrop-filter:\s*blur\(28px\)\s+saturate\(1\.12\)/,
@@ -80,7 +84,11 @@ test("추천 기록 상세는 한 겹의 frosted Glass와 읽기용 content plat
     /\.recommendation-history-detail\s+\.recommendation-result\.is-embedded\s+\.detail-section\s*\{[^}]*background:\s*transparent/,
   );
   assert.match(
-    styles,
-    /\.recommendation-history-detail\s+\.recommendation-meta\s*\{[^}]*grid-template-areas:\s*"period date"\s*"role role"/,
+    recommendationResultSource,
+    /isEmbedded \? result\.prompt : result\.recommendedExperienceTitle/,
+  );
+  assert.match(
+    recommendationResultSource,
+    /experience && !isEmbedded/,
   );
 });
