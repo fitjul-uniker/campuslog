@@ -114,3 +114,23 @@ test("스크롤 목록은 콘텐츠를 가리는 상하단 페이드 오버레�
   }
   assert.doesNotMatch(styles, /\.dashboard-list-fade(?:-top|-bottom)?\s*\{/);
 });
+
+test("추천 기록 행은 좁은 폭에서도 한 줄 말줄임으로 높이를 유지한다", () => {
+  assert.match(
+    styles,
+    /\.recommendation-history-row\s*\{[^}]*height:\s*116px;[^}]*min-width:\s*0;/is,
+  );
+
+  for (const selector of [
+    "recommendation-history-row-meta",
+    "recommendation-history-row-prompt",
+  ]) {
+    assert.match(
+      styles,
+      new RegExp(
+        `\\.${selector}\\s*\\{[^}]*overflow:\\s*hidden;[^}]*text-overflow:\\s*ellipsis;[^}]*white-space:\\s*nowrap;`,
+        "is",
+      ),
+    );
+  }
+});

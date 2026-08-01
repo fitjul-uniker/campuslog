@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-02 - PR #64 main 충돌 해결과 이슈 번호 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-02 |
+| 작업자 | Codex |
+| 작업 요약 | `design/auth-liquid-glass-polish`에 최신 main을 병합하고 PR #64의 문서 충돌과 중복 이슈 번호를 정리 |
+| 수정한 파일 | 충돌이 발생한 `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md`와 이슈 번호를 참조하는 `docs/TODO.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | main의 공유 계정 동시 작업 `ISSUE-134`와 상세 역할 AI 분석 `ISSUE-135`를 유지하고, 디자인 브랜치의 나의 활동 초기 로딩 헤더 통일 이슈를 `ISSUE-136`으로 변경. TASK_LOG의 두 2026-08-02 작업 기록을 모두 보존하고, 자동 병합된 `ExperienceDashboard`와 `ExperienceForm`에는 main의 최신 분석·입력 제한 로직과 디자인 브랜치의 LoadingState 변경이 함께 유지되도록 확인 |
+| 검증한 내용 | conflict marker 0건, 전체 Node 테스트 148개, `npm run lint`, build 완료 후 `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 원격 반영 뒤 PR #64 리뷰와 병합 |
+| 관련 커밋 메시지 | `merge: resolve main conflicts for liquid glass flows` |
+
 ### 2026-08-02 - 공유 계정 동시 작업과 상세 경험 AI 분석 안정화
 
 | 항목 | 내용 |
@@ -42,6 +55,19 @@
 | 검증한 내용 | 처음 재현에서 로그인 `test4` 계정의 한빛미디어 경험 역할이 220자임을 확인하고 `/api/analyze` 400 재현. 상한 수정 후 OpenAI SSE 호출은 200으로 완료됐지만 저장 시 `22P02`를 재현했고 JSON 비교 수정 후 같은 경험에서 `/api/analyze` 200, 분석 완료 상태, STAR·주요 성과·키워드 표시와 Supabase 저장을 확인. 검증 중 실제 OpenAI 분석 요청 2회가 실행됐고 최종 결과 1건이 저장됨. 전체 Node 테스트 135개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 동일 계정 동시 작업을 포함한 직접 로직 테스트를 완료 |
 | 남은 작업 | 배포 환경에서의 추가 회귀 모니터링 |
 | 관련 커밋 메시지 | `f22ab13 fix: support concurrent shared-account sessions`, `4337806 fix: accept detailed experience roles in AI flows` |
+
+### 2026-08-02 - 나의 활동 초기 로딩 헤더 통일 (`ISSUE-136`)
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-02 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 화면 전환 중 실제 `전체 활동` 제목이 먼저 남던 로딩 위계 수정 |
+| 수정한 파일 | `web/src/components/common/LoadingState.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/common/LoadingState.structure.test.mjs`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md` |
+| 변경 내용 | 목록 데이터가 준비되기 전에는 실제 `전체 활동`·개수·검색 헤더를 화면에서 숨기고 같은 위치의 공통 Liquid skeleton 헤더와 6개 목록 행을 표시. 로딩 region은 visually hidden `전체 활동` heading으로 접근 가능한 이름을 유지하고 데이터 준비 뒤 실제 헤더를 한 번만 렌더링 |
+| 검증한 내용 | 관련 Node 구조 테스트 5개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 로그인 `/experiences` 최종 DOM에서 region과 실제 `전체 활동` heading이 한 번만 노출되고 목록·검색이 정상 렌더링됨을 확인. 데이터 로드가 빨라 transient skeleton 자체는 브라우저에서 장시간 캡처하지 못했으며 조건 분기 구조 테스트로 검증 |
+| 남은 작업 | 없음. API·schema·repository·사용자 데이터는 변경하지 않음 |
+| 관련 커밋 메시지 | `fix: align experience loading header` |
 
 ### 2026-07-30 - 진행 활동 작업 큐 UX 검토
 

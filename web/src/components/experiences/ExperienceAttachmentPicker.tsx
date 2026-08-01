@@ -1,18 +1,23 @@
 "use client";
 
-import Image from "next/image";
 import {
+  CircleAlert,
+  CloudUpload,
   FileText,
-  ImagePlus,
-  Paperclip,
+  Images,
   Trash2,
+  Upload,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 
 import {
+  EXPERIENCE_ATTACHMENT_ACCEPT,
   EXPERIENCE_ATTACHMENT_MAX_COUNT,
-  EXPERIENCE_MATERIAL_ACCEPT,
-  EXPERIENCE_PHOTO_ACCEPT,
   formatAttachmentSize,
   getAttachmentKind,
   validateAttachmentSelection,
@@ -25,62 +30,8 @@ type ExperienceAttachmentPickerProps = {
   disabled?: boolean;
 };
 
-type SelectedAttachmentProps = {
-  file: File;
-  index: number;
-  onRemove: () => void;
-};
-
-function SelectedAttachment({
-  file,
-  index,
-  onRemove,
-}: SelectedAttachmentProps) {
-  const [previewUrl, setPreviewUrl] = useState("");
-  const isPhoto = getAttachmentKind(file) === "photo";
-
-  useEffect(() => {
-    if (!isPhoto) {
-      setPreviewUrl("");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [file, isPhoto]);
-
-  return (
-    <li className="attachment-picker-item">
-      <span className="attachment-picker-preview" aria-hidden="true">
-        {previewUrl ? (
-          <Image
-            src={previewUrl}
-            alt=""
-            width={52}
-            height={52}
-            unoptimized
-          />
-        ) : (
-          <FileText />
-        )}
-      </span>
-      <span className="attachment-picker-copy">
-        <strong title={file.name}>{file.name}</strong>
-        <span>{formatAttachmentSize(file.size)}</span>
-      </span>
-      <button
-        type="button"
-        className="attachment-picker-remove"
-        onClick={onRemove}
-        aria-label={`${index + 1}번째 선택 파일 삭제`}
-        title="선택 파일 삭제"
-      >
-        <Trash2 aria-hidden="true" />
-      </button>
-    </li>
-  );
+function getFileTypeLabel(file: File): string {
+  return getAttachmentKind(file) === "photo" ? "이미지" : "PDF";
 }
 
 export function ExperienceAttachmentPicker({
@@ -89,11 +40,22 @@ export function ExperienceAttachmentPicker({
   onFilesChange,
   disabled = false,
 }: ExperienceAttachmentPickerProps) {
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const materialInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
   const totalCount = existingCount + files.length;
   const isAtLimit = totalCount >= EXPERIENCE_ATTACHMENT_MAX_COUNT;
+  const isDropDisabled = disabled || isAtLimit;
+
+  useEffect(() => {
+    if (!isDropDisabled) {
+      return;
+    }
+
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+  }, [isDropDisabled]);
 
   function addFiles(incomingFiles: File[]) {
     const validation = validateAttachmentSelection(totalCount, incomingFiles);
@@ -117,82 +79,212 @@ export function ExperienceAttachmentPicker({
     setErrorMessage("");
   }
 
+  function clearFiles() {
+    setErrorMessage("");
+    onFilesChange([]);
+  }
+
+  function handleDragEnter(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (isDropDisabled) {
+      return;
+    }
+
+    dragDepthRef.current += 1;
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (isDropDisabled) {
+      return;
+    }
+
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+
+    if (dragDepthRef.current === 0) {
+      setIsDragging(false);
+    }
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = isDropDisabled ? "none" : "copy";
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+
+    if (isDropDisabled) {
+      return;
+    }
+
+    addFiles(Array.from(event.dataTransfer.files));
+  }
+
   return (
-    <fieldset className="attachment-picker-fieldset">
-      <legend>첨부 파일</legend>
-      <div className="attachment-picker-toolbar">
-        <div className="attachment-picker-actions">
-          <button
-            type="button"
-            className="attachment-picker-button"
-            onClick={() => photoInputRef.current?.click()}
-            disabled={disabled || isAtLimit}
-          >
-            <ImagePlus aria-hidden="true" />
-            사진 첨부
-          </button>
-          <button
-            type="button"
-            className="attachment-picker-button"
-            onClick={() => materialInputRef.current?.click()}
-            disabled={disabled || isAtLimit}
-          >
-            <Paperclip aria-hidden="true" />
-            자료 첨부
-          </button>
-        </div>
-        <span>
-          {totalCount}/{EXPERIENCE_ATTACHMENT_MAX_COUNT}
+    <fieldset className="experience-attachment-fieldset liquid-section">
+      <legend className="experience-attachment-legend">첨부 파일</legend>
+      <input
+        ref={inputRef}
+        className="sr-only"
+        type="file"
+        accept={EXPERIENCE_ATTACHMENT_ACCEPT}
+        multiple
+        tabIndex={-1}
+        disabled={isDropDisabled}
+        onChange={(event) => handleFileInput(event.currentTarget)}
+      />
+
+      <div
+        className="experience-attachment-dropzone"
+        data-dragging={isDragging ? "true" : "false"}
+        data-disabled={isDropDisabled ? "true" : "false"}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        <span className="experience-attachment-upload-icon" aria-hidden="true">
+          <Upload />
         </span>
+        <div className="experience-attachment-upload-copy">
+          <h3>사진 또는 파일을 추가하세요</h3>
+          <p>여기에 파일을 끌어다 놓거나 선택해 주세요.</p>
+          <span>JPG, PNG, WebP, PDF · 최대 3개 · 파일당 5MB 이하</span>
+          <span>첨부 파일은 AI 분석에는 사용되지 않아요.</span>
+        </div>
+        <button
+          type="button"
+          className="experience-attachment-select"
+          onClick={() => inputRef.current?.click()}
+          disabled={isDropDisabled}
+        >
+          파일 선택
+        </button>
       </div>
 
-      <input
-        ref={photoInputRef}
-        className="sr-only"
-        type="file"
-        accept={EXPERIENCE_PHOTO_ACCEPT}
-        multiple
-        tabIndex={-1}
-        onChange={(event) => handleFileInput(event.currentTarget)}
-      />
-      <input
-        ref={materialInputRef}
-        className="sr-only"
-        type="file"
-        accept={EXPERIENCE_MATERIAL_ACCEPT}
-        multiple
-        tabIndex={-1}
-        onChange={(event) => handleFileInput(event.currentTarget)}
-      />
-
-      <p className="attachment-picker-help">
-        JPG, PNG, WebP 사진과 PDF 자료를 파일당 5MB까지 저장할 수 있어요.
-        첨부 내용은 AI 분석에는 사용되지 않아요.
-      </p>
-
       {files.length > 0 ? (
-        <ul className="attachment-picker-list">
-          {files.map((file, index) => (
-            <SelectedAttachment
-              key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
-              file={file}
-              index={index}
-              onRemove={() => removeFile(index)}
-            />
-          ))}
-        </ul>
+        <section className="experience-attachment-table-section">
+          <div className="experience-attachment-table-heading">
+            <div>
+              <h3>선택한 파일</h3>
+              <span>
+                {totalCount}/{EXPERIENCE_ATTACHMENT_MAX_COUNT}
+              </span>
+            </div>
+            <div className="experience-attachment-table-actions">
+              {!isAtLimit ? (
+                <button
+                  type="button"
+                  className="liquid-capsule"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={disabled}
+                >
+                  <CloudUpload aria-hidden="true" />
+                  파일 추가
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="liquid-capsule"
+                onClick={clearFiles}
+                disabled={disabled}
+              >
+                <Trash2 aria-hidden="true" />
+                전체 삭제
+              </button>
+            </div>
+          </div>
+
+          <div className="experience-attachment-table-shell">
+            <table className="experience-attachment-table">
+              <thead>
+                <tr>
+                  <th scope="col">파일</th>
+                  <th scope="col" className="experience-attachment-type-column">
+                    형식
+                  </th>
+                  <th scope="col" className="experience-attachment-size-column">
+                    용량
+                  </th>
+                  <th scope="col" className="experience-attachment-action-column">
+                    <span className="sr-only">관리</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {files.map((file, index) => {
+                  const isPhoto = getAttachmentKind(file) === "photo";
+
+                  return (
+                    <tr
+                      key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                    >
+                      <td>
+                        <div className="experience-attachment-file-cell">
+                          <span aria-hidden="true">
+                            {isPhoto ? <Images /> : <FileText />}
+                          </span>
+                          <div>
+                            <strong title={file.name}>{file.name}</strong>
+                            <small>
+                              {getFileTypeLabel(file)} ·{" "}
+                              {formatAttachmentSize(file.size)}
+                            </small>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="experience-attachment-type-column">
+                        <span className="experience-attachment-type-badge">
+                          {getFileTypeLabel(file)}
+                        </span>
+                      </td>
+                      <td className="experience-attachment-size-column">
+                        {formatAttachmentSize(file.size)}
+                      </td>
+                      <td className="experience-attachment-action-column">
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          disabled={disabled}
+                          aria-label={`${file.name} 첨부 파일 삭제`}
+                          title="첨부 파일 삭제"
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
       ) : null}
 
-      {disabled ? (
-        <p className="attachment-picker-status">
-          첨부 파일 정보를 불러오는 중이거나 로그인 저장소를 사용할 수 없어요.
+      {disabled && files.length === 0 ? (
+        <p className="experience-attachment-status" role="status">
+          첨부 파일을 지금 추가할 수 없어요.
         </p>
       ) : null}
 
       {errorMessage ? (
-        <p className="attachment-picker-error" role="alert">
-          {errorMessage}
-        </p>
+        <div className="recommendation-image-error" role="alert">
+          <CircleAlert aria-hidden="true" />
+          <span>
+            <strong>파일을 추가하지 못했어요</strong>
+            <span>{errorMessage}</span>
+          </span>
+        </div>
       ) : null}
     </fieldset>
   );

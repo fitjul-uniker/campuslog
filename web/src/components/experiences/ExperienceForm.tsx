@@ -526,7 +526,7 @@ export function ExperienceForm({
         <legend>활동기간</legend>
         <div className="field-grid">
           <div className="form-field">
-            <label htmlFor="experience-period-start">시작월</label>
+            <label htmlFor="experience-period-start">시작</label>
             <input
               id="experience-period-start"
               name="periodStart"
@@ -540,7 +540,7 @@ export function ExperienceForm({
             />
           </div>
           <div className="form-field">
-            <label htmlFor="experience-period-end">종료월</label>
+            <label htmlFor="experience-period-end">종료</label>
             <input
               id="experience-period-end"
               name="periodEnd"
@@ -571,7 +571,6 @@ export function ExperienceForm({
           />
           <span>현재 진행 중</span>
         </label>
-        <p className="period-help">예: 2026.03 - 2026.07 또는 2025.01 ~ 현재</p>
       </fieldset>
 
       <div className="form-field">
@@ -640,10 +639,18 @@ export function ExperienceForm({
               const rowError = relatedLinkErrors[row.clientId];
 
               return (
-                <div className="related-link-row" key={row.clientId}>
+                <div
+                  className={`related-link-row${index === 0 ? "" : " is-continuation"}`}
+                  key={row.clientId}
+                >
                   <RelatedLinkFavicon url={row.previewUrl} />
                   <div className="form-field related-link-url-field">
-                    <label htmlFor={urlInputId}>URL</label>
+                    <label
+                      className={index === 0 ? undefined : "sr-only"}
+                      htmlFor={urlInputId}
+                    >
+                      URL
+                    </label>
                     <input
                       ref={(node) => {
                         if (node) {
@@ -676,7 +683,10 @@ export function ExperienceForm({
                     ) : null}
                   </div>
                   <div className="form-field related-link-description-field">
-                    <label htmlFor={descriptionInputId}>
+                    <label
+                      className={index === 0 ? undefined : "sr-only"}
+                      htmlFor={descriptionInputId}
+                    >
                       설명 <span>(선택)</span>
                     </label>
                     <input
