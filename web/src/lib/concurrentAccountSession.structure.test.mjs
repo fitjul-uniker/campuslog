@@ -57,6 +57,10 @@ test("경험 수정은 기존 updatedAt을 조건으로 전달해 덮어쓰기�
   );
   assert.match(repositorySource, /\.eq\("updated_at", expectedUpdatedAt\)/);
   assert.match(repositorySource, /\.eq\("title", expectedExperience\.title\)/);
+  assert.match(
+    repositorySource,
+    /"related_links",\s*"eq",\s*JSON\.stringify\(expectedExperience\.relatedLinks\)/s,
+  );
   assert.match(repositorySource, /"CONCURRENT_UPDATE"/);
   assert.match(
     repositorySource,

@@ -1009,7 +1009,11 @@ function createSupabaseCampusLogRepository(
             .eq("role", expectedExperience.role)
             .eq("description", expectedExperience.description)
             .eq("achievements", expectedExperience.achievements)
-            .eq("related_links", expectedExperience.relatedLinks);
+            .filter(
+              "related_links",
+              "eq",
+              JSON.stringify(expectedExperience.relatedLinks),
+            );
         }
 
         const { data: updatedExperienceData, error: experienceError } =
