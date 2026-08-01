@@ -580,6 +580,7 @@ export function ExperienceForm({
           id="experience-role"
           name="role"
           type="text"
+          maxLength={1_000}
           value={formValue.role}
           onChange={(event) => updateField("role", event.target.value)}
           aria-invalid={Boolean(errorMessage && !formValue.role.trim())}

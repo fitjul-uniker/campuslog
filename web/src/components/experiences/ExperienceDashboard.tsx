@@ -28,7 +28,7 @@ import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
-import { requestExperienceAnalysis } from "@/lib/analysisApi";
+import { analyzeCurrentExperience } from "@/lib/experienceAnalysisWorkflow";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   DailyLog,
@@ -330,10 +330,7 @@ export function ExperienceDashboard() {
 
     const abortController = new AbortController();
     analysisAbortControllersRef.current[experienceId] = abortController;
-    const repository = getCampusLogRepository();
-    const followups =
-      await repository.experienceFollowups.listByExperienceId(experience.id);
-    const response = await requestExperienceAnalysis(experience, followups, {
+    const response = await analyzeCurrentExperience(experience.id, {
       signal: abortController.signal,
       stream: true,
       onStatus: (message) => {
@@ -366,29 +363,15 @@ export function ExperienceDashboard() {
       return;
     }
 
-    const savedAnalysis = await repository.analyses.save(response.analysis);
-
-    if (!savedAnalysis) {
-      setAnalysisRequestByExperienceId((current) => ({
-        ...current,
-        [experienceId]: {
-          isLoading: false,
-          error:
-            "분석 결과를 저장하지 못했습니다. 경험이 삭제되지 않았는지 확인해 주세요.",
-          statusMessage: "",
-        },
-      }));
-      if (analysisAbortControllersRef.current[experienceId] === abortController) {
-        delete analysisAbortControllersRef.current[experienceId];
-      }
-      return;
-    }
-
     setAnalysesByExperienceId((current) => ({
       ...current,
-      [experienceId]: savedAnalysis,
+      [experienceId]: response.analysis,
     }));
-    setExperiences(await repository.experiences.list());
+    setExperiences((current) =>
+      current?.map((item) =>
+        item.id === experienceId ? response.experience : item,
+      ) ?? null,
+    );
     setAnalysisRequestByExperienceId((current) => ({
       ...current,
       [experienceId]: { isLoading: false, error: "", statusMessage: "" },

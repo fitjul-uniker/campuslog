@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Navigation } from "@/components/layout/Navigation";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { GlassSurface } from "@/components/ui/glass-surface";
+import { useAuthSessionGuard } from "@/hooks/use-auth-session-guard";
 import { usePageTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 
 type AppShellProps = {
@@ -14,6 +15,7 @@ type AppShellProps = {
 };
 
 function ProductShell({ children }: AppShellProps) {
+  useAuthSessionGuard();
   usePageTransientScrollbar();
 
   return (
