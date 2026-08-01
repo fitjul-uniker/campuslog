@@ -23,13 +23,26 @@ test("long-form screens use one content layer instead of stacked glass", async (
   assert.match(cleanup, /background:\s*var\(--liquid-content-fill\)/);
   assert.match(cleanup, /backdrop-filter:\s*none/);
   assert.ok(longFormRule);
-  assert.match(
+  assert.doesNotMatch(
     longFormRule,
     /\.page-stack-narrow:not\(\.recommendation-page\)\s*>\s*\.form-panel\.liquid-workspace/,
   );
   assert.doesNotMatch(
     longFormRule,
     /(?<!:not\()\.recommendation-page\s*>\s*\.form-panel\.liquid-workspace/,
+  );
+});
+
+test("표준 경험 폼과 추천 빈 상태는 오늘의 기록 workspace 재질을 공유한다", async () => {
+  const styles = await readFile(globalsPath, "utf8");
+
+  assert.match(
+    styles,
+    /\.sub-page\.page-stack-narrow\s*>\s*\.form-panel\.liquid-workspace\s*\{[^}]*margin-left:\s*0/is,
+  );
+  assert.match(
+    styles,
+    /\.recommendation-page\s*>\s*\.empty-state\s*\{[^}]*border-radius:\s*30px[^}]*background:\s*var\(--liquid-frosted-fill\)[^}]*backdrop-filter:\s*blur\(28px\) saturate\(1\.12\)/is,
   );
 });
 

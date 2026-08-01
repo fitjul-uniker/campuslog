@@ -37,6 +37,7 @@ import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
+import { LoadingState } from "@/components/common/LoadingState";
 import {
   Combobox,
   ComboboxContent,
@@ -137,6 +138,46 @@ function getRequestedActivityId(): string {
 
   return (
     new URLSearchParams(window.location.search).get("activityId")?.trim() ?? ""
+  );
+}
+
+function TodayDashboardBreadcrumb() {
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+            CampusLog
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>오늘의 기록</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
+function TodayDashboardHeader({ today }: { today: string }) {
+  return (
+    <header className="activity-today-header primary-page-heading">
+      <div>
+        <div className="activity-today-title-row">
+          <h1>오늘의 기록</h1>
+          <p className="activity-section-kicker">
+            {formatDateKey(today, {
+              month: "long",
+              day: "numeric",
+              weekday: "long",
+            })}
+          </p>
+        </div>
+        <p className="primary-page-description">
+          하루하루 해낸 일을 기록하세요. 쌓인 기록은 하나의 경험이 됩니다.
+        </p>
+      </div>
+    </header>
   );
 }
 
@@ -604,49 +645,21 @@ export function TodayDashboard() {
 
   if (activities === null) {
     return (
-      <div className="activity-today-page activity-page-loading" aria-busy="true">
-        <span className="sr-only">오늘의 기록을 불러오는 중입니다.</span>
-        <div />
-        <div />
-        <div />
+      <div className="activity-today-page primary-page">
+        <TodayDashboardBreadcrumb />
+        <TodayDashboardHeader today={today} />
+        <LoadingState
+          variant="dashboard"
+          message="오늘의 기록을 불러오는 중입니다."
+        />
       </div>
     );
   }
 
   return (
     <div className="activity-today-page primary-page">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
-              CampusLog
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>오늘의 기록</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <header className="activity-today-header primary-page-heading">
-        <div>
-          <div className="activity-today-title-row">
-            <h1>오늘의 기록</h1>
-            <p className="activity-section-kicker">
-              {formatDateKey(today, {
-                month: "long",
-                day: "numeric",
-                weekday: "long",
-              })}
-            </p>
-          </div>
-          <p className="primary-page-description">
-            하루하루 해낸 일을 기록하세요. 쌓인 기록은 하나의 경험이
-            됩니다.
-          </p>
-        </div>
-      </header>
+      <TodayDashboardBreadcrumb />
+      <TodayDashboardHeader today={today} />
 
       {loadError ? (
         <div className="activity-inline-alert" role="alert">

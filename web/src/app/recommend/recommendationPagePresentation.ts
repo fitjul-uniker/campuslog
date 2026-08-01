@@ -7,7 +7,7 @@ export type RecommendationEmptyStatePresentation = {
   title: string;
   description: string;
   primaryAction: EmptyStateAction;
-  secondaryAction: EmptyStateAction;
+  secondaryAction?: EmptyStateAction;
 };
 
 export const RECOMMENDATION_PAGE_DESCRIPTION =
@@ -18,20 +18,29 @@ export function getRecommendationEmptyStatePresentation(
 ): RecommendationEmptyStatePresentation {
   const hasTrackedActivity = trackedActivityCount > 0;
 
+  if (!hasTrackedActivity) {
+    return {
+      title: "추천에 사용할 경험이 아직 없어요",
+      description:
+        "나의 활동에 경험을 등록하면 바로 추천에 활용할 수 있어요.",
+      primaryAction: {
+        href: "/experiences/new",
+        label: "활동 추가",
+      },
+    };
+  }
+
   return {
-    title: hasTrackedActivity
-      ? "진행 중인 활동을 경험으로 정리해 주세요"
-      : "추천에 사용할 경험이 아직 없어요",
-    description: hasTrackedActivity
-      ? "쌓아 둔 기록을 확인하고 완료 경험으로 정리하면 추천에 활용할 수 있어요."
-      : "새 활동을 시작해 기록을 쌓거나, 이미 끝난 활동을 바로 등록해 주세요.",
+    title: "진행 중인 활동을 경험으로 정리해 주세요",
+    description:
+      "쌓아 둔 기록을 확인하고 완료 경험으로 정리하면 추천에 활용할 수 있어요.",
     primaryAction: {
-      href: hasTrackedActivity ? "/dashboard" : "/activities/new",
-      label: hasTrackedActivity ? "진행 활동 확인하기" : "활동 추가",
+      href: "/dashboard",
+      label: "진행 활동 확인하기",
     },
     secondaryAction: {
       href: "/experiences/new",
-      label: "과거 활동 기록하기",
+      label: "활동 추가",
     },
   };
 }

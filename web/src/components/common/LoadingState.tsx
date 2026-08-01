@@ -1,46 +1,112 @@
 type LoadingStateProps = {
-  variant?: "panel" | "cards";
+  variant?: "dashboard" | "list" | "form";
   count?: number;
   message?: string;
 };
 
+function LoadingHeader() {
+  return (
+    <div className="product-loading-header" aria-hidden="true">
+      <span className="product-loading-line is-heading" />
+      <span className="product-loading-control" />
+    </div>
+  );
+}
+
+function LoadingRows({ count }: { count: number }) {
+  return (
+    <div className="product-loading-list" aria-hidden="true">
+      {Array.from({ length: count }, (_, index) => (
+        <div className="product-loading-list-row" key={index}>
+          <span className="product-loading-line is-row-title" />
+          <span className="product-loading-line is-row-meta" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function LoadingState({
-  variant = "panel",
-  count = 1,
+  variant = "list",
+  count = 6,
   message = "화면을 불러오는 중입니다.",
 }: LoadingStateProps) {
-  if (variant === "cards") {
+  if (variant === "dashboard") {
     return (
-      <section className="loading-state" aria-live="polite" aria-busy="true">
+      <section
+        className="product-loading-state is-dashboard"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <span className="sr-only">{message}</span>
-        {Array.from({ length: count }).map((_, index) => (
-          <article className="loading-card" aria-hidden="true" key={index}>
-            <div className="loading-card-header">
-              <span className="skeleton-line skeleton-title" />
-              <span className="skeleton-badge" />
-            </div>
-            <span className="skeleton-line skeleton-meta" />
-            <span className="skeleton-line" />
-            <span className="skeleton-line skeleton-short" />
-            <div className="skeleton-tags">
-              <span />
-              <span />
-              <span />
-            </div>
-          </article>
-        ))}
+
+        <div
+          className="product-loading-surface is-dashboard-overview"
+          aria-hidden="true"
+        >
+          <LoadingHeader />
+          <div className="product-loading-overview-grid">
+            <span className="product-loading-block is-activity" />
+            <span className="product-loading-block is-activity" />
+          </div>
+          <span className="product-loading-divider" />
+          <span className="product-loading-block is-summary" />
+        </div>
+
+        <div
+          className="product-loading-surface is-dashboard-calendar"
+          aria-hidden="true"
+        >
+          <LoadingHeader />
+          <div className="product-loading-calendar-grid">
+            {Array.from({ length: 28 }, (_, index) => (
+              <span key={index} />
+            ))}
+          </div>
+        </div>
+
+        <div
+          className="product-loading-surface is-dashboard-records"
+          aria-hidden="true"
+        >
+          <LoadingHeader />
+          <LoadingRows count={3} />
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === "form") {
+    return (
+      <section
+        className="product-loading-state is-form liquid-workspace"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <span className="sr-only">{message}</span>
+        <div className="product-loading-form" aria-hidden="true">
+          <div className="product-loading-form-copy">
+            <span className="product-loading-line is-form-title" />
+            <span className="product-loading-line is-form-description" />
+          </div>
+          <span className="product-loading-block is-input" />
+          <span className="product-loading-block is-textarea" />
+          <span className="product-loading-block is-upload" />
+          <span className="product-loading-line is-form-action" />
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="placeholder-panel loading-panel" aria-live="polite">
-      <p className="muted-text">{message}</p>
-      <div className="skeleton-panel" aria-hidden="true">
-        <span className="skeleton-line skeleton-title" />
-        <span className="skeleton-line" />
-        <span className="skeleton-line skeleton-short" />
-      </div>
+    <section
+      className="product-loading-state is-list"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="sr-only">{message}</span>
+      <LoadingHeader />
+      <LoadingRows count={count} />
     </section>
   );
 }

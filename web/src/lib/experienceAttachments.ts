@@ -4,6 +4,7 @@ export const EXPERIENCE_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
 export const EXPERIENCE_PHOTO_ACCEPT =
   "image/jpeg,image/png,image/webp";
 export const EXPERIENCE_MATERIAL_ACCEPT = "application/pdf";
+export const EXPERIENCE_ATTACHMENT_ACCEPT = `${EXPERIENCE_PHOTO_ACCEPT},${EXPERIENCE_MATERIAL_ACCEPT}`;
 
 const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
   "image/jpeg",

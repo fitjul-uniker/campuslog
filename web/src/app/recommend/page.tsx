@@ -9,6 +9,7 @@ import { RecommendationForm } from "@/components/ai/RecommendationForm";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
 import { EmptyState } from "@/components/common/EmptyState";
+import { LoadingState } from "@/components/common/LoadingState";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -305,9 +306,10 @@ export default function RecommendPage() {
         <RecommendationPageBreadcrumb />
         <RecommendationPageHeader />
 
-        <section className="placeholder-panel">
-          <p className="muted-text">활동 추천 화면을 불러오는 중입니다.</p>
-        </section>
+        <LoadingState
+          variant="form"
+          message="AI 기반 활동 추천을 불러오는 중입니다."
+        />
       </div>
     );
   }

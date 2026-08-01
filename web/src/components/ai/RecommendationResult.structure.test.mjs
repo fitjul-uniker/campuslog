@@ -36,3 +36,23 @@ test("추천 결과는 긴 내용을 보호하는 Liquid Glass section을 사용
     /detail-panel recommendation-result liquid-section/,
   );
 });
+
+test("추천 직후 결과만 활동 기간과 역할 메타 정보를 표시한다", () => {
+  assert.match(source, /experience && !isEmbedded/);
+  assert.match(source, /className="dashboard-detail-meta recommendation-meta"/);
+  assert.match(source, /<dt>활동 기간<\/dt>/);
+  assert.match(source, /<dt>역할<\/dt>/);
+  assert.match(source, /recommendation-result-generated-at/);
+  assert.doesNotMatch(source, /<dt>추천 생성일<\/dt>/);
+});
+
+test("추천 기록 상세는 질문을 대표 제목으로 사용하고 하단에 중복하지 않는다", () => {
+  assert.match(
+    source,
+    /isEmbedded \? result\.prompt : result\.recommendedExperienceTitle/,
+  );
+  assert.match(
+    source,
+    /\{!isEmbedded \? \([\s\S]*result\.purpose === "jd"[\s\S]*<p>\{result\.prompt\}<\/p>[\s\S]*\) : null\}/,
+  );
+});

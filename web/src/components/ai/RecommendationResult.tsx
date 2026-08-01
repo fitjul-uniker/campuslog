@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   AlertTriangle,
+  ChevronRight,
   ExternalLink,
   FileText,
   Loader2,
@@ -18,6 +19,12 @@ import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   ANSWER_DRAFT_TARGET_GUIDES,
   ANSWER_DRAFT_TYPE_LABELS,
@@ -510,6 +517,8 @@ export function RecommendationResult({
     Record<string, string>
   >({});
   const draftAbortControllerRef = useRef<AbortController | null>(null);
+  const matchItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const matchScrollTimerRef = useRef<number | null>(null);
   const isEmbedded = variant === "embedded";
   const purposeConfig = getRecommendationPurposeConfig(result.purpose);
   const generationOptions = getGenerationOptionsForPurpose(result.purpose);
@@ -595,8 +604,60 @@ export function RecommendationResult({
   useEffect(() => {
     return () => {
       draftAbortControllerRef.current?.abort();
+      if (matchScrollTimerRef.current !== null) {
+        window.clearTimeout(matchScrollTimerRef.current);
+      }
     };
   }, []);
+
+  function handleMatchAccordionValueChange(values: string[]) {
+    if (matchScrollTimerRef.current !== null) {
+      window.clearTimeout(matchScrollTimerRef.current);
+      matchScrollTimerRef.current = null;
+    }
+
+    const openedValue = values[0];
+    if (!isEmbedded || !openedValue) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    matchScrollTimerRef.current = window.setTimeout(
+      () => {
+        const item = matchItemRefs.current.get(openedValue);
+        const scrollContainer = item?.closest<HTMLElement>(
+          ".recommendation-history-detail",
+        );
+
+        if (!item || !scrollContainer) {
+          matchScrollTimerRef.current = null;
+          return;
+        }
+
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+        const containerPaddingTop = Number.parseFloat(
+          window.getComputedStyle(scrollContainer).paddingTop,
+        );
+        const readingOffset = Math.max(20, containerPaddingTop || 0);
+        const targetTop =
+          scrollContainer.scrollTop +
+          itemRect.top -
+          containerRect.top -
+          readingOffset;
+
+        scrollContainer.scrollTo({
+          top: Math.max(0, targetTop),
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+        matchScrollTimerRef.current = null;
+      },
+      prefersReducedMotion ? 80 : 280,
+    );
+  }
 
   async function handleGenerateAnswerDrafts(
     match: RecommendationMatch,
@@ -784,6 +845,9 @@ export function RecommendationResult({
             <p className="experience-meta recommendation-result-kicker">
               AI 기반 활동 추천 결과
             </p>
+            <span className="recommendation-result-generated-at">
+              {formatDateTime(result.generatedAt)}
+            </span>
             {result.inputSource !== "text" ? (
               <span className="recommendation-image-source">
                 <ScanText aria-hidden="true" />
@@ -792,7 +856,7 @@ export function RecommendationResult({
             ) : null}
           </div>
           <h2 id="recommendation-title">
-            {result.recommendedExperienceTitle}
+            {isEmbedded ? result.prompt : result.recommendedExperienceTitle}
           </h2>
         </div>
         {experience || onClose ? (
@@ -820,36 +884,30 @@ export function RecommendationResult({
         ) : null}
       </div>
 
-      {experience ? (
-        <dl className="meta-grid recommendation-meta">
+      {experience && !isEmbedded ? (
+        <dl className="dashboard-detail-meta recommendation-meta">
           <div>
-            <dt>기간</dt>
+            <dt>활동 기간</dt>
             <dd>{experience.period}</dd>
           </div>
           <div>
             <dt>역할</dt>
             <dd>{experience.role}</dd>
           </div>
-          <div>
-            <dt>추천 생성일</dt>
-            <dd>{formatDateTime(result.generatedAt)}</dd>
-          </div>
         </dl>
-      ) : (
-        <p className="muted-text">
-          추천 생성일 {formatDateTime(result.generatedAt)}
-        </p>
-      )}
+      ) : null}
 
       <div className="detail-section">
         <h3>활용 목적</h3>
         <p>{purposeConfig.inputLabel}</p>
       </div>
 
-      <div className="detail-section">
-        <h3>{result.purpose === "jd" ? "채용공고 / 질문" : "질문 / 문항"}</h3>
-        <p>{result.prompt}</p>
-      </div>
+      {!isEmbedded ? (
+        <div className="detail-section">
+          <h3>{result.purpose === "jd" ? "채용공고 / 질문" : "질문 / 문항"}</h3>
+          <p>{result.prompt}</p>
+        </div>
+      ) : null}
 
       {hasRequirements ? (
         <div className="detail-section recommendation-requirements-section">
@@ -1019,8 +1077,17 @@ export function RecommendationResult({
       ) : null}
 
       <div className="detail-section recommendation-matches-section">
-        <h3>추천 경험 Top {matches.length}</h3>
-        <div className="recommendation-match-list">
+        <h3>추천 경험 {matches.length}개</h3>
+        <Accordion
+          className="recommendation-match-list recommendation-match-accordion"
+          defaultValue={
+            matches[0]
+              ? [`${matches[0].rank}:${matches[0].experienceId}`]
+              : []
+          }
+          multiple={false}
+          onValueChange={handleMatchAccordionValueChange}
+        >
           {matches.map((match) => {
             const matchedExperience = experiencesById.get(match.experienceId);
             const answerDrafts = answerDraftsByExperienceId[match.experienceId];
@@ -1041,169 +1108,194 @@ export function RecommendationResult({
             const hasFollowupSignal =
               hasListContent(match.missingEvidence) ||
               hasListContent(match.overclaimRisks);
+            const matchValue = `${match.rank}:${match.experienceId}`;
             return (
-              <article
-                className="recommendation-match-card"
+              <AccordionItem
+                className="recommendation-match-accordion-item"
+                data-recommendation-match-value={matchValue}
                 key={`${match.rank}-${match.experienceId}`}
+                ref={(node) => {
+                  if (node) {
+                    matchItemRefs.current.set(matchValue, node);
+                  } else {
+                    matchItemRefs.current.delete(matchValue);
+                  }
+                }}
+                value={matchValue}
               >
-                <div className="recommendation-match-header">
-                  <div>
+                <AccordionTrigger className="recommendation-match-trigger">
+                  <ChevronRight
+                    className="recommendation-match-chevron"
+                    aria-hidden="true"
+                  />
+                  <span className="recommendation-match-trigger-copy">
                     <span className="recommendation-match-rank">
                       {match.rank}순위
                     </span>
-                    <h4>{match.experienceTitle}</h4>
-                  </div>
+                    <span className="recommendation-match-trigger-title">
+                      {match.experienceTitle}
+                    </span>
+                  </span>
                   <span
                     className="recommendation-fit-badge"
                     data-fit-level={match.fitLevel}
                   >
                     {FIT_LEVEL_LABELS[match.fitLevel]} · {match.score}
                   </span>
-                </div>
+                </AccordionTrigger>
 
-                <div className="recommendation-match-reason">
-                  <h5>추천 이유</h5>
-                  <p>{match.matchReason}</p>
-                </div>
+                <AccordionContent className="recommendation-match-panel">
+                  <article
+                    className="recommendation-match-card"
+                    aria-label={`${match.rank}순위 ${match.experienceTitle} 추천 상세`}
+                  >
+                    <div className="recommendation-match-reason">
+                      <h5>추천 이유</h5>
+                      <p>{match.matchReason}</p>
+                    </div>
 
-                {hasListContent(match.relatedCompetencies) ? (
-                  <div className="experience-tags">
-                    {match.relatedCompetencies.map((tag, index) => (
-                      <span key={`${match.experienceId}-tag-${tag}-${index}`}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className="recommendation-match-details">
-                  <div>
-                    <h5>직접 근거</h5>
-                    {hasListContent(match.matchedEvidence) ? (
-                      <ul className="recommendation-compact-list">
-                        {match.matchedEvidence.map((item, index) => (
-                          <li
-                            key={`${match.experienceId}-evidence-${index}`}
-                          >
-                            {item}
-                          </li>
+                    {hasListContent(match.relatedCompetencies) ? (
+                      <div className="experience-tags">
+                        {match.relatedCompetencies.map((tag, index) => (
+                          <span key={`${match.experienceId}-tag-${tag}-${index}`}>
+                            {tag}
+                          </span>
                         ))}
-                      </ul>
-                    ) : (
-                      <p className="muted-text">
-                        원본 경험 또는 보완 답변에서 확인된 근거가 적습니다.
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <h5>부족한 근거</h5>
-                    {hasListContent(match.missingEvidence) ? (
-                      <ul className="recommendation-compact-list">
-                        {match.missingEvidence.map((item, index) => (
-                          <li key={`${match.experienceId}-missing-${index}`}>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="muted-text">뚜렷한 부족 근거 없음</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <h5>과장 주의점</h5>
-                    {hasListContent(match.overclaimRisks) ? (
-                      <ul className="recommendation-compact-list is-risk">
-                        {match.overclaimRisks.map((item, index) => (
-                          <li key={`${match.experienceId}-risk-${index}`}>
-                            <AlertTriangle aria-hidden="true" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="muted-text">기록 밖 사실 추가만 피하면 됩니다.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="recommendation-match-angle">
-                  <h5>활용 각도</h5>
-                  <p>{match.suggestedAngle}</p>
-                </div>
-
-                {matchedExperience ? (
-                  <div className="recommendation-match-actions">
-                    <Link
-                      href={`/experiences/${matchedExperience.id}`}
-                      className="recommendation-match-link"
-                    >
-                      활동 보기
-                    </Link>
-                    {hasFollowupSignal ? (
-                      <Link
-                        href={`/experiences/${matchedExperience.id}/analysis`}
-                        className="recommendation-match-link"
-                      >
-                        분석 보완하기
-                      </Link>
+                      </div>
                     ) : null}
-                  </div>
-                ) : null}
 
-                {activeStreamingDraft ? (
-                  <AnswerDraftStreamingPanel
-                    streamingDraft={activeStreamingDraft}
-                    experienceTitle={
-                      matchedExperience?.title ?? match.experienceTitle
-                    }
-                    purposeLabel={purposeConfig.label}
-                    isRetryDisabled={Boolean(generatingDraftKey)}
-                    canCancel={
-                      generatingDraftKey === activeStreamingDraft.key &&
-                      activeStreamingDraft.mode !== "failed" &&
-                      activeStreamingDraft.mode !== "cancelled"
-                    }
-                    onCancel={handleCancelAnswerDraftGeneration}
-                    onRetry={() =>
-                      handleGenerateAnswerDrafts(
-                        match,
-                        activeStreamingDraft.draftType,
-                      )
-                    }
-                  />
-                ) : null}
+                    <div className="recommendation-match-details">
+                      <div>
+                        <h5>직접 근거</h5>
+                        {hasListContent(match.matchedEvidence) ? (
+                          <ul className="recommendation-compact-list">
+                            {match.matchedEvidence.map((item, index) => (
+                              <li
+                                key={`${match.experienceId}-evidence-${index}`}
+                              >
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="muted-text">
+                            원본 경험 또는 보완 답변에서 확인된 근거가 적습니다.
+                          </p>
+                        )}
+                      </div>
 
-                {draftError ? (
-                  <p className="form-error answer-draft-error" role="alert">
-                    {draftError}
-                  </p>
-                ) : null}
-                {matchedExperience && !activeStreamingDraft ? (
-                  <AnswerDraftViewer
-                    draftResult={answerDrafts}
-                    experienceId={matchedExperience.id}
-                    selectedType={selectedDraftType}
-                    onSelectType={(type) =>
-                      setSelectedDraftTypes((currentTypes) => ({
-                        ...currentTypes,
-                        [match.experienceId]: type,
-                      }))
-                    }
-                    isGenerating={isGeneratingDraft}
-                    isGenerateDisabled={Boolean(generatingDraftKey)}
-                    generationOptions={generationOptions}
-                    primaryActionLabel={purposeConfig.primaryActionLabel}
-                    onGenerate={(draftType) =>
-                      handleGenerateAnswerDrafts(match, draftType)
-                    }
-                  />
-                ) : null}
-              </article>
+                      <div>
+                        <h5>부족한 근거</h5>
+                        {hasListContent(match.missingEvidence) ? (
+                          <ul className="recommendation-compact-list">
+                            {match.missingEvidence.map((item, index) => (
+                              <li key={`${match.experienceId}-missing-${index}`}>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="muted-text">뚜렷한 부족 근거 없음</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <h5>과장 주의점</h5>
+                        {hasListContent(match.overclaimRisks) ? (
+                          <ul className="recommendation-compact-list is-risk">
+                            {match.overclaimRisks.map((item, index) => (
+                              <li key={`${match.experienceId}-risk-${index}`}>
+                                <AlertTriangle aria-hidden="true" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="muted-text">
+                            기록 밖 사실 추가만 피하면 됩니다.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="recommendation-match-angle">
+                      <h5>활용 각도</h5>
+                      <p>{match.suggestedAngle}</p>
+                    </div>
+
+                    {matchedExperience ? (
+                      <div className="recommendation-match-actions">
+                        <Link
+                          href={`/experiences/${matchedExperience.id}`}
+                          className="recommendation-match-link"
+                        >
+                          활동 보기
+                        </Link>
+                        {hasFollowupSignal ? (
+                          <Link
+                            href={`/experiences/${matchedExperience.id}/analysis`}
+                            className="recommendation-match-link"
+                          >
+                            분석 보완하기
+                          </Link>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {activeStreamingDraft ? (
+                      <AnswerDraftStreamingPanel
+                        streamingDraft={activeStreamingDraft}
+                        experienceTitle={
+                          matchedExperience?.title ?? match.experienceTitle
+                        }
+                        purposeLabel={purposeConfig.label}
+                        isRetryDisabled={Boolean(generatingDraftKey)}
+                        canCancel={
+                          generatingDraftKey === activeStreamingDraft.key &&
+                          activeStreamingDraft.mode !== "failed" &&
+                          activeStreamingDraft.mode !== "cancelled"
+                        }
+                        onCancel={handleCancelAnswerDraftGeneration}
+                        onRetry={() =>
+                          handleGenerateAnswerDrafts(
+                            match,
+                            activeStreamingDraft.draftType,
+                          )
+                        }
+                      />
+                    ) : null}
+
+                    {draftError ? (
+                      <p className="form-error answer-draft-error" role="alert">
+                        {draftError}
+                      </p>
+                    ) : null}
+                    {matchedExperience && !activeStreamingDraft ? (
+                      <AnswerDraftViewer
+                        draftResult={answerDrafts}
+                        experienceId={matchedExperience.id}
+                        selectedType={selectedDraftType}
+                        onSelectType={(type) =>
+                          setSelectedDraftTypes((currentTypes) => ({
+                            ...currentTypes,
+                            [match.experienceId]: type,
+                          }))
+                        }
+                        isGenerating={isGeneratingDraft}
+                        isGenerateDisabled={Boolean(generatingDraftKey)}
+                        generationOptions={generationOptions}
+                        primaryActionLabel={purposeConfig.primaryActionLabel}
+                        onGenerate={(draftType) =>
+                          handleGenerateAnswerDrafts(match, draftType)
+                        }
+                      />
+                    ) : null}
+                  </article>
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
       </div>
 
     </section>

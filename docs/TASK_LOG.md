@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-02 - 나의 활동 초기 로딩 헤더 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-02 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 화면 전환 중 실제 `전체 활동` 제목이 먼저 남던 로딩 위계 수정 |
+| 수정한 파일 | `web/src/components/common/LoadingState.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/components/common/LoadingState.structure.test.mjs`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md` |
+| 변경 내용 | 목록 데이터가 준비되기 전에는 실제 `전체 활동`·개수·검색 헤더를 화면에서 숨기고 같은 위치의 공통 Liquid skeleton 헤더와 6개 목록 행을 표시. 로딩 region은 visually hidden `전체 활동` heading으로 접근 가능한 이름을 유지하고 데이터 준비 뒤 실제 헤더를 한 번만 렌더링 |
+| 검증한 내용 | 관련 Node 구조 테스트 5개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 로그인 `/experiences` 최종 DOM에서 region과 실제 `전체 활동` heading이 한 번만 노출되고 목록·검색이 정상 렌더링됨을 확인. 데이터 로드가 빨라 transient skeleton 자체는 브라우저에서 장시간 캡처하지 못했으며 조건 분기 구조 테스트로 검증 |
+| 남은 작업 | 없음. API·schema·repository·사용자 데이터는 변경하지 않음 |
+| 관련 커밋 메시지 | `fix: align experience loading header` |
+
 ### 2026-07-30 - 진행 활동 작업 큐 UX 검토
 
 | 항목 | 내용 |
