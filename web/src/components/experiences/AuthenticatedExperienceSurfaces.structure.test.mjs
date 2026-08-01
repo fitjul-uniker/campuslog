@@ -92,6 +92,29 @@ test("독립 AI 분석과 임베디드 분석은 서로 다른 Liquid Glass 밀�
   );
 });
 
+test("AI 분석 결과는 추천 기록과 같은 kicker·생성일·대표 제목 위계를 사용한다", () => {
+  assert.match(resultSource, /AI 경험 분석 결과/);
+  assert.match(resultSource, /analysis-result-generated-at/);
+  assert.match(
+    resultSource,
+    /<h2 id="analysis-result-title">\{experience\.title\}<\/h2>/,
+  );
+  assert.doesNotMatch(resultSource, /저장된 분석 결과/);
+  assert.doesNotMatch(resultSource, /분석 생성일/);
+  assert.doesNotMatch(
+    resultSource,
+    /원본 경험이 바뀌면 업데이트 필요로 표시됩니다/,
+  );
+  assert.match(
+    styles,
+    /\.analysis-result-header\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto;/s,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-analysis-split-panel\.liquid-section\s*\{[^}]*background:\s*var\(--liquid-frosted-fill\)/s,
+  );
+});
+
 test("첨부 목록은 상세 내부에서 안정적인 content plate로 읽힌다", () => {
   assert.match(
     attachmentsSource,

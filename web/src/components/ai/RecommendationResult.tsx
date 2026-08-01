@@ -855,9 +855,7 @@ export function RecommendationResult({
               </span>
             ) : null}
           </div>
-          <h2 id="recommendation-title">
-            {isEmbedded ? result.prompt : result.recommendedExperienceTitle}
-          </h2>
+          <h2 id="recommendation-title">{result.prompt}</h2>
         </div>
         {experience || onClose ? (
           <div className="recommendation-result-header-actions">
@@ -884,30 +882,10 @@ export function RecommendationResult({
         ) : null}
       </div>
 
-      {experience && !isEmbedded ? (
-        <dl className="dashboard-detail-meta recommendation-meta">
-          <div>
-            <dt>활동 기간</dt>
-            <dd>{experience.period}</dd>
-          </div>
-          <div>
-            <dt>역할</dt>
-            <dd>{experience.role}</dd>
-          </div>
-        </dl>
-      ) : null}
-
       <div className="detail-section">
         <h3>활용 목적</h3>
         <p>{purposeConfig.inputLabel}</p>
       </div>
-
-      {!isEmbedded ? (
-        <div className="detail-section">
-          <h3>{result.purpose === "jd" ? "채용공고 / 질문" : "질문 / 문항"}</h3>
-          <p>{result.prompt}</p>
-        </div>
-      ) : null}
 
       {hasRequirements ? (
         <div className="detail-section recommendation-requirements-section">

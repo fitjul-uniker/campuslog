@@ -6,6 +6,10 @@ const source = await readFile(
   new URL("./RecommendationResult.tsx", import.meta.url),
   "utf8",
 );
+const styles = await readFile(
+  new URL("../../app/globals.css", import.meta.url),
+  "utf8",
+);
 
 test("추천 결과는 요청한 보조 정보 블록을 렌더링하지 않는다", () => {
   assert.doesNotMatch(source, /requirements\.requiredCompetencies/);
@@ -37,22 +41,30 @@ test("추천 결과는 긴 내용을 보호하는 Liquid Glass section을 사용
   );
 });
 
-test("추천 직후 결과만 활동 기간과 역할 메타 정보를 표시한다", () => {
-  assert.match(source, /experience && !isEmbedded/);
-  assert.match(source, /className="dashboard-detail-meta recommendation-meta"/);
-  assert.match(source, /<dt>활동 기간<\/dt>/);
-  assert.match(source, /<dt>역할<\/dt>/);
+test("현재 추천과 추천 기록은 질문을 대표 제목으로 공유한다", () => {
+  assert.match(
+    source,
+    /<h2 id="recommendation-title">\{result\.prompt\}<\/h2>/,
+  );
   assert.match(source, /recommendation-result-generated-at/);
   assert.doesNotMatch(source, /<dt>추천 생성일<\/dt>/);
 });
 
-test("추천 기록 상세는 질문을 대표 제목으로 사용하고 하단에 중복하지 않는다", () => {
+test("현재 추천과 추천 기록은 활동 메타와 질문을 하단에 중복하지 않는다", () => {
+  assert.doesNotMatch(source, /className="dashboard-detail-meta recommendation-meta"/);
+  assert.doesNotMatch(source, /<dt>활동 기간<\/dt>/);
+  assert.doesNotMatch(source, /<dt>역할<\/dt>/);
+  assert.doesNotMatch(source, /채용공고 \/ 질문/);
+  assert.doesNotMatch(source, /질문 \/ 문항/);
+});
+
+test("제목과 활용 목적 사이에는 한 줄의 hairline만 사용한다", () => {
   assert.match(
-    source,
-    /isEmbedded \? result\.prompt : result\.recommendedExperienceTitle/,
+    styles,
+    /\.recommendation-result \.detail-header\s*\{[^}]*border-bottom:\s*1px solid/,
   );
   assert.match(
-    source,
-    /\{!isEmbedded \? \([\s\S]*result\.purpose === "jd"[\s\S]*<p>\{result\.prompt\}<\/p>[\s\S]*\) : null\}/,
+    styles,
+    /\.recommendation-result \.detail-header \+ \.detail-section\s*\{[^}]*border-top:\s*0/,
   );
 });
