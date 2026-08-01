@@ -39,8 +39,8 @@
 | 작업 요약 | 동일 테스트 계정의 여러 기기·탭 사용 시 세션·동시 수정·동시 분석 저장을 안정화하고, 상세 역할 데이터에서 발생한 `/api/analyze` 400과 분석 결과 저장 오류를 수정 |
 | 수정한 파일 | `web/src/lib/auth/actions.ts`, `web/src/lib/supabase/browser.ts`, `web/src/hooks/use-auth-session-guard.ts`, `web/src/lib/repositories/campuslogRepository.ts`, `web/src/lib/experienceAnalysisWorkflow.ts`, 경험 분석 실행 컴포넌트 3개, `web/src/components/experiences/EditExperienceClient.tsx`, `web/src/components/experiences/ExperienceForm.tsx`, AI API Route 4개, 관련 구조 테스트, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
 | 변경 내용 | 로그아웃을 Supabase `local` scope로 제한하고 브라우저 client singleton을 명시했으며, 만료 세션 로그인 복귀, 분석 직전 최신 경험·보완 답변 재조회, 경험별 분석 결과 `upsert`, 원문 변경 중 분석 결과 저장 방지, `updated_at` 기반 경험 수정 충돌 감지를 추가. 역할 220자가 기존 API 상한 200자를 넘어 요청 전체가 `BAD_REQUEST`가 되던 문제는 분석·추천·답변 초안·보완 질문과 입력 화면 상한을 1,000자로 통일. 동시성 저장 조건에서 `related_links` 배열이 `[object Object]`로 전달되어 PostgreSQL `22P02`가 발생한 문제는 JSON 문자열 비교로 수정 |
-| 검증한 내용 | 처음 재현에서 로그인 `test4` 계정의 한빛미디어 경험 역할이 220자임을 확인하고 `/api/analyze` 400 재현. 상한 수정 후 OpenAI SSE 호출은 200으로 완료됐지만 저장 시 `22P02`를 재현했고 JSON 비교 수정 후 같은 경험에서 `/api/analyze` 200, 분석 완료 상태, STAR·주요 성과·키워드 표시와 Supabase 저장을 확인. 검증 중 실제 OpenAI 분석 요청 2회가 실행됐고 최종 결과 1건이 저장됨. 전체 Node 테스트 135개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
-| 남은 작업 | 동일 계정의 서로 다른 두 기기에서 동시 입력·분석, 같은 경험 동시 수정 충돌 안내, 한 기기 로그아웃 후 다른 기기 세션 유지 smoke test. 현재 변경은 기능 브랜치 로컬 커밋이며 main 병합·배포는 수행하지 않음 |
+| 검증한 내용 | 처음 재현에서 로그인 `test4` 계정의 한빛미디어 경험 역할이 220자임을 확인하고 `/api/analyze` 400 재현. 상한 수정 후 OpenAI SSE 호출은 200으로 완료됐지만 저장 시 `22P02`를 재현했고 JSON 비교 수정 후 같은 경험에서 `/api/analyze` 200, 분석 완료 상태, STAR·주요 성과·키워드 표시와 Supabase 저장을 확인. 검증 중 실제 OpenAI 분석 요청 2회가 실행됐고 최종 결과 1건이 저장됨. 전체 Node 테스트 135개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 동일 계정 동시 작업을 포함한 직접 로직 테스트를 완료 |
+| 남은 작업 | 배포 환경에서의 추가 회귀 모니터링 |
 | 관련 커밋 메시지 | `f22ab13 fix: support concurrent shared-account sessions`, `4337806 fix: accept detailed experience roles in AI flows` |
 
 ### 2026-07-30 - 진행 활동 작업 큐 UX 검토
