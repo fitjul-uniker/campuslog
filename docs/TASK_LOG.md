@@ -43,6 +43,32 @@
 | 남은 작업 | 실제 OpenAI 추천 결과의 목적별 품질과 저장·재조회는 기존 `ISSUE-079` 범위에서 계속 확인 |
 | 관련 커밋 메시지 | `feat: refine recommendation prompt examples` |
 
+### 2026-08-02 - 현재 추천 결과와 추천 기록 위계 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-02 |
+| 작업자 | Codex |
+| 작업 요약 | `/recommend`의 현재 추천 결과를 추천 기록 상세와 같은 질문 중심 정보 위계로 통일 |
+| 수정한 파일 | `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/ai/RecommendationResult.structure.test.mjs`, `web/src/app/recommend/history/page.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md` |
+| 변경 내용 | 공용 추천 결과가 현재 화면과 기록 화면 모두 저장한 질문·문항을 대표 제목으로 표시하도록 변경하고, 추천 경험의 활동 기간·역할 상단 메타와 하단 중복 질문 구획을 제거. 제목 헤더가 아래 hairline 하나만 소유하고 바로 이어지는 활용 목적 구획의 위 선은 제거해 이중선을 방지. 추천 경험명은 Top 3 Accordion에 유지하고 활용 목적·요구사항 분석·추천 근거·답변 생성·활동 이동은 보존 |
+| 검증한 내용 | 최신 `main` 리베이스 후 전체 Node 구조 테스트 152개와 후속 관련 구조 테스트 11개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 로그인된 추천 기록에서 기존 2026-08-02 추천 결과를 열어 질문·문항이 대표 제목으로 한 번만 표시되고 활동 기간·역할이 제거됐으며 가로 overflow가 없음을 확인. 개발 서버 재시작 후 제목 헤더 아래선은 `1px solid`, 바로 이어지는 활용 목적 구획의 위 선은 `0px none`, 두 구획 사이 margin은 `0px`로 계산되어 단일 hairline만 표시됨을 브라우저에서 재확인. 현재 추천 결과는 같은 공용 컴포넌트의 기본 variant를 사용하며 새 AI 호출과 추천 기록 저장을 유발하는 실데이터 재생성은 수행하지 않음 |
+| 남은 작업 | 없음. 로컬 Supabase 연결 실패 콘솔 오류는 기존 환경 이슈로 이번 UI 변경과 무관하며, API·schema·repository·사용자 데이터는 변경하지 않음 |
+| 관련 커밋 메시지 | `fix: align current recommendation result hierarchy` |
+
+### 2026-08-02 - AI 분석 결과 위계 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-02 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 AI 분석 스플릿뷰와 독립 분석 화면을 최근 정리한 추천 기록 상세의 Liquid Glass 결과 위계로 통일 |
+| 수정한 파일 | `web/src/components/ai/AnalysisResult.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, `web/src/app/globals.css`, 관련 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md` |
+| 변경 내용 | 분석 스플릿 패널 외곽을 추천 기록 상세와 같은 frosted Glass로 맞추고 헤더를 `AI 경험 분석 결과` kicker·분석 생성일·대표 제목·상태/닫기 순서로 재구성. 스플릿뷰는 왼쪽 활동명 중복 없이 `AI 분석 결과`, 독립 화면은 경험 제목을 대표 제목으로 표시. 정상 상태에서 항상 보이던 사용법 notice와 하단 중복 생성일을 제거하고 원본 수정·레거시 재분석처럼 실제 조치가 필요한 안내만 조건부로 유지. 요약·STAR·성과·부족 정보 답변·키워드와 재분석 동작은 보존 |
+| 검증한 내용 | 관련 Node 구조 테스트 19개, `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. 로그인 `/experiences`에서 저장된 분석을 스플릿뷰로 열어 kicker·생성일·제목·상태·닫기와 단일 frosted 표면, 반복 notice·중복 생성일 제거를 확인하고 `/experiences/[id]/analysis` 독립 화면에서도 경험 제목 중심 헤더와 기존 결과 구획을 확인 |
+| 남은 작업 | 실제 원본 수정·레거시 재분석 상태에서 조건부 warning/info 문구가 표시되는지 별도 상태 smoke test 필요. API·schema·repository·사용자 데이터는 변경하지 않음 |
+| 관련 커밋 메시지 | `style: align analysis results with recommendation detail` |
+
 ### 2026-08-02 - PR #64 main 충돌 해결과 이슈 번호 정리
 
 | 항목 | 내용 |
@@ -69,7 +95,7 @@
 | 남은 작업 | 배포 환경에서의 추가 회귀 모니터링 |
 | 관련 커밋 메시지 | `f22ab13 fix: support concurrent shared-account sessions`, `4337806 fix: accept detailed experience roles in AI flows` |
 
-### 2026-08-02 - 나의 활동 초기 로딩 헤더 통일 (`ISSUE-136`)
+### 2026-08-02 - 나의 활동 초기 로딩 헤더 통일
 
 | 항목 | 내용 |
 | --- | --- |

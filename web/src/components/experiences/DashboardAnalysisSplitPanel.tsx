@@ -10,6 +10,7 @@ import { AnalysisResult } from "@/components/ai/AnalysisResult";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
 import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
+import { formatDateTime } from "@/lib/date";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
 export const DASHBOARD_ANALYSIS_SPLIT_PANEL_ID =
@@ -71,6 +72,14 @@ export function DashboardAnalysisSplitPanel({
     >
       <header className="dashboard-analysis-split-header">
         <div>
+          <div className="analysis-result-kicker-row">
+            <p className="experience-meta analysis-result-kicker">
+              AI 경험 분석 결과
+            </p>
+            <span className="analysis-result-generated-at">
+              {formatDateTime(analysis.generatedAt)}
+            </span>
+          </div>
           <h2 id={titleId}>AI 분석 결과</h2>
         </div>
         <div className="dashboard-analysis-split-header-actions">
