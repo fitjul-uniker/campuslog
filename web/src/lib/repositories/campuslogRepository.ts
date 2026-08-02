@@ -1003,17 +1003,13 @@ function createSupabaseCampusLogRepository(
           .eq("id", result.experienceId);
 
         if (expectedExperience) {
-          experienceUpdateQuery = experienceUpdateQuery
-            .eq("title", expectedExperience.title)
-            .eq("period", expectedExperience.period)
-            .eq("role", expectedExperience.role)
-            .eq("description", expectedExperience.description)
-            .eq("achievements", expectedExperience.achievements)
-            .filter(
-              "related_links",
-              "eq",
-              JSON.stringify(expectedExperience.relatedLinks),
-            );
+          // The analysis request may contain a very long experience body. Use
+          // the row version timestamp for optimistic concurrency instead of
+          // serializing the entire experience into the PostgREST URL.
+          experienceUpdateQuery = experienceUpdateQuery.eq(
+            "updated_at",
+            expectedExperience.updatedAt,
+          );
         }
 
         const { data: updatedExperienceData, error: experienceError } =

@@ -67,6 +67,7 @@ Migrations:
 - Storage object는 `{userId}/{experienceId}/{attachmentId}.{extension}` 경로에 저장하고 원래 파일명은 metadata에만 보존합니다.
 - 첨부 업로드 묶음이 중간에 실패하면 이번 요청에서 만든 metadata와 object를 정리합니다.
 - `ExperienceAttachment`는 `Experience`와 별도 repository 영역에 있으며 분석·추천·답변 초안 API 입력에 병합하지 않습니다.
+- `Experience` 입력 상한은 화면과 네 AI API가 공용 계약을 사용하며 제목 200자, 기간 120자, 역할 1,000자, 내용 8,000자, 성과 4,000자입니다. 내용과 성과는 상한을 넘긴 값을 자동 절단하지 않고 저장 전에 사용자에게 수정하도록 안내합니다.
 - localStorage fallback에는 파일 본문을 저장하지 않습니다.
 
 ## Repository 전환 원칙

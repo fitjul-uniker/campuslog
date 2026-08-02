@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-02 - 긴 경험 원문 분석 저장 URL 초과 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-02 |
+| 작업자 | Codex |
+| 작업 요약 | 긴 경험 분석 결과 저장 시 Supabase 요청 URL이 과도하게 증가해 발생하던 400 오류 수정 |
+| 수정한 파일 | `web/src/lib/repositories/campuslogRepository.ts`, `web/src/lib/experienceAnalysisWorkflow.ts`, `web/src/lib/experienceInputLimits.ts`, `web/src/components/experiences/ExperienceForm.tsx`, 네 AI API Route, `web/src/app/globals.css`, 관련 테스트, `docs/SCREEN_SPEC.md`, `docs/DATA_CONTRACT.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 분석 결과 저장의 동시성 조건을 제목·역할·활동 내용·성과·관련 링크 전체 비교에서 `experiences.updated_at` 단일 비교로 변경. AI 생성 성공 후 저장 오류는 `분석 결과 저장 실패`로 안내하고, 401 세션 만료와 동시 수정 오류는 기존 분기를 유지. 화면과 AI API의 경험 입력 제한을 공용 계약으로 묶고 내용 8,000자·성과 4,000자의 90%부터만 안내와 카운터를 표시. 초과 붙여넣기는 자동 절단하지 않고 초과 글자 수를 안내하며 저장 시 해당 입력에 초점 이동 |
+| 검증한 내용 | 전체 Node 테스트 156개, lint, typecheck, production build 통과. UI preview 경험 작성 화면에서 평상시 카운터 0개, 내용 7,200자부터 조건부 `7,200 / 8,000` 안내, 8,530자 원문 보존과 `530자를 줄여주세요`·`aria-invalid=true`, 가로 overflow 0, console error 0건 확인. 사용자가 실제 환경에서 직접 로직 테스트 완료. `git diff --check` 통과 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: use experience version for analysis save concurrency` |
+
 ### 2026-08-02 - AI 추천 목적별 대표 질문과 JD 실제형 사례 정리
 
 | 항목 | 내용 |

@@ -13,6 +13,10 @@ import {
 import { RelatedLinkFavicon } from "@/components/common/RelatedLinkFavicon";
 import { ExperienceAttachmentPicker } from "@/components/experiences/ExperienceAttachmentPicker";
 import {
+  EXPERIENCE_INPUT_LIMITS,
+  getExperienceLengthState,
+} from "@/lib/experienceInputLimits";
+import {
   MAX_RELATED_LINK_DESCRIPTION_LENGTH,
   MAX_RELATED_LINKS,
   MAX_RELATED_LINK_URL_LENGTH,
@@ -263,6 +267,21 @@ function hasRequiredFields(formValue: ExperienceFormInput): boolean {
   );
 }
 
+function getLengthGuidanceMessage(
+  state: ReturnType<typeof getExperienceLengthState>,
+  limit: number,
+): string {
+  if (state.isOverLimit) {
+    return `최대 ${limit.toLocaleString()}자까지 입력할 수 있어요. ${state.excess.toLocaleString()}자를 줄여주세요.`;
+  }
+
+  if (state.isAtLimit) {
+    return "최대 입력 분량에 도달했어요.";
+  }
+
+  return "입력 가능한 분량이 얼마 남지 않았어요.";
+}
+
 export function ExperienceForm({
   mode,
   initialValue,
@@ -289,6 +308,8 @@ export function ExperienceForm({
   const nextRelatedLinkId = useRef(initialValue?.relatedLinks.length ?? 0);
   const relatedLinkInputRefs = useRef(new Map<string, HTMLInputElement>());
   const addRelatedLinkButtonRef = useRef<HTMLButtonElement>(null);
+  const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
+  const achievementsInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setFormValue(createFormValue(initialValue));
@@ -310,6 +331,14 @@ export function ExperienceForm({
 
   const periodErrorMessage = getPeriodErrorMessage(periodFields);
   const hasPeriodError = Boolean(errorMessage && periodErrorMessage);
+  const descriptionLengthState = getExperienceLengthState(
+    formValue.description,
+    EXPERIENCE_INPUT_LIMITS.description,
+  );
+  const achievementsLengthState = getExperienceLengthState(
+    formValue.achievements,
+    EXPERIENCE_INPUT_LIMITS.achievements,
+  );
 
   function updatePeriodField(field: "startMonth" | "endMonth", value: string) {
     const nextPeriodFields = {
@@ -467,6 +496,16 @@ export function ExperienceForm({
       return;
     }
 
+    if (descriptionLengthState.isOverLimit) {
+      descriptionInputRef.current?.focus();
+      return;
+    }
+
+    if (achievementsLengthState.isOverLimit) {
+      achievementsInputRef.current?.focus();
+      return;
+    }
+
     const relatedLinkValidation = validateRelatedLinks(relatedLinkRows);
 
     if (relatedLinkValidation.firstErrorId) {
@@ -515,6 +554,7 @@ export function ExperienceForm({
           id="experience-title"
           name="title"
           type="text"
+          maxLength={EXPERIENCE_INPUT_LIMITS.title}
           value={formValue.title}
           onChange={(event) => updateField("title", event.target.value)}
           aria-invalid={Boolean(errorMessage && !formValue.title.trim())}
@@ -579,7 +619,7 @@ export function ExperienceForm({
           id="experience-role"
           name="role"
           type="text"
-          maxLength={1_000}
+          maxLength={EXPERIENCE_INPUT_LIMITS.role}
           value={formValue.role}
           onChange={(event) => updateField("role", event.target.value)}
           aria-invalid={Boolean(errorMessage && !formValue.role.trim())}
@@ -590,25 +630,77 @@ export function ExperienceForm({
       <div className="form-field">
         <label htmlFor="experience-description">내용</label>
         <textarea
+          ref={descriptionInputRef}
           id="experience-description"
           name="description"
           rows={8}
           value={formValue.description}
           onChange={(event) => updateField("description", event.target.value)}
-          aria-invalid={Boolean(errorMessage && !formValue.description.trim())}
+          aria-invalid={
+            descriptionLengthState.isOverLimit ||
+            Boolean(errorMessage && !formValue.description.trim())
+          }
+          aria-describedby={
+            descriptionLengthState.showGuidance
+              ? "experience-description-length"
+              : undefined
+          }
           required
         />
+        {descriptionLengthState.showGuidance ? (
+          <p
+            id="experience-description-length"
+            className={`experience-length-guidance${descriptionLengthState.isOverLimit ? " is-over-limit" : ""}`}
+            role={descriptionLengthState.isOverLimit ? "alert" : undefined}
+          >
+            <span>
+              {getLengthGuidanceMessage(
+                descriptionLengthState,
+                EXPERIENCE_INPUT_LIMITS.description,
+              )}
+            </span>
+            <span>
+              {descriptionLengthState.count.toLocaleString()} /{" "}
+              {EXPERIENCE_INPUT_LIMITS.description.toLocaleString()}
+            </span>
+          </p>
+        ) : null}
       </div>
 
       <div className="form-field">
         <label htmlFor="experience-achievements">성과</label>
         <textarea
+          ref={achievementsInputRef}
           id="experience-achievements"
           name="achievements"
           rows={5}
           value={formValue.achievements}
           onChange={(event) => updateField("achievements", event.target.value)}
+          aria-invalid={achievementsLengthState.isOverLimit}
+          aria-describedby={
+            achievementsLengthState.showGuidance
+              ? "experience-achievements-length"
+              : undefined
+          }
         />
+        {achievementsLengthState.showGuidance ? (
+          <p
+            id="experience-achievements-length"
+            className={`experience-length-guidance${achievementsLengthState.isOverLimit ? " is-over-limit" : ""}`}
+            role={achievementsLengthState.isOverLimit ? "alert" : undefined}
+          >
+            <span>
+              {getLengthGuidanceMessage(
+                achievementsLengthState,
+                EXPERIENCE_INPUT_LIMITS.achievements,
+              )}
+            </span>
+            <span>
+              {achievementsLengthState.count.toLocaleString()} /{" "}
+              {EXPERIENCE_INPUT_LIMITS.achievements.toLocaleString()}
+            </span>
+          </p>
+        ) : null}
       </div>
 
       <fieldset className="related-links-fieldset">
