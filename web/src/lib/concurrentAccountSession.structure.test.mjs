@@ -50,16 +50,19 @@ test("분석 직전에 최신 저장 경험과 보완 답변을 다시 조회한
   );
 });
 
-test("경험 수정은 기존 updatedAt을 조건으로 전달해 덮어쓰기를 막는다", () => {
+test("경험 수정과 분석 저장은 updatedAt을 조건으로 전달해 덮어쓰기를 막는다", () => {
   assert.match(
     editExperienceSource,
     /repository\.experiences\.update\(id, input, experience\.updatedAt\)/,
   );
   assert.match(repositorySource, /\.eq\("updated_at", expectedUpdatedAt\)/);
-  assert.match(repositorySource, /\.eq\("title", expectedExperience\.title\)/);
   assert.match(
     repositorySource,
-    /"related_links",\s*"eq",\s*JSON\.stringify\(expectedExperience\.relatedLinks\)/s,
+    /\.eq\(\s*"updated_at"\s*,\s*expectedExperience\.updatedAt\s*,?\s*\)/,
+  );
+  assert.doesNotMatch(
+    repositorySource,
+    /JSON\.stringify\(expectedExperience\.relatedLinks\)/,
   );
   assert.match(repositorySource, /"CONCURRENT_UPDATE"/);
   assert.match(

@@ -81,6 +81,25 @@ test("역할 입력은 다른 단문 입력보다 여유 있는 높이를 사용
   );
 });
 
+test("긴 경험 입력은 한도에 가까울 때만 글자 수를 안내한다", () => {
+  assert.match(formSource, /descriptionLengthState\.showGuidance/);
+  assert.match(formSource, /achievementsLengthState\.showGuidance/);
+  assert.match(formSource, /experience-length-guidance/);
+  assert.match(formSource, /자를 줄여주세요/);
+  assert.doesNotMatch(
+    formSource,
+    /id="experience-description"[\s\S]*?maxLength=\{EXPERIENCE_INPUT_LIMITS\.description\}/,
+  );
+  assert.match(
+    styles,
+    /\.experience-length-guidance\s*\{[^}]*color:\s*var\(--color-text-soft\)/s,
+  );
+  assert.match(
+    styles,
+    /\.experience-length-guidance\.is-over-limit\s*\{[^}]*color:\s*var\(--color-danger-text\)/s,
+  );
+});
+
 test("독립 AI 분석과 임베디드 분석은 서로 다른 Liquid Glass 밀도를 사용한다", () => {
   assert.match(
     analysisClientSource,

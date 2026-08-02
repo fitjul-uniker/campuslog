@@ -2303,6 +2303,28 @@ h2 {
   font-weight: 750;
 }
 
+.experience-length-guidance {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.experience-length-guidance > span:last-child {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.experience-length-guidance.is-over-limit {
+  color: var(--color-danger-text);
+}
+
 .detail-header {
   margin-bottom: 24px;
 }

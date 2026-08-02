@@ -23,6 +23,7 @@
 - [x] 프로필 드롭다운 로그아웃 제출 안정화와 세션 제거·보호 경로 재차단 브라우저 확인
 - [x] `fix/concurrent-account-session`에서 공유 테스트 계정용 현재 세션 로그아웃, 만료 감지, 분석 전 최신 경험 재조회, 분석 결과 atomic upsert와 경험 동시 수정 충돌 감지 구현 (`ISSUE-134`)
 - [x] 동일 테스트 계정 동시 작업과 세션 독립 유지 직접 로직 테스트 (`ISSUE-134`)
+- [x] 긴 경험 원문 AI 분석 저장의 Supabase URL 초과 400 오류를 `updated_at` 기반 동시성 조건으로 수정하고, 화면·AI API 입력 상한을 공용화해 내용 8,000자·성과 4,000자의 90%부터만 조건부 글자 수 안내와 초과 수정 안내 제공 (`ISSUE-139`)
 - [x] AI API 보호 foundation: 세 AI API Route의 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용
 - [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심 schema / 저장 / 표시 간소화
 - [x] 상세 역할 220자 경험의 AI API 입력 상한 불일치와 분석 저장 JSON 오류를 수정하고 로그인 브라우저에서 `/api/analyze` 200·Supabase 저장·결과 표시 확인 (`ISSUE-135`)

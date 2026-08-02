@@ -1,5 +1,6 @@
 import { requestExperienceAnalysis } from "@/lib/analysisApi";
 import {
+  CampusLogRepositoryError,
   getCampusLogRepository,
   isRepositorySessionError,
 } from "@/lib/repositories/campuslogRepository";
@@ -72,10 +73,29 @@ export async function analyzeCurrentExperience(
 
     // The repository uses an atomic upsert, so simultaneous analyses for the
     // same account and experience converge on one saved result.
-    const savedAnalysis = await repository.analyses.save(
-      response.analysis,
-      experience,
-    );
+    let savedAnalysis: ExperienceAnalysis | null;
+    try {
+      savedAnalysis = await repository.analyses.save(
+        response.analysis,
+        experience,
+      );
+    } catch (error) {
+      if (isRepositorySessionError(error)) {
+        throw error;
+      }
+
+      if (
+        error instanceof CampusLogRepositoryError &&
+        error.code === "CONCURRENT_UPDATE"
+      ) {
+        return createWorkflowError("BAD_REQUEST", error.message);
+      }
+
+      return createWorkflowError(
+        "UNKNOWN_ERROR",
+        "AI 생성은 완료되었지만 분석 결과 저장에 실패했습니다. 경험을 새로고침한 뒤 다시 시도해 주세요.",
+      );
+    }
 
     if (!savedAnalysis) {
       return createWorkflowError(
