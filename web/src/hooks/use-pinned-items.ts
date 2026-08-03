@@ -27,22 +27,42 @@ export function usePinnedItems(type: PinnableItemType) {
   useEffect(() => {
     let isActive = true;
 
-    getPinnedItems(type)
-      .then((storedPins) => {
-        if (isActive) {
-          setPinnedItems(storedPins);
-        }
-      })
-      .catch(() => {
-        if (isActive) {
-          setError(
-            "즐겨찾기를 불러오지 못했습니다. 목록은 그대로 사용할 수 있습니다.",
-          );
-        }
-      });
+    const loadPinnedItems = () => {
+      if (pendingIdsRef.current.size > 0) {
+        return;
+      }
+
+      getPinnedItems(type)
+        .then((storedPins) => {
+          if (isActive) {
+            pinnedItemsRef.current = storedPins;
+            setPinnedItems(storedPins);
+            setError("");
+          }
+        })
+        .catch(() => {
+          if (isActive) {
+            setError(
+              "즐겨찾기를 불러오지 못했습니다. 목록은 그대로 사용할 수 있습니다.",
+            );
+          }
+        });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadPinnedItems();
+      }
+    };
+
+    loadPinnedItems();
+    window.addEventListener("focus", loadPinnedItems);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       isActive = false;
+      window.removeEventListener("focus", loadPinnedItems);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [type]);
 

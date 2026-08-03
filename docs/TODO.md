@@ -106,6 +106,7 @@
 ### Deferred / Optional
 
 - [ ] localStorage → 계정 데이터 마이그레이션 탐지 / 확인 / upsert 구현 (`ISSUE-025`)
+- [x] 나의 활동·추천 기록 즐겨찾기를 사용자별 `favorite_items` / RLS로 동기화하고 기존 브라우저 즐겨찾기를 1회 병합 (`ISSUE-140`)
 - [ ] 기존 v1.1 데이터 read 호환과 migration 멱등성 구현
 - [ ] 사용자 생성 데이터 판별과 샘플·fixture·파싱 실패 항목 제외 contract 구현
 - [ ] migration 부분 실패 / 재시도 / 원본 보존 구현
@@ -125,7 +126,7 @@
   - [x] 인증 제품 라우트의 루트 스크롤바 예약 폭을 통일해 메뉴 전환 시 Breadcrumb·H1의 서브픽셀 흔들림 제거 (`ISSUE-117`)
   - [x] 오늘의 기록 이동 시 이중 활성 capsule·상시 scrollbar·smooth scroll 전환을 제거해 화면 전환 안정화 (`ISSUE-118`)
   - [x] 오늘의 기록 `활동 추가`를 포인터 환경에서 44px 아이콘→118px 라벨로 확장하고 터치 환경은 전체 라벨을 유지 (`ISSUE-119`)
-  - [x] 나의 활동의 완료 경험·진행 활동과 추천 기록에 unlumen UI Pinned List 참고 즐겨찾기 구획·테두리 없는 44px 노란 별·사용자별 브라우저 저장을 적용 (`ISSUE-120`, `ISSUE-121`, `ISSUE-122`)
+  - [x] 나의 활동의 완료 경험·진행 활동과 추천 기록에 unlumen UI Pinned List 참고 즐겨찾기 구획·테두리 없는 44px 노란 별·사용자별 계정 DB 동기화를 적용 (`ISSUE-120`, `ISSUE-121`, `ISSUE-122`, `ISSUE-140`)
   - [x] 첫 화면·인증·오늘의 기록·나의 활동·추천·추천 기록과 관련 상세/작성 화면의 웜화이트·크림 hover를 공통 쿨 뉴트럴 Liquid Glass 토큰으로 통일 (`ISSUE-123`)
   - [x] 나의 활동·추천 기록 즐겨찾기 행의 selected·hover 배경을 제목과 별 영역 전체로 확장 (`ISSUE-124`)
   - [x] 나의 활동·추천 기록 목록 하단의 뿌연 gradient fade를 제거하고 실제 패널 여백으로 마감 (`ISSUE-125`)

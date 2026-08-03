@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-03 - 계정 기반 즐겨찾기 동기화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-03 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동과 추천 기록 즐겨찾기를 사용자별 Supabase DB에 저장해 기기 간 재조회 지원 |
+| 수정한 파일 | `supabase/migrations/20260803000100_account_favorites.sql`, `web/src/lib/pinnedItems.ts`, `web/src/hooks/use-pinned-items.ts`, 즐겨찾기 구조 테스트, `docs/DATA_CONTRACT.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `favorite_items` table·복합 PK·본인 CRUD RLS와 완료 경험·진행 활동·추천 기록 삭제 trigger를 추가. 로그인 세션은 즐겨찾기를 DB에서 조회·추가·해제하고 기존 사용자 scope localStorage 값은 DB에 없는 항목만 1회 병합한 뒤 성공한 목록 범위만 정리. 저장 실패 rollback, 개발 미리보기 localStorage fallback, 화면 재활성화 시 DB 재조회 유지 |
+| 검증한 내용 | 즐겨찾기 구조 테스트 8개 포함 전체 Node 테스트 157개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 실제 환경에서 직접 로직 테스트 완료 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: sync favorites across devices` |
+
 ### 2026-08-02 - 긴 경험 원문 분석 저장 URL 초과 수정
 
 | 항목 | 내용 |

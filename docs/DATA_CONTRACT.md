@@ -2,8 +2,8 @@
 
 ## 상태
 
-- 적용 상태: `main`에 반영된 PR #30 + AI 분석 v2.1 간소화 + 추천 v2 확장 + 답변 초안 v1 확장 + 분석 부족 정보 답변 저장 호환성 + 추천 이미지 입력
-- 범위: 사용자별 Supabase Postgres schema, RLS, private Storage, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, localStorage 자동 이전·자동 삭제 금지 정책, 완료 경험 첨부 저장, AI 경험 분석 v2.1 저장 호환성, 추천 v2 저장 호환성, 답변 초안 v1 저장 호환성, 분석 부족 정보 답변 저장 호환성, 추천 입력 출처 저장
+- 적용 상태: `main`에 반영된 PR #30 + AI 분석 v2.1 간소화 + 추천 v2 확장 + 답변 초안 v1 확장 + 분석 부족 정보 답변 저장 호환성 + 추천 이미지 입력 + 계정 즐겨찾기 동기화
+- 범위: 사용자별 Supabase Postgres schema, RLS, private Storage, localStorage 모델 매핑, repository 경계, 주요 UI의 Supabase repository 전환, 일반 기록 localStorage 자동 이전·자동 삭제 금지 정책, 즐겨찾기 환경설정의 1회 DB 병합, 완료 경험 첨부 저장, AI 경험 분석 v2.1 저장 호환성, 추천 v2 저장 호환성, 답변 초안 v1 저장 호환성, 분석 부족 정보 답변 저장 호환성, 추천 입력 출처 저장
 - 기준: v1.1 UI/UX와 기존 도메인 타입을 유지하고, DB 전환은 작은 PR로 단계적으로 진행
 - 제외: 추천 입력 이미지 원본 영구 저장
 
@@ -20,6 +20,7 @@
 | `TrackedActivity` | `campuslog:v1:tracked-activities` | `TrackedActivity[]` | 진행 활동. 완료 저장 후 `generatedExperienceId`로 `Experience.id` 참조 |
 | `DailyLog` | `campuslog:v1:daily-logs` | `DailyLog[]` | `activityId`로 `TrackedActivity.id` 참조 |
 | `SynthesisDraft` | `campuslog:v1:synthesis-drafts` | `Record<activityId, ExperienceSynthesisDraft>` | 활동별 합성 초안 1개. `usedLogIds`로 사용된 `DailyLog.id` 목록 보존 |
+| 즐겨찾기 환경설정 | `campuslog:v1:pinned-items` | 로그인 사용자 scope별 완료 경험·진행 활동·추천 id와 선택 시각 | `favorite_items` 적용 전 값의 1회 병합과 Supabase 설정 누락 개발 fallback에만 사용 |
 
 현재 UI는 `web/src/lib/repositories/campuslogRepository.ts`의 async repository 계약을 통해 데이터를 읽고 씁니다. Supabase 환경 변수가 설정된 로그인 세션에서는 Supabase repository를 사용하고, localStorage adapter는 설정 누락 fallback과 미래의 선택적 이전 가능성을 위해 보존합니다. localStorage 데이터는 로그인 계정의 기본 데이터로 자동 표시하지 않습니다.
 
@@ -33,6 +34,7 @@ Migrations:
 - `supabase/migrations/20260714000300_ai_answer_drafts.sql`
 - `supabase/migrations/20260714000400_experience_followups.sql`
 - `supabase/migrations/20260724000100_experience_attachments.sql`
+- `supabase/migrations/20260803000100_account_favorites.sql`
 
 | 테이블 | 기존 타입 | 소유권 | PK / 멱등성 | 주요 관계 |
 | --- | --- | --- | --- | --- |
@@ -45,6 +47,7 @@ Migrations:
 | `answer_drafts` | `AnswerDraftResult` | `user_id` | `(user_id, recommendation_id, experience_id)` | 추천 기록과 선택 경험별 최신 초안 묶음 1개를 upsert. 추천 또는 경험 삭제 시 cascade. 생성된 초안 type들을 `drafts` JSONB 배열로 저장 |
 | `experience_followups` | `ExperienceFollowup` | `user_id` | `(user_id, id)` | 경험별 보완 질문 / 답변을 별도 저장. 경험 삭제 시 cascade. 원본 `Experience.description` / `achievements`를 자동 수정하지 않음 |
 | `experience_attachments` | `ExperienceAttachment` | `user_id` | `(user_id, id)`, unique `(user_id, storage_path)` | `(user_id, experience_id)`가 `experiences`를 참조하며 경험 삭제 시 metadata cascade. 경험당 최대 3개 |
+| `favorite_items` | 즐겨찾기 환경설정 | `user_id` | `(user_id, item_type, item_id)` | `experience`·`tracked_activity`·`recommendation` id와 선택 시각 저장. 대상 삭제 trigger로 관련 행 정리 |
 | `local_data_migration_batches` | migration ledger | `user_id` | unique `(user_id, client_migration_id)` | 사용자 확인 기반 이전 작업 단위 |
 | `local_data_migration_items` | migration ledger | `user_id` | unique `(user_id, entity_type, local_id)` | 재시도 시 동일 로컬 항목 중복 이전 방지 |
 
@@ -59,6 +62,15 @@ Migrations:
 - `service_role` key는 현재 앱 코드와 브라우저 환경에서 사용하지 않습니다.
 - 서버 repository가 생겨도 클라이언트 입력의 `user_id`를 신뢰하지 않고 Supabase session의 사용자로 소유권을 확인합니다.
 - `experience-attachments` bucket은 public URL을 제공하지 않습니다. Storage object 경로 첫 segment가 현재 `auth.uid()`와 같은 경우에만 select / insert / delete를 허용하고 1시간 signed URL로 조회합니다.
+
+## 계정 즐겨찾기 동기화 계약
+
+- 로그인 세션의 나의 활동과 추천 기록 즐겨찾기는 `favorite_items`에서 조회·추가·해제하며 기기별 브라우저 저장소를 기본값으로 사용하지 않습니다.
+- 나의 활동의 완료 경험은 `experience`, 진행 활동은 `tracked_activity`, 추천 기록은 `recommendation`으로 구분하고 기존 UI의 `tracked:{id}` 식별자는 저장 경계에서 변환합니다.
+- 화면 최초 진입 시 현재 로그인 사용자 scope의 기존 `campuslog:v1:pinned-items` 값을 DB와 합집합으로 병합합니다. 이미 DB에 있는 항목은 DB 선택 시각을 보존하고, upsert 성공 뒤 해당 목록의 로컬 값만 비웁니다.
+- DB 저장 실패 시 화면의 낙관적 이동을 되돌리고 로컬 원본은 삭제하지 않습니다. 화면을 다시 활성화하면 DB 값을 다시 읽어 다른 기기의 변경을 반영합니다.
+- 완료 경험·진행 활동·추천 기록이 삭제되면 DB trigger가 같은 사용자의 연결된 즐겨찾기를 삭제합니다.
+- Supabase 공개 설정이 없는 개발 미리보기에서는 기존 localStorage adapter를 fallback으로 유지합니다.
 
 ## 완료 경험 첨부 계약
 
@@ -136,6 +148,7 @@ Migrations:
 - localStorage → 계정 DB 이전 UI와 실제 upsert 구현은 현재 High 필수 범위가 아니며 Deferred / Optional입니다.
 - localStorage 데이터는 로그인 계정의 기본 데이터로 자동 표시하지 않습니다.
 - localStorage 원본은 자동 이전하거나 자동 삭제하지 않습니다.
+- 단, 원문 사용자 기록이 아닌 즐겨찾기 환경설정은 계정 동기화 전환을 위해 사용자별 기존 값을 `favorite_items`와 한 번 병합하고 성공한 목록 범위만 localStorage에서 비웁니다.
 - `local_data_migration_batches`와 `local_data_migration_items`는 향후 실제 기존 사용자 데이터 보존 요구가 생길 때 선택적으로 이전 기능을 만들기 위한 안전장치입니다.
 - 미래에 이전 기능을 다시 도입한다면 다음 원칙을 유지합니다.
   - 사용자 확인 전 자동 이전 금지
@@ -152,4 +165,5 @@ Migrations:
 - 답변 초안 migration `20260714000300_ai_answer_drafts.sql`은 Supabase project 적용 후 로그인 세션에서 초안 저장 smoke test가 필요합니다.
 - 기록 보완 migration `20260714000400_experience_followups.sql`은 Supabase project 적용 후 로그인 세션에서 분석 부족 정보 답변 저장, 수정, 새로고침 유지, 추천 반영 smoke test가 필요합니다.
 - 추천 이미지 입력 migration `20260724000200_recommendation_image_input.sql`은 Supabase project 적용 후 이미지 기반 추천 저장·재조회와 출처 배지 유지 smoke test가 필요합니다.
+- 계정 즐겨찾기 migration `20260803000100_account_favorites.sql` 기반 저장·조회 흐름은 사용자가 실제 환경에서 직접 로직 테스트를 완료했습니다.
 - SQL-level 또는 자동화된 select / insert / update / delete RLS 정책 검증은 아직 별도 hardening 작업으로 남아 있습니다.

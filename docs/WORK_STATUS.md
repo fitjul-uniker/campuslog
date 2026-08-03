@@ -77,6 +77,7 @@
 - [x] 오늘의 기록 이동의 이중 활성 capsule·상시 scrollbar·smooth scroll 전환을 제거하고 공통 transient root scrollbar 적용 (`ISSUE-118`)
 - [x] 오늘의 기록 `활동 추가`를 fine pointer의 아이콘→라벨 확장 CTA와 터치용 상시 라벨 CTA로 반응형 정리 (`ISSUE-119`)
 - [x] 나의 활동 완료 경험·진행 활동과 추천 기록에 실제 위치 이동형 `즐겨찾기` 구획, 테두리 없는 독립 44px 노란 별, 사용자별 브라우저 저장과 reduced-motion 대응 적용 (`ISSUE-120`, `ISSUE-121`, `ISSUE-122`)
+- [x] 즐겨찾기를 사용자별 Supabase `favorite_items`와 RLS로 전환하고 기존 브라우저 값을 1회 병합해 기기 간 재조회 지원 (`ISSUE-140`)
 - [x] 첫 화면·인증·제품 화면 전체의 웜화이트·크림 상태를 공통 쿨 뉴트럴 Liquid Glass semantic/state 토큰으로 통일 (`ISSUE-123`)
 - [x] 나의 활동·추천 기록 즐겨찾기 selected·hover를 제목과 별 영역 전체가 공유하는 행 표면으로 통일 (`ISSUE-124`)
 - [x] 나의 활동·추천 기록 목록 상하단의 뿌연 gradient fade 제거 (`ISSUE-125`)
@@ -159,7 +160,9 @@
 
 2026-07-28 오늘의 기록 활동 추가 CTA 마감에서는 ReUI `Expanding button from icon to label`을 현재 CampusLog Liquid Glass에 맞게 적용했습니다. hover 가능한 fine pointer에서는 접근 가능한 `활동 추가` 문구를 DOM에 유지한 채 44×44px 원형 `+`에서 hover·`focus-visible`·작성 화면 열림 시 우측 끝이 고정된 118×44px capsule로 확장하고, 터치·coarse pointer에서는 문구가 처음부터 보이는 기존 라벨 버튼을 유지합니다. 기존 RippleButton, Expandable Screen 열기·초점 복귀와 차콜 Primary 재질은 변경하지 않았고 reduced motion은 80ms로 줄였습니다. 1280×720 로그인 화면에서 접힘 44×44px·라벨 opacity 0, 열림 118×44px·라벨 opacity 1·동일한 우측 여백, dialog 연결과 가로 overflow 없음을 확인했습니다. 전체 테스트 113개, lint, typecheck, production build, diff check를 통과했으며 API·schema·repository·인증·사용자 데이터에는 영향이 없습니다.
 
-2026-07-28 나의 활동·추천 기록 즐겨찾기에서는 unlumen UI `Pinned List`의 controlled 목록·상단 고정 구획·layout 이동을 CampusLog Liquid Glass에 맞게 적용했습니다. `/experiences`는 완료 경험만, `/recommend/history`는 모든 추천 기록을 44px Pin으로 고정하며 첫 항목이 생기면 `즐겨찾기`와 `모든 활동` 또는 `모든 기록` 구획이 나타납니다. 항목은 복제 없이 실제 위치를 옮기고 본문 선택과 Pin을 분리했으며, `aria-pressed`, 짧은 접근성 이름, 저장 중 상태, 키보드 focus와 reduced motion을 제공합니다. 사용자별 localStorage에는 entity id와 고정 시각만 저장하고 경험·추천 원문과 API·DB schema·repository는 변경하지 않았습니다. 로그인 `test1`의 데스크톱과 390×844 브라우저에서 두 목록의 고정·해제·새로고침 유지·가로 overflow 없음과 warning/error 0건을 확인했습니다. 전체 테스트 116개, lint, typecheck, production build, diff check를 통과했습니다.
+2026-08-03 계정 즐겨찾기 동기화에서는 나의 활동의 완료 경험·진행 활동과 추천 기록 별 상태를 사용자별 Supabase `favorite_items`에 저장하도록 전환했습니다. `(user_id, item_type, item_id)` 복합 PK와 본인 CRUD만 허용하는 RLS를 적용하고 대상 데이터 삭제 trigger로 고아 즐겨찾기를 정리합니다. 기존 `campuslog:v1:pinned-items`의 로그인 사용자 값은 DB에 없는 항목만 1회 병합하고 성공한 목록 범위만 비우며, 실패 시 원본과 화면 rollback을 보존합니다. 화면 재진입과 브라우저 재활성화 시 DB를 다시 조회해 다른 기기 변경을 반영하고 Supabase 설정이 없는 개발 미리보기만 localStorage fallback을 유지합니다. 전체 Node 테스트 157개, lint, typecheck, production build, diff check를 통과했고 사용자가 실제 환경에서 직접 로직 테스트를 완료했습니다.
+
+2026-07-28 나의 활동·추천 기록 즐겨찾기에서는 unlumen UI `Pinned List`의 controlled 목록·상단 고정 구획·layout 이동을 CampusLog Liquid Glass에 맞게 적용했습니다. `/experiences`는 완료 경험만, `/recommend/history`는 모든 추천 기록을 44px Pin으로 고정하며 첫 항목이 생기면 `즐겨찾기`와 `모든 활동` 또는 `모든 기록` 구획이 나타납니다. 항목은 복제 없이 실제 위치를 옮기고 본문 선택과 Pin을 분리했으며, `aria-pressed`, 짧은 접근성 이름, 저장 중 상태, 키보드 focus와 reduced motion을 제공합니다. 당시에는 사용자별 localStorage에 entity id와 고정 시각만 저장했으며 2026-08-03 계정 DB 동기화로 대체했습니다. 로그인 `test1`의 데스크톱과 390×844 브라우저에서 두 목록의 고정·해제·새로고침 유지·가로 overflow 없음과 warning/error 0건을 확인했습니다. 전체 테스트 116개, lint, typecheck, production build, diff check를 통과했습니다.
 
 2026-07-29 즐겨찾기 시각 언어는 기존 Pin에서 노란 별로 변경했습니다. 상단 재배치·사용자별 브라우저 저장·실패 rollback과 접근성 계약은 그대로 유지하고, 비선택 상태는 중립 외곽선 별, 선택 상태는 옅은 노란 Glass 안의 `#FFD84D` 채움 별로 표시합니다. 나의 활동과 추천 기록 모두 같은 44px 토글을 사용하며 API·DB schema·repository·원문 데이터는 변경하지 않았습니다.
 
