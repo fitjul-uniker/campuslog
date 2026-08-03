@@ -14,6 +14,13 @@ const pinPreferenceSource = await readFile(
   new URL("../lib/pinnedItems.ts", import.meta.url),
   "utf8",
 );
+const favoriteMigrationSource = await readFile(
+  new URL(
+    "../../../supabase/migrations/20260803000100_account_favorites.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const experiencePageSource = await readFile(
   new URL("./experiences/ExperienceDashboard.tsx", import.meta.url),
   "utf8",
@@ -27,11 +34,34 @@ const styles = await readFile(
   "utf8",
 );
 
-test("즐겨찾기는 사용자별 브라우저 환경설정으로 분리 저장한다", () => {
+test("즐겨찾기는 사용자별 DB에 저장하고 기존 브라우저 값을 한 번 병합한다", () => {
   assert.match(pinPreferenceSource, /campuslog:v1:pinned-items/);
   assert.match(pinPreferenceSource, /user:\$\{user\.id\}/);
+  assert.match(pinPreferenceSource, /\.from\("favorite_items"\)/);
+  assert.match(pinPreferenceSource, /ignoreDuplicates:\s*true/);
+  assert.match(pinPreferenceSource, /clearLocalPinnedItems/);
   assert.match(pinPreferenceSource, /type PinnableItemType =/);
   assert.match(pinPreferenceSource, /"experience"\s*\|\s*"recommendation"/);
+  assert.match(pinPreferenceSource, /"tracked_activity"/);
+});
+
+test("즐겨찾기 DB는 사용자별 RLS와 대상 삭제 정리를 강제한다", () => {
+  assert.match(favoriteMigrationSource, /create table if not exists public\.favorite_items/i);
+  assert.match(favoriteMigrationSource, /primary key \(user_id, item_type, item_id\)/i);
+  assert.match(favoriteMigrationSource, /enable row level security/i);
+  assert.match(favoriteMigrationSource, /force row level security/i);
+  assert.match(favoriteMigrationSource, /auth\.uid\(\)\) = user_id/i);
+
+  for (const tableName of [
+    "experiences",
+    "tracked_activities",
+    "recommendations",
+  ]) {
+    assert.match(
+      favoriteMigrationSource,
+      new RegExp(`after delete on public\\.${tableName}`, "i"),
+    );
+  }
 });
 
 test("나의 활동과 추천 기록은 같은 controlled pinned-list 계약을 사용한다", () => {
