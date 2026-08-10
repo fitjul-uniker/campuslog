@@ -8,6 +8,9 @@ import type {
 
 export const ANSWER_DRAFT_SCHEMA_VERSION = "v1" as const;
 export const ANSWER_DRAFT_PROMPT_VERSION = "answer-drafts-v1.0";
+export const CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS = 100;
+export const CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS = 2_000;
+export const CUSTOM_ANSWER_DRAFT_DEFAULT_CHARACTERS = 700;
 
 export const ANSWER_DRAFT_TYPES: AnswerDraftType[] = [
   "cover_letter_300",
@@ -75,14 +78,60 @@ export function countAnswerDraftCharacters(value: string): number {
   return Array.from(value).length;
 }
 
+export function isValidCustomAnswerDraftCharacterCount(
+  value: unknown,
+): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS &&
+    value <= CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS
+  );
+}
+
+export function getCustomAnswerDraftCharacterLimit(
+  targetCharacterCount: number,
+): { min: number; max: number } | null {
+  if (!isValidCustomAnswerDraftCharacterCount(targetCharacterCount)) {
+    return null;
+  }
+
+  return {
+    min: Math.floor(targetCharacterCount * 0.88),
+    max: Math.floor(targetCharacterCount * 0.95),
+  };
+}
+
 export function getAnswerDraftCharacterLimit(
   type: AnswerDraftType,
+  targetCharacterCount?: number,
 ): { min: number; max: number } | null {
+  if (type === "custom" && targetCharacterCount !== undefined) {
+    return getCustomAnswerDraftCharacterLimit(targetCharacterCount);
+  }
+
   return ANSWER_DRAFT_CHARACTER_LIMITS[type] ?? null;
 }
 
+export function getAnswerDraftTargetGuide(
+  type: AnswerDraftType,
+  targetCharacterCount?: number,
+): string {
+  const customLimit =
+    type === "custom" && targetCharacterCount !== undefined
+      ? getCustomAnswerDraftCharacterLimit(targetCharacterCount)
+      : null;
+
+  return customLimit
+    ? `${customLimit.min}~${customLimit.max}자 자기소개서 초안 (${targetCharacterCount}자 제한)`
+    : ANSWER_DRAFT_TARGET_GUIDES[type];
+}
+
 export function isAnswerDraftWithinCharacterLimit(draft: AnswerDraft): boolean {
-  const limit = getAnswerDraftCharacterLimit(draft.type);
+  const limit = getAnswerDraftCharacterLimit(
+    draft.type,
+    draft.targetCharacterCount,
+  );
 
   if (!limit) {
     return true;
@@ -134,7 +183,18 @@ export function normalizeAnswerDraft(value: unknown): AnswerDraft | null {
     title,
     content,
     targetGuide:
-      normalizeText(candidate.targetGuide) || ANSWER_DRAFT_TARGET_GUIDES[type],
+      normalizeText(candidate.targetGuide) ||
+      getAnswerDraftTargetGuide(
+        type,
+        isValidCustomAnswerDraftCharacterCount(candidate.targetCharacterCount)
+          ? candidate.targetCharacterCount
+          : undefined,
+      ),
+    targetCharacterCount:
+      type === "custom" &&
+      isValidCustomAnswerDraftCharacterCount(candidate.targetCharacterCount)
+        ? candidate.targetCharacterCount
+        : undefined,
     usedEvidence: normalizeStringList(candidate.usedEvidence, 10),
     missingEvidenceNotes: normalizeStringList(
       candidate.missingEvidenceNotes,

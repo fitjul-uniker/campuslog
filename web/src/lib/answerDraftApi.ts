@@ -11,6 +11,7 @@ import type {
 
 type RequestAnswerDraftsInput = {
   draftType: ActiveAnswerDraftType;
+  customCharacterCount?: number;
   recommendation: RecommendationResult;
   match: RecommendationMatch;
   experience: Experience;
@@ -146,6 +147,7 @@ function parseAnswerDraftStreamEvent(
 
 export async function requestAnswerDrafts({
   draftType,
+  customCharacterCount,
   recommendation,
   match,
   experience,
@@ -161,6 +163,7 @@ export async function requestAnswerDrafts({
       },
       body: JSON.stringify({
         draftType,
+        customCharacterCount,
         recommendation,
         match,
         experience,
@@ -217,6 +220,7 @@ export async function requestAnswerDrafts({
 
 export async function requestAnswerDraftsStream({
   draftType,
+  customCharacterCount,
   recommendation,
   match,
   experience,
@@ -235,6 +239,7 @@ export async function requestAnswerDraftsStream({
       },
       body: JSON.stringify({
         draftType,
+        customCharacterCount,
         recommendation,
         match,
         experience,

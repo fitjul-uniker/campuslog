@@ -210,6 +210,11 @@ export const RECOMMENDATION_PURPOSE_CONFIGS: Record<
         label: "1000자",
         description: "약 880~950자",
       },
+      {
+        type: "custom",
+        label: "직접 입력",
+        description: "100~2000자 제한",
+      },
     ],
     primaryActionLabel: "선택한 경험으로 자기소개서 초안 만들기",
   },
