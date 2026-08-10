@@ -16,6 +16,7 @@
 - [x] Supabase project migration 적용과 Google 계정 A/B 데이터 분리 수동 smoke test
 - [x] 비로그인 순환 기록 문구 → 중앙 인증 카드 → 인증 후 3D 책 표지 진입 흐름 구현
 - [x] 회원가입 방식 선택 → 이메일 조건부 자격 증명 → 이름·닉네임 Stepper와 Google 온보딩 복귀 구현
+- [x] 계정 메뉴 닉네임 수정과 데스크톱·모바일 프로필 표시 즉시 동기화를 구현하고 실제 로그인 저장·새로고침 유지 직접 로직 테스트 완료 (`ISSUE-141`)
 - [x] 오늘의 기록 빠른 작성 폼을 반응형 플로팅 패널로 고도화
 - [x] CampusLog AI 추천 화면 설명과 추천·기록 간 교차 이동 위계 정리
 - [x] 활동 추가 Expandable Screen, 공용 Checkbox·CopyButton과 좌측 하단 프로필 드롭다운 통합
