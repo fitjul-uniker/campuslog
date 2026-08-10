@@ -17,12 +17,13 @@ import { EXPERIENCE_INPUT_LIMITS } from "@/lib/experienceInputLimits";
 import {
   ANSWER_DRAFT_PROMPT_VERSION,
   ANSWER_DRAFT_SCHEMA_VERSION,
-  ANSWER_DRAFT_TARGET_GUIDES,
   ANSWER_DRAFT_TYPE_LABELS,
   ANSWER_DRAFT_TYPES,
   countAnswerDraftCharacters,
   getAnswerDraftCharacterLimit,
+  getAnswerDraftTargetGuide,
   isAnswerDraftWithinCharacterLimit,
+  isValidCustomAnswerDraftCharacterCount,
   normalizeAnswerDraft,
   normalizeAnswerDraftResult,
 } from "@/lib/answerDraftResult";
@@ -441,14 +442,17 @@ function mergeNotes(primary: string[], secondary: string[]): string[] {
 }
 
 function createDraftPromptContext(body: AnswerDraftsRequest) {
-  const characterLimit = getAnswerDraftCharacterLimit(body.draftType);
+  const characterLimit = getRequestedAnswerDraftCharacterLimit(body);
+  const targetGuide = getRequestedAnswerDraftTargetGuide(body);
+  const typeLabel = getRequestedAnswerDraftTypeLabel(body);
   const purposeConfig = getRecommendationPurposeConfig(
     body.recommendation.purpose,
   );
   const selectedDraftType = {
     type: body.draftType,
-    label: ANSWER_DRAFT_TYPE_LABELS[body.draftType],
-    targetGuide: ANSWER_DRAFT_TARGET_GUIDES[body.draftType],
+    label: typeLabel,
+    targetGuide,
+    targetCharacterCount: body.customCharacterCount ?? null,
     characterLimit,
   };
 
@@ -516,7 +520,7 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
         ? `draft.content는 공백, 문장부호, 줄바꿈을 포함해 ${characterLimit.min}자 이상 ${characterLimit.max}자 이하로 작성합니다.`
         : "draft.content는 targetGuide에 맞는 분량으로 작성합니다.",
       "글자 수는 JavaScript Array.from(draft.content).length 기준입니다.",
-      "cover_letter_300, cover_letter_500, cover_letter_1000은 selectedRecommendation.prompt의 문항에 직접 답하는 자기소개서 초안으로 작성합니다.",
+      "cover_letter_300, cover_letter_500, cover_letter_1000과 자기소개서 목적의 custom은 selectedRecommendation.prompt의 문항에 직접 답하는 자기소개서 초안으로 작성합니다.",
       "자기소개서 초안은 목표 글자 수보다 약간 작게 작성해 사용자가 직접 수정할 여백을 남깁니다.",
       "자기소개서 초안의 missingEvidenceNotes에는 추가하면 좋은 정보와 축약하거나 수정할 부분을 함께 분리합니다.",
       "interview_30s와 interview_60s는 핵심 답변, 상황, 본인의 역할과 행동, 결과, 배운 점 또는 직무 연결 흐름을 따릅니다.",
@@ -524,7 +528,9 @@ function createDraftPromptContext(body: AnswerDraftsRequest) {
       "interview_60s는 1분 이상 말할 수 있게 STAR 구조를 더 충분히 작성합니다.",
       "interview_followups는 본문을 답변 문단이 아니라 예상 꼬리 질문 목록 중심으로 작성합니다.",
       "jd_strategy는 JD 핵심 요약, 강조할 경험, 부족한 역량, 자기소개서/면접 활용 방향, 최종 지원 판단을 중심으로 작성합니다.",
-      "custom은 사용자의 질문이 단순 경험 추천이면 새 글을 과하게 생성하지 말고 추천 분석을 정리하는 맞춤 결과로 작성합니다.",
+      body.draftType === "custom" && body.customCharacterCount
+        ? `custom은 ${body.customCharacterCount}자 제한에 맞춘 자기소개서 초안으로 작성합니다.`
+        : "custom은 사용자의 질문이 단순 경험 추천이면 새 글을 과하게 생성하지 말고 추천 분석을 정리하는 맞춤 결과로 작성합니다.",
       "긴 한 문장보다 모바일에서 읽기 쉬운 짧은 문단을 사용합니다.",
     ],
     evidenceOptions: createEvidenceOptions(
@@ -539,10 +545,43 @@ function createAnswerDraftPrompt(body: AnswerDraftsRequest): string {
   return JSON.stringify(createDraftPromptContext(body), null, 2);
 }
 
-function getTargetCharacterCount(
-  draftType: ActiveAnswerDraftType,
-): number | undefined {
-  return getAnswerDraftCharacterLimit(draftType)?.max;
+function getRequestedAnswerDraftCharacterLimit(body: AnswerDraftsRequest) {
+  return getAnswerDraftCharacterLimit(
+    body.draftType,
+    body.customCharacterCount,
+  );
+}
+
+function getRequestedAnswerDraftTargetGuide(body: AnswerDraftsRequest): string {
+  return getAnswerDraftTargetGuide(
+    body.draftType,
+    body.customCharacterCount,
+  );
+}
+
+function getRequestedAnswerDraftTypeLabel(body: AnswerDraftsRequest): string {
+  return body.draftType === "custom" && body.customCharacterCount
+    ? `${body.customCharacterCount}자 자기소개서`
+    : ANSWER_DRAFT_TYPE_LABELS[body.draftType];
+}
+
+function getTargetCharacterCount(body: AnswerDraftsRequest): number | undefined {
+  return (
+    body.customCharacterCount ??
+    getRequestedAnswerDraftCharacterLimit(body)?.max
+  );
+}
+
+function getAnswerDraftMaxOutputTokens(
+  body: AnswerDraftsRequest,
+  isRepair = false,
+): number {
+  const targetCharacterCount = getTargetCharacterCount(body) ?? 0;
+  const estimatedTokens = 1_200 + Math.ceil(targetCharacterCount * 1.5);
+
+  return isRepair
+    ? Math.max(3_200, Math.min(4_800, estimatedTokens + 600))
+    : Math.max(2_600, Math.min(4_200, estimatedTokens));
 }
 
 function countAnswerDraftInputCharacters(body: AnswerDraftsRequest): number {
@@ -1157,7 +1196,8 @@ function parseAnswerDraftsResult(
 
     const normalizedDraft: AnswerDraft = {
       ...draft,
-      targetGuide: ANSWER_DRAFT_TARGET_GUIDES[draft.type],
+      targetGuide: getRequestedAnswerDraftTargetGuide(body),
+      targetCharacterCount: body.customCharacterCount,
       missingEvidenceNotes: mergeNotes(
         draft.missingEvidenceNotes,
         fallbackMissingEvidence,
@@ -1188,10 +1228,12 @@ type AnswerDraftLengthIssue = {
 
 function getAnswerDraftLengthIssue(
   answerDrafts: AnswerDraftResult,
-  draftType: ActiveAnswerDraftType,
+  body: AnswerDraftsRequest,
 ): AnswerDraftLengthIssue | null {
-  const draft = answerDrafts.drafts.find((draft) => draft.type === draftType);
-  const limit = getAnswerDraftCharacterLimit(draftType);
+  const draft = answerDrafts.drafts.find(
+    (draft) => draft.type === body.draftType,
+  );
+  const limit = getRequestedAnswerDraftCharacterLimit(body);
 
   if (!draft || !limit || isAnswerDraftWithinCharacterLimit(draft)) {
     return null;
@@ -1226,7 +1268,7 @@ function createAnswerDraftRepairPrompt(
       previousDraft: draft,
       repairRules: [
         `draft.type은 반드시 ${body.draftType}입니다.`,
-        `draft.targetGuide는 반드시 "${ANSWER_DRAFT_TARGET_GUIDES[body.draftType]}"입니다.`,
+        `draft.targetGuide는 반드시 "${getRequestedAnswerDraftTargetGuide(body)}"입니다.`,
         `draft.content는 공백 포함 ${lengthIssue.min}자 이상 ${lengthIssue.max}자 이하로 맞춥니다.`,
         "원본에 없는 성과, 수치, 역할, 협업 규모, 기술명은 새로 만들지 않습니다.",
         "usedEvidence는 originalContext.evidenceOptions 중 실제 사용한 문장을 그대로 복사합니다.",
@@ -1250,6 +1292,7 @@ async function readRequestBody(
 
     const candidate = body as Record<string, unknown>;
     const draftType = candidate.draftType;
+    const customCharacterCount = candidate.customCharacterCount;
     const recommendation = parseRecommendationForDrafts(
       candidate.recommendation,
     );
@@ -1270,6 +1313,20 @@ async function readRequestBody(
       return null;
     }
 
+    const needsCustomCharacterCount =
+      recommendation.purpose === "cover_letter" && draftType === "custom";
+    const normalizedCustomCharacterCount =
+      isValidCustomAnswerDraftCharacterCount(customCharacterCount)
+        ? customCharacterCount
+        : undefined;
+
+    if (
+      needsCustomCharacterCount !==
+      Boolean(normalizedCustomCharacterCount)
+    ) {
+      return null;
+    }
+
     const matchBelongsToRecommendation =
       recommendation.matches.some(
         (item) =>
@@ -1287,6 +1344,9 @@ async function readRequestBody(
 
     return {
       draftType,
+      customCharacterCount: needsCustomCharacterCount
+        ? normalizedCustomCharacterCount
+        : undefined,
       recommendation,
       match,
       experience,
@@ -1397,7 +1457,7 @@ function createAnswerDraftsStreamResponse({
           userContent: createAnswerDraftPrompt(body),
           schemaName: "campuslog_answer_drafts_v1",
           schema: answerDraftsResponseSchema,
-          maxOutputTokens: 2600,
+          maxOutputTokens: getAnswerDraftMaxOutputTokens(body),
           logLabel: "answer-drafts-v1",
           signal: openAiAbortController.signal,
           onContentDelta: (text) => {
@@ -1445,7 +1505,7 @@ function createAnswerDraftsStreamResponse({
 
         const lengthIssue = getAnswerDraftLengthIssue(
           answerDrafts,
-          body.draftType,
+          body,
         );
 
         if (lengthIssue) {
@@ -1465,7 +1525,7 @@ function createAnswerDraftsStreamResponse({
             ),
             schemaName: "campuslog_answer_drafts_length_repair_v1",
             schema: answerDraftsResponseSchema,
-            maxOutputTokens: 3200,
+            maxOutputTokens: getAnswerDraftMaxOutputTokens(body, true),
             logLabel: "answer-drafts-length-repair-v1",
             signal: openAiAbortController.signal,
             onContentDelta: () => undefined,
@@ -1518,7 +1578,7 @@ function createAnswerDraftsStreamResponse({
 
           const repairedLengthIssue = getAnswerDraftLengthIssue(
             repairedAnswerDrafts,
-            body.draftType,
+            body,
           );
 
           if (repairedLengthIssue) {
@@ -1637,7 +1697,7 @@ export async function POST(request: Request) {
     responseType: body.stream ? "ndjson_stream" : "structured_json",
     inputCharacterCount: countAnswerDraftInputCharacters(body),
     experienceCount: 1,
-    targetCharacterCount: getTargetCharacterCount(body.draftType),
+    targetCharacterCount: getTargetCharacterCount(body),
     model: ANSWER_DRAFT_MODEL,
     retry: false,
   });
@@ -1683,7 +1743,7 @@ export async function POST(request: Request) {
       userContent: createAnswerDraftPrompt(body),
       schemaName: "campuslog_answer_drafts_v1",
       schema: answerDraftsResponseSchema,
-      maxOutputTokens: 2600,
+      maxOutputTokens: getAnswerDraftMaxOutputTokens(body),
       logLabel: "answer-drafts-v1",
       signal: openAiAbortController.signal,
     });
@@ -1712,7 +1772,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const lengthIssue = getAnswerDraftLengthIssue(answerDrafts, body.draftType);
+    const lengthIssue = getAnswerDraftLengthIssue(answerDrafts, body);
 
     if (lengthIssue) {
       aiMetric.markRetry();
@@ -1726,7 +1786,7 @@ export async function POST(request: Request) {
         ),
         schemaName: "campuslog_answer_drafts_length_repair_v1",
         schema: answerDraftsResponseSchema,
-        maxOutputTokens: 3200,
+        maxOutputTokens: getAnswerDraftMaxOutputTokens(body, true),
         logLabel: "answer-drafts-length-repair-v1",
         signal: openAiAbortController.signal,
       });
@@ -1757,7 +1817,7 @@ export async function POST(request: Request) {
 
       const repairedLengthIssue = getAnswerDraftLengthIssue(
         repairedAnswerDrafts,
-        body.draftType,
+        body,
       );
 
       if (repairedLengthIssue) {

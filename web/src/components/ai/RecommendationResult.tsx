@@ -26,10 +26,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  ANSWER_DRAFT_TARGET_GUIDES,
   ANSWER_DRAFT_TYPE_LABELS,
+  CUSTOM_ANSWER_DRAFT_DEFAULT_CHARACTERS,
+  CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS,
+  CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS,
   countAnswerDraftCharacters,
   getAnswerDraftCharacterLimit,
+  getAnswerDraftTargetGuide,
+  getCustomAnswerDraftCharacterLimit,
+  isValidCustomAnswerDraftCharacterCount,
 } from "@/lib/answerDraftResult";
 import { requestAnswerDraftsStream } from "@/lib/answerDraftApi";
 import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
@@ -67,6 +72,7 @@ type StreamingDraftState = {
   key: string;
   experienceId: string;
   draftType: ActiveAnswerDraftType;
+  customCharacterCount?: number;
   statusMessage: string;
   streamedText: string;
   mode: "loading" | "streaming" | "repairing" | "failed" | "cancelled";
@@ -162,6 +168,7 @@ function AnswerDraftViewer({
   onGenerate,
   generationOptions,
   primaryActionLabel,
+  supportsCustomCharacterCount,
 }: {
   draftResult?: AnswerDraftResult;
   experienceId: string;
@@ -169,14 +176,37 @@ function AnswerDraftViewer({
   onSelectType: (type: ActiveAnswerDraftType) => void;
   isGenerating: boolean;
   isGenerateDisabled: boolean;
-  onGenerate: (type: ActiveAnswerDraftType) => void;
+  onGenerate: (
+    type: ActiveAnswerDraftType,
+    customCharacterCount?: number,
+  ) => void;
   generationOptions: RecommendationGenerationOption[];
   primaryActionLabel: string;
+  supportsCustomCharacterCount: boolean;
 }) {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+  const savedCustomCharacterCount = findDraftByType(draftResult, "custom")
+    ?.targetCharacterCount;
+  const [customCharacterCountInput, setCustomCharacterCountInput] = useState(
+    String(
+      savedCustomCharacterCount ?? CUSTOM_ANSWER_DRAFT_DEFAULT_CHARACTERS,
+    ),
+  );
+  const parsedCustomCharacterCount = Number(customCharacterCountInput);
+  const isCustomCharacterCountValid =
+    isValidCustomAnswerDraftCharacterCount(parsedCustomCharacterCount);
+  const customCharacterLimit = isCustomCharacterCountValid
+    ? getCustomAnswerDraftCharacterLimit(parsedCustomCharacterCount)
+    : null;
   const activeDraft = findDraftByType(draftResult, selectedType);
-  const activeLabel = ANSWER_DRAFT_TYPE_LABELS[selectedType];
-  const activeCharacterLimit = getAnswerDraftCharacterLimit(selectedType);
+  const activeLabel =
+    selectedType === "custom" && activeDraft?.targetCharacterCount
+      ? `${activeDraft.targetCharacterCount}자`
+      : ANSWER_DRAFT_TYPE_LABELS[selectedType];
+  const activeCharacterLimit = getAnswerDraftCharacterLimit(
+    selectedType,
+    activeDraft?.targetCharacterCount,
+  );
   const activeCharacterCount = activeDraft
     ? countAnswerDraftCharacters(activeDraft.content)
     : 0;
@@ -185,13 +215,23 @@ function AnswerDraftViewer({
     !activeCharacterLimit ||
     (activeCharacterCount >= activeCharacterLimit.min &&
       activeCharacterCount <= activeCharacterLimit.max);
-  const missingEvidenceHeading = selectedType.startsWith("cover_letter_")
-    ? "추가하면 좋은 정보 / 수정할 부분"
-    : "부족한 근거";
+  const missingEvidenceHeading =
+    selectedType.startsWith("cover_letter_") ||
+    (selectedType === "custom" && supportsCustomCharacterCount)
+      ? "추가하면 좋은 정보 / 수정할 부분"
+      : "부족한 근거";
 
   useEffect(() => {
     setCopyStatus("idle");
   }, [selectedType]);
+
+  useEffect(() => {
+    setCustomCharacterCountInput(
+      String(
+        savedCustomCharacterCount ?? CUSTOM_ANSWER_DRAFT_DEFAULT_CHARACTERS,
+      ),
+    );
+  }, [experienceId, savedCustomCharacterCount]);
 
   return (
     <div className="answer-draft-viewer">
@@ -225,6 +265,37 @@ function AnswerDraftViewer({
           );
         })}
       </div>
+
+      {selectedType === "custom" && supportsCustomCharacterCount ? (
+        <div className="answer-draft-custom-length">
+          <label htmlFor={`answer-draft-length-${experienceId}`}>
+            지원서 글자 수 제한
+          </label>
+          <div className="answer-draft-custom-length-control">
+            <input
+              id={`answer-draft-length-${experienceId}`}
+              type="number"
+              inputMode="numeric"
+              min={CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS}
+              max={CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS}
+              step={1}
+              value={customCharacterCountInput}
+              disabled={isGenerateDisabled}
+              aria-describedby={`answer-draft-length-help-${experienceId}`}
+              aria-invalid={!isCustomCharacterCountValid}
+              onChange={(event) =>
+                setCustomCharacterCountInput(event.target.value)
+              }
+            />
+            <span>자</span>
+          </div>
+          <p id={`answer-draft-length-help-${experienceId}`}>
+            {customCharacterLimit
+              ? `${parsedCustomCharacterCount}자 제한에 맞춰 약 ${customCharacterLimit.min}~${customCharacterLimit.max}자로 생성합니다.`
+              : `${CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS}~${CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS} 사이의 숫자를 입력해 주세요.`}
+          </p>
+        </div>
+      ) : null}
 
       <div className="answer-draft-body">
         <div className="answer-draft-heading">
@@ -271,8 +342,20 @@ function AnswerDraftViewer({
         <RippleButton
           className="button button-secondary answer-draft-generate-button"
           type="button"
-          disabled={isGenerateDisabled}
-          onClick={() => onGenerate(selectedType)}
+          disabled={
+            isGenerateDisabled ||
+            (selectedType === "custom" &&
+              supportsCustomCharacterCount &&
+              !isCustomCharacterCountValid)
+          }
+          onClick={() =>
+            onGenerate(
+              selectedType,
+              selectedType === "custom" && supportsCustomCharacterCount
+                ? parsedCustomCharacterCount
+                : undefined,
+            )
+          }
         >
           {isGenerating ? (
             <Loader2 className="button-icon is-spinning" aria-hidden="true" />
@@ -353,9 +436,19 @@ function AnswerDraftStreamingPanel({
   isRetryDisabled: boolean;
   canCancel: boolean;
 }) {
-  const draftTypeLabel = ANSWER_DRAFT_TYPE_LABELS[streamingDraft.draftType];
-  const targetGuide = ANSWER_DRAFT_TARGET_GUIDES[streamingDraft.draftType];
-  const characterLimit = getAnswerDraftCharacterLimit(streamingDraft.draftType);
+  const draftTypeLabel =
+    streamingDraft.draftType === "custom" &&
+    streamingDraft.customCharacterCount
+      ? `${streamingDraft.customCharacterCount}자 자기소개서`
+      : ANSWER_DRAFT_TYPE_LABELS[streamingDraft.draftType];
+  const targetGuide = getAnswerDraftTargetGuide(
+    streamingDraft.draftType,
+    streamingDraft.customCharacterCount,
+  );
+  const characterLimit = getAnswerDraftCharacterLimit(
+    streamingDraft.draftType,
+    streamingDraft.customCharacterCount,
+  );
   const characterCount = countAnswerDraftCharacters(
     streamingDraft.streamedText,
   );
@@ -662,6 +755,7 @@ export function RecommendationResult({
   async function handleGenerateAnswerDrafts(
     match: RecommendationMatch,
     draftType: ActiveAnswerDraftType,
+    customCharacterCount?: number,
   ) {
     if (generatingDraftKey) {
       return;
@@ -669,6 +763,18 @@ export function RecommendationResult({
 
     const matchedExperience = experiencesById.get(match.experienceId);
     const draftKey = `${match.experienceId}:${draftType}`;
+
+    if (
+      result.purpose === "cover_letter" &&
+      draftType === "custom" &&
+      !isValidCustomAnswerDraftCharacterCount(customCharacterCount)
+    ) {
+      setAnswerDraftError((currentErrors) => ({
+        ...currentErrors,
+        [match.experienceId]: `${CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS}~${CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS} 사이의 글자 수를 입력해 주세요.`,
+      }));
+      return;
+    }
 
     if (!matchedExperience) {
       setAnswerDraftError((currentErrors) => ({
@@ -684,6 +790,7 @@ export function RecommendationResult({
       key: draftKey,
       experienceId: match.experienceId,
       draftType,
+      customCharacterCount,
       statusMessage: "선택한 경험과 문항을 다시 확인하고 있어요.",
       streamedText: "",
       mode: "loading",
@@ -711,6 +818,7 @@ export function RecommendationResult({
       ]);
       const response = await requestAnswerDraftsStream({
         draftType,
+        customCharacterCount,
         recommendation: result,
         match,
         experience: matchedExperience,
@@ -1238,6 +1346,7 @@ export function RecommendationResult({
                           handleGenerateAnswerDrafts(
                             match,
                             activeStreamingDraft.draftType,
+                            activeStreamingDraft.customCharacterCount,
                           )
                         }
                       />
@@ -1263,8 +1372,15 @@ export function RecommendationResult({
                         isGenerateDisabled={Boolean(generatingDraftKey)}
                         generationOptions={generationOptions}
                         primaryActionLabel={purposeConfig.primaryActionLabel}
-                        onGenerate={(draftType) =>
-                          handleGenerateAnswerDrafts(match, draftType)
+                        supportsCustomCharacterCount={
+                          result.purpose === "cover_letter"
+                        }
+                        onGenerate={(draftType, customCharacterCount) =>
+                          handleGenerateAnswerDrafts(
+                            match,
+                            draftType,
+                            customCharacterCount,
+                          )
                         }
                       />
                     ) : null}

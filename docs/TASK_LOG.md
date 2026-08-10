@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-10 - 자기소개서 글자 수 직접 입력
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-10 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog AI 자기소개서 답변 생성에 기업별 글자 수 제한 직접 입력 추가 |
+| 수정한 파일 | `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/api/answer-drafts/route.ts`, 답변 초안 타입·정규화·API helper·목적 설정·스타일·테스트, `README.md`, `PRD.md`, `docs/CURRENT_PHASE.md`, `docs/SCREEN_SPEC.md`, `docs/DATA_CONTRACT.md`, `docs/AI_API_CONTRACT.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 기존 300자 / 500자 / 1000자 선택을 유지하고 100~2000자 `직접 입력`을 추가. 700자·1500자 등 최대 글자 수를 입력하면 약 88~95% 범위로 생성·분량 교정하며 목표 제한을 요청, 스트리밍, 저장 결과에 유지. 긴 직접 입력에는 출력 토큰 예산을 제한 내에서 동적으로 확장 |
+| 검증한 내용 | 직접 입력 범위·700자/1500자 생성 범위·저장 정규화 및 UI 구조 테스트를 포함한 전체 Node 테스트 163개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 이번 변경의 직접 로직 테스트 완료 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: support custom cover letter lengths` |
+
 ### 2026-08-10 - 계정 메뉴 닉네임 수정
 
 | 항목 | 내용 |

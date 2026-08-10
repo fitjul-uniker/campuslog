@@ -15,7 +15,7 @@
 | legacy `Experience` | `campuslog:v1:experiences` | `Experience[]` | v2 key가 없고 migration marker가 없을 때만 v2로 복사 |
 | `ExperienceAnalysis` | `campuslog:v1:analyses` | `Record<experienceId, ExperienceAnalysis>` | `experienceId`로 `Experience.id` 참조. 경험 1개당 최신 분석 1개. v1 결과는 v2 기본값으로 보정 |
 | `Recommendation` | `campuslog:v1:recommendations` | `RecommendationResult[]` | `recommendedExperienceId`로 1순위 `Experience.id` 참조. v2 결과는 `matches` Top 3를 포함하며 v1 결과는 1개 match로 보정 |
-| `AnswerDraftResult` | `campuslog:v1:answer-drafts` | `AnswerDraftResult[]` | `recommendationId`와 `experienceId`로 추천 기록과 선택 경험을 참조. 추천 row 자체를 변경하지 않고 사용자가 선택 생성한 500자 / 800자 / 1000자 + 면접 + 포트폴리오 초안을 누적 저장 |
+| `AnswerDraftResult` | `campuslog:v1:answer-drafts` | `AnswerDraftResult[]` | `recommendationId`와 `experienceId`로 추천 기록과 선택 경험을 참조. 추천 row 자체를 변경하지 않고 목적별 답변 초안을 type 단위로 누적 저장하며, 직접 입력 자기소개서는 목표 제한을 draft에 함께 저장 |
 | `ExperienceFollowup` | `campuslog:v1:experience-followups` | `ExperienceFollowup[]` | 원본 경험을 자동 수정하지 않는 별도 보완 질문 / 답변 호환 저장소. `experienceId`로 `Experience.id`를 참조하며 분석 부족 정보 답변도 함께 저장. 답변 저장만으로 `needs_reanalysis`를 강제하지 않음 |
 | `TrackedActivity` | `campuslog:v1:tracked-activities` | `TrackedActivity[]` | 진행 활동. 완료 저장 후 `generatedExperienceId`로 `Experience.id` 참조 |
 | `DailyLog` | `campuslog:v1:daily-logs` | `DailyLog[]` | `activityId`로 `TrackedActivity.id` 참조 |
@@ -123,8 +123,8 @@ Migrations:
 ## 답변 초안 v1 저장 계약
 
 - `AnswerDraftResult`는 `schemaVersion`, `promptVersion`, `model`, `recommendationId`, `experienceId`, `sourceMatchRank`, `drafts`, `generatedAt`을 저장합니다.
-- `drafts`는 사용자가 선택해 생성한 `cover_letter_500`, `cover_letter_800`, `cover_letter_1000`, `interview`, `portfolio` type 초안을 포함합니다. 아직 생성하지 않은 type은 저장하지 않습니다.
-- 각 draft는 `title`, `content`, `targetGuide`, `usedEvidence`, `missingEvidenceNotes`, `cautions`를 포함합니다.
+- `drafts`는 현재 자기소개서 `cover_letter_300`, `cover_letter_500`, `cover_letter_1000`, 면접 `interview_30s`, `interview_60s`, `interview_followups`, `jd_strategy`, `custom`과 레거시 type을 포함할 수 있습니다. 아직 생성하지 않은 type은 저장하지 않습니다.
+- 각 draft는 `title`, `content`, `targetGuide`, optional `targetCharacterCount`, `usedEvidence`, `missingEvidenceNotes`, `cautions`를 포함합니다. 자기소개서 `custom`은 100~2000자 최대 제한을 `targetCharacterCount`에 저장하고 해당 값의 약 88~95%를 생성·검증 범위로 사용합니다.
 - 원본 기록에 없는 성과, 수치, 역할, 협업 규모, 기술명은 `content`에 사실처럼 넣지 않고 `missingEvidenceNotes` 또는 `cautions`로 분리합니다.
 - Supabase는 `answer_drafts` table에 `(user_id, recommendation_id, experience_id)` primary key로 저장하며 같은 추천 / 경험 조합은 최신 초안 묶음으로 upsert합니다. 새 type을 생성하면 기존 type은 보존하고 해당 type만 교체합니다.
 - localStorage는 `campuslog:v1:answer-drafts` key를 사용하고, 기존 추천 기록 key와 분석 key를 변경하지 않습니다. localStorage도 같은 type별 merge 규칙을 적용합니다.

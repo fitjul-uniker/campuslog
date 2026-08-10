@@ -386,6 +386,7 @@ export type AnswerDraft = {
   title: string;
   content: string;
   targetGuide: string;
+  targetCharacterCount?: number;
   usedEvidence: string[];
   missingEvidenceNotes: string[];
   cautions: string[];
@@ -404,6 +405,7 @@ export type AnswerDraftResult = {
 
 export type AnswerDraftsRequest = {
   draftType: ActiveAnswerDraftType;
+  customCharacterCount?: number;
   recommendation: RecommendationResult;
   match: RecommendationMatch;
   experience: Experience;

@@ -8014,6 +8014,68 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   outline-offset: 2px;
 }
 
+.answer-draft-custom-length {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 5px 12px;
+  max-width: 430px;
+  border: 1px solid #e4e2dc;
+  border-radius: 10px;
+  background: #fffefa;
+  padding: 12px;
+}
+
+.answer-draft-custom-length label {
+  color: #2c2c29;
+  font-size: 0.8rem;
+  font-weight: 780;
+  line-height: 1.4;
+}
+
+.answer-draft-custom-length-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.answer-draft-custom-length-control input {
+  width: 112px;
+  min-height: 38px;
+  border: 1px solid #cfcec8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #22221f;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 740;
+}
+
+.answer-draft-custom-length-control input:focus-visible {
+  outline: 3px solid rgba(31, 31, 29, 0.16);
+  outline-offset: 2px;
+}
+
+.answer-draft-custom-length-control input[aria-invalid="true"] {
+  border-color: #b95750;
+}
+
+.answer-draft-custom-length-control span {
+  color: #555550;
+  font-size: 0.8rem;
+  font-weight: 760;
+}
+
+.answer-draft-custom-length p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #75736c;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
 .answer-draft-body {
   min-width: 0;
 }

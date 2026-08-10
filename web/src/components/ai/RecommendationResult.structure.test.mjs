@@ -28,6 +28,14 @@ test("추천 결과는 핵심 비교와 생성 흐름을 유지한다", () => {
   assert.match(source, /초안 본문을 클립보드에 복사했습니다/);
 });
 
+test("자기소개서 초안은 사용자가 글자 수 제한을 직접 입력할 수 있다", () => {
+  assert.match(source, /지원서 글자 수 제한/);
+  assert.match(source, /CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS/);
+  assert.match(source, /CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS/);
+  assert.match(source, /customCharacterCount/);
+  assert.match(styles, /\.answer-draft-custom-length/);
+});
+
 test("이미지로 생성한 추천 결과는 출처를 명확히 표시한다", () => {
   assert.match(source, /result\.inputSource !== "text"/);
   assert.match(source, /이미지에서 추출된 내용 기반/);
