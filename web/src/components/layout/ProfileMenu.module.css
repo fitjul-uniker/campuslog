@@ -37,6 +37,10 @@
 }
 
 .trigger:focus-visible,
+.editButton:focus-visible,
+.closeButton:focus-visible,
+.nicknameForm input:focus-visible,
+.saveButton:focus-visible,
 .logoutButton:focus-visible {
   outline: 3px solid rgba(31, 30, 28, 0.2);
   outline-offset: 2px;
@@ -127,6 +131,152 @@
   cursor: pointer;
   padding: 10px;
   text-align: left;
+}
+
+.editButton {
+  width: 100%;
+  min-height: 44px;
+  gap: 9px;
+  border-radius: 10px;
+  color: #3b3936;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.editButton svg,
+.closeButton svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+
+.dialog {
+  width: min(400px, calc(100vw - 32px));
+  max-width: none;
+  margin: auto;
+  border: 1px solid rgb(29 29 31 / 11%);
+  border-radius: 22px;
+  background: rgb(252 252 250 / 96%);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 18%);
+  color: #1d1d1f;
+  padding: 22px;
+}
+
+.dialog::backdrop {
+  background: rgb(21 21 22 / 24%);
+  backdrop-filter: blur(6px);
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dialogHeader h2 {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.dialogHeader p {
+  margin: 7px 0 0;
+  color: #6f6d68;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.closeButton {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #4b4945;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: rgb(29 29 31 / 6%);
+}
+
+.nicknameForm {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.nicknameForm label {
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.nicknameForm input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgb(29 29 31 / 14%);
+  border-radius: 13px;
+  background: #fff;
+  color: #1d1d1f;
+  font: inherit;
+  padding: 0 13px;
+}
+
+.nicknameForm input[aria-invalid="true"] {
+  border-color: rgb(171 54 46 / 48%);
+}
+
+.formFooter {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 4px;
+}
+
+.inputHelp,
+.formError {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.inputHelp {
+  color: #77746e;
+}
+
+.formError {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  color: #a33630;
+}
+
+.formError + .saveButton {
+  grid-row: 2;
+}
+
+.saveButton {
+  min-width: 78px;
+  min-height: 42px;
+  grid-column: 2;
+  border: 0;
+  border-radius: 12px;
+  background: #1d1d1f;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 0 16px;
+}
+
+.saveButton:disabled {
+  cursor: wait;
+  opacity: 0.55;
 }
 
 .logoutButton:hover,

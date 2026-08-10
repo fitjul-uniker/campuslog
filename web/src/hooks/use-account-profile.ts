@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { getCampusLogProfile } from "@/lib/auth/profile";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
+export const ACCOUNT_PROFILE_UPDATED_EVENT = "campuslog:profile-updated";
+
 export type AccountProfile = {
   nickname: string;
   avatarUrl: string | null;
@@ -48,6 +50,15 @@ function getTrustedGoogleAvatarUrl(metadata: Record<string, unknown>) {
 
 function getInitial(nickname: string) {
   return Array.from(nickname.trim())[0]?.toLocaleUpperCase("ko-KR") ?? "계";
+}
+
+function isNicknameUpdateEvent(
+  event: Event,
+): event is CustomEvent<{ nickname: string }> {
+  return (
+    event instanceof CustomEvent &&
+    typeof event.detail?.nickname === "string"
+  );
 }
 
 async function loadAccountProfile(): Promise<AccountProfile> {
@@ -99,6 +110,29 @@ export function useAccountProfile() {
       if (activeProfileConsumers === 0) {
         accountProfileRequest = null;
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleProfileUpdate = (event: Event) => {
+      if (!isNicknameUpdateEvent(event)) {
+        return;
+      }
+
+      setProfile((currentProfile) => ({
+        ...currentProfile,
+        nickname: event.detail.nickname,
+        initial: getInitial(event.detail.nickname),
+      }));
+    };
+
+    window.addEventListener(ACCOUNT_PROFILE_UPDATED_EVENT, handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener(
+        ACCOUNT_PROFILE_UPDATED_EVENT,
+        handleProfileUpdate,
+      );
     };
   }, []);
 

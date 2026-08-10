@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-10 - 계정 메뉴 닉네임 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-10 |
+| 작업자 | Codex |
+| 작업 요약 | 기존 앱 셸 디자인을 유지하면서 로그인 사용자가 계정 메뉴에서 닉네임을 수정할 수 있게 함 |
+| 수정한 파일 | `web/src/components/layout/ProfileMenu.tsx`, `web/src/components/layout/ProfileMenu.module.css`, `web/src/hooks/use-account-profile.ts`, `web/src/lib/auth/profile-actions.ts`, `web/src/components/layout/ProfileMenu.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/IA.md`, `docs/SCREEN_SPEC.md`, `docs/DESIGN.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 데스크톱·모바일 공용 계정 메뉴에 `닉네임 수정`을 추가하고 기존 쿨 뉴트럴 표면의 native dialog에서 1~20자 닉네임을 저장. 서버는 현재 세션과 기존 완료 프로필을 다시 확인하고 `campuslog_profile.nickname`만 변경해 이름·완료 시각·provider metadata를 보존. 성공 시 계정 프로필 갱신 이벤트로 사이드바와 모바일 헤더의 닉네임·fallback initial을 즉시 동기화하며 오류, 제출 중, Escape·닫기, 트리거 초점 복귀를 제공 |
+| 검증한 내용 | 닉네임 수정 구조 테스트 2개를 포함한 전체 Node 테스트 159개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 사용자가 실제 로그인 환경에서 닉네임 저장, 데스크톱·모바일 프로필 표시 반영과 새로고침 후 유지를 직접 로직 테스트로 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: allow nickname updates` |
+
 ### 2026-08-03 - 계정 기반 즐겨찾기 동기화
 
 | 항목 | 내용 |
