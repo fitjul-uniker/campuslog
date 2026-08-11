@@ -35,6 +35,11 @@ import {
 } from "@/components/animate-ui/components/buttons/ripple";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import {
+  useAIBackgroundTasks,
+  useAITask,
+  type AITaskDefinition,
+} from "@/components/ai/AIBackgroundTaskProvider";
+import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -56,6 +61,15 @@ import type {
 type ActivityDetailClientProps = {
   id: string;
 };
+
+type ActivitySynthesisTaskResult = {
+  activity: TrackedActivity;
+  draft: ExperienceSynthesisDraft;
+};
+
+function getActivitySynthesisTaskKey(activityId: string): string {
+  return `activity-synthesis:${activityId}`;
+}
 
 function sortTimelineLogs(logs: DailyLog[]): DailyLog[] {
   return [...logs].sort((a, b) => {
@@ -103,14 +117,22 @@ function createActivityDeleteConfirmMessage(
 
 export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   const router = useRouter();
+  const {
+    startTask,
+    cancelTask,
+    dismissTask,
+    sendTaskToBackground,
+  } = useAIBackgroundTasks();
+  const synthesisTaskKey = getActivitySynthesisTaskKey(id);
+  const synthesisTask = useAITask<ActivitySynthesisTaskResult>(
+    synthesisTaskKey,
+  );
   const [activity, setActivity] = useState<TrackedActivity | null>(null);
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [draft, setDraft] = useState<ExperienceSynthesisDraft | null>(null);
   const [draftDescription, setDraftDescription] = useState("");
   const [draftAchievements, setDraftAchievements] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSynthesizing, setIsSynthesizing] = useState(false);
-  const [synthesisStatusMessage, setSynthesisStatusMessage] = useState("");
   const [isSavingExperience, setIsSavingExperience] = useState(false);
   const [isEditingActivity, setIsEditingActivity] = useState(false);
   const [isUpdatingActivity, setIsUpdatingActivity] = useState(false);
@@ -118,7 +140,8 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   const [error, setError] = useState("");
   const endActivityButtonRef = useRef<HTMLButtonElement>(null);
   const endConfirmationRef = useRef<HTMLElement>(null);
-  const synthesisAbortControllerRef = useRef<AbortController | null>(null);
+  const isSynthesizing = synthesisTask?.status === "pending";
+  const synthesisStatusMessage = synthesisTask?.statusMessage ?? "";
 
   const loadActivity = useCallback(async () => {
     setIsLoading(true);
@@ -154,10 +177,24 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   }, [loadActivity]);
 
   useEffect(() => {
-    return () => {
-      synthesisAbortControllerRef.current?.abort();
-    };
-  }, []);
+    if (synthesisTask?.mode === "background") {
+      return;
+    }
+
+    if (synthesisTask?.status === "success" && synthesisTask.result) {
+      setActivity(synthesisTask.result.activity);
+      setDraft(synthesisTask.result.draft);
+      setDraftDescription(synthesisTask.result.draft.description);
+      setDraftAchievements(synthesisTask.result.draft.achievements.join("\n"));
+      setError("");
+      dismissTask(synthesisTaskKey);
+      return;
+    }
+
+    if (synthesisTask?.status === "error") {
+      setError(synthesisTask.errorMessage);
+    }
+  }, [dismissTask, synthesisTask, synthesisTaskKey]);
 
   useEffect(() => {
     if (!showEndConfirmation) {
@@ -209,7 +246,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     setActivity(updatedActivity);
   }
 
-  async function runSynthesis(sourceActivity: TrackedActivity) {
+  function runSynthesis(sourceActivity: TrackedActivity) {
     if (logs.length === 0) {
       setError(
         "AI가 정리할 실제 기록이 없습니다. 활동을 종료하기 전에 한 일을 한 건 이상 남겨 주세요.",
@@ -234,106 +271,105 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     }
 
     setError("");
-    setSynthesisStatusMessage("");
-    setIsSynthesizing(true);
-    const repository = getCampusLogRepository();
-    const processingActivity = await repository.trackedActivities.setSynthesisStatus(
-      sourceActivity.id,
-      "processing",
-    );
+    const definition: AITaskDefinition = {
+      key: synthesisTaskKey,
+      type: "activity-synthesis",
+      targetId: sourceActivity.id,
+      title: `${sourceActivity.title} 완료 경험 정리`,
+      pendingMessage: "CampusLog AI가 날짜별 기록을 정리하고 있어요.",
+      successMessage: "완료 경험 초안이 준비되었습니다.",
+      sourceHref: `/activities/${sourceActivity.id}`,
+      resultHref: `/activities/${sourceActivity.id}`,
+    };
 
-    if (!processingActivity) {
-      setIsSynthesizing(false);
-      setError("AI 정리 상태를 저장하지 못했습니다. 다시 시도해 주세요.");
-      return;
-    }
+    void startTask(definition, async ({ signal, setStatusMessage }) => {
+      const repository = getCampusLogRepository();
+      const processingActivity =
+        await repository.trackedActivities.setSynthesisStatus(
+          sourceActivity.id,
+          "processing",
+        );
 
-    setActivity(processingActivity);
-    const abortController = new AbortController();
-    synthesisAbortControllerRef.current = abortController;
-    const response = await requestActivitySynthesis(processingActivity, logs, {
-      signal: abortController.signal,
-      stream: true,
-      onStatus: setSynthesisStatusMessage,
-    });
+      if (!processingActivity) {
+        return {
+          ok: false,
+          error: "AI 정리 상태를 저장하지 못했습니다. 다시 시도해 주세요.",
+        };
+      }
 
-    if (!response.ok) {
-      if (response.error.code === "REQUEST_CANCELLED") {
-        const restoredActivity =
+      const response = await requestActivitySynthesis(processingActivity, logs, {
+        signal,
+        stream: true,
+        onStatus: setStatusMessage,
+      });
+
+      if (!response.ok) {
+        if (response.error.code === "REQUEST_CANCELLED") {
           await repository.trackedActivities.setSynthesisStatus(
             processingActivity.id,
             sourceActivity.synthesisStatus,
           );
-        setActivity(restoredActivity ?? {
-          ...processingActivity,
-          synthesisStatus: sourceActivity.synthesisStatus,
-        });
-        setIsSynthesizing(false);
-        setSynthesisStatusMessage("");
-        setError(
-          "AI 완료 경험 생성을 취소했습니다. 활동과 날짜별 기록은 그대로 유지했어요.",
-        );
-        if (synthesisAbortControllerRef.current === abortController) {
-          synthesisAbortControllerRef.current = null;
+          return {
+            ok: false,
+            error:
+              "AI 완료 경험 생성을 취소했습니다. 활동과 날짜별 기록은 그대로 유지했어요.",
+            cancelled: true,
+          };
         }
-        return;
+
+        await repository.trackedActivities.setSynthesisStatus(
+          processingActivity.id,
+          "failed",
+        );
+        return { ok: false, error: response.error.message };
       }
 
-      const failedActivity = await repository.trackedActivities.setSynthesisStatus(
-        processingActivity.id,
-        "failed",
-      );
-      setActivity(failedActivity ?? processingActivity);
-      setIsSynthesizing(false);
-      setSynthesisStatusMessage("");
-      setError(response.error.message);
-      if (synthesisAbortControllerRef.current === abortController) {
-        synthesisAbortControllerRef.current = null;
+      const nextDraft: ExperienceSynthesisDraft = {
+        activityId: processingActivity.id,
+        ...response.synthesis,
+        generatedAt: new Date().toISOString(),
+      };
+      const savedDraft = await repository.synthesisDrafts.save(nextDraft);
+
+      if (!savedDraft) {
+        await repository.trackedActivities.setSynthesisStatus(
+          processingActivity.id,
+          "failed",
+        );
+        return {
+          ok: false,
+          error:
+            "AI 초안을 계정에 저장하지 못했습니다. 활동과 일일 기록은 그대로 보존되어 있습니다.",
+        };
       }
-      return;
-    }
 
-    const nextDraft: ExperienceSynthesisDraft = {
-      activityId: processingActivity.id,
-      ...response.synthesis,
-      generatedAt: new Date().toISOString(),
-    };
-    const savedDraft = await repository.synthesisDrafts.save(nextDraft);
+      const readyActivity =
+        await repository.trackedActivities.setSynthesisStatus(
+          processingActivity.id,
+          "draft_ready",
+        );
 
-    if (!savedDraft) {
-      const failedActivity = await repository.trackedActivities.setSynthesisStatus(
-        processingActivity.id,
-        "failed",
-      );
-      setActivity(failedActivity ?? processingActivity);
-      setIsSynthesizing(false);
-      setSynthesisStatusMessage("");
-      setError(
-        "AI 초안을 계정에 저장하지 못했습니다. 활동과 일일 기록은 그대로 보존되어 있습니다.",
-      );
-      if (synthesisAbortControllerRef.current === abortController) {
-        synthesisAbortControllerRef.current = null;
-      }
-      return;
-    }
-
-    const readyActivity = await repository.trackedActivities.setSynthesisStatus(
-      processingActivity.id,
-      "draft_ready",
-    );
-    setActivity(readyActivity ?? processingActivity);
-    setDraft(savedDraft);
-    setDraftDescription(savedDraft.description);
-    setDraftAchievements(savedDraft.achievements.join("\n"));
-    setIsSynthesizing(false);
-    setSynthesisStatusMessage("");
-    if (synthesisAbortControllerRef.current === abortController) {
-      synthesisAbortControllerRef.current = null;
-    }
+      return {
+        ok: true,
+        value: {
+          activity:
+            readyActivity ?? {
+              ...processingActivity,
+              synthesisStatus: "draft_ready",
+            },
+          draft: savedDraft,
+        },
+      };
+    });
   }
 
   function handleCancelSynthesis() {
-    synthesisAbortControllerRef.current?.abort();
+    cancelTask(synthesisTaskKey);
+  }
+
+  function handleBackgroundSynthesis() {
+    sendTaskToBackground(synthesisTaskKey);
+    router.push("/dashboard");
   }
 
   async function handleConfirmEnd() {
@@ -833,6 +869,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           longWaitMessage="기록 개수나 전체 분량이 많으면 초안 근거를 확인하는 데 시간이 더 걸릴 수 있어요."
           canCancel
           onCancel={handleCancelSynthesis}
+          onBackground={handleBackgroundSynthesis}
         />
       ) : null}
 

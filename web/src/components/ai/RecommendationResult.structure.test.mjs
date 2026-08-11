@@ -50,10 +50,7 @@ test("추천 결과는 긴 내용을 보호하는 Liquid Glass section을 사용
 });
 
 test("현재 추천과 추천 기록은 질문을 대표 제목으로 공유한다", () => {
-  assert.match(
-    source,
-    /<h2 id="recommendation-title">\{result\.prompt\}<\/h2>/,
-  );
+  assert.match(source, /<h2 id="recommendation-title">\{result\.prompt\}<\/h2>/);
   assert.match(source, /recommendation-result-generated-at/);
   assert.doesNotMatch(source, /<dt>추천 생성일<\/dt>/);
 });

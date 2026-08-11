@@ -11,9 +11,10 @@ test("AI 추천 취소는 오류 알림을 만들지 않고 실제 실패만 표
   );
   assert.match(
     source,
-    /if \(response\.error\.code === "REQUEST_CANCELLED"\) \{\s*return;\s*\}/,
+    /cancelled:\s*response\.error\.code === "REQUEST_CANCELLED"/,
   );
-  assert.match(source, /setRecommendationError\(response\.error\.message\)/);
+  assert.match(source, /if \(recommendationTask\.isCancelled\)/);
+  assert.match(source, /setRecommendationError\(recommendationTask\.errorMessage\)/);
 });
 
 test("AI 추천은 이미지와 정규화된 문항을 전달하고 이미지 출처를 저장한다", () => {

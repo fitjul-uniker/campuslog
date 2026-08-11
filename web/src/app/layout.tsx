@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { AIBackgroundTaskProvider } from "@/components/ai/AIBackgroundTaskProvider";
 import { AppShell } from "@/components/layout/AppShell";
 
 import "./globals.css";
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <AppShell>{children}</AppShell>
+        <AIBackgroundTaskProvider>
+          <AppShell>{children}</AppShell>
+        </AIBackgroundTaskProvider>
       </body>
     </html>
   );

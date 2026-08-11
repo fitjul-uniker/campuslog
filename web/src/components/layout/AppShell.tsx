@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { AIBackgroundTaskCenter } from "@/components/ai/AIBackgroundTaskCenter";
 import { Navigation } from "@/components/layout/Navigation";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { GlassSurface } from "@/components/ui/glass-surface";
@@ -56,6 +57,8 @@ function ProductShell({ children }: AppShellProps) {
       <main className="app-main product-main">
         <div className="product-surface">{children}</div>
       </main>
+
+      <AIBackgroundTaskCenter />
     </div>
   );
 }
