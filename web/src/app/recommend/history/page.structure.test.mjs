@@ -85,8 +85,9 @@ test("추천 기록 상세는 한 겹의 frosted Glass와 질문 중심 읽기 �
   );
   assert.match(
     recommendationResultSource,
-    /<h2 id="recommendation-title">\{result\.prompt\}<\/h2>/,
+    /<h2 id="recommendation-title">\{resultTitle\}<\/h2>/,
   );
+  assert.match(recommendationResultSource, /입력한 JD 보기/);
   assert.doesNotMatch(
     recommendationResultSource,
     /className="dashboard-detail-meta recommendation-meta"/,

@@ -7602,6 +7602,85 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   border-top: 0;
 }
 
+.recommendation-source-disclosure {
+  border-bottom: 1px solid var(--color-border);
+  padding: 14px 0;
+}
+
+.recommendation-source-disclosure + .detail-section {
+  border-top: 0;
+}
+
+.recommendation-source-disclosure summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #343432;
+  cursor: pointer;
+  list-style: none;
+}
+
+.recommendation-source-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.recommendation-source-disclosure-label,
+.recommendation-source-disclosure-meta {
+  display: inline-flex;
+  align-items: center;
+}
+
+.recommendation-source-disclosure-label {
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 720;
+}
+
+.recommendation-source-disclosure-label svg,
+.recommendation-source-disclosure-meta svg {
+  width: 17px;
+  height: 17px;
+}
+
+.recommendation-source-disclosure-meta {
+  flex: 0 0 auto;
+  gap: 5px;
+  color: #858580;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.recommendation-source-disclosure-meta svg {
+  transition: transform 180ms ease;
+}
+
+.recommendation-source-disclosure[open]
+  .recommendation-source-disclosure-meta
+  svg {
+  transform: rotate(90deg);
+}
+
+.recommendation-source-disclosure-content {
+  max-height: 360px;
+  margin-top: 10px;
+  overflow: auto;
+  border: 1px solid #e5e5e1;
+  border-radius: 12px;
+  background: #f8f8f5;
+  padding: 16px;
+}
+
+.recommendation-source-disclosure-content p {
+  margin: 0;
+  color: #4f4f4a;
+  font-size: 0.86rem;
+  line-height: 1.72;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .recommendation-result-kicker-row {
   display: flex;
   align-items: center;
@@ -8404,7 +8483,8 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 
 @media (prefers-reduced-motion: reduce) {
   .campuslog-ai-history-header,
-  .recommendation-history-new {
+  .recommendation-history-new,
+  .recommendation-source-disclosure-meta svg {
     transition-duration: 80ms;
   }
 }
@@ -8596,6 +8676,15 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   .recommendation-history-detail {
     border-radius: 20px;
     padding: 22px 20px;
+  }
+
+  .recommendation-source-disclosure summary {
+    gap: 10px;
+  }
+
+  .recommendation-source-disclosure-content {
+    max-height: 280px;
+    padding: 14px;
   }
 
   .recommendation-history-heading-row {

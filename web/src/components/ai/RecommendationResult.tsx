@@ -628,6 +628,15 @@ export function RecommendationResult({
   const purposeConfig = getRecommendationPurposeConfig(result.purpose);
   const generationOptions = getGenerationOptionsForPurpose(result.purpose);
   const requirements = result.extractedRequirements;
+  const normalizedRequirementIntent = requirements.intent.trim();
+  const isLongJdPrompt =
+    result.purpose === "jd" && result.prompt.trim().length > 240;
+  const resultTitle = isLongJdPrompt
+    ? normalizedRequirementIntent.length > 0 &&
+      normalizedRequirementIntent.length <= 100
+      ? normalizedRequirementIntent
+      : "JD 요구사항과 경험 적합도 분석"
+    : result.prompt;
   const hasRequirements =
     hasListContent(requirements.preferredCompetencies) ||
     requirements.intent.trim().length > 0;
@@ -1031,7 +1040,7 @@ export function RecommendationResult({
               </span>
             ) : null}
           </div>
-          <h2 id="recommendation-title">{result.prompt}</h2>
+          <h2 id="recommendation-title">{resultTitle}</h2>
         </div>
         {experience || onClose ? (
           <div className="recommendation-result-header-actions">
@@ -1057,6 +1066,24 @@ export function RecommendationResult({
           </div>
         ) : null}
       </div>
+
+      {isLongJdPrompt ? (
+        <details className="recommendation-source-disclosure">
+          <summary>
+            <span className="recommendation-source-disclosure-label">
+              <FileText aria-hidden="true" />
+              입력한 JD 보기
+            </span>
+            <span className="recommendation-source-disclosure-meta">
+              {result.prompt.trim().length.toLocaleString("ko-KR")}자
+              <ChevronRight aria-hidden="true" />
+            </span>
+          </summary>
+          <div className="recommendation-source-disclosure-content">
+            <p>{result.prompt}</p>
+          </div>
+        </details>
+      ) : null}
 
       <div className="detail-section">
         <h3>활용 목적</h3>
