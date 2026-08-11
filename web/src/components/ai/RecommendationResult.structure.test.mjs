@@ -49,8 +49,14 @@ test("추천 결과는 긴 내용을 보호하는 Liquid Glass section을 사용
   );
 });
 
-test("현재 추천과 추천 기록은 질문을 대표 제목으로 공유한다", () => {
-  assert.match(source, /<h2 id="recommendation-title">\{result\.prompt\}<\/h2>/);
+test("짧은 질문은 제목으로 유지하고 긴 JD 원문은 접힌 영역에서 확인한다", () => {
+  assert.match(source, /result\.purpose === "jd"/);
+  assert.match(source, /result\.prompt\.trim\(\)\.length > 240/);
+  assert.match(source, /JD 요구사항과 경험 적합도 분석/);
+  assert.match(source, /<h2 id="recommendation-title">\{resultTitle\}<\/h2>/);
+  assert.match(source, /입력한 JD 보기/);
+  assert.match(source, /recommendation-source-disclosure-content/);
+  assert.match(styles, /\.recommendation-source-disclosure/);
   assert.match(source, /recommendation-result-generated-at/);
   assert.doesNotMatch(source, /<dt>추천 생성일<\/dt>/);
 });

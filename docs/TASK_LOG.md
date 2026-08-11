@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-11 - 긴 JD 추천 결과 제목 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-11 |
+| 작업자 | Codex |
+| 작업 요약 | 붙여넣은 긴 JD 전체가 추천 결과 대표 제목을 차지하지 않도록 읽기 위계 개선 |
+| 수정한 파일 | `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/ai/RecommendationResult.structure.test.mjs`, `web/src/app/recommend/history/page.structure.test.mjs`, `web/src/app/globals.css`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 240자를 넘는 JD는 100자 이하 추출 의도 또는 고정 분석 제목을 사용. 원문은 글자 수가 있는 native disclosure에 기본 접힘으로 보존하고, 펼친 영역은 데스크톱 360px·모바일 280px 독립 스크롤 적용. 짧은 질문 제목은 기존 동작 유지 |
+| 검증한 내용 | 관련 구조 테스트, 전체 Node 테스트, lint, typecheck, build, diff check 통과. 로그인 `test4`의 569자 JD 저장 기록에서 데스크톱 제목 2줄·접힘 행 73px·펼침 360px, 390px 제목 4줄·펼침 280px, 가로 overflow 0과 console error 0건 확인. 사용자가 실제 환경에서 직접 로직 테스트 완료 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: collapse long JD prompts in results` |
+
 ### 2026-08-11 - 백그라운드 AI 추천 결과 직접 복귀
 
 | 항목 | 내용 |
