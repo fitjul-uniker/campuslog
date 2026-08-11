@@ -51,10 +51,32 @@ export default function RecommendationHistoryPage() {
   const [selectedRecommendationId, setSelectedRecommendationId] = useState<
     string | null
   >(null);
+  const [requestedRecommendationId, setRequestedRecommendationId] = useState<
+    string | null
+  >(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadError, setLoadError] = useState("");
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
+
+  const scrollToRecommendationDetailOnMobile = useCallback(() => {
+    if (!window.matchMedia("(max-width: 860px)").matches) {
+      return;
+    }
+
+    if (mobileScrollTimerRef.current !== null) {
+      window.clearTimeout(mobileScrollTimerRef.current);
+    }
+    mobileScrollTimerRef.current = window.setTimeout(() => {
+      document.getElementById(RECOMMENDATION_DETAIL_ID)?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+      mobileScrollTimerRef.current = null;
+    }, 80);
+  }, []);
 
   const loadHistory = useCallback(async () => {
     setLoadError("");
@@ -77,6 +99,9 @@ export default function RecommendationHistoryPage() {
   }, []);
 
   useEffect(() => {
+    setRequestedRecommendationId(
+      new URLSearchParams(window.location.search).get("recommendationId"),
+    );
     loadHistory();
     return () => {
       if (mobileScrollTimerRef.current !== null) {
@@ -84,6 +109,25 @@ export default function RecommendationHistoryPage() {
       }
     };
   }, [loadHistory]);
+
+  useEffect(() => {
+    if (
+      !requestedRecommendationId ||
+      !recommendations?.some(
+        (recommendation) => recommendation.id === requestedRecommendationId,
+      )
+    ) {
+      return;
+    }
+
+    setSelectedRecommendationId(requestedRecommendationId);
+    setRequestedRecommendationId(null);
+    scrollToRecommendationDetailOnMobile();
+  }, [
+    recommendations,
+    requestedRecommendationId,
+    scrollToRecommendationDetailOnMobile,
+  ]);
 
   const normalizedSearchQuery = normalizeSearchValue(searchQuery);
   const filteredRecommendations = useMemo(() => {
@@ -137,21 +181,7 @@ export default function RecommendationHistoryPage() {
     lastSelectionTriggerRef.current = trigger;
     setSelectedRecommendationId(recommendation.id);
 
-    if (window.matchMedia("(max-width: 860px)").matches) {
-      if (mobileScrollTimerRef.current !== null) {
-        window.clearTimeout(mobileScrollTimerRef.current);
-      }
-      mobileScrollTimerRef.current = window.setTimeout(() => {
-        document.getElementById(RECOMMENDATION_DETAIL_ID)?.scrollIntoView({
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "auto"
-            : "smooth",
-          block: "start",
-        });
-        mobileScrollTimerRef.current = null;
-      }, 80);
-    }
+    scrollToRecommendationDetailOnMobile();
   };
 
   const handleCloseDetail = useCallback(() => {

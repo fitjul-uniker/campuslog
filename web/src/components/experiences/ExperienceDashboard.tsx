@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AlertCircle, Plus, RotateCcw } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -28,7 +29,7 @@ import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
-import { analyzeCurrentExperience } from "@/lib/experienceAnalysisWorkflow";
+import { useExperienceAnalysisTask } from "@/hooks/use-experience-analysis-task";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   DailyLog,
@@ -48,20 +49,12 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useAIBackgroundTasks } from "@/components/ai/AIBackgroundTaskProvider";
 
 const DASHBOARD_LAYOUT_TRANSITION = {
   duration: 0.3,
   ease: [0.22, 1, 0.36, 1] as const,
 };
-
-type AnalysisRequestState = Record<
-  string,
-  {
-    isLoading: boolean;
-    error: string;
-    statusMessage: string;
-  }
->;
 
 function normalizeSearchValue(value: string): string {
   return value.normalize("NFKC").trim().toLocaleLowerCase("ko-KR");
@@ -88,6 +81,8 @@ function createTrackedActivityDeleteConfirmMessage(
 }
 
 export function ExperienceDashboard() {
+  const router = useRouter();
+  const { tasks: aiTasks } = useAIBackgroundTasks();
   const experiencePins = usePinnedItems("experience");
   const [experiences, setExperiences] = useState<Experience[] | null>(null);
   const [trackedActivities, setTrackedActivities] = useState<
@@ -100,16 +95,13 @@ export function ExperienceDashboard() {
   const [loadError, setLoadError] = useState("");
   const [experienceDeleteError, setExperienceDeleteError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [analysisRequestByExperienceId, setAnalysisRequestByExperienceId] =
-    useState<AnalysisRequestState>({});
+  const [analysisErrorByExperienceId, setAnalysisErrorByExperienceId] =
+    useState<Record<string, string>>({});
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const analysisTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
-  const analysisAbortControllersRef = useRef<
-    Record<string, AbortController | undefined>
-  >({});
 
   const loadDashboardData = useCallback(async () => {
     setLoadError("");
@@ -151,16 +143,10 @@ export function ExperienceDashboard() {
   }, [loadDashboardData]);
 
   useEffect(() => {
-    const analysisAbortControllers = analysisAbortControllersRef.current;
-
     return () => {
       if (mobileScrollTimerRef.current !== null) {
         window.clearTimeout(mobileScrollTimerRef.current);
       }
-
-      Object.values(analysisAbortControllers).forEach(
-        (abortController) => abortController?.abort(),
-      );
     };
   }, []);
 
@@ -187,6 +173,30 @@ export function ExperienceDashboard() {
       })),
     ].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }, [experiences, trackedActivities]);
+
+  const focusedDashboardAnalysisTask = aiTasks.find(
+    (task) =>
+      task.type === "experience-analysis" &&
+      task.status === "pending" &&
+      task.mode === "focused" &&
+      task.sourceHref === "/experiences",
+  );
+
+  useEffect(() => {
+    if (
+      selectedItemKey ||
+      !activityItems ||
+      !focusedDashboardAnalysisTask?.targetId
+    ) {
+      return;
+    }
+
+    const taskItemKey = `experience:${focusedDashboardAnalysisTask.targetId}`;
+
+    if (activityItems.some((item) => item.key === taskItemKey)) {
+      setSelectedItemKey(taskItemKey);
+    }
+  }, [activityItems, focusedDashboardAnalysisTask, selectedItemKey]);
 
   useEffect(() => {
     if (
@@ -218,6 +228,13 @@ export function ExperienceDashboard() {
   const selectedTrackedActivityLogs = selectedTrackedActivity
     ? dailyLogs.filter((log) => log.activityId === selectedTrackedActivity.id)
     : [];
+  const analysisTask = useExperienceAnalysisTask({
+    experienceId: selectedExperience?.id ?? "",
+    experienceTitle: selectedExperience?.title ?? "경험",
+    sourceHref: "/experiences",
+  });
+  const currentAnalysisTask = analysisTask.task;
+  const dismissAnalysisTask = analysisTask.dismiss;
   const normalizedSearchQuery = normalizeSearchValue(searchQuery);
   const filteredActivityItems = useMemo(() => {
     if (!activityItems || !normalizedSearchQuery) {
@@ -244,6 +261,43 @@ export function ExperienceDashboard() {
       setIsAnalysisOpen(false);
     }
   }, [selectedAnalysis, selectedExperience]);
+
+  useEffect(() => {
+    if (!selectedExperience || currentAnalysisTask?.mode === "background") {
+      return;
+    }
+
+    const experienceId = selectedExperience.id;
+
+    if (currentAnalysisTask?.status === "success" && currentAnalysisTask.result) {
+      setAnalysesByExperienceId((current) => ({
+        ...current,
+        [experienceId]: currentAnalysisTask.result?.analysis ?? null,
+      }));
+      setExperiences((current) =>
+        current?.map((item) =>
+          item.id === experienceId
+            ? (currentAnalysisTask.result?.experience ?? item)
+            : item,
+        ) ?? null,
+      );
+      setAnalysisErrorByExperienceId((current) => ({
+        ...current,
+        [experienceId]: "",
+      }));
+      dismissAnalysisTask();
+      return;
+    }
+
+    if (currentAnalysisTask?.status === "error") {
+      setAnalysisErrorByExperienceId((current) => ({
+        ...current,
+        [experienceId]: currentAnalysisTask.isCancelled
+          ? "AI 분석 요청을 취소했습니다. 기존 기록과 분석 결과는 그대로 유지했어요."
+          : currentAnalysisTask.errorMessage,
+      }));
+    }
+  }, [currentAnalysisTask, dismissAnalysisTask, selectedExperience]);
 
   const handleSelectActivity = (
     item: MyActivityListItem,
@@ -317,73 +371,27 @@ export function ExperienceDashboard() {
     });
   }, []);
 
-  const handleAnalyzeExperience = async (experience: Experience) => {
+  const handleAnalyzeExperience = (experience: Experience) => {
     const experienceId = experience.id;
 
-    if (analysisRequestByExperienceId[experienceId]?.isLoading) {
+    if (analysisTask.isPending || experienceId !== selectedExperience?.id) {
       return;
     }
 
-    setAnalysisRequestByExperienceId((current) => ({
+    setAnalysisErrorByExperienceId((current) => ({
       ...current,
-      [experienceId]: { isLoading: true, error: "", statusMessage: "" },
+      [experienceId]: "",
     }));
-
-    const abortController = new AbortController();
-    analysisAbortControllersRef.current[experienceId] = abortController;
-    const response = await analyzeCurrentExperience(experience.id, {
-      signal: abortController.signal,
-      stream: true,
-      onStatus: (message) => {
-        setAnalysisRequestByExperienceId((current) => ({
-          ...current,
-          [experienceId]: {
-            isLoading: true,
-            error: "",
-            statusMessage: message,
-          },
-        }));
-      },
-    });
-
-    if (!response.ok) {
-      setAnalysisRequestByExperienceId((current) => ({
-        ...current,
-        [experienceId]: {
-          isLoading: false,
-          error:
-            response.error.code === "REQUEST_CANCELLED"
-              ? "AI 분석 요청을 취소했습니다. 기존 기록과 분석 결과는 그대로 유지했어요."
-              : response.error.message,
-          statusMessage: "",
-        },
-      }));
-      if (analysisAbortControllersRef.current[experienceId] === abortController) {
-        delete analysisAbortControllersRef.current[experienceId];
-      }
-      return;
-    }
-
-    setAnalysesByExperienceId((current) => ({
-      ...current,
-      [experienceId]: response.analysis,
-    }));
-    setExperiences((current) =>
-      current?.map((item) =>
-        item.id === experienceId ? response.experience : item,
-      ) ?? null,
-    );
-    setAnalysisRequestByExperienceId((current) => ({
-      ...current,
-      [experienceId]: { isLoading: false, error: "", statusMessage: "" },
-    }));
-    if (analysisAbortControllersRef.current[experienceId] === abortController) {
-      delete analysisAbortControllersRef.current[experienceId];
-    }
+    void analysisTask.start();
   };
 
-  const handleCancelAnalyzeExperience = (experienceId: string) => {
-    analysisAbortControllersRef.current[experienceId]?.abort();
+  const handleCancelAnalyzeExperience = () => {
+    analysisTask.cancel();
+  };
+
+  const handleBackgroundAnalyzeExperience = () => {
+    analysisTask.sendToBackground();
+    router.push("/dashboard");
   };
 
   const handleDeleteExperience = async (experience: Experience) => {
@@ -404,8 +412,6 @@ export function ExperienceDashboard() {
       return;
     }
 
-    analysisAbortControllersRef.current[experience.id]?.abort();
-    delete analysisAbortControllersRef.current[experience.id];
     setExperiences((currentExperiences) =>
       currentExperiences?.filter(
         (storedExperience) => storedExperience.id !== experience.id,
@@ -416,10 +422,10 @@ export function ExperienceDashboard() {
       delete nextAnalyses[experience.id];
       return nextAnalyses;
     });
-    setAnalysisRequestByExperienceId((currentRequests) => {
-      const nextRequests = { ...currentRequests };
-      delete nextRequests[experience.id];
-      return nextRequests;
+    setAnalysisErrorByExperienceId((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[experience.id];
+      return nextErrors;
     });
     setIsAnalysisOpen(false);
     setSelectedItemKey(null);
@@ -653,23 +659,19 @@ export function ExperienceDashboard() {
                         handleAnalyzeExperience(selectedExperience)
                       }
                       onCancelAnalysis={() =>
-                        handleCancelAnalyzeExperience(selectedExperience.id)
+                        handleCancelAnalyzeExperience()
                       }
+                      onBackgroundAnalysis={handleBackgroundAnalyzeExperience}
                       onOpenAnalysis={handleOpenAnalysis}
                       isAnalysisOpen={isAnalysisOpen}
-                      isAnalyzing={
-                        analysisRequestByExperienceId[selectedExperience.id]
-                          ?.isLoading ?? false
-                      }
+                      isAnalyzing={analysisTask.isPending}
                       analysisError={
                         experienceDeleteError ||
-                        analysisRequestByExperienceId[selectedExperience.id]
-                          ?.error ||
+                        analysisErrorByExperienceId[selectedExperience.id] ||
                         ""
                       }
                       analysisStatusMessage={
-                        analysisRequestByExperienceId[selectedExperience.id]
-                          ?.statusMessage ?? ""
+                        currentAnalysisTask?.statusMessage ?? ""
                       }
                       onDelete={() =>
                         handleDeleteExperience(selectedExperience)
@@ -695,25 +697,21 @@ export function ExperienceDashboard() {
                   key={`analysis:${selectedExperience.id}`}
                   experience={selectedExperience}
                   analysis={selectedAnalysis}
-                  isAnalyzing={
-                    analysisRequestByExperienceId[selectedExperience.id]
-                      ?.isLoading ?? false
-                  }
+                  isAnalyzing={analysisTask.isPending}
                   analysisError={
-                    analysisRequestByExperienceId[selectedExperience.id]
-                      ?.error ?? ""
+                    analysisErrorByExperienceId[selectedExperience.id] ?? ""
                   }
                   analysisStatusMessage={
-                    analysisRequestByExperienceId[selectedExperience.id]
-                      ?.statusMessage ?? ""
+                    currentAnalysisTask?.statusMessage ?? ""
                   }
                   onClose={handleCloseAnalysis}
                   onReanalyze={() =>
                     handleAnalyzeExperience(selectedExperience)
                   }
                   onCancelAnalysis={() =>
-                    handleCancelAnalyzeExperience(selectedExperience.id)
+                    handleCancelAnalyzeExperience()
                   }
+                  onBackgroundAnalysis={handleBackgroundAnalyzeExperience}
                 />
               ) : null}
             </AnimatePresence>

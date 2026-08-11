@@ -30,6 +30,32 @@
 
 ## 작업 로그
 
+### 2026-08-11 - 백그라운드 AI 추천 결과 직접 복귀
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-11 |
+| 작업자 | Codex |
+| 작업 요약 | AI 추천 완료 알림의 `결과 보기`가 방금 생성한 저장 결과를 바로 열도록 수정 |
+| 수정한 파일 | `web/src/components/ai/AIBackgroundTaskCenter.tsx`, `web/src/app/recommend/page.tsx`, AI background task 구조 테스트, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 완료 task 결과의 recommendation id로 추천 기록 query URL을 만들고, 추천 기록 화면에서 해당 id를 자동 선택해 상세 표시. id 누락 시 추천 기록 목록으로 fallback |
+| 검증한 내용 | AI task 구조 테스트, lint, typecheck, build, diff check 통과. 사용자가 실제 환경에서 직접 로직 테스트 완료 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: open completed background recommendation` |
+
+### 2026-08-11 - AI 대기 선택권과 백그라운드 작업 UX
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-11 |
+| 작업자 | Codex |
+| 작업 요약 | 기존 AI 작업 중 UI를 기본 경험으로 보존하면서 CampusLog 내부 route 이동 중 AI 요청을 계속하고 compact 완료·실패 알림으로 복귀하는 UX 구현 |
+| 수정한 파일 | root AI task provider·compact center·경험 분석 task hook, `AIProcessingPanel`, 경험 분석 3개 진입점, 활동 종료 합성, AI 추천, 답변 초안 스트리밍, 추천 기록, 앱 셸·스타일·구조 테스트, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 기존 Strands·AI Text Loading·메시지·취소·답변 초안 스트리밍을 유지하고 작은 `다른 작업 하러 가기`만 추가. dependency 없는 root in-memory registry가 기능·대상 key별 요청·저장 runner와 pending/success/error를 관리해 내부 route unmount에서 요청을 취소하지 않음. 앱 셸에 compact 진행·완료·실패 상태, 작업 화면·정확한 결과·재시도 경로를 제공하고 명시적 취소와 동일 key 중복 방지를 유지. API·prompt·schema는 변경하지 않음 |
+| 검증한 내용 | 전체 Node 테스트 171개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 로그인 브라우저에서 기존 full-screen AI 처리 dialog·보조 CTA, 내부 route 이동 후 compact pending, invalid key 실패 알림·재시도, 390px 가로 overflow 없음 확인. 사용자가 실제 환경에서 직접 로직 테스트 완료 |
+| 남은 작업 | 없음. 새로고침·브라우저 종료 중인 요청 복구는 MVP 범위에서 제외 |
+| 관련 커밋 메시지 | `feat: add background AI task UX` |
+
 ### 2026-08-10 - 자기소개서 글자 수 직접 입력
 
 | 항목 | 내용 |

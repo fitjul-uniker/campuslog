@@ -32,6 +32,13 @@ test("AI 처리 패널은 기존 취소와 장기 대기 문구 계약을 유지
   assert.match(source, /longWaitMessage/);
 });
 
+test("기존 AI 처리 패널 안에서만 백그라운드 전환을 secondary action으로 제공한다", () => {
+  assert.match(source, /ai-processing-background-choice/);
+  assert.match(source, /다른 작업 하러 가기/);
+  assert.match(source, /onClick=\{onBackground\}/);
+  assert.match(styles, /\.ai-processing-background-choice/);
+});
+
 test("AI 처리 문구는 2.4초 간격과 말줄임 끝맺음을 사용한다", () => {
   assert.match(source, /function normalizeLoadingText/);
   assert.match(source, /replace\(\/\[\.\u2026\]\+\$\/u, ""\)/);

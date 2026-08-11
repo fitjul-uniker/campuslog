@@ -2,7 +2,7 @@
 
 import { BookOpenText } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { DashboardExperienceDetail } from "@/components/experiences/DashboardExperienceDetail";
@@ -14,7 +14,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { analyzeCurrentExperience } from "@/lib/experienceAnalysisWorkflow";
+import { useExperienceAnalysisTask } from "@/hooks/use-experience-analysis-task";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
@@ -28,10 +28,16 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
     undefined,
   );
   const [analysis, setAnalysis] = useState<ExperienceAnalysis | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
-  const [analysisStatusMessage, setAnalysisStatusMessage] = useState("");
-  const analysisAbortControllerRef = useRef<AbortController | null>(null);
+  const analysisTask = useExperienceAnalysisTask({
+    experienceId: id,
+    experienceTitle: experience?.title ?? "경험",
+    sourceHref: `/experiences/${id}`,
+  });
+  const isAnalyzing = analysisTask.isPending;
+  const analysisStatusMessage = analysisTask.task?.statusMessage ?? "";
+  const currentAnalysisTask = analysisTask.task;
+  const dismissAnalysisTask = analysisTask.dismiss;
 
   useEffect(() => {
     let isMounted = true;
@@ -64,10 +70,28 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   }, [id]);
 
   useEffect(() => {
-    return () => {
-      analysisAbortControllerRef.current?.abort();
-    };
-  }, []);
+    const task = currentAnalysisTask;
+
+    if (task?.mode === "background") {
+      return;
+    }
+
+    if (task?.status === "success" && task.result) {
+      setAnalysis(task.result.analysis);
+      setExperience(task.result.experience);
+      dismissAnalysisTask();
+      router.push(`/experiences/${id}/analysis`);
+      return;
+    }
+
+    if (task?.status === "error") {
+      setAnalysisError(
+        task.isCancelled
+          ? "AI 분석 요청을 취소했습니다. 기존 기록과 분석 결과는 그대로 유지했어요."
+          : task.errorMessage,
+      );
+    }
+  }, [currentAnalysisTask, dismissAnalysisTask, id, router]);
 
   async function handleDelete() {
     const repository = getCampusLogRepository();
@@ -83,50 +107,22 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
     router.push("/experiences");
   }
 
-  async function handleAnalyze() {
+  function handleAnalyze() {
     if (!experience || isAnalyzing) {
       return;
     }
 
-    setIsAnalyzing(true);
     setAnalysisError("");
-    setAnalysisStatusMessage("");
-
-    const abortController = new AbortController();
-    analysisAbortControllerRef.current = abortController;
-
-    const response = await analyzeCurrentExperience(experience.id, {
-      signal: abortController.signal,
-      stream: true,
-      onStatus: setAnalysisStatusMessage,
-    });
-
-    if (!response.ok) {
-      setAnalysisError(
-        response.error.code === "REQUEST_CANCELLED"
-          ? "AI 분석 요청을 취소했습니다. 기존 기록과 분석 결과는 그대로 유지했어요."
-          : response.error.message,
-      );
-      setIsAnalyzing(false);
-      setAnalysisStatusMessage("");
-      if (analysisAbortControllerRef.current === abortController) {
-        analysisAbortControllerRef.current = null;
-      }
-      return;
-    }
-
-    setAnalysis(response.analysis);
-    setExperience(response.experience);
-    setIsAnalyzing(false);
-    setAnalysisStatusMessage("");
-    if (analysisAbortControllerRef.current === abortController) {
-      analysisAbortControllerRef.current = null;
-    }
-    router.push(`/experiences/${id}/analysis`);
+    void analysisTask.start();
   }
 
   function handleCancelAnalysis() {
-    analysisAbortControllerRef.current?.abort();
+    analysisTask.cancel();
+  }
+
+  function handleBackgroundAnalysis() {
+    analysisTask.sendToBackground();
+    router.push("/dashboard");
   }
 
   if (experience === undefined) {
@@ -181,6 +177,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
         onDelete={handleDelete}
         onAnalyze={handleAnalyze}
         onCancelAnalysis={handleCancelAnalysis}
+        onBackgroundAnalysis={handleBackgroundAnalysis}
         isAnalyzing={isAnalyzing}
         analysisError={analysisError}
         analysisStatusMessage={analysisStatusMessage}

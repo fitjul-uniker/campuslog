@@ -1,6 +1,6 @@
 "use client";
 
-import { XCircle } from "lucide-react";
+import { ArrowRight, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -36,6 +36,9 @@ type AIProcessingPanelProps = {
   canCancel?: boolean;
   cancelLabel?: string;
   onCancel?: () => void;
+  backgroundHint?: string;
+  backgroundLabel?: string;
+  onBackground?: () => void;
   className?: string;
 };
 
@@ -80,6 +83,10 @@ export function AIProcessingPanel({
   canCancel = false,
   cancelLabel = "요청 취소",
   onCancel,
+  backgroundHint =
+    "완료될 때까지 다른 기록을 작성하거나 CampusLog의 다른 기능을 이용할 수 있어요.",
+  backgroundLabel = "다른 작업 하러 가기",
+  onBackground,
   className = "",
 }: AIProcessingPanelProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -189,6 +196,16 @@ export function AIProcessingPanel({
             className="ai-processing-loading-text"
           />
         </div>
+
+        {onBackground ? (
+          <div className="ai-processing-background-choice">
+            <p>{backgroundHint}</p>
+            <button type="button" onClick={onBackground}>
+              {backgroundLabel}
+              <ArrowRight aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
 
         {canCancel ? (
           <button

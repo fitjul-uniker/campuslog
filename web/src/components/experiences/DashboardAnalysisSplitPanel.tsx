@@ -25,6 +25,7 @@ type DashboardAnalysisSplitPanelProps = {
   onClose: () => void;
   onReanalyze: () => void;
   onCancelAnalysis?: () => void;
+  onBackgroundAnalysis?: () => void;
 };
 
 export function DashboardAnalysisSplitPanel({
@@ -36,6 +37,7 @@ export function DashboardAnalysisSplitPanel({
   onClose,
   onReanalyze,
   onCancelAnalysis,
+  onBackgroundAnalysis,
 }: DashboardAnalysisSplitPanelProps) {
   const shouldReduceMotion = useReducedMotion();
   const handleTransientScroll = useTransientScrollbar<HTMLElement>();
@@ -138,6 +140,7 @@ export function DashboardAnalysisSplitPanel({
             longWaitMessage="경험 원문이나 보완 답변이 길면 분석 결과 형식 검증에 시간이 더 걸릴 수 있어요."
             canCancel={Boolean(onCancelAnalysis)}
             onCancel={onCancelAnalysis}
+            onBackground={onBackgroundAnalysis}
           />
         ) : null}
 

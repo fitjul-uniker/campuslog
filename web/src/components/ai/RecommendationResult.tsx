@@ -11,10 +11,15 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { CopyButton } from "@/components/animate-ui/components/buttons/copy";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
+import {
+  useAIBackgroundTasks,
+  type AITaskDefinition,
+} from "@/components/ai/AIBackgroundTaskProvider";
 import {
   RippleButton,
   RippleButtonRipples,
@@ -107,12 +112,6 @@ const JD_FINAL_VERDICT_LABELS: Record<JdFinalVerdict, string> = {
 
 function hasListContent(values: string[]): boolean {
   return values.some((value) => value.trim().length > 0);
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message.trim()
-    ? error.message
-    : fallback;
 }
 
 function getInitialDraftType(
@@ -425,6 +424,7 @@ function AnswerDraftStreamingPanel({
   purposeLabel,
   onRetry,
   onCancel,
+  onBackground,
   isRetryDisabled,
   canCancel,
 }: {
@@ -433,6 +433,7 @@ function AnswerDraftStreamingPanel({
   purposeLabel: string;
   onRetry: () => void;
   onCancel: () => void;
+  onBackground: () => void;
   isRetryDisabled: boolean;
   canCancel: boolean;
 }) {
@@ -495,6 +496,7 @@ function AnswerDraftStreamingPanel({
         canCancel={canCancel}
         cancelLabel="생성 취소"
         onCancel={onCancel}
+        onBackground={onBackground}
       />
     );
   }
@@ -596,6 +598,14 @@ export function RecommendationResult({
   variant = "default",
   onClose,
 }: RecommendationResultProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const {
+    startTask,
+    cancelTask,
+    dismissTask,
+    sendTaskToBackground,
+  } = useAIBackgroundTasks();
   const [answerDraftsByExperienceId, setAnswerDraftsByExperienceId] = useState<
     Record<string, AnswerDraftResult>
   >({});
@@ -609,7 +619,9 @@ export function RecommendationResult({
   const [answerDraftError, setAnswerDraftError] = useState<
     Record<string, string>
   >({});
-  const draftAbortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
+  const activeDraftTaskKeyRef = useRef<string | null>(null);
+  const backgroundedDraftTaskKeysRef = useRef(new Set<string>());
   const matchItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const matchScrollTimerRef = useRef<number | null>(null);
   const isEmbedded = variant === "embedded";
@@ -644,8 +656,6 @@ export function RecommendationResult({
 
   useEffect(() => {
     let isMounted = true;
-    draftAbortControllerRef.current?.abort();
-    draftAbortControllerRef.current = null;
 
     async function loadAnswerDrafts() {
       const repository = getCampusLogRepository();
@@ -695,13 +705,21 @@ export function RecommendationResult({
   }, [generationOptions, result.id]);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     return () => {
-      draftAbortControllerRef.current?.abort();
+      isMountedRef.current = false;
+      const activeTaskKey = activeDraftTaskKeyRef.current;
+
+      if (activeTaskKey) {
+        sendTaskToBackground(activeTaskKey);
+      }
+
       if (matchScrollTimerRef.current !== null) {
         window.clearTimeout(matchScrollTimerRef.current);
       }
     };
-  }, []);
+  }, [sendTaskToBackground]);
 
   function handleMatchAccordionValueChange(values: string[]) {
     if (matchScrollTimerRef.current !== null) {
@@ -763,6 +781,7 @@ export function RecommendationResult({
 
     const matchedExperience = experiencesById.get(match.experienceId);
     const draftKey = `${match.experienceId}:${draftType}`;
+    const taskKey = `answer-draft:${result.id}:${match.experienceId}:${draftType}:${customCharacterCount ?? "default"}`;
 
     if (
       result.purpose === "cover_letter" &&
@@ -799,8 +818,7 @@ export function RecommendationResult({
       ...currentErrors,
       [match.experienceId]: "",
     }));
-    const abortController = new AbortController();
-    draftAbortControllerRef.current = abortController;
+    activeDraftTaskKeyRef.current = taskKey;
 
     const updateStreamingDraft = (
       updater: (currentDraft: StreamingDraftState) => StreamingDraftState,
@@ -810,89 +828,136 @@ export function RecommendationResult({
       );
     };
 
-    try {
-      const repository = getCampusLogRepository();
-      const [analysis, followups] = await Promise.all([
-        repository.analyses.getByExperienceId(match.experienceId),
-        repository.experienceFollowups.listByExperienceId(match.experienceId),
-      ]);
-      const response = await requestAnswerDraftsStream({
-        draftType,
-        customCharacterCount,
-        recommendation: result,
-        match,
-        experience: matchedExperience,
-        analysis: analysis
-          ? mergeAnalysisGapAnswersIntoAnalysis(analysis, followups)
-          : null,
-        signal: abortController.signal,
-        onStatus: (message) => {
-          updateStreamingDraft((currentDraft) => ({
-            ...currentDraft,
-            statusMessage: message,
-            mode: message.includes("분량")
-              ? "repairing"
-              : currentDraft.streamedText
-                ? "streaming"
-                : "loading",
-          }));
-        },
-        onDelta: (text) => {
-          if (!text) {
-            return;
-          }
+    const definition: AITaskDefinition = {
+      key: taskKey,
+      type: "answer-draft",
+      targetId: match.experienceId,
+      title: `${match.experienceTitle} 답변 초안`,
+      pendingMessage: "CampusLog AI가 답변 초안을 작성하고 있어요.",
+      successMessage: "답변 초안이 완성되었습니다.",
+      sourceHref: pathname,
+      resultHref: `/recommend/history?recommendationId=${encodeURIComponent(result.id)}`,
+    };
+    const taskResult = await startTask(
+      definition,
+      async ({ signal, setStatusMessage }) => {
+        const repository = getCampusLogRepository();
+        const [analysis, followups] = await Promise.all([
+          repository.analyses.getByExperienceId(match.experienceId),
+          repository.experienceFollowups.listByExperienceId(match.experienceId),
+        ]);
+        const response = await requestAnswerDraftsStream({
+          draftType,
+          customCharacterCount,
+          recommendation: result,
+          match,
+          experience: matchedExperience,
+          analysis: analysis
+            ? mergeAnalysisGapAnswersIntoAnalysis(analysis, followups)
+            : null,
+          signal,
+          onStatus: (message) => {
+            setStatusMessage(message);
 
-          updateStreamingDraft((currentDraft) => ({
-            ...currentDraft,
-            statusMessage: "문장을 이어서 작성하고 있어요.",
-            streamedText: `${currentDraft.streamedText}${text}`,
-            mode: "streaming",
-          }));
-        },
-        onReplace: (text) => {
-          updateStreamingDraft((currentDraft) => ({
-            ...currentDraft,
-            statusMessage: "목표 분량에 맞게 문장을 다듬었어요.",
-            streamedText: text,
-            mode: "repairing",
-          }));
-        },
-      });
+            if (!isMountedRef.current) {
+              return;
+            }
 
-      if (!response.ok) {
-        const isCancelled = response.error.code === "REQUEST_CANCELLED";
-        updateStreamingDraft((currentDraft) => ({
-          ...currentDraft,
-          statusMessage: isCancelled
-            ? "생성을 취소했습니다. 작성 중이던 문장은 참고용으로 남겨두었어요."
-            : "생성을 완료하지 못했습니다.",
-          mode: isCancelled ? "cancelled" : "failed",
-        }));
-        setAnswerDraftError((currentErrors) => ({
-          ...currentErrors,
-          [match.experienceId]: isCancelled ? "" : response.error.message,
-        }));
-        return;
+            updateStreamingDraft((currentDraft) => ({
+              ...currentDraft,
+              statusMessage: message,
+              mode: message.includes("분량")
+                ? "repairing"
+                : currentDraft.streamedText
+                  ? "streaming"
+                  : "loading",
+            }));
+          },
+          onDelta: (text) => {
+            if (!text) {
+              return;
+            }
+
+            if (!isMountedRef.current) {
+              return;
+            }
+
+            updateStreamingDraft((currentDraft) => ({
+              ...currentDraft,
+              statusMessage: "문장을 이어서 작성하고 있어요.",
+              streamedText: `${currentDraft.streamedText}${text}`,
+              mode: "streaming",
+            }));
+          },
+          onReplace: (text) => {
+            if (!isMountedRef.current) {
+              return;
+            }
+
+            updateStreamingDraft((currentDraft) => ({
+              ...currentDraft,
+              statusMessage: "목표 분량에 맞게 문장을 다듬었어요.",
+              streamedText: text,
+              mode: "repairing",
+            }));
+          },
+        });
+
+        if (!response.ok) {
+          return {
+            ok: false,
+            error: response.error.message,
+            cancelled: response.error.code === "REQUEST_CANCELLED",
+          };
+        }
+
+        const savedDraft = await repository.answerDrafts.save(
+          response.answerDrafts,
+        );
+
+        if (!savedDraft) {
+          return {
+            ok: false,
+            error:
+              "답변 초안을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+          };
+        }
+
+        return { ok: true, value: savedDraft };
+      },
+    );
+
+    if (!isMountedRef.current) {
+      return;
+    }
+    if (backgroundedDraftTaskKeysRef.current.delete(taskKey)) {
+      if (activeDraftTaskKeyRef.current === taskKey) {
+        activeDraftTaskKeyRef.current = null;
       }
-
-      const savedDraft = await repository.answerDrafts.save(
-        response.answerDrafts,
+      setGeneratingDraftKey(null);
+      setStreamingDraft((currentDraft) =>
+        currentDraft?.key === draftKey ? null : currentDraft,
       );
-
-      if (!savedDraft) {
-        updateStreamingDraft((currentDraft) => ({
-          ...currentDraft,
-          statusMessage: "초안을 저장하지 못했습니다.",
-          mode: "failed",
-        }));
-        setAnswerDraftError((currentErrors) => ({
-          ...currentErrors,
-          [match.experienceId]:
-            "답변 초안을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        }));
-        return;
+      return;
+    }
+    if (!taskResult.ok) {
+      const isCancelled = taskResult.cancelled === true;
+      updateStreamingDraft((currentDraft) => ({
+        ...currentDraft,
+        statusMessage: isCancelled
+          ? "생성을 취소했습니다. 작성 중이던 문장은 참고용으로 남겨두었어요."
+          : "생성을 완료하지 못했습니다.",
+        mode: isCancelled ? "cancelled" : "failed",
+      }));
+      setAnswerDraftError((currentErrors) => ({
+        ...currentErrors,
+        [match.experienceId]: isCancelled ? "" : taskResult.error,
+      }));
+      if (isCancelled) {
+        dismissTask(taskKey);
       }
-
+    } else {
+      const savedDraft = taskResult.value;
       setAnswerDraftsByExperienceId((currentDrafts) => ({
         ...currentDrafts,
         [savedDraft.experienceId]: savedDraft,
@@ -904,26 +969,13 @@ export function RecommendationResult({
       setStreamingDraft((currentDraft) =>
         currentDraft?.key === draftKey ? null : currentDraft,
       );
-    } catch (error) {
-      console.error("CampusLog answer draft generation failed", error);
-      updateStreamingDraft((currentDraft) => ({
-        ...currentDraft,
-        statusMessage: "생성을 완료하지 못했습니다.",
-        mode: "failed",
-      }));
-      setAnswerDraftError((currentErrors) => ({
-        ...currentErrors,
-        [match.experienceId]: getErrorMessage(
-          error,
-          "답변 초안 생성 중 문제가 발생했습니다. 다시 시도해 주세요.",
-        ),
-      }));
-    } finally {
-      if (draftAbortControllerRef.current === abortController) {
-        draftAbortControllerRef.current = null;
-      }
-      setGeneratingDraftKey(null);
+      dismissTask(taskKey);
     }
+
+    if (activeDraftTaskKeyRef.current === taskKey) {
+      activeDraftTaskKeyRef.current = null;
+    }
+    setGeneratingDraftKey(null);
   }
 
   function handleCancelAnswerDraftGeneration() {
@@ -935,7 +987,23 @@ export function RecommendationResult({
           }
         : currentDraft,
     );
-    draftAbortControllerRef.current?.abort();
+    const activeTaskKey = activeDraftTaskKeyRef.current;
+
+    if (activeTaskKey) {
+      cancelTask(activeTaskKey);
+    }
+  }
+
+  function handleBackgroundAnswerDraftGeneration() {
+    const activeTaskKey = activeDraftTaskKeyRef.current;
+
+    if (!activeTaskKey) {
+      return;
+    }
+
+    sendTaskToBackground(activeTaskKey);
+    backgroundedDraftTaskKeysRef.current.add(activeTaskKey);
+    router.push("/dashboard");
   }
 
   return (
@@ -1342,6 +1410,7 @@ export function RecommendationResult({
                           activeStreamingDraft.mode !== "cancelled"
                         }
                         onCancel={handleCancelAnswerDraftGeneration}
+                        onBackground={handleBackgroundAnswerDraftGeneration}
                         onRetry={() =>
                           handleGenerateAnswerDrafts(
                             match,

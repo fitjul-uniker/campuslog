@@ -1490,6 +1490,52 @@ h2 {
   line-height: 1.35;
 }
 
+.ai-processing-background-choice {
+  display: grid;
+  max-width: 520px;
+  justify-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  text-align: center;
+}
+
+.ai-processing-background-choice p {
+  margin: 0;
+  color: #676763;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.ai-processing-background-choice button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: #202022;
+  padding: 9px 4px;
+  font-size: 0.9rem;
+  font-weight: 780;
+  cursor: pointer;
+}
+
+.ai-processing-background-choice button svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 160ms ease;
+}
+
+.ai-processing-background-choice button:is(:hover, :focus-visible) svg {
+  transform: translateX(3px);
+}
+
+.ai-processing-background-choice button:focus-visible {
+  outline: 3px solid rgba(29, 29, 31, 0.2);
+  outline-offset: 3px;
+}
+
 .ai-processing-cancel-button {
   display: inline-flex;
   min-height: 44px;
@@ -1507,6 +1553,145 @@ h2 {
   transition:
     color 160ms ease,
     opacity 160ms ease;
+}
+
+.ai-background-task-center {
+  position: fixed;
+  z-index: 1100;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  display: grid;
+  width: min(390px, calc(100vw - 40px));
+  gap: 10px;
+  pointer-events: none;
+}
+
+.ai-background-task {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px 12px;
+  border: 1px solid rgb(43 48 56 / 14%);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 88%);
+  padding: 14px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 82%),
+    0 18px 48px rgb(43 48 56 / 15%);
+  -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  backdrop-filter: blur(22px) saturate(1.08);
+  pointer-events: auto;
+}
+
+.ai-background-task-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: rgb(43 48 56 / 7%);
+  color: #2b3038;
+}
+
+.ai-background-task.is-pending .ai-background-task-icon {
+  color: #7c3aed;
+}
+
+.ai-background-task.is-success .ai-background-task-icon {
+  color: #207a4b;
+}
+
+.ai-background-task.is-error .ai-background-task-icon {
+  color: #a43d39;
+}
+
+.ai-background-task-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ai-background-task.is-pending .ai-background-task-icon svg {
+  animation: ai-background-pulse 1.8s ease-in-out infinite;
+}
+
+.ai-background-task-copy {
+  min-width: 0;
+}
+
+.ai-background-task-copy strong,
+.ai-background-task-copy p {
+  overflow-wrap: anywhere;
+}
+
+.ai-background-task-copy strong {
+  display: block;
+  color: #202226;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.ai-background-task-copy p {
+  margin: 3px 0 0;
+  color: #676b72;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.ai-background-task-actions {
+  grid-column: 2;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-background-task-actions button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 10px;
+  background: rgb(43 48 56 / 7%);
+  color: #2b3038;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.ai-background-task-actions button:is(:hover, :focus-visible) {
+  background: rgb(43 48 56 / 12%);
+}
+
+.ai-background-task-actions button:focus-visible {
+  outline: 3px solid rgb(43 48 56 / 18%);
+  outline-offset: 2px;
+}
+
+.ai-background-task-actions button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ai-background-task-actions .ai-background-task-dismiss {
+  width: 36px;
+  padding: 0;
+  margin-left: auto;
+  background: transparent;
+}
+
+@keyframes ai-background-pulse {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(0.94);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
 }
 
 .ai-processing-cancel-button:hover {
@@ -1552,6 +1737,30 @@ h2 {
 
   .ai-processing-loading-text {
     font-size: clamp(1.22rem, 5.8vw, 1.58rem);
+  }
+
+  .ai-processing-background-choice {
+    max-width: 330px;
+  }
+
+  .ai-background-task-center {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(360px, calc(100vw - 24px));
+  }
+
+  .ai-background-task {
+    border-radius: 16px;
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-processing-background-choice button svg,
+  .ai-background-task.is-pending .ai-background-task-icon svg {
+    animation: none;
+    transition: none;
+    transform: none;
   }
 }
 

@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { History } from "lucide-react";
 import { useReducedMotion } from "motion/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { RecommendationForm } from "@/components/ai/RecommendationForm";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
+import {
+  useAIBackgroundTasks,
+  useAITask,
+  type AITaskDefinition,
+} from "@/components/ai/AIBackgroundTaskProvider";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingState } from "@/components/common/LoadingState";
@@ -46,6 +52,8 @@ type RecommendationFormInput = {
   prompt: string;
   images: RecommendationImageInput[];
 };
+
+const RECOMMENDATION_TASK_KEY = "recommendation:current";
 
 function RecommendationPageBreadcrumb() {
   return (
@@ -109,16 +117,23 @@ function getRecommendationInputSource(
 }
 
 export default function RecommendPage() {
+  const router = useRouter();
+  const {
+    startTask,
+    cancelTask,
+    dismissTask,
+    sendTaskToBackground,
+  } = useAIBackgroundTasks();
+  const recommendationTask = useAITask<Recommendation>(
+    RECOMMENDATION_TASK_KEY,
+  );
   const [experiences, setExperiences] = useState<Experience[] | null>(null);
   const [analyses, setAnalyses] = useState<ExperienceAnalysis[]>([]);
   const [trackedActivityCount, setTrackedActivityCount] = useState(0);
   const [recommendation, setRecommendation] = useState<Recommendation | null>(
     null,
   );
-  const [isRecommending, setIsRecommending] = useState(false);
   const [recommendationError, setRecommendationError] = useState("");
-  const [recommendationStatusMessage, setRecommendationStatusMessage] =
-    useState("");
   const [pendingRecommendationInput, setPendingRecommendationInput] =
     useState<RecommendationFormInput | null>(null);
   const [
@@ -127,10 +142,9 @@ export default function RecommendPage() {
   ] = useState<RecommendationRequestContextStats | null>(null);
   const recommendationResultRef = useRef<HTMLDivElement>(null);
   const lastScrolledRecommendationIdRef = useRef<string | null>(null);
-  const recommendationAbortControllerRef = useRef<AbortController | null>(
-    null,
-  );
   const shouldReduceMotion = useReducedMotion();
+  const isRecommending = recommendationTask?.status === "pending";
+  const recommendationStatusMessage = recommendationTask?.statusMessage ?? "";
 
   useEffect(() => {
     let isMounted = true;
@@ -207,12 +221,33 @@ export default function RecommendPage() {
   }, [recommendationId, shouldReduceMotion]);
 
   useEffect(() => {
-    return () => {
-      recommendationAbortControllerRef.current?.abort();
-    };
-  }, []);
+    if (recommendationTask?.mode === "background") {
+      return;
+    }
 
-  async function handleRecommend(input: RecommendationFormInput) {
+    if (recommendationTask?.status === "success" && recommendationTask.result) {
+      setRecommendation(recommendationTask.result);
+      setRecommendationError("");
+      setPendingRecommendationInput(null);
+      setPendingRecommendationContextStats(null);
+      dismissTask(RECOMMENDATION_TASK_KEY);
+      return;
+    }
+
+    if (recommendationTask?.status === "error") {
+      setPendingRecommendationInput(null);
+      setPendingRecommendationContextStats(null);
+
+      if (recommendationTask.isCancelled) {
+        dismissTask(RECOMMENDATION_TASK_KEY);
+        return;
+      }
+
+      setRecommendationError(recommendationTask.errorMessage);
+    }
+  }, [dismissTask, recommendationTask]);
+
+  function handleRecommend(input: RecommendationFormInput) {
     if (isRecommending) {
       return;
     }
@@ -224,9 +259,7 @@ export default function RecommendPage() {
       return;
     }
 
-    setIsRecommending(true);
     setRecommendationError("");
-    setRecommendationStatusMessage("");
     setRecommendation(null);
     setPendingRecommendationInput(input);
 
@@ -238,27 +271,35 @@ export default function RecommendPage() {
     });
     setPendingRecommendationContextStats(recommendationContext.stats);
 
-    const abortController = new AbortController();
-    recommendationAbortControllerRef.current = abortController;
+    const purposeConfig = getRecommendationPurposeConfig(input.purpose);
+    const definition: AITaskDefinition = {
+      key: RECOMMENDATION_TASK_KEY,
+      type: "recommendation",
+      targetId: RECOMMENDATION_TASK_KEY,
+      title: `${purposeConfig.label} 경험 추천`,
+      pendingMessage: "CampusLog AI가 요구사항과 경험을 비교하고 있어요.",
+      successMessage: "AI 경험 추천이 완료되었습니다.",
+      sourceHref: "/recommend",
+      resultHref: "/recommend/history",
+    };
 
-    try {
+    void startTask(definition, async ({ signal, setStatusMessage }) => {
       const response = await requestRecommendation({
         ...input,
         images: input.images,
         experiences: recommendationContext.experiences,
         analyses: recommendationContext.analyses,
-        signal: abortController.signal,
+        signal,
         stream: true,
-        onStatus: setRecommendationStatusMessage,
+        onStatus: setStatusMessage,
       });
 
       if (!response.ok) {
-        if (response.error.code === "REQUEST_CANCELLED") {
-          return;
-        }
-
-        setRecommendationError(response.error.message);
-        return;
+        return {
+          ok: false,
+          error: response.error.message,
+          cancelled: response.error.code === "REQUEST_CANCELLED",
+        };
       }
 
       const repository = getCampusLogRepository();
@@ -272,25 +313,24 @@ export default function RecommendPage() {
       });
 
       if (!savedRecommendation) {
-        setRecommendationError(
-          "활동 추천 결과를 계정에 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        );
-        return;
+        return {
+          ok: false,
+          error:
+            "활동 추천 결과를 계정에 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        };
       }
 
-      setRecommendation(savedRecommendation);
-    } finally {
-      if (recommendationAbortControllerRef.current === abortController) {
-        recommendationAbortControllerRef.current = null;
-      }
-      setIsRecommending(false);
-      setRecommendationStatusMessage("");
-      setPendingRecommendationInput(null);
-    }
+      return { ok: true, value: savedRecommendation };
+    });
   }
 
   function handleCancelRecommendation() {
-    recommendationAbortControllerRef.current?.abort();
+    cancelTask(RECOMMENDATION_TASK_KEY);
+  }
+
+  function handleBackgroundRecommendation() {
+    sendTaskToBackground(RECOMMENDATION_TASK_KEY);
+    router.push("/dashboard");
   }
 
   const recommendedExperience = experiences?.find(
@@ -425,6 +465,7 @@ export default function RecommendPage() {
           longWaitMessage="저장된 경험이 많으면 관련 후보를 먼저 추려 비교합니다. 질문이 길면 추천 근거 정리에 시간이 더 걸릴 수 있어요."
           canCancel
           onCancel={handleCancelRecommendation}
+          onBackground={handleBackgroundRecommendation}
         />
       ) : recommendation ? (
         <div

@@ -16,7 +16,7 @@ type AnalyzeCurrentExperienceOptions = {
   onStatus?: (message: string) => void;
 };
 
-type AnalyzeCurrentExperienceResult =
+export type AnalyzeCurrentExperienceResult =
   | {
       ok: true;
       analysis: ExperienceAnalysis;
