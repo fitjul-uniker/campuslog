@@ -7,6 +7,7 @@ import {
   rejectTooLargeAiApiRequest,
   requireAuthenticatedAiApiUser,
 } from "@/lib/aiApiProtection";
+import { AI_MODELS } from "@/lib/aiModelConfig";
 import {
   countAiInputCharacters,
   createAiRequestMetricLogger,
@@ -55,7 +56,7 @@ type RecommendRouteResult = {
 };
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
-const RECOMMENDATION_MODEL = "gpt-4.1-mini";
+const RECOMMENDATION_MODEL = AI_MODELS.recommendation;
 const OPENAI_REQUEST_TIMEOUT_MS =
   AI_API_REQUEST_LIMITS.recommend.openAiTimeoutMs;
 const MAX_ID_LENGTH = 160;

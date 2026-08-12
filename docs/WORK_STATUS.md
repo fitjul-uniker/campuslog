@@ -9,6 +9,7 @@
 - [x] v1.1 commit / push / Draft PR #27
 - [x] 팀 리뷰와 main merge
 - [x] 2차 MVP 기능 브랜치 시작
+- [x] AI 모델 Hybrid 적용: 경험 추천은 `gpt-4.1-mini`, 활동 합성·분석·답변 초안·보완 질문은 A/B 기준 `reasoning.effort: "none"`의 `gpt-5.6-luna`로 라우팅 (`ISSUE-146`)
 - [x] Supabase Auth foundation 구현
 - [x] 사용자별 Supabase DB schema / RLS foundation 작성
 - [x] localStorage 모델과 DB 이전 정책 문서화
