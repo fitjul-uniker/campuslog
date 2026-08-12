@@ -23,6 +23,7 @@
 
 진행 메모:
 
+- 2026-08-12: 실제 CampusLog prompt·schema 기반 A/B benchmark 결정에 따라 server-only AI 모델 설정을 추가. `/api/recommend`는 `gpt-4.1-mini`를 유지하고 `/api/analyze`, `/api/answer-drafts`, `/api/evidence-followups`, `/api/synthesize-activity`는 `gpt-5.6-luna`와 `reasoning.effort: "none"`으로 전환. 기존 prompt·schema·timeout·SSE/NDJSON·저장 계약은 유지. 사용자가 로그인 세션에서 기능별 직접 로직 테스트를 완료했으며, 보완 질문·활동 합성의 합성 benchmark 회귀 사례 확장은 후속 작업 (`ISSUE-146`).
 - 2026-08-11: 추천 결과와 추천 기록에서 240자를 넘는 긴 JD를 대표 제목으로 노출하지 않고 짧은 분석 제목과 기본 접힘 `입력한 JD 보기`로 분리. 짧은 자기소개서·면접 질문은 기존 제목을 유지하고, 펼친 원문은 내부 스크롤로 제한. 사용자가 직접 로직 테스트 완료 (`ISSUE-145`).
 - 2026-08-11: 백그라운드 AI 추천 완료 알림의 `결과 보기`를 새 추천 입력 화면이 아니라 저장된 추천 id가 선택된 추천 기록 상세로 직접 연결하고 사용자 직접 로직 테스트 완료 (`ISSUE-144`).
 - 2026-08-11: 기존 AI 작업 중 Strands·AI Text Loading과 답변 초안 스트리밍 UI를 기본 경험으로 유지하면서, 경험 분석·추천·활동 종료 합성·답변 초안을 root in-memory registry에 연결. 사용자가 선택할 때만 내부 route로 이동해 compact 상태를 보고 다른 활동을 계속하며, 완료·실패 알림에서 정확한 결과 또는 재시도로 복귀. 기능·대상 key 중복 요청 방지, 모바일 390px overflow 보호, 새로고침·브라우저 종료 중 복구 제외 범위를 문서화하고 사용자 직접 로직 테스트 완료 (`ISSUE-143`).

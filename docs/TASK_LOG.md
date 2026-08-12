@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-12 - AI 모델 Hybrid 적용
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-12 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog prompt·schema A/B 결과에 따라 경험 추천만 GPT-4.1 mini로 유지하고 나머지 AI route를 Luna로 전환 |
+| 수정한 파일 | `web/src/lib/aiModelConfig.ts`, AI route 5개, 모델 라우팅 테스트, `docs/AI_MODEL_*.md`, `docs/CURRENT_PHASE.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md` |
+| 변경 내용 | server-only 모델 매핑에서 `/api/recommend`는 `gpt-4.1-mini`, `/api/analyze`·`/api/answer-drafts`·`/api/evidence-followups`·`/api/synthesize-activity`는 `gpt-5.6-luna`로 지정. Luna route의 모든 Responses API 요청에는 benchmark 조건과 같은 `reasoning.effort: "none"`을 명시. 기존 prompt·schema·timeout·streaming·저장 흐름은 유지 |
+| 검증한 내용 | 모델 라우팅 구조 테스트 3개와 전체 Node test 174개, lint, typecheck, production build, diff check 통과. 사용자가 로그인 세션에서 기능별 직접 로직 테스트를 완료 |
+| 남은 작업 | 보완 질문·활동 합성의 합성 benchmark 회귀 케이스 확장 |
+| 관련 커밋 메시지 | `feat: route CampusLog AI by benchmarked model` |
+
 ### 2026-08-11 - 긴 JD 추천 결과 제목 정리
 
 | 항목 | 내용 |

@@ -4,6 +4,7 @@
 
 - 현재 제품 기준선: **v1.1 고도화 완료**
 - 현재 활성 계획 단계: **2차 MVP**
+- 2026-08-12 결정·적용: CampusLog AI 모델은 기능별 Hybrid로 운영한다. 경험 추천 `/api/recommend`만 `gpt-4.1-mini`, 활동 경험 분석·답변 초안·보완 질문·활동 종료 합성은 `gpt-5.6-luna`를 사용한다. Luna route는 A/B benchmark와 같은 `reasoning.effort: "none"`을 명시하며 기존 prompt·schema·사용자 흐름은 변경하지 않는다.
 - 기능 구현 시작 조건: PR #27이 main에 반영되었으므로 최신 `main`에서 2차 MVP 기능 브랜치를 시작합니다.
 - 전환 원칙: `main`에는 직접 기능을 추가하지 않고, 인증·DB·AI 고도화는 작은 기능 브랜치와 PR로 진행합니다.
 - 2026-07-13 결정: 이메일 인증 흐름, Google OAuth, 사용자별 DB 분리 smoke test가 확인되었으므로 로그인·DB foundation은 완료로 보고, 다음 개발 초점은 AI 보호와 AI 분석·추천 품질 고도화로 전환합니다.

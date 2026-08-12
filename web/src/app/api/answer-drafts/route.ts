@@ -7,6 +7,7 @@ import {
   rejectTooLargeAiApiRequest,
   requireAuthenticatedAiApiUser,
 } from "@/lib/aiApiProtection";
+import { AI_MODELS, LUNA_REASONING } from "@/lib/aiModelConfig";
 import {
   countAiInputCharacters,
   createAiRequestMetricLogger,
@@ -56,7 +57,7 @@ import type {
 } from "@/lib/types";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
-const ANSWER_DRAFT_MODEL = "gpt-4.1-mini";
+const ANSWER_DRAFT_MODEL = AI_MODELS.answerDrafts;
 const OPENAI_REQUEST_TIMEOUT_MS =
   AI_API_REQUEST_LIMITS.answerDrafts.openAiTimeoutMs;
 const MAX_ID_LENGTH = 160;
@@ -701,6 +702,7 @@ async function requestOpenAiStructuredOutput({
     },
     body: JSON.stringify({
       model: ANSWER_DRAFT_MODEL,
+      reasoning: LUNA_REASONING,
       input: [
         {
           role: "system",
@@ -976,6 +978,7 @@ async function requestOpenAiStructuredOutputStream({
     },
     body: JSON.stringify({
       model: ANSWER_DRAFT_MODEL,
+      reasoning: LUNA_REASONING,
       input: [
         {
           role: "system",
