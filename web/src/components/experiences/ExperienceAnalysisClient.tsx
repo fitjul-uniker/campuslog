@@ -237,24 +237,31 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
 
       {analysis ? (
         <>
-          <AnalysisResult experience={experience} analysis={analysis} />
+          <AnalysisResult
+            experience={experience}
+            analysis={analysis}
+            footer={
+              <>
+                {analysisError ? (
+                  <p className="form-error" role="alert">
+                    {analysisError}
+                  </p>
+                ) : null}
+                <div className="panel-actions analysis-page-footer-actions">
+                  <AnimatedGradientActionButton
+                    type="button"
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    aria-busy={isAnalyzing}
+                    icon={<RefreshCcw />}
+                  >
+                    {isAnalyzing ? "분석 중..." : "다시 분석하기"}
+                  </AnimatedGradientActionButton>
+                </div>
+              </>
+            }
+          />
           {isAnalyzing ? analysisProcessingPanel : null}
-          {analysisError ? (
-            <p className="form-error" role="alert">
-              {analysisError}
-            </p>
-          ) : null}
-          <div className="panel-actions analysis-page-footer-actions analysis-page-footer-actions-spaced">
-            <AnimatedGradientActionButton
-              type="button"
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
-              aria-busy={isAnalyzing}
-              icon={<RefreshCcw />}
-            >
-              {isAnalyzing ? "분석 중..." : "다시 분석하기"}
-            </AnimatedGradientActionButton>
-          </div>
         </>
       ) : (
         <>

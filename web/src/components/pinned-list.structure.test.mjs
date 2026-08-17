@@ -88,6 +88,17 @@ test("나의 활동은 완료 경험과 진행 활동을 모두 즐겨찾기할 
   );
 });
 
+test("나의 활동 구획 제목은 글자를 늘이지 않고 위치만 전환한다", () => {
+  assert.match(
+    experienceListSource,
+    /<motion\.li\s+layout="position"\s+key="experience-pinned-heading"/,
+  );
+  assert.match(
+    experienceListSource,
+    /<motion\.li\s+layout="position"\s+key="experience-all-heading"/,
+  );
+});
+
 test("즐겨찾기 행은 외곽선 없는 44px 채움형 별 조작 영역을 사용한다", () => {
   assert.match(
     styles,

@@ -18,39 +18,38 @@ const recommendationSource = await readFile(
   new URL("../../app/recommend/page.tsx", import.meta.url),
   "utf8",
 );
+const pinnedItemsSource = await readFile(
+  new URL("../../hooks/use-pinned-items.ts", import.meta.url),
+  "utf8",
+);
 const styles = await readFile(
   new URL("../../app/globals.css", import.meta.url),
   "utf8",
 );
 
-test("주요 제품 화면은 목적지 레이아웃을 닮은 공통 로딩 상태를 사용한다", () => {
-  assert.match(loadingSource, /"dashboard" \| "list" \| "form"/);
-  assert.match(todaySource, /<LoadingState[\s\S]*?variant="dashboard"/);
-  assert.match(experiencesSource, /<LoadingState[\s\S]*?variant="list"/);
+test("주요 제품 화면은 초기 로딩 중 시각적 가짜 패널을 렌더링하지 않는다", () => {
+  assert.doesNotMatch(loadingSource, /variant/);
+  assert.doesNotMatch(loadingSource, /product-loading/);
+  assert.match(
+    todaySource,
+    /if \(activities === null\)[\s\S]*?<TodayDashboardHeader today=\{today\} \/>[\s\S]*?<LoadingState[\s\S]*?message="오늘의 기록을 불러오는 중입니다\."/,
+  );
   assert.match(
     experiencesSource,
-    /\{activityItems !== null \? \(\s*<header className="dashboard-experience-section-heading">/,
+    /activityItems === null \|\| !experiencePins\.isLoaded \? \([\s\S]*?<LoadingState message="나의 활동을 불러오는 중입니다\." \/>[\s\S]*?\) : \([\s\S]*?<LayoutGroup id="dashboard-experience-layout">/,
   );
   assert.match(
-    loadingSource,
-    /className="product-loading-state is-list"[\s\S]*?<LoadingHeader \/>[\s\S]*?<LoadingRows count=\{count\} \/>/,
-  );
-  assert.match(recommendationSource, /<LoadingState[\s\S]*?variant="form"/);
-  assert.doesNotMatch(todaySource, /activity-today-page activity-page-loading/);
-  assert.doesNotMatch(
     recommendationSource,
-    /활동 추천 화면을 불러오는 중입니다/,
+    /if \(experiences === null\)[\s\S]*?<RecommendationPageHeader \/>[\s\S]*?<LoadingState[\s\S]*?message="AI 기반 활동 추천을 불러오는 중입니다\."/,
   );
+  assert.doesNotMatch(styles, /\.product-loading-/);
+  assert.match(pinnedItemsSource, /const \[isLoaded, setIsLoaded\] = useState\(false\)/);
 });
 
-test("공통 로딩은 Liquid Glass 재질과 접근성 대안을 유지한다", () => {
+test("시각적 로딩 패널 없이 접근성 안내만 유지한다", () => {
+  assert.match(loadingSource, /className="sr-only"/);
+  assert.match(loadingSource, /role="status"/);
   assert.match(loadingSource, /aria-live="polite"/);
   assert.match(loadingSource, /aria-busy="true"/);
-  assert.match(loadingSource, /<span className="sr-only">\{message\}<\/span>/);
-  assert.match(
-    styles,
-    /\.product-loading-surface,[\s\S]*?background:\s*var\(--liquid-frosted-fill\)[\s\S]*?backdrop-filter:\s*blur\(28px\) saturate\(1\.12\)/,
-  );
-  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.product-loading-state/);
-  assert.match(styles, /@media \(max-width: 860px\)[\s\S]*?\.product-loading-state\.is-dashboard/);
+  assert.match(loadingSource, />\s*\{message\}\s*<\/span>/);
 });

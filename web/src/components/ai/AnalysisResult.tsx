@@ -1,4 +1,5 @@
 import { AlertTriangle } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { AnalysisGapAnswerList } from "@/components/ai/AnalysisGapAnswerList";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -9,12 +10,14 @@ type AnalysisResultProps = {
   experience: Experience;
   analysis: ExperienceAnalysis;
   variant?: "default" | "embedded";
+  footer?: ReactNode;
 };
 
 export function AnalysisResult({
   experience,
   analysis,
   variant = "default",
+  footer,
 }: AnalysisResultProps) {
   const isSourceOutdated =
     analysis.sourceExperienceUpdatedAt !== experience.updatedAt;
@@ -142,6 +145,8 @@ export function AnalysisResult({
           </p>
         )}
       </div>
+
+      {footer ? <div className="analysis-result-footer">{footer}</div> : null}
     </section>
   );
 }

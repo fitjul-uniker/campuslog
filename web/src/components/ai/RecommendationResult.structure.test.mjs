@@ -69,6 +69,14 @@ test("현재 추천과 추천 기록은 활동 메타와 질문을 하단에 중
   assert.doesNotMatch(source, /질문 \/ 문항/);
 });
 
+test("추천 결과 헤더는 첫 경험으로만 이동하는 활동 링크를 표시하지 않는다", () => {
+  assert.doesNotMatch(source, /<ExternalLink/);
+  assert.doesNotMatch(
+    source,
+    /href=\{`\/experiences\/\$\{experience\.id\}`\}/,
+  );
+});
+
 test("제목과 활용 목적 사이에는 한 줄의 hairline만 사용한다", () => {
   assert.match(
     styles,

@@ -9,6 +9,15 @@
 - [x] v1.1 commit / push / Draft PR #27
 - [x] 팀 리뷰와 main merge
 - [x] 2차 MVP 기능 브랜치 시작
+- [x] 독립 AI 분석의 `다시 분석하기`와 실행 오류를 흰 결과 표면 내부 footer로 이동 (`ISSUE-156`)
+- [x] 비교용 페이지 로딩 탭을 제거하고 앱 셸·헤더 뒤 본문이 바로 나타나는 무시각 placeholder 전환으로 확정 (`ISSUE-155`)
+- [x] AI 처리 overlay 안내 문장을 제거하고 추천 결과의 원본 활동 이동을 Top 3 경험별 액션으로 분리 (`ISSUE-152`)
+- [x] 경험 수정 폼 관련 링크의 `URL` 제목을 폼 왼쪽 기준선에 정렬 (`ISSUE-153`)
+- [x] AI 처리 시작 직후 상태 문구 갱신으로 첫 문장이 두 번 전환되는 순환 초기화 제거 (`ISSUE-151`)
+- [x] 나의 활동 `즐겨찾기`·`모든 활동` 구획 제목의 layout scale을 제거하고 위치 전환만 유지 (`ISSUE-150`)
+- [x] 나의 활동 상세를 현재 우측 슬롯에서 먼저 퇴장시킨 뒤 목록을 확장하도록 닫기 상태를 분리 (`ISSUE-149`)
+- [x] 오늘의 기록·나의 활동·CampusLog AI의 첫 로딩에서 모든 시각적 placeholder를 제거하고 앱 창·페이지 헤더만 유지 (`ISSUE-148`)
+- [x] 나의 활동 상세에서 활동 기간과 역할을 각각 전체 폭의 독립 행으로 분리하고 본문 구획과 같은 hairline 리듬 적용 (`ISSUE-147`)
 - [x] AI 모델 Hybrid 적용: 경험 추천은 `gpt-4.1-mini`, 활동 합성·분석·답변 초안·보완 질문은 A/B 기준 `reasoning.effort: "none"`의 `gpt-5.6-luna`로 라우팅 (`ISSUE-146`)
 - [x] Supabase Auth foundation 구현
 - [x] 사용자별 Supabase DB schema / RLS foundation 작성
