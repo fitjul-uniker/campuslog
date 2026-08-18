@@ -10,6 +10,10 @@ const dashboardSource = await readFile(
   new URL("./ExperienceDashboard.tsx", import.meta.url),
   "utf8",
 );
+const trackedDetailSource = await readFile(
+  new URL("./DashboardTrackedActivityDetail.tsx", import.meta.url),
+  "utf8",
+);
 const globalCssSource = await readFile(
   new URL("../../app/globals.css", import.meta.url),
   "utf8",
@@ -60,6 +64,56 @@ test("나의 활동 목록과 상세는 서로 다른 Liquid Glass 계층을 사
     /dashboard-experience-list-pane liquid-workspace/,
   );
   assert.match(detailSource, /dashboard-experience-detail liquid-section/);
+});
+
+test("상세는 현재 우측 슬롯에서 퇴장한 뒤 선택을 해제한다", () => {
+  assert.match(
+    dashboardSource,
+    /const \[isDetailClosing, setIsDetailClosing\] = useState\(false\)/,
+  );
+  assert.match(
+    dashboardSource,
+    /const handleCloseDetail = useCallback\(\(\) => \{[\s\S]*?setIsDetailClosing\(true\);/,
+  );
+  assert.match(
+    dashboardSource,
+    /animate=\{[\s\S]*?isDetailClosing[\s\S]*?opacity: 0, x: 48[\s\S]*?opacity: 1, x: 0/,
+  );
+  assert.match(
+    dashboardSource,
+    /duration: shouldReduceMotion \? 0\.1 : 0\.2/,
+  );
+  assert.match(
+    dashboardSource,
+    /const handleDetailCloseAnimationComplete = useCallback\(\(\) => \{[\s\S]*?if \(!isDetailClosing\)[\s\S]*?setSelectedItemKey\(null\);[\s\S]*?setIsDetailClosing\(false\)/,
+  );
+  assert.match(
+    dashboardSource,
+    /lastSelectionTriggerRef\.current\.focus\(\{ preventScroll: true \}\)/,
+  );
+  assert.doesNotMatch(
+    dashboardSource,
+    /key=\{selectedItemKey\}\s+layout\s+initial=\{false\}/,
+  );
+  assert.doesNotMatch(
+    detailSource,
+    /<motion\.section\s+layout\s+id=\{DASHBOARD_EXPERIENCE_DETAIL_ID\}/,
+  );
+  assert.doesNotMatch(
+    trackedDetailSource,
+    /<motion\.section\s+layout\s+id=\{DASHBOARD_EXPERIENCE_DETAIL_ID\}/,
+  );
+});
+
+test("활동 기간과 역할은 각각 전체 폭의 독립 행으로 표시한다", () => {
+  assert.match(
+    globalCssSource,
+    /\.dashboard-detail-meta\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)[^}]*gap:\s*0[^}]*padding:\s*0/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-detail-meta\s*>\s*div\s*\{[^}]*border-bottom:\s*1px solid var\(--liquid-divider, #ededeb\)[^}]*padding:\s*24px 0/s,
+  );
 });
 
 test("독립 경험 상세는 상태부터 읽히는 하나의 Liquid Glass 표면을 사용한다", () => {

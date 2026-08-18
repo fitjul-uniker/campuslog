@@ -36,10 +36,11 @@ test("분석 페이지 하단에는 분석 실행 버튼만 유지한다", () =>
   assert.doesNotMatch(source, /AI 기반 활동 추천/);
 });
 
-test("저장된 분석 결과와 재분석 버튼 사이에 24px 여백을 둔다", () => {
-  assert.equal(count(source, "analysis-page-footer-actions-spaced"), 1);
+test("저장된 분석 결과의 재분석 버튼은 결과 표면 내부 footer에 둔다", () => {
+  assert.doesNotMatch(source, /analysis-page-footer-actions-spaced/);
+  assert.match(source, /<AnalysisResult[\s\S]*?footer=\{/);
   assert.match(
     styles,
-    /\.analysis-page-footer-actions-spaced\s*\{[^}]*margin-top:\s*24px;/s,
+    /\.analysis-result-footer\s*\{[^}]*border-top:[^}]*padding-top:\s*22px;/s,
   );
 });

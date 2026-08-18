@@ -27,12 +27,7 @@ export function AITextLoading({
     () => (texts.length > 0 ? texts : ["요청을 처리하고 있어요."]),
     [texts],
   );
-  const textsKey = normalizedTexts.join("\u0000");
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
-
-  useEffect(() => {
-    setCurrentTextIndex(0);
-  }, [textsKey]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -76,7 +71,7 @@ export function AITextLoading({
               opacity: 0,
               y: shouldReduceMotion ? 0 : 20,
             }}
-            key={`${textsKey}-${currentTextIndex}`}
+            key={currentText}
             transition={{
               opacity: { duration: shouldReduceMotion ? 0.01 : 0.3 },
               y: { duration: shouldReduceMotion ? 0.01 : 0.3 },

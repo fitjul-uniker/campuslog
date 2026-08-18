@@ -26,6 +26,17 @@ test("추천 경험은 첫 순위만 기본으로 여는 단일 Accordion을 사
   assert.match(source, /<AccordionContent/);
 });
 
+test("각 추천 경험은 해당 경험 id의 활동으로 직접 이동할 수 있다", () => {
+  assert.match(
+    source,
+    /href=\{`\/experiences\/\$\{match\.experienceId\}`\}[\s\S]*?활동 보기/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\{matchedExperience \? \([\s\S]*?recommendation-match-actions/,
+  );
+});
+
 test("Accordion은 Base UI 접근성 primitive와 회전 화살표를 사용한다", () => {
   assert.match(
     accordionSource,

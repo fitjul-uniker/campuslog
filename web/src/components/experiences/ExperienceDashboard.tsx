@@ -8,6 +8,7 @@ import {
   LayoutGroup,
   MotionConfig,
   motion,
+  useReducedMotion,
 } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -82,6 +83,7 @@ function createTrackedActivityDeleteConfirmMessage(
 
 export function ExperienceDashboard() {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const { tasks: aiTasks } = useAIBackgroundTasks();
   const experiencePins = usePinnedItems("experience");
   const [experiences, setExperiences] = useState<Experience[] | null>(null);
@@ -98,6 +100,7 @@ export function ExperienceDashboard() {
   const [analysisErrorByExperienceId, setAnalysisErrorByExperienceId] =
     useState<Record<string, string>>({});
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
+  const [isDetailClosing, setIsDetailClosing] = useState(false);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const analysisTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -194,6 +197,7 @@ export function ExperienceDashboard() {
     const taskItemKey = `experience:${focusedDashboardAnalysisTask.targetId}`;
 
     if (activityItems.some((item) => item.key === taskItemKey)) {
+      setIsDetailClosing(false);
       setSelectedItemKey(taskItemKey);
     }
   }, [activityItems, focusedDashboardAnalysisTask, selectedItemKey]);
@@ -204,6 +208,7 @@ export function ExperienceDashboard() {
       activityItems &&
       !activityItems.some((item) => item.key === selectedItemKey)
     ) {
+      setIsDetailClosing(false);
       setSelectedItemKey(null);
     }
   }, [activityItems, selectedItemKey]);
@@ -252,6 +257,7 @@ export function ExperienceDashboard() {
       filteredActivityItems &&
       !filteredActivityItems.some((item) => item.key === selectedItemKey)
     ) {
+      setIsDetailClosing(false);
       setSelectedItemKey(null);
     }
   }, [filteredActivityItems, selectedItemKey]);
@@ -306,6 +312,7 @@ export function ExperienceDashboard() {
     lastSelectionTriggerRef.current = trigger;
     setExperienceDeleteError("");
     setIsAnalysisOpen(false);
+    setIsDetailClosing(false);
     setSelectedItemKey(item.key);
 
     if (window.matchMedia("(max-width: 860px)").matches) {
@@ -333,14 +340,23 @@ export function ExperienceDashboard() {
     }
 
     setIsAnalysisOpen(false);
+    setIsDetailClosing(true);
+  }, []);
+
+  const handleDetailCloseAnimationComplete = useCallback(() => {
+    if (!isDetailClosing) {
+      return;
+    }
+
     setSelectedItemKey(null);
+    setIsDetailClosing(false);
 
     window.requestAnimationFrame(() => {
       if (lastSelectionTriggerRef.current?.isConnected) {
-        lastSelectionTriggerRef.current.focus();
+        lastSelectionTriggerRef.current.focus({ preventScroll: true });
       }
     });
-  }, []);
+  }, [isDetailClosing]);
 
   const handleOpenAnalysis = (trigger: HTMLButtonElement) => {
     analysisTriggerRef.current = trigger;
@@ -525,7 +541,10 @@ export function ExperienceDashboard() {
           </p>
         </header>
 
-        <LayoutGroup id="dashboard-experience-layout">
+        {activityItems === null || !experiencePins.isLoaded ? (
+          <LoadingState message="나의 활동을 불러오는 중입니다." />
+        ) : (
+          <LayoutGroup id="dashboard-experience-layout">
           <motion.div
             layout
             className="dashboard-experience-workspace"
@@ -539,8 +558,7 @@ export function ExperienceDashboard() {
               aria-labelledby="dashboard-experience-list-heading"
               transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
             >
-              {activityItems !== null ? (
-                <header className="dashboard-experience-section-heading">
+              <header className="dashboard-experience-section-heading">
                   <div className="dashboard-experience-heading-row">
                     <div className="dashboard-experience-title-group">
                       <h2 id="dashboard-experience-list-heading">전체 활동</h2>
@@ -577,14 +595,7 @@ export function ExperienceDashboard() {
                       {filteredActivityItems.length}개의 활동을 찾았습니다.
                     </p>
                   ) : null}
-                </header>
-              ) : null}
-
-              {activityItems === null ? (
-                <h2 id="dashboard-experience-list-heading" className="sr-only">
-                  전체 활동
-                </h2>
-              ) : null}
+              </header>
 
               {experiencePins.error ? (
                 <div className="pinned-list-error" role="alert">
@@ -606,12 +617,6 @@ export function ExperienceDashboard() {
                     <RippleButtonRipples />
                   </RippleButton>
                 </div>
-              ) : activityItems === null ? (
-                <LoadingState
-                  variant="list"
-                  count={6}
-                  message="나의 활동을 불러오는 중입니다."
-                />
               ) : activityItems.length === 0 ? (
                 <div className="dashboard-list-state is-empty">
                   <span className="dashboard-empty-mark" aria-hidden="true">
@@ -642,14 +647,24 @@ export function ExperienceDashboard() {
               )}
             </motion.section>
 
-            <AnimatePresence initial={false} mode="wait">
-              {selectedExperience || selectedTrackedActivity ? (
-                <motion.div
-                  key={selectedItemKey}
-                  layout
-                  className="dashboard-experience-detail-slot"
-                  transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
-                >
+            {selectedExperience || selectedTrackedActivity ? (
+              <motion.div
+                key={selectedItemKey}
+                initial={false}
+                animate={
+                  isDetailClosing
+                    ? shouldReduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, x: 48 }
+                    : { opacity: 1, x: 0 }
+                }
+                className="dashboard-experience-detail-slot"
+                transition={{
+                  duration: shouldReduceMotion ? 0.1 : 0.2,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                onAnimationComplete={handleDetailCloseAnimationComplete}
+              >
                   {selectedExperience ? (
                     <DashboardExperienceDetail
                       experience={selectedExperience}
@@ -685,9 +700,8 @@ export function ExperienceDashboard() {
                       onDelete={handleDeleteTrackedActivity}
                     />
                   ) : null}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
+              </motion.div>
+            ) : null}
 
             <AnimatePresence initial={false}>
               {isAnalysisOpen &&
@@ -716,15 +730,18 @@ export function ExperienceDashboard() {
               ) : null}
             </AnimatePresence>
           </motion.div>
-        </LayoutGroup>
+          </LayoutGroup>
+        )}
 
-        <Link
-          href="/experiences/new"
-          className="dashboard-add-experience"
-          aria-label="과거 경험 기록하기"
-        >
-          <Plus aria-hidden="true" />
-        </Link>
+        {activityItems !== null && experiencePins.isLoaded ? (
+          <Link
+            href="/experiences/new"
+            className="dashboard-add-experience"
+            aria-label="과거 경험 기록하기"
+          >
+            <Plus aria-hidden="true" />
+          </Link>
+        ) : null}
       </div>
     </MotionConfig>
   );

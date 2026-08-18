@@ -11,6 +11,7 @@ import {
 
 export function usePinnedItems(type: PinnableItemType) {
   const [pinnedItems, setPinnedItems] = useState<PinnedItemMap>({});
+  const [isLoaded, setIsLoaded] = useState(false);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
   const pinnedItemsRef = useRef(pinnedItems);
@@ -38,6 +39,7 @@ export function usePinnedItems(type: PinnableItemType) {
             pinnedItemsRef.current = storedPins;
             setPinnedItems(storedPins);
             setError("");
+            setIsLoaded(true);
           }
         })
         .catch(() => {
@@ -45,6 +47,7 @@ export function usePinnedItems(type: PinnableItemType) {
             setError(
               "즐겨찾기를 불러오지 못했습니다. 목록은 그대로 사용할 수 있습니다.",
             );
+            setIsLoaded(true);
           }
         });
     };
@@ -122,6 +125,7 @@ export function usePinnedItems(type: PinnableItemType) {
   return {
     pinnedItems,
     pinnedIds,
+    isLoaded,
     pendingIds,
     error,
     clearError: () => setError(""),

@@ -37,7 +37,6 @@ export function DashboardTrackedActivityDetail({
 
   return (
     <motion.section
-      layout
       id={DASHBOARD_EXPERIENCE_DETAIL_ID}
       className="dashboard-experience-detail dashboard-tracked-activity-detail liquid-section"
       aria-labelledby={titleId}

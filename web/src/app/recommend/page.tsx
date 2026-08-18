@@ -347,7 +347,6 @@ export default function RecommendPage() {
         <RecommendationPageHeader />
 
         <LoadingState
-          variant="form"
           message="AI 기반 활동 추천을 불러오는 중입니다."
         />
       </div>

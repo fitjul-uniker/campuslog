@@ -72,6 +72,10 @@ test("관련 링크의 열 제목은 첫 행에만 보이고 추가 행은 입�
     styles,
     /\.experience-form\.liquid-form[\s\S]*?\.related-link-row\s*\{[^}]*border:\s*0[^}]*padding:\s*0/,
   );
+  assert.match(
+    styles,
+    /\.related-link-url-field\s*>\s*label\s*\{[^}]*margin-left:\s*-46px/,
+  );
 });
 
 test("역할 입력은 다른 단문 입력보다 여유 있는 높이를 사용한다", () => {
@@ -132,6 +136,11 @@ test("AI 분석 결과는 추천 기록과 같은 kicker·생성일·대표 제�
     styles,
     /\.dashboard-analysis-split-panel\.liquid-section\s*\{[^}]*background:\s*var\(--liquid-frosted-fill\)/s,
   );
+});
+
+test("독립 분석 결과는 후속 액션을 같은 결과 표면 안에 넣을 수 있다", () => {
+  assert.match(resultSource, /footer\?: ReactNode/);
+  assert.match(resultSource, /analysis-result-footer/);
 });
 
 test("첨부 목록은 상세 내부에서 안정적인 content plate로 읽힌다", () => {

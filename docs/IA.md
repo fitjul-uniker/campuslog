@@ -101,7 +101,7 @@ CampusLog
 CampusLog AI (`/recommend`)
 ├── AI 기반 활동 추천
 └── 추천 기록 (`/recommend/history`)
-    └── 추천에 사용된 완료 경험 → `/experiences/[id]`
+    └── Top 3 각 추천 경험의 `활동 보기` → `/experiences/[id]`
 ```
 
 ## 2차 MVP 인증 보호 정책

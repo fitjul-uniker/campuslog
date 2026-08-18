@@ -36,6 +36,8 @@ test("기존 AI 처리 패널 안에서만 백그라운드 전환을 secondary a
   assert.match(source, /ai-processing-background-choice/);
   assert.match(source, /다른 작업 하러 가기/);
   assert.match(source, /onClick=\{onBackground\}/);
+  assert.doesNotMatch(source, /완료될 때까지 다른 기록을 작성하거나/);
+  assert.doesNotMatch(source, /backgroundHint/);
   assert.match(styles, /\.ai-processing-background-choice/);
 });
 

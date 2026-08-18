@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ChevronRight,
-  ExternalLink,
   FileText,
   Loader2,
   ScanText,
@@ -1042,27 +1041,16 @@ export function RecommendationResult({
           </div>
           <h2 id="recommendation-title">{resultTitle}</h2>
         </div>
-        {experience || onClose ? (
+        {onClose ? (
           <div className="recommendation-result-header-actions">
-            {experience ? (
-              <Link
-                href={`/experiences/${experience.id}`}
-                className="button button-secondary"
-              >
-                <ExternalLink className="button-icon" aria-hidden="true" />
-                활동
-              </Link>
-            ) : null}
-            {onClose ? (
-              <button
-                className="dashboard-detail-close"
-                type="button"
-                onClick={onClose}
-                aria-label="추천 기록 상세 닫기"
-              >
-                <X aria-hidden="true" />
-              </button>
-            ) : null}
+            <button
+              className="dashboard-detail-close"
+              type="button"
+              onClick={onClose}
+              aria-label="추천 기록 상세 닫기"
+            >
+              <X aria-hidden="true" />
+            </button>
           </div>
         ) : null}
       </div>
@@ -1404,24 +1392,22 @@ export function RecommendationResult({
                       <p>{match.suggestedAngle}</p>
                     </div>
 
-                    {matchedExperience ? (
-                      <div className="recommendation-match-actions">
+                    <div className="recommendation-match-actions">
+                      <Link
+                        href={`/experiences/${match.experienceId}`}
+                        className="recommendation-match-link"
+                      >
+                        활동 보기
+                      </Link>
+                      {hasFollowupSignal ? (
                         <Link
-                          href={`/experiences/${matchedExperience.id}`}
+                          href={`/experiences/${match.experienceId}/analysis`}
                           className="recommendation-match-link"
                         >
-                          활동 보기
+                          분석 보완하기
                         </Link>
-                        {hasFollowupSignal ? (
-                          <Link
-                            href={`/experiences/${matchedExperience.id}/analysis`}
-                            className="recommendation-match-link"
-                          >
-                            분석 보완하기
-                          </Link>
-                        ) : null}
-                      </div>
-                    ) : null}
+                      ) : null}
+                    </div>
 
                     {activeStreamingDraft ? (
                       <AnswerDraftStreamingPanel

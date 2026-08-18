@@ -649,7 +649,6 @@ export function TodayDashboard() {
         <TodayDashboardBreadcrumb />
         <TodayDashboardHeader today={today} />
         <LoadingState
-          variant="dashboard"
           message="오늘의 기록을 불러오는 중입니다."
         />
       </div>

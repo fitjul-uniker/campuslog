@@ -132,7 +132,6 @@ export function DashboardExperienceDetail({
 
   return (
     <motion.section
-      layout
       id={DASHBOARD_EXPERIENCE_DETAIL_ID}
       className={`dashboard-experience-detail liquid-section${isFullscreen ? " is-fullscreen" : ""}`}
       data-transient-scrollbar="true"

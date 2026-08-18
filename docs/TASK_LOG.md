@@ -30,6 +30,123 @@
 
 ## 작업 로그
 
+### 2026-08-18 - 독립 AI 분석 재분석 액션 내부 통합
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-18 |
+| 작업자 | Codex |
+| 작업 요약 | 결과 카드 밖의 `다시 분석하기`를 흰 분석 결과 표면 내부 footer로 이동 |
+| 수정한 파일 | `AnalysisResult.tsx`, `ExperienceAnalysisClient.tsx`, `globals.css`, 관련 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | 공용 분석 결과에 optional footer slot을 추가하고 독립 화면의 재분석 버튼과 실행 오류를 마지막 키워드 구획 아래 hairline으로 분리해 같은 표면 안에 배치. 임베디드 결과에는 footer를 전달하지 않아 기존 구조 유지 |
+| 검증한 내용 | 관련 구조 테스트 11개, lint, typecheck, `git diff --check`, 지정 분석 화면에서 버튼이 `.analysis-result-footer`와 `.analysis-result` 내부에 있으며 카드 하단 39px 여백을 갖는지 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: place reanalysis action inside result panel` |
+
+### 2026-08-18 - 비교용 페이지 로딩 탭 제거
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-18 |
+| 작업자 | Codex |
+| 작업 요약 | 세 페이지의 비교용 시각적 로딩 탭을 제거하고 헤더 뒤 본문이 바로 나타나는 전환으로 복귀 |
+| 수정한 파일 | `LoadingState.tsx`, 세 페이지 연결 코드, `globals.css`, 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | dashboard·list·form skeleton, 상단 진행광, breathing, 반응형 loading panel 스타일을 모두 제거하고 화면에 보이지 않는 `aria-live`·`aria-busy` 안내만 유지 |
+| 검증한 내용 | 로딩 구조 테스트, lint, typecheck, `git diff --check`, 로그인 브라우저에서 로딩 패널이 나타나지 않는지 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `revert: remove visual page loading tabs` |
+
+### 2026-08-18 - 페이지별 목적지 맞춤 로딩 탭 비교 실험
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-18 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록·나의 활동·CampusLog AI 이동 시 최종 화면 구조와 크기를 유지하는 로딩 탭을 비교용으로 구현 |
+| 수정한 파일 | `LoadingState.tsx`, 세 페이지 연결 코드, `globals.css`, 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | 대시보드·목록·폼 variant를 공용화하고 실제 텍스트를 흉내 내지 않는 구조 블록, 낮은 대비 breathing, 상단 2px 진행광을 적용. 데스크톱·모바일 열 전환과 reduced motion·접근성 상태 유지 |
+| 검증한 내용 | 세 variant 구조 테스트, lint, typecheck, `git diff --check`, 로그인 브라우저에서 세 경로의 초기 로딩 프레임 캡처 및 최종 레이아웃 폭 비교 |
+| 남은 작업 | 사용자 확인 결과 채택하지 않았으며 후속 `ISSUE-155`에서 관련 코드와 스타일을 모두 제거함 |
+| 관련 커밋 메시지 | 최종 미유지로 별도 커밋하지 않음 |
+
+### 2026-08-18 - 추천 경험별 활동 이동과 관련 링크 라벨 정렬
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-18 |
+| 작업자 | Codex |
+| 작업 요약 | AI 처리 화면의 불필요한 설명을 제거하고 추천 Top 3별 원본 활동 이동 및 경험 수정 폼의 `URL` 라벨 정렬 개선 |
+| 수정한 파일 | `AIProcessingPanel.tsx`, `RecommendationResult.tsx`, `globals.css`, 관련 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/IA.md`, 작업 기록 문서 |
+| 변경 내용 | `다른 작업 하러 가기` 위 설명 문장을 제거하고, 결과 헤더의 첫 경험 전용 `활동` 링크를 없앤 뒤 각 추천 경험의 `experienceId`로 연결되는 `활동 보기`를 항상 표시. 링크 입력은 유지하면서 `URL` 제목만 폼 왼쪽 기준선으로 이동 |
+| 검증한 내용 | 관련 구조 테스트 28개, lint, typecheck, `git diff --check`, 로그인 브라우저 화면 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: clarify recommendation activity actions` |
+
+### 2026-08-18 - AI 처리 시작 문구 중복 전환 제거
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-18 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 분석 시작 직후 같은 AI 처리 문장이 두 번 전환되는 현상 수정 |
+| 수정한 파일 | `web/src/components/ui/AITextLoading.tsx`, 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | 서버 상태 문구로 `texts`가 갱신될 때 현재 인덱스를 0으로 초기화하던 effect를 제거하고 현재 표시 문구를 Motion key로 사용해 첫 문장의 중복 재진입을 방지 |
+| 검증한 내용 | AI Text Loading·AI Processing Panel 구조 테스트, lint, typecheck, `git diff --check` |
+| 남은 작업 | 실제 AI 호출은 사용자 요청 비용을 추가로 발생시키지 않도록 수행하지 않음 |
+| 관련 커밋 메시지 | `fix: preserve AI loading text rotation` |
+
+### 2026-08-18 - 나의 활동 구획 제목 모션 보정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-18 |
+| 작업자 | Codex |
+| 작업 요약 | 목록 크기 전환 중 `즐겨찾기`·`모든 활동` 글자가 늘거나 눌리는 현상 수정 |
+| 수정한 파일 | `web/src/components/experiences/AnimatedExperienceList.tsx`, `web/src/components/pinned-list.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | 두 구획 제목의 Motion layout을 전체 크기 보간에서 `layout="position"`으로 변경해 위치 이동은 유지하고 텍스트 scale 변형을 제거 |
+| 검증한 내용 | 즐겨찾기 구조 테스트, lint, typecheck, `git diff --check`, 로그인 `/experiences` 목록 폭 전환 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: stabilize experience section heading motion` |
+
+### 2026-08-18 - 나의 활동 상세 우측 퇴장 순서 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-18 |
+| 작업자 | Codex |
+| 작업 요약 | 우측 상세 패널 자체가 닫을 때 좌측 하단으로 이동하는 문제 수정 |
+| 수정한 파일 | `web/src/components/experiences/ExperienceDashboard.tsx`, 상세 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | 닫기 클릭 시 선택을 즉시 해제하지 않고 `isDetailClosing` 상태에서 현재 우측 슬롯 전체를 0.2초 동안 오른쪽으로 fade-out. 바깥 슬롯뿐 아니라 사용자가 실제로 보는 `section#dashboard-experience-detail`의 중첩 layout 투영도 제거하고 퇴장 완료 뒤에만 선택을 해제해 목록을 확장. 원래 목록 항목 초점은 `preventScroll`로 복귀해 Y축 화면 이동 방지 |
+| 검증한 내용 | 구조 테스트, lint, typecheck, `git diff --check`, 로그인 `/experiences`의 지정 완료 경험에서 열기·닫기 위치 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: close experience detail toward the right` |
+
+### 2026-08-16 - 주요 화면 첫 로딩 상태 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-16 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록·나의 활동·CampusLog AI의 첫 로딩에서 시각적 placeholder를 모두 제거 |
+| 수정한 파일 | `web/src/components/common/LoadingState.tsx`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/experiences/ExperienceDashboard.tsx`, `web/src/app/recommend/page.tsx`, `web/src/app/globals.css`, 로딩 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | 세 화면은 skeleton, 빈 패널, 외곽선, 배경, 그림자, blur를 포함한 시각적 로딩 UI를 전부 렌더링하지 않음. 앱 셸과 Breadcrumb·H1·설명·헤더 액션만 최종 위치에 유지하고 본문 패널은 데이터 준비 뒤 처음 표시. 후속 재현에서 나의 활동 일렁임은 목록보다 늦게 로드된 즐겨찾기가 `motion layout` 재배치를 유발한 것으로 확인해 목록과 즐겨찾기가 모두 준비된 뒤 올바른 순서의 패널을 한 번만 렌더링하도록 수정. 로딩 상태는 화면에 보이지 않는 공용 `aria-live`·`aria-busy` 안내로만 유지 |
+| 검증한 내용 | 관련 구조 테스트 7개, lint, typecheck, `git diff --check` 통과. 구조 테스트에서 로딩 중 `product-loading-*` 시각 요소와 나의 활동 목록 패널이 렌더링되지 않음을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: simplify primary page loading surfaces` |
+
+### 2026-08-15 - 나의 활동 상세 메타 행 분리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-15 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 상세의 활동 기간과 역할을 병렬 메타 영역에서 각각 독립된 전체 폭 행으로 분리 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, `docs/SCREEN_SPEC.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 공용 상세 메타 grid를 한 열로 고정하고 각 항목에 본문 섹션과 같은 hairline·세로 여백을 적용. 독립 상세와 작은 화면의 여백도 같은 행 구조로 정리 |
+| 검증한 내용 | 관련 구조 테스트, lint, 인앱 브라우저 반응형 레이아웃·가로 overflow·console error 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: separate experience metadata rows` |
+
 ### 2026-08-12 - AI 모델 Hybrid 적용
 
 | 항목 | 내용 |

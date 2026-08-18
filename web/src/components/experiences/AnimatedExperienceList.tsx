@@ -186,7 +186,7 @@ export function AnimatedExperienceList({
             <AnimatePresence initial={false} mode="popLayout">
               {pinnedActivityItems.length > 0 ? (
                 <motion.li
-                  layout
+                  layout="position"
                   key="experience-pinned-heading"
                   className="pinned-list-section-heading"
                   initial={{ opacity: 0, height: 0 }}
@@ -200,7 +200,7 @@ export function AnimatedExperienceList({
               {pinnedActivityItems.length > 0 &&
               remainingItems.length > 0 ? (
                 <motion.li
-                  layout
+                  layout="position"
                   key="experience-all-heading"
                   className="pinned-list-section-heading is-all"
                   initial={{ opacity: 0, height: 0 }}
