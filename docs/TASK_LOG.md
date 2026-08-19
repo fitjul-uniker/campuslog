@@ -30,6 +30,70 @@
 
 ## 작업 로그
 
+### 2026-08-20 - 나의 활동 UI 변경 문서 정합성 확인
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-20 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 목록 폭·master-detail 모션·스크롤바 위계·우측 상세 모서리 수정 기록을 현재 코드와 다시 대조 |
+| 확인한 문서 | `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/WORK_STATUS.md` |
+| 변경 내용 | 실제 구현된 `ISSUE-157`~`ISSUE-160`만 Track B 완료 항목과 현재 진행 상태에 유지. 개발 서버 재시작은 제품 기능이나 진행 상태 변경이 아니므로 완료 이슈로 추가하지 않음 |
+| 검증한 내용 | 관련 코드 diff와 문서의 수정 범위·수치·검증 기록을 대조하고 `git diff --check`로 문서 형식을 확인 |
+| 남은 작업 | commit·push·PR은 사용자 승인 전까지 진행하지 않음 |
+
+### 2026-08-19 - 나의 활동 스크롤바 모서리 침범 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-19 |
+| 작업자 | Codex |
+| 작업 요약 | 우측 활동 상세 스크롤 thumb가 상단·하단 둥근 모서리 영역을 넘어가는 문제 수정 |
+| 수정한 파일 | `DashboardExperienceDetail.tsx`, `globals.css`, 스크롤바 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | Chromium이 WebKit track 여백을 thumb 이동 범위에 반영하지 않는 동작을 확인해 둥근 외곽 상세 표면과 실제 스크롤 viewport를 분리. viewport를 위아래 30px 안쪽에 배치해 thumb 전체가 반응형 24~28px 곡률 아래에서만 이동하도록 하고 기존 3px·30% 인셋 표현과 stable gutter 유지 |
+| 검증한 내용 | 관련 스크롤바 테스트, `git diff --check`, 로그인 Chromium에서 외곽 상세 `overflow: hidden`, 내부 viewport 시작점이 외곽보다 31px 아래인지와 스크롤 중 thumb 전체가 모서리 아래에서 시작하는지 확인. 가로 overflow 0 유지 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: inset detail scrollbar from corners` |
+
+### 2026-08-19 - 나의 활동 스크롤바 위계 고도화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-19 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 상세 스크롤 중 강하게 보이던 막대를 얇고 조용한 인셋형 스크롤 표시로 고도화 |
+| 수정한 파일 | `globals.css`, `transient-scrollbar-controller.ts`, 관련 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | 페이지는 8px 채널 안의 2px·24%, 목록·상세·분석은 10px 채널 안쪽의 3px·30% 캡슐로 분리. 표시된 thumb만 hover 44%·drag 56%로 강화하고 숨김 지연을 900ms에서 650ms, WebKit 색 전환을 280ms에서 180ms로 단축. 안정적인 gutter·reduced motion·forced colors 계약 유지 |
+| 검증한 내용 | 관련 스크롤바·상세 구조 테스트 13개, lint, typecheck, `git diff --check` 통과. 로그인 브라우저에서 상세 스크롤 중 30% thumb, 650ms 뒤 완전 투명, 390×844 목록·상세 347px와 가로 overflow 0 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: refine activity scrollbar hierarchy` |
+
+### 2026-08-19 - 나의 활동 master-detail 전환 고도화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-19 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 선택 시 목록이 좌측으로 정돈되고 상세가 이어서 진입하는 자연스러운 master-detail 모션 적용 |
+| 수정한 파일 | `ExperienceDashboard.tsx`, `globals.css`, 관련 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, 작업 기록 문서 |
+| 변경 내용 | transform layout 투영 대신 목록의 실제 `flex-basis`와 패널 간격을 0.42초 동안 보간해 텍스트 왜곡을 제거. 상세는 0.08초 뒤 오른쪽 32px에서 0.34초 동안 진입하도록 순서를 분리하고 모바일은 기존 세로 배치, reduced motion은 폭·위치 이동 없이 짧은 fade만 유지 |
+| 검증한 내용 | 관련 구조 테스트, lint, typecheck, `git diff --check` 통과. 로그인 브라우저 데스크톱에서 0.42초 transition 적용값·최종 목록 360px·가로 overflow 0을 확인하고 390×844에서 목록·상세 347px 세로 배치와 overflow 0 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: refine activity master detail motion` |
+
+### 2026-08-19 - 나의 활동 기본 목록 폭 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-19 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동의 기본 목록 패널을 오늘의 기록·추천 입력과 같은 공통 콘텐츠 폭으로 확장 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, 작업 기록 문서 |
+| 변경 내용 | 상세를 열기 전 나의 활동 workspace의 560px 제한과 중간 화면 520px 제한을 제거해 공통 레일 전체를 사용하도록 변경. 활동을 선택한 뒤에는 기존 목록·상세 2열 구조를 유지 |
+| 검증한 내용 | 관련 구조 테스트 7개와 전체 lint 통과. 로그인 브라우저 1280px에서 오늘의 기록·나의 활동·추천 입력의 주요 패널 폭이 모두 923px인지 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align my activities workspace width` |
+
 ### 2026-08-18 - 독립 AI 분석 재분석 액션 내부 통합
 
 | 항목 | 내용 |

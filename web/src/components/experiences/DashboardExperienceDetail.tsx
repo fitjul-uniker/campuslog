@@ -59,7 +59,7 @@ export function DashboardExperienceDetail({
   analysisStatusMessage = "",
 }: DashboardExperienceDetailProps) {
   const shouldReduceMotion = useReducedMotion();
-  const handleTransientScroll = useTransientScrollbar<HTMLElement>();
+  const handleTransientScroll = useTransientScrollbar<HTMLDivElement>();
   const titleId = `${DASHBOARD_EXPERIENCE_DETAIL_ID}-title`;
   const isFullscreen = variant === "fullscreen";
   const needsFreshAnalysis = Boolean(
@@ -134,10 +134,8 @@ export function DashboardExperienceDetail({
     <motion.section
       id={DASHBOARD_EXPERIENCE_DETAIL_ID}
       className={`dashboard-experience-detail liquid-section${isFullscreen ? " is-fullscreen" : ""}`}
-      data-transient-scrollbar="true"
       aria-labelledby={titleId}
       role={isFullscreen ? undefined : "complementary"}
-      onScroll={handleTransientScroll}
       initial={
         isFullscreen || shouldReduceMotion
           ? false
@@ -152,6 +150,11 @@ export function DashboardExperienceDetail({
         ease: [0.22, 1, 0.36, 1],
       }}
     >
+      <div
+        className="dashboard-experience-detail-scroll"
+        data-transient-scrollbar="true"
+        onScroll={handleTransientScroll}
+      >
       <div className="dashboard-detail-header">
         <div>
           <div className="dashboard-detail-status">
@@ -375,6 +378,7 @@ export function DashboardExperienceDetail({
             {analysisAction}
           </>
         )}
+      </div>
       </div>
     </motion.section>
   );

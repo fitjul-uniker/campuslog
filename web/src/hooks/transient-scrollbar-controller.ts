@@ -1,4 +1,4 @@
-export const TRANSIENT_SCROLLBAR_HIDE_DELAY_MS = 900;
+export const TRANSIENT_SCROLLBAR_HIDE_DELAY_MS = 650;
 
 type TransientScrollbarTarget = Pick<HTMLElement, "dataset">;
 
