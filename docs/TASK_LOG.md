@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-20 - 반복 가능한 테스트·QA 기록 체계 구축 및 로그인 오류 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-20 |
+| 작업자 | Codex |
+| 작업 요약 | 실제 코드와 실행 기능을 기준으로 `docs/testing/` 테스트 계획·케이스·최신 결과·누적 이력을 만들고 자동화, 비로그인 API, UI preview, 실제 QA 로그인·저장 데이터 재조회, 모바일 검증을 수행 |
+| 수정한 파일 | `docs/testing/TEST_PLAN.md`, `TEST_CASES.md`, `TEST_RESULTS.md`, `TEST_HISTORY.md`, `profile-actions.ts`, `profile-action-state.ts`, `ProfileMenu.tsx`, profile action 구조 테스트, 작업 기록 문서 |
+| 변경 내용 | 35개 TC와 상태 기준을 정의하고 미구현·미실행을 PASS와 분리. 잘못된 로그인에서 `use server` 모듈의 객체 export로 runtime overlay가 나타나는 오류를 재현해 상태 객체를 별도 모듈로 분리하고 회귀 테스트 추가 |
+| 검증한 내용 | Node 182개 PASS, lint·typecheck·production build PASS, 비로그인 AI API 5종 401, QA 로그인·로그아웃·세션 복구, 2계정 RLS, OpenAI 추천 1회 HTTP 200·Top 3·기록 24→25, 실제 경험·링크·private PDF·활동·날짜별 기록 저장·수정·개별 삭제와 재조회, 390px 실데이터 5개 화면 overflow 0. 빈 QA 계정의 합성 데이터는 기록 2→1 관계 보존, PDF 1→0 원문·미분석 보존을 확인한 뒤 활동·기록·경험·첨부·추천 기록 모두 0개로 정리 |
+| 남은 작업 | 비용 제한으로 실제 AI 분석·취소·답변 초안과 로그인 rate/본문 guard 4개 TC는 `NOT_RUN` 유지. 다음 우선순위는 추가 토큰이 들지 않는 로그인 입력 guard(`TC-028`) |
+| 관련 커밋 메시지 | `test: add QA regression system and fix login action exports` |
+
 ### 2026-08-20 - 나의 활동 UI 변경 문서 정합성 확인
 
 | 항목 | 내용 |

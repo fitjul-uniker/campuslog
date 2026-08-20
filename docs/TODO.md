@@ -23,6 +23,7 @@
 
 진행 메모:
 
+- 2026-08-20: 실제 구현 기준 `docs/testing/`에 계획·35개 TC·최신 결과·누적 이력을 구축하고 자동화, 인증·RLS, 실제 DB CRUD, private PDF 업로드·개별 삭제, 390px 반응형, OpenAI 자기소개서 추천 1회와 저장·재조회를 검증. 잘못된 로그인에서 Server Action runtime overlay가 노출되던 `ISSUE-161`을 최소 수정하고 회귀 테스트를 추가. 현재 집계는 PASS 28, NOT_RUN 4, NOT_IMPLEMENTED 3이며 실제 AI 분석·실패/취소·답변 초안과 로그인 입력 guard는 후속 검증으로 유지.
 - 2026-08-12: 실제 CampusLog prompt·schema 기반 A/B benchmark 결정에 따라 server-only AI 모델 설정을 추가. `/api/recommend`는 `gpt-4.1-mini`를 유지하고 `/api/analyze`, `/api/answer-drafts`, `/api/evidence-followups`, `/api/synthesize-activity`는 `gpt-5.6-luna`와 `reasoning.effort: "none"`으로 전환. 기존 prompt·schema·timeout·SSE/NDJSON·저장 계약은 유지. 사용자가 로그인 세션에서 기능별 직접 로직 테스트를 완료했으며, 보완 질문·활동 합성의 합성 benchmark 회귀 사례 확장은 후속 작업 (`ISSUE-146`).
 - 2026-08-11: 추천 결과와 추천 기록에서 240자를 넘는 긴 JD를 대표 제목으로 노출하지 않고 짧은 분석 제목과 기본 접힘 `입력한 JD 보기`로 분리. 짧은 자기소개서·면접 질문은 기존 제목을 유지하고, 펼친 원문은 내부 스크롤로 제한. 사용자가 직접 로직 테스트 완료 (`ISSUE-145`).
 - 2026-08-11: 백그라운드 AI 추천 완료 알림의 `결과 보기`를 새 추천 입력 화면이 아니라 저장된 추천 id가 선택된 추천 기록 상세로 직접 연결하고 사용자 직접 로직 테스트 완료 (`ISSUE-144`).
@@ -74,17 +75,22 @@
 - [x] localStorage → 계정 데이터 마이그레이션 정책 문서화 (`ISSUE-025`)
 - [ ] DailyLog write와 AI 합성 상태 무효화를 transaction 또는 멱등 부분 성공 contract로 정리 (`ISSUE-039`)
 - [x] AI API 보호 foundation: `/api/analyze`, `/api/recommend`, `/api/synthesize-activity` 서버 세션 확인, 401 JSON 오류, 입력 상한, timeout, runtime-local rate guard 적용 (`ISSUE-024`)
+- [x] 실제 구현 기준 반복 가능한 QA 문서·35개 TC·최신 결과·실패/수정 이력 구축, 핵심 인증·RLS·CRUD·반응형·추천 1회 회귀 검증
+- [ ] 로그인 AI API의 malformed JSON·본문/입력 상한·최소 근거·runtime-local rate guard를 OpenAI 호출 전에 차단하는 통합 검증 (`TC-028`)
 - [x] 공유 테스트 계정 안정화 foundation: 현재 세션만 로그아웃, 세션 만료 감지, 분석 전 최신 경험 재조회, 분석 결과 atomic upsert, 경험 동시 수정 감지 구현 (`ISSUE-134`)
 - [x] 동일 테스트 계정 동시 작업과 세션 독립 유지 직접 로직 테스트 (`ISSUE-134`)
 - [ ] AI API 운영 hardening: durable rate limit, 중복 요청 멱등성, OpenAI project spend limit / alert 적용 (`ISSUE-024`)
 - [x] AI 추천 입력 선별·압축으로 경험 수 증가 시 `/api/recommend` 본문 상한 초과를 방지 (`ISSUE-084`)
-- [ ] 완료 경험 사진·PDF 첨부 코드 구현 완료, Supabase migration 적용과 로그인 업로드·조회·삭제 smoke test 수행 (`ISSUE-095`)
+- [x] 완료 경험 사진·PDF 첨부의 실제 로그인 private PDF 업로드·signed 조회·개별 삭제와 경험 원문·분석 상태 보존 smoke test 수행 (`ISSUE-095`)
 - [x] AI 경험 분석 v2.1: STAR, 주요 성과, 부족 정보 답변, 키워드 중심으로 화면·신규 분석 출력 간소화 (`ISSUE-078`)
+- [ ] 실제 로그인 경험 1건의 AI 분석 결과 구조·DB 저장·새로고침 재조회 검증 (`TC-022`)
 - [x] 200자를 넘는 상세 역할 기록의 AI 입력 상한을 1,000자로 통일하고 실제 로그인 경험 분석·Supabase 저장 smoke test 완료 (`ISSUE-135`)
 - [x] 추천 v2: 문항 / JD 요구사항 추출, 경험 Top 3 매칭, 부족 근거와 과장 위험 표시 (`ISSUE-031`)
 - [x] Supabase project에 추천 목적 `jd`, `recommendations.jd_analysis`, 새 answer draft type constraint migration 적용 (`ISSUE-060`, `ISSUE-079`)
 - [ ] 로그인 세션에서 JD 추천 저장·재조회 smoke test (`ISSUE-060`, `ISSUE-079`)
 - [x] 목적별 답변 생성: 자기소개서 300자 / 500자 / 1000자와 100~2000자 직접 입력, 면접 30초 / 1분 이상 / 예상 꼬리 질문, JD 지원 전략, 기타 맞춤 결과 contract와 UI 구현 (`ISSUE-031`, `ISSUE-079`, `ISSUE-142`)
+- [ ] 대표 자기소개서 분량 1건의 답변 초안 생성 구조·저장·재조회 검증 (`TC-027`)
+- [ ] AI 실패·취소 시 원본·마지막 유효 결과 보존을 live 장애 없이 mock/fault injection으로 검증 (`TC-023`)
 - [x] 기록 보완 루프 UX 개편: 부족 정보 카드 안에서 바로 답변 저장, 질문 생성 단계 제거, 추천 즉시 반영 (`ISSUE-078`)
 
 ### Medium

@@ -14,16 +14,8 @@ import {
   isValidNickname,
   normalizeProfileText,
 } from "@/lib/auth/profile";
+import type { NicknameUpdateState } from "@/lib/auth/profile-action-state";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-export type NicknameUpdateState =
-  | { status: "idle" }
-  | { status: "success"; nickname: string }
-  | { status: "error"; message: string; nickname: string };
-
-export const initialNicknameUpdateState: NicknameUpdateState = {
-  status: "idle",
-};
 
 export async function updateNicknameAction(
   previousState: NicknameUpdateState,

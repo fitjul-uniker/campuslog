@@ -18,10 +18,8 @@ import {
   useAccountProfile,
 } from "@/hooks/use-account-profile";
 import { signOutAction } from "@/lib/auth/actions";
-import {
-  initialNicknameUpdateState,
-  updateNicknameAction,
-} from "@/lib/auth/profile-actions";
+import { initialNicknameUpdateState } from "@/lib/auth/profile-action-state";
+import { updateNicknameAction } from "@/lib/auth/profile-actions";
 import { AUTH_NICKNAME_MAX_LENGTH } from "@/lib/auth/profile";
 import { cn } from "@/lib/utils";
 

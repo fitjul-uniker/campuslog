@@ -120,7 +120,7 @@ test("authenticated routes reserve one root scrollbar width", async () => {
   );
   assert.match(
     styles,
-    /html:has\(\.product-shell\[data-liquid-glass="true"\]\)::\-webkit-scrollbar\s*\{[^}]*width:\s*10px/is,
+    /html:has\(\.product-shell\[data-liquid-glass="true"\]\)::\-webkit-scrollbar\s*\{[^}]*width:\s*8px/is,
   );
   assert.doesNotMatch(
     styles,
