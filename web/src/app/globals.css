@@ -3935,16 +3935,17 @@ h2 {
 
 html:has(.product-shell[data-liquid-glass="true"]) {
   --page-scrollbar-thumb: transparent;
+  scrollbar-gutter: stable;
   scrollbar-color: var(--page-scrollbar-thumb) transparent;
   scrollbar-width: thin;
 }
 
 html:has(.product-shell[data-liquid-glass="true"])[data-scrolling="true"] {
-  --page-scrollbar-thumb: rgb(101 105 112 / 44%);
+  --page-scrollbar-thumb: rgb(82 87 96 / 24%);
 }
 
 html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-track {
@@ -3957,31 +3958,50 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: var(--page-scrollbar-thumb);
   background-clip: padding-box;
-  transition: background-color 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: background-color 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html:has(.product-shell[data-liquid-glass="true"])[data-scrolling="true"]::-webkit-scrollbar-thumb:hover {
+  background: rgb(82 87 96 / 42%);
+  background-clip: padding-box;
+}
+
+html:has(.product-shell[data-liquid-glass="true"])[data-scrolling="true"]::-webkit-scrollbar-thumb:active {
+  background: rgb(82 87 96 / 54%);
+  background-clip: padding-box;
 }
 
 .dashboard-experience-workspace {
-  display: grid;
+  display: flex;
   width: min(100%, 1120px);
-  grid-template-columns: minmax(0, 560px);
   align-items: start;
   justify-content: center;
-  gap: clamp(28px, 4vw, 56px);
+  column-gap: 0;
+  transition: column-gap 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dashboard-experience-workspace[data-detail-open="true"] {
-  grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);
+  column-gap: clamp(28px, 4vw, 56px);
   justify-content: stretch;
 }
 
 .dashboard-experience-list-pane {
   min-width: 0;
+  flex: 0 0 100%;
   container-name: experience-list-pane;
   container-type: inline-size;
+  transition: flex-basis 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: flex-basis;
+}
+
+.dashboard-experience-workspace[data-detail-open="true"]
+  .dashboard-experience-list-pane {
+  flex-basis: 360px;
 }
 
 .dashboard-experience-detail-slot {
   min-width: 0;
+  flex: 1 1 0;
   container-name: experience-detail-slot;
   container-type: inline-size;
 }
@@ -4060,11 +4080,11 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 .dashboard-animated-list[data-scrolling="true"] {
-  --list-scrollbar-thumb: rgb(101 105 112 / 44%);
+  --list-scrollbar-thumb: rgb(82 87 96 / 30%);
 }
 
 .dashboard-animated-list::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 .dashboard-animated-list::-webkit-scrollbar-track {
@@ -4073,11 +4093,21 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 
 .dashboard-animated-list::-webkit-scrollbar-thumb {
   min-height: 48px;
-  border: 2px solid transparent;
+  border: 3.5px solid transparent;
   border-radius: 999px;
   background: var(--list-scrollbar-thumb);
   background-clip: padding-box;
-  transition: background-color 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: background-color 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dashboard-animated-list[data-scrolling="true"]::-webkit-scrollbar-thumb:hover {
+  background: rgb(82 87 96 / 44%);
+  background-clip: padding-box;
+}
+
+.dashboard-animated-list[data-scrolling="true"]::-webkit-scrollbar-thumb:active {
+  background: rgb(82 87 96 / 56%);
+  background-clip: padding-box;
 }
 
 .dashboard-animated-list ul {
@@ -4305,18 +4335,25 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 .dashboard-experience-detail {
+  --dashboard-detail-inline-padding: clamp(26px, 3vw, 38px);
   position: sticky;
   top: 56px;
   min-width: 0;
   max-height: calc(100vh - 112px);
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid #e5e5e2;
   border-radius: 28px;
   background: #ffffff;
   box-shadow:
     0 24px 64px rgba(24, 24, 22, 0.08),
     0 4px 18px rgba(24, 24, 22, 0.035);
-  padding: clamp(26px, 3vw, 38px);
+  padding: 30px 0;
+}
+
+.dashboard-experience-detail-scroll {
+  max-height: calc(100vh - 172px);
+  overflow: auto;
+  padding: 8px var(--dashboard-detail-inline-padding);
   scrollbar-gutter: stable;
 }
 
@@ -5039,17 +5076,17 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
     padding-left: 24px;
   }
 
-  .dashboard-experience-workspace {
-    grid-template-columns: minmax(0, 520px);
+  .dashboard-experience-workspace[data-detail-open="true"] {
+    column-gap: 24px;
   }
 
-  .dashboard-experience-workspace[data-detail-open="true"] {
-    grid-template-columns: minmax(240px, 300px) minmax(340px, 1fr);
-    gap: 24px;
+  .dashboard-experience-workspace[data-detail-open="true"]
+    .dashboard-experience-list-pane {
+    flex-basis: 300px;
   }
 
   .dashboard-experience-detail {
-    padding: 26px;
+    --dashboard-detail-inline-padding: 26px;
   }
 
 }
@@ -5110,9 +5147,18 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 
   .dashboard-experience-workspace,
   .dashboard-experience-workspace[data-detail-open="true"] {
+    display: grid;
     width: min(100%, 640px);
     grid-template-columns: minmax(0, 1fr);
     gap: 30px;
+    transition: none;
+  }
+
+  .dashboard-experience-list-pane,
+  .dashboard-experience-workspace[data-detail-open="true"]
+    .dashboard-experience-list-pane {
+    flex-basis: auto;
+    transition: none;
   }
 
   .dashboard-experience-heading {
@@ -5136,8 +5182,14 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
     top: auto;
     max-height: none;
     border-radius: 24px;
-    padding: 28px;
+    padding: 0;
     scroll-margin-top: 78px;
+  }
+
+  .dashboard-experience-detail-scroll {
+    max-height: none;
+    overflow: visible;
+    padding: 28px;
   }
 
   .dashboard-add-experience {
@@ -5167,6 +5219,9 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 
   .dashboard-experience-detail {
     border-radius: 20px;
+  }
+
+  .dashboard-experience-detail-scroll {
     padding: 22px 20px;
   }
 
@@ -5207,6 +5262,11 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .dashboard-experience-workspace,
+  .dashboard-experience-list-pane {
+    transition: none;
+  }
+
   .pinned-list-item,
   .pinned-list-section-heading,
   .pinned-list-pin-button,
@@ -6964,6 +7024,13 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   overflow: visible;
 }
 
+.dashboard-experience-detail.is-fullscreen
+  .dashboard-experience-detail-scroll {
+  max-height: none;
+  overflow: visible;
+  padding: var(--dashboard-detail-inline-padding);
+}
+
 /* Dashboard heading with search */
 .dashboard-experience-heading-row {
   align-items: center;
@@ -7082,7 +7149,7 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 :is(
-    .dashboard-experience-detail,
+    .dashboard-experience-detail-scroll,
     .dashboard-analysis-split-panel
   )[data-transient-scrollbar="true"] {
   --transient-scrollbar-thumb: transparent;
@@ -7091,43 +7158,59 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 }
 
 :is(
-    .dashboard-experience-detail,
+    .dashboard-experience-detail-scroll,
     .dashboard-analysis-split-panel
   )[data-transient-scrollbar="true"][data-scrolling="true"] {
-  --transient-scrollbar-thumb: rgb(101 105 112 / 44%);
+  --transient-scrollbar-thumb: rgb(82 87 96 / 30%);
 }
 
 :is(
-    .dashboard-experience-detail,
+    .dashboard-experience-detail-scroll,
     .dashboard-analysis-split-panel
   )[data-transient-scrollbar="true"]::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 :is(
-    .dashboard-experience-detail,
+    .dashboard-experience-detail-scroll,
     .dashboard-analysis-split-panel
   )[data-transient-scrollbar="true"]::-webkit-scrollbar-track {
   background: transparent;
 }
 
 :is(
-    .dashboard-experience-detail,
+    .dashboard-experience-detail-scroll,
     .dashboard-analysis-split-panel
   )[data-transient-scrollbar="true"]::-webkit-scrollbar-thumb {
   min-height: 48px;
-  border: 2px solid transparent;
+  border: 3.5px solid transparent;
   border-radius: 999px;
   background: var(--transient-scrollbar-thumb);
   background-clip: padding-box;
-  transition: background-color 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: background-color 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:is(
+    .dashboard-experience-detail-scroll,
+    .dashboard-analysis-split-panel
+  )[data-transient-scrollbar="true"][data-scrolling="true"]::-webkit-scrollbar-thumb:hover {
+  background: rgb(82 87 96 / 44%);
+  background-clip: padding-box;
+}
+
+:is(
+    .dashboard-experience-detail-scroll,
+    .dashboard-analysis-split-panel
+  )[data-transient-scrollbar="true"][data-scrolling="true"]::-webkit-scrollbar-thumb:active {
+  background: rgb(82 87 96 / 56%);
+  background-clip: padding-box;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb,
   .dashboard-animated-list::-webkit-scrollbar-thumb,
   :is(
-      .dashboard-experience-detail,
+      .dashboard-experience-detail-scroll,
       .dashboard-analysis-split-panel
     )[data-transient-scrollbar="true"]::-webkit-scrollbar-thumb {
     transition-duration: 80ms;
@@ -7138,7 +7221,7 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   html:has(.product-shell[data-liquid-glass="true"]),
   .dashboard-animated-list,
   :is(
-      .dashboard-experience-detail,
+      .dashboard-experience-detail-scroll,
       .dashboard-analysis-split-panel
     )[data-transient-scrollbar="true"] {
     scrollbar-color: auto;
@@ -7147,7 +7230,7 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
   html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb,
   .dashboard-animated-list::-webkit-scrollbar-thumb,
   :is(
-      .dashboard-experience-detail,
+      .dashboard-experience-detail-scroll,
       .dashboard-analysis-split-panel
     )[data-transient-scrollbar="true"]::-webkit-scrollbar-thumb {
     border-color: transparent;
@@ -12145,6 +12228,13 @@ html:has(.product-shell[data-liquid-glass="true"])::-webkit-scrollbar-thumb {
 
   .product-surface .sub-page .dashboard-experience-detail.is-fullscreen {
     border-radius: 24px;
+    padding: 0;
+  }
+
+  .product-surface
+    .sub-page
+    .dashboard-experience-detail.is-fullscreen
+    .dashboard-experience-detail-scroll {
     padding: 24px 20px;
   }
 

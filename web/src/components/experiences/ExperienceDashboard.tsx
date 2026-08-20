@@ -5,7 +5,6 @@ import { AlertCircle, Plus, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   AnimatePresence,
-  LayoutGroup,
   MotionConfig,
   motion,
   useReducedMotion,
@@ -51,11 +50,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAIBackgroundTasks } from "@/components/ai/AIBackgroundTaskProvider";
-
-const DASHBOARD_LAYOUT_TRANSITION = {
-  duration: 0.3,
-  ease: [0.22, 1, 0.36, 1] as const,
-};
 
 function normalizeSearchValue(value: string): string {
   return value.normalize("NFKC").trim().toLocaleLowerCase("ko-KR");
@@ -544,19 +538,14 @@ export function ExperienceDashboard() {
         {activityItems === null || !experiencePins.isLoaded ? (
           <LoadingState message="나의 활동을 불러오는 중입니다." />
         ) : (
-          <LayoutGroup id="dashboard-experience-layout">
-          <motion.div
-            layout
+          <div
             className="dashboard-experience-workspace"
             data-detail-open={hasSelection && !isAnalysisOpen ? "true" : "false"}
             data-analysis-open={isAnalysisOpen ? "true" : "false"}
-            transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
           >
-            <motion.section
-              layout="position"
+            <section
               className="dashboard-experience-list-pane liquid-workspace"
               aria-labelledby="dashboard-experience-list-heading"
-              transition={{ layout: DASHBOARD_LAYOUT_TRANSITION }}
             >
               <header className="dashboard-experience-section-heading">
                   <div className="dashboard-experience-heading-row">
@@ -645,12 +634,14 @@ export function ExperienceDashboard() {
                   onTogglePin={experiencePins.togglePinned}
                 />
               )}
-            </motion.section>
+            </section>
 
             {selectedExperience || selectedTrackedActivity ? (
               <motion.div
                 key={selectedItemKey}
-                initial={false}
+                initial={
+                  shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 32 }
+                }
                 animate={
                   isDetailClosing
                     ? shouldReduceMotion
@@ -659,10 +650,18 @@ export function ExperienceDashboard() {
                     : { opacity: 1, x: 0 }
                 }
                 className="dashboard-experience-detail-slot"
-                transition={{
-                  duration: shouldReduceMotion ? 0.1 : 0.2,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
+                transition={
+                  isDetailClosing
+                    ? {
+                        duration: shouldReduceMotion ? 0.1 : 0.2,
+                        ease: [0.22, 1, 0.36, 1],
+                      }
+                    : {
+                        duration: shouldReduceMotion ? 0.1 : 0.34,
+                        delay: shouldReduceMotion ? 0 : 0.08,
+                        ease: [0.22, 1, 0.36, 1],
+                      }
+                }
                 onAnimationComplete={handleDetailCloseAnimationComplete}
               >
                   {selectedExperience ? (
@@ -729,8 +728,7 @@ export function ExperienceDashboard() {
                 />
               ) : null}
             </AnimatePresence>
-          </motion.div>
-          </LayoutGroup>
+          </div>
         )}
 
         {activityItems !== null && experiencePins.isLoaded ? (

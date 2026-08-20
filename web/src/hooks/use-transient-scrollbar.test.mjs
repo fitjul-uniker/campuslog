@@ -9,7 +9,7 @@ try {
   // RED 상태에서는 아직 production module이 없습니다.
 }
 
-test("스크롤 중 표시 상태를 켜고 마지막 이벤트 900ms 뒤 유휴 상태로 돌아간다", () => {
+test("스크롤 중 표시 상태를 켜고 마지막 이벤트 650ms 뒤 유휴 상태로 돌아간다", () => {
   const createController =
     controllerModule.createTransientScrollbarController;
 
@@ -31,12 +31,12 @@ test("스크롤 중 표시 상태를 켜고 마지막 이벤트 900ms 뒤 유휴
   controller.handleScroll(target);
 
   assert.equal(target.dataset.scrolling, "true");
-  assert.equal(scheduledCallbacks[0].delay, 900);
+  assert.equal(scheduledCallbacks[0].delay, 650);
 
   controller.handleScroll(target);
 
   assert.deepEqual(clearedTimers, [1]);
-  assert.equal(scheduledCallbacks[1].delay, 900);
+  assert.equal(scheduledCallbacks[1].delay, 650);
 
   scheduledCallbacks[1].callback();
 

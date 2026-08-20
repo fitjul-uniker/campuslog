@@ -66,6 +66,44 @@ test("나의 활동 목록과 상세는 서로 다른 Liquid Glass 계층을 사
   assert.match(detailSource, /dashboard-experience-detail liquid-section/);
 });
 
+test("나의 활동 목록은 상세를 열기 전 공통 페이지 폭 전체를 사용한다", () => {
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-list-pane\s*\{[^}]*flex:\s*0 0 100%/s,
+  );
+  assert.doesNotMatch(
+    globalCssSource,
+    /\.dashboard-experience-list-pane\s*\{[^}]*flex-basis:\s*(?:520|560)px/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-workspace\[data-detail-open="true"\][\s\S]*?\.dashboard-experience-list-pane\s*\{[^}]*flex-basis:\s*360px/s,
+  );
+});
+
+test("활동 선택 시 목록 너비와 상세 진입을 순차적으로 전환한다", () => {
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-workspace\s*\{[^}]*transition:\s*column-gap 420ms cubic-bezier\(0\.22, 1, 0\.36, 1\)/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-list-pane\s*\{[^}]*transition:\s*flex-basis 420ms cubic-bezier\(0\.22, 1, 0\.36, 1\)/s,
+  );
+  assert.match(
+    dashboardSource,
+    /initial=\{[\s\S]*?shouldReduceMotion \? \{ opacity: 0 \} : \{ opacity: 0, x: 32 \}/,
+  );
+  assert.match(
+    dashboardSource,
+    /duration: shouldReduceMotion \? 0\.1 : 0\.34,[\s\S]*?delay: shouldReduceMotion \? 0 : 0\.08/,
+  );
+  assert.match(
+    globalCssSource,
+    /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.dashboard-experience-workspace,[\s\S]*?\.dashboard-experience-list-pane\s*\{[^}]*transition:\s*none/s,
+  );
+});
+
 test("상세는 현재 우측 슬롯에서 퇴장한 뒤 선택을 해제한다", () => {
   assert.match(
     dashboardSource,

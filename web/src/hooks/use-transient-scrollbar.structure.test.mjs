@@ -45,6 +45,7 @@ const [hook, appShell, dashboard, list, detail, analysis, styles] = await Promis
 test("상세와 분석 패널이 공용 transient scrollbar 동작을 연결한다", () => {
   assert.match(hook, /useTransientScrollbar/);
   assert.match(detail, /useTransientScrollbar/);
+  assert.match(detail, /className="dashboard-experience-detail-scroll"/);
   assert.match(detail, /data-transient-scrollbar="true"/);
   assert.match(detail, /onScroll=\{handleTransientScroll\}/);
   assert.match(analysis, /useTransientScrollbar/);
@@ -66,10 +67,10 @@ test("페이지와 활동 목록도 스크롤 중에만 표시 상태를 연결�
   assert.match(list, /handleTransientScroll\(event\)/);
 });
 
-test("나의 활동 스크롤바는 트랙 없이 4px 캡슐로 통일한다", () => {
+test("나의 활동 스크롤바는 페이지 2px·패널 3px 인셋 캡슐로 위계를 나눈다", () => {
   assert.match(
     styles,
-    /html:has\(\.product-shell\[data-liquid-glass="true"\]\)::\-webkit-scrollbar\s*\{\s*width:\s*10px/is,
+    /html:has\(\.product-shell\[data-liquid-glass="true"\]\)::\-webkit-scrollbar\s*\{\s*width:\s*8px/is,
   );
   assert.match(
     styles,
@@ -77,15 +78,23 @@ test("나의 활동 스크롤바는 트랙 없이 4px 캡슐로 통일한다", (
   );
   assert.match(
     styles,
-    /\.dashboard-animated-list::\-webkit-scrollbar\s*\{\s*width:\s*8px/is,
+    /\.dashboard-animated-list::\-webkit-scrollbar\s*\{\s*width:\s*10px/is,
   );
   assert.match(
     styles,
-    /\.dashboard-animated-list::\-webkit-scrollbar-thumb\s*\{[\s\S]*border:\s*2px solid transparent[\s\S]*background-clip:\s*padding-box/is,
+    /\.dashboard-animated-list::\-webkit-scrollbar-thumb\s*\{[\s\S]*border:\s*3\.5px solid transparent[\s\S]*background-clip:\s*padding-box/is,
   );
   assert.match(
     styles,
-    /\[data-transient-scrollbar="true"\]::\-webkit-scrollbar\s*\{\s*width:\s*8px/is,
+    /\[data-transient-scrollbar="true"\]::\-webkit-scrollbar\s*\{\s*width:\s*10px/is,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-experience-detail\s*\{[\s\S]*overflow:\s*hidden[\s\S]*padding:\s*30px 0/is,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-experience-detail-scroll\s*\{[\s\S]*max-height:\s*calc\(100vh - 172px\)[\s\S]*overflow:\s*auto/is,
   );
   assert.match(
     styles,
@@ -104,9 +113,12 @@ test("나의 활동 스크롤바는 트랙 없이 4px 캡슐로 통일한다", (
     styles,
     /\[data-transient-scrollbar="true"\]:hover/,
   );
-  assert.doesNotMatch(styles, /scrollbar-thumb:hover/);
   assert.match(
     styles,
-    /\[data-scrolling="true"\]\s*\{\s*--transient-scrollbar-thumb:\s*rgb\(101 105 112 \/ 44%\)/is,
+    /\[data-scrolling="true"\]\s*\{\s*--transient-scrollbar-thumb:\s*rgb\(82 87 96 \/ 30%\)/is,
+  );
+  assert.match(
+    styles,
+    /\[data-scrolling="true"\]::\-webkit-scrollbar-thumb:hover\s*\{[^}]*background:\s*rgb\(82 87 96 \/ 44%\)/is,
   );
 });
