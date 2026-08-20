@@ -36,7 +36,7 @@ test("주요 제품 화면은 초기 로딩 중 시각적 가짜 패널을 렌�
   );
   assert.match(
     experiencesSource,
-    /activityItems === null \|\| !experiencePins\.isLoaded \? \([\s\S]*?<LoadingState message="나의 활동을 불러오는 중입니다\." \/>[\s\S]*?\) : \([\s\S]*?<LayoutGroup id="dashboard-experience-layout">/,
+    /activityItems === null \|\| !experiencePins\.isLoaded \? \([\s\S]*?<LoadingState message="나의 활동을 불러오는 중입니다\." \/>[\s\S]*?\) : \([\s\S]*?className="dashboard-experience-workspace"/,
   );
   assert.match(
     recommendationSource,

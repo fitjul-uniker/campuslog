@@ -9,6 +9,11 @@
 - [x] v1.1 commit / push / Draft PR #27
 - [x] 팀 리뷰와 main merge
 - [x] 2차 MVP 기능 브랜치 시작
+- [x] 실제 구현 기준 `docs/testing/` 테스트 계획·35개 TC·최신 결과·누적 실패 이력 체계를 만들고 자동화·인증·저장 데이터 재조회·390px 검증 수행
+- [x] 잘못된 로그인에서 Server Action runtime overlay가 노출되는 객체 export 오류 수정 및 회귀 테스트 추가 (`ISSUE-161`)
+- [x] 실제 OpenAI 자기소개서 추천 1회·HTTP 200·Top 3 필수 구조·추천 기록 24→25와 새로고침 재조회 확인
+- [x] 실제 두 QA 계정 목록·상대 experience 직접 URL의 RLS 격리와 빈 추천·기록 상태 확인
+- [x] 빈 QA 계정의 합성 기록 개별 삭제 관계 보존, private PDF 개별 삭제 원문·분석 상태 보존, 남은 활동·경험 정리와 테스트 결과 최종화
 - [x] 나의 활동 우측 상세의 외곽 표면·내부 스크롤 viewport 분리와 상하 30px 안전 영역으로 둥근 모서리 침범 제거 (`ISSUE-160`)
 - [x] 나의 활동 페이지·목록·상세·분석 스크롤바를 얇은 인셋형 위계와 짧은 transient 상태로 고도화 (`ISSUE-159`)
 - [x] 나의 활동 선택 시 목록 실제 폭 축소와 지연된 상세 진입을 사용하는 자연스러운 master-detail 전환 적용 (`ISSUE-158`)

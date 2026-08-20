@@ -15,8 +15,8 @@ test("나의 활동 페이지 제목은 목록 Glass 밖에 있고 목록은 전
   const pageHeaderStart = source.indexOf(
     '<header className="dashboard-experience-heading primary-page-heading">',
   );
-  const layoutGroupStart = source.indexOf(
-    '<LayoutGroup id="dashboard-experience-layout">',
+  const workspaceStart = source.indexOf(
+    'className="dashboard-experience-workspace"',
   );
   const listPaneStart = source.indexOf(
     'className="dashboard-experience-list-pane liquid-workspace"',
@@ -26,11 +26,11 @@ test("나의 활동 페이지 제목은 목록 Glass 밖에 있고 목록은 전
   );
 
   assert.ok(pageHeaderStart > -1);
-  assert.ok(layoutGroupStart > pageHeaderStart);
-  assert.ok(listPaneStart > layoutGroupStart);
+  assert.ok(workspaceStart > pageHeaderStart);
+  assert.ok(listPaneStart > workspaceStart);
   assert.ok(sectionHeadingStart > listPaneStart);
   assert.match(
-    source.slice(pageHeaderStart, layoutGroupStart),
+    source.slice(pageHeaderStart, workspaceStart),
     /<h1 id="dashboard-experience-heading">나의 활동<\/h1>[\s\S]*primary-page-description/,
   );
   assert.match(
