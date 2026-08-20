@@ -9,7 +9,9 @@
 - [x] v1.1 commit / push / Draft PR #27
 - [x] 팀 리뷰와 main merge
 - [x] 2차 MVP 기능 브랜치 시작
-- [x] 실제 구현 기준 `docs/testing/` 테스트 계획·35개 TC·최신 결과·누적 실패 이력 체계를 만들고 자동화·인증·저장 데이터 재조회·390px 검증 수행
+- [x] 실제 구현 기준 `docs/testing/` 테스트 계획·35개 TC·최신 결과·누적 실패 이력 체계를 만들고 PASS 32·NOT_IMPLEMENTED 3·FAIL/BLOCKED/NOT_RUN 0으로 현재 범위의 코드 기반 QA 종료
+- [x] AI 사전 입력 guard와 mock 실패·취소 보존을 검증하고 test-only 회귀 테스트 추가 (`TC-023`, `TC-028`)
+- [x] 실제 OpenAI 경험 분석 1회와 500자 답변 초안 1회로 결과 구조·DB 저장·새로고침 재조회 확인, 실행 가능한 TC의 `NOT_RUN` 0으로 최종화 (`TC-022`, `TC-027`)
 - [x] 잘못된 로그인에서 Server Action runtime overlay가 노출되는 객체 export 오류 수정 및 회귀 테스트 추가 (`ISSUE-161`)
 - [x] 실제 OpenAI 자기소개서 추천 1회·HTTP 200·Top 3 필수 구조·추천 기록 24→25와 새로고침 재조회 확인
 - [x] 실제 두 QA 계정 목록·상대 experience 직접 URL의 RLS 격리와 빈 추천·기록 상태 확인

@@ -190,6 +190,56 @@
 - 관련 회귀: `npm run build` compile·type/lint·19개 static page 생성, exit 0
 - 최종 결과: `TC-001`~`TC-004` PASS 유지, 제품 `FAIL` 0
 
+## Run #12 — AI 사전 guard와 실패·취소 fault injection
+
+- 실행 일시: 2026-08-20, Asia/Seoul
+- 환경: `env -u OPENAI_API_KEY npm run dev`, 실제 로그인 session, Codex in-app Chromium, Node v23.11.0
+- TC-028 AI 사전 guard:
+  - malformed JSON → HTTP 400 `BAD_REQUEST`
+  - 32,000 bytes 본문 상한 초과 → HTTP 413 `PAYLOAD_TOO_LARGE`
+  - 제목 201자 입력 상한 초과 → HTTP 400 `BAD_REQUEST`
+  - 최소 행동 근거 부족 → HTTP 422 `INSUFFICIENT_INPUT`
+  - 같은 runtime의 21번째 요청 → HTTP 429 `RATE_LIMITED`, `Retry-After: 596`
+  - 개발 서버에는 위 `POST /api/analyze` 상태 코드만 기록됐고 OpenAI 요청 로그는 없음
+- TC-023 mock 실패·취소:
+  - `node --test src/lib/experienceAnalysisWorkflow.failure.test.mjs`: 2 PASS, 0 FAIL
+  - `OPENAI_API_ERROR`와 `REQUEST_CANCELLED`를 테스트 프로세스 안에서만 주입
+  - 두 조건 모두 `analyses.save` 0회, 경험 원문과 마지막 정상 분석 snapshot 보존
+  - production route·client fault 분기 없음. 동일 origin HTTP probe는 TC-028 직후 삭제
+- 결과: `TC-023 PASS`, `TC-028 PASS`
+- 실제 OpenAI 호출: 0회
+
+## Run #13 — 실제 AI 분석·답변 초안 최소 호출 및 최종 회귀
+
+- 실행 일시: 2026-08-20, Asia/Seoul
+- 환경: `env -u OPENAI_API_KEY npm run dev`, test4 로그인 session, Codex in-app Chromium, Node v23.11.0
+- TC-022 실제 AI 분석:
+  - 기존 비민감 경험 1개에서 `다시 분석하기` 1회 실행
+  - `/api/analyze` HTTP 200, `gpt-5.6-luna`, `status: success`, `retry: false`, total duration 약 11.55초
+  - summary, STAR S/T/A/R, achievements 4개, evidence gaps 4개, keywords 10개와 생성 metadata 확인
+  - 직접 URL 재진입·새로고침 뒤 같은 생성 시각과 구조를 재조회해 DB 저장 확인
+  - 실제 OpenAI 호출 정확히 1회, 기존 경험 원문 삭제·수정 없음
+- TC-027 실제 답변 초안:
+  - 기존 자기소개서 추천의 1순위 경험에서 500자 버전 1회 생성
+  - `/api/answer-drafts` HTTP 200, `gpt-5.6-luna`, `status: success`, `retry: false`, total duration 약 10.97초
+  - 첫 결과가 목표 440~480자 안의 공백 포함 451자로 완료되어 자동 보정과 두 번째 OpenAI 호출 없음
+  - 제목·본문·usedEvidence 4개·missingEvidenceNotes·cautions 확인
+  - 추천 기록 새로고침 후 같은 500자 탭에서 동일 결과를 재조회해 DB 저장 확인
+  - 기존 추천·경험 삭제나 수정 없음
+- 외부 호출 안전장치:
+  - 개발 환경에서 두 번째 답변 초안 외부 호출 직전에만 막는 1회 제한 장치를 로컬에 임시 적용
+  - 제품의 분량 판단·자동 보정 조건은 변경하지 않았고 첫 호출이 목표 범위를 만족해 장치는 차단 동작을 하지 않음
+  - 검증 직후 임시 코드와 환경을 제거하고 `answer-drafts/route.ts` 기준 branch diff 0, 제한용 문자열 검색 결과 0건 확인
+- 최종 회귀:
+  - `node --test`: 186 PASS, 0 FAIL, 약 695ms
+  - `npm run lint`: exit 0
+  - `npm run build`: compile·type/lint·19개 static page 생성, exit 0
+  - 마지막 확인에서 `npx tsc --noEmit`과 build를 동시에 실행해 build의 `.next/types` 교체와 경합하면서 typecheck가 TS6053으로 1회 실패
+  - 원인: 생성 디렉터리를 읽고 쓰는 두 명령의 동시 실행. 제품 source나 타입 오류는 없음
+  - 동일 조건을 직렬화해 build 완료 뒤 `npx tsc --noEmit` 단독 재실행, exit 0
+- 결과: `TC-022 PASS`, `TC-027 PASS`, 전체 35개 중 PASS 32·NOT_IMPLEMENTED 3·FAIL/BLOCKED/NOT_RUN 0
+- 실제 OpenAI 호출: 분석 1회 + 답변 초안 1회, 총 2회
+
 ## 실패 기록 템플릿
 
 ### Run #N
