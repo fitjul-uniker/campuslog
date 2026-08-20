@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-20 - 남은 AI QA 실행 및 테스트 체계 최종화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-20 |
+| 작업자 | Codex |
+| 작업 요약 | 남아 있던 AI guard·실패/취소·실제 분석·답변 초안 테스트를 최소 외부 호출로 완료하고 35개 TC의 실행 가능 상태를 모두 확정 |
+| 수정한 파일 | `AGENTS.md`, `docs/testing/TEST_PLAN.md`, `TEST_CASES.md`, `TEST_RESULTS.md`, `TEST_HISTORY.md`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/WORK_STATUS.md`, `web/src/lib/experienceAnalysisWorkflow.failure.test.mjs` |
+| 변경 내용 | AI 분석 실패·취소 시 저장 0회와 기존 원문·마지막 정상 분석 보존을 검증하는 test-only virtual module 회귀 테스트 추가. `.next/types` 경합을 막기 위해 typecheck와 build를 순차 실행하는 규칙 추가. 실제 제품 로직·DB schema는 변경하지 않음 |
+| 검증한 내용 | `TC-028`의 malformed JSON·본문/필드 상한·최소 근거·rate limit이 OpenAI 전에 400·413·422·429로 차단됨을 확인. test4의 기존 비민감 경험으로 AI 분석 1회와 500자 답변 초안 1회를 실행해 결과 구조·DB 저장·새로고침 재조회를 확인. 초안은 첫 결과 451자·`retry: false`로 보정 호출 없이 종료. 최종 Node 186개 PASS, lint·typecheck·production build 19개 page PASS |
+| 남은 작업 | 이번 테스트 범위의 `NOT_RUN` 없음. 사용자 플로우가 없는 3개 항목은 `NOT_IMPLEMENTED` 유지. 현재 범위의 코드 기반 QA 종료 |
+| 관련 커밋 메시지 | `test: complete remaining AI QA and finalize documentation` |
+
 ### 2026-08-20 - 반복 가능한 테스트·QA 기록 체계 구축 및 로그인 오류 수정
 
 | 항목 | 내용 |

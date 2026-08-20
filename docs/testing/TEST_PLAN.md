@@ -158,3 +158,5 @@
 | AI route | 입력 guard, 인증, 실제 성공 구조 1회, 저장·기록 재조회, 취소/실패 보존 |
 | UI/반응형 | 영향 화면 데스크톱·390px, 키보드 초점, 가로 overflow |
 | 공통 변경 | `node --test`, lint, typecheck, production build |
+
+TypeScript 검사와 production build는 `.next/types` 생성 경합을 피하기 위해 병렬로 실행하지 않고 순차 실행합니다.

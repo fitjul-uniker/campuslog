@@ -15,12 +15,12 @@
 ### TC-001 전체 Node 테스트
 
 - 기능명: 단위·구조·회귀 자동 테스트
-- 목적: 현재 저장소의 49개 테스트 파일 전체가 통과하는지 확인
+- 목적: 현재 저장소의 50개 테스트 파일 전체가 통과하는지 확인
 - Preconditions: `web/node_modules` 설치, Node.js 22 이상
 - 입력값: `web/src/**/*.test.mjs`
 - 실행 절차: `web/`에서 `node --test` 실행
 - 예상 결과: 종료 코드 0, 실패 0
-- 실제 결과: 최신 전체 회귀에서 182개 PASS, fail 0, duration 약 712ms
+- 실제 결과: 최신 전체 회귀에서 186개 PASS, fail 0, duration 약 695ms
 - 상태: `PASS`
 - 검증 방법: Node TAP 요약과 종료 코드
 
@@ -280,8 +280,8 @@
 - 입력값: 기존 비민감 QA 경험 1개
 - 실행 절차: 분석 1회 → 결과 확인 → 새로고침/재조회
 - 예상 결과: HTTP 200, summary·STAR·achievements·evidenceGaps·keywords, 분석 metadata, 저장 결과 유지
-- 실제 결과: 저장돼 있던 기존 분석 결과의 필드와 재조회는 확인했지만, 이번 실행에서는 토큰 제한에 따라 `/api/analyze` 실제 OpenAI 호출과 신규 저장을 수행하지 않았다.
-- 상태: `NOT_RUN`
+- 실제 결과: test4의 기존 비민감 경험 1개에서 `다시 분석하기`를 1회 실행했다. `/api/analyze`는 HTTP 200, `gpt-5.6-luna`, `status: success`, `retry: false`, 약 11.55초로 완료됐고 실제 OpenAI 호출은 정확히 1회였다. 결과에서 summary, STAR의 S/T/A/R, achievements 4개, evidenceGaps 4개, keywords 10개와 분석 완료 metadata를 확인했다. 생성 시각이 갱신됐으며 직접 URL 재진입과 새로고침 뒤에도 같은 생성 시각과 결과 구조가 조회되어 DB 저장을 확인했다. 경험 원문은 수정하거나 삭제하지 않았다.
+- 상태: `PASS`
 - 검증 방법: network status, DOM 필드, repository 재조회
 
 ### TC-023 AI 분석 실패·취소 보존
@@ -292,9 +292,9 @@
 - 입력값: 취소, mock 불가 시 실제 실패를 유발하지 않는 구조 테스트
 - 실행 절차: 요청 시작 → 취소/실패 → 재진입
 - 예상 결과: 원본 보존, 부분 결과 미저장, 재시도 가능
-- 실제 결과: background/취소 구조 자동 테스트는 PASS, 실제 브라우저 취소는 미실행
-- 상태: `NOT_RUN`
-- 검증 방법: 브라우저 network·DOM과 저장 결과
+- 실제 결과: 테스트 프로세스 안에서 AI API와 repository만 가상 모듈로 교체해 `OPENAI_API_ERROR`와 `REQUEST_CANCELLED`를 각각 주입했다. 두 조건 모두 분석 저장 함수 호출은 0회였고 경험 원문과 마지막 정상 분석 snapshot이 보존됐다. 취소 결과는 `REQUEST_CANCELLED`를 유지했다.
+- 상태: `PASS`
+- 검증 방법: `node --test src/lib/experienceAnalysisWorkflow.failure.test.mjs` — 2 tests, 2 pass. production route·client에는 fault 분기나 임시 header를 추가하지 않음
 
 ### TC-024 텍스트 AI 추천·자동 저장
 
@@ -340,8 +340,8 @@
 - 입력값: 자기소개서 300/500/1000 또는 100~2000 직접 입력 중 대표 1개
 - 실행 절차: 초안 1회 생성 → 필드·분량 → 새로고침 재조회
 - 예상 결과: 본문·usedEvidence·missingEvidenceNotes·cautions, 목표 분량, 같은 추천에 누적 저장
-- 실제 결과: 분량·정규화 자동 테스트는 PASS, 실제 OpenAI·저장은 미실행
-- 상태: `NOT_RUN`
+- 실제 결과: test4의 기존 자기소개서 추천 1순위 경험에서 500자 버전 1개를 생성했다. `/api/answer-drafts`는 HTTP 200, `gpt-5.6-luna`, `status: success`, `retry: false`, 약 10.97초로 완료돼 실제 OpenAI 호출은 1회뿐이었고 자동 보정 호출은 발생하지 않았다. 첫 결과는 목표 440~480자 안의 공백 포함 451자였으며 제목·본문·usedEvidence 4개·missingEvidenceNotes·cautions 구조를 확인했다. 추천 기록 화면 새로고침 후 같은 500자 탭에서 제목, 451자 본문과 세 보조 구획이 다시 조회되어 DB 저장을 확인했다. 기존 추천과 경험은 삭제하거나 수정하지 않았다.
+- 상태: `PASS`
 - 검증 방법: network, 글자 수, repository 재조회
 
 ### TC-028 AI 입력 guard와 rate limit
@@ -352,9 +352,9 @@
 - 입력값: malformed JSON, route별 상한 초과, 빈 근거, 제한 횟수 반복
 - 실행 절차: 각 대표 요청의 HTTP 응답 확인
 - 예상 결과: 400/413/422/429와 공통 오류 구조, 429 `Retry-After`
-- 실제 결과: 비로그인 401 선행 순서만 확인, 로그인 guard는 미실행
-- 상태: `NOT_RUN`
-- 검증 방법: HTTP status/header/JSON, 서버 AI 호출 로그 부재
+- 실제 결과: 실제 로그인 session에서 malformed JSON은 HTTP 400 `BAD_REQUEST`, 32,000 bytes 상한 초과는 HTTP 413 `PAYLOAD_TOO_LARGE`, 제목 201자 입력은 HTTP 400 `BAD_REQUEST`, 의미 있는 행동 근거 부족은 HTTP 422 `INSUFFICIENT_INPUT`으로 차단됐다. 같은 runtime의 21번째 분석 요청은 HTTP 429 `RATE_LIMITED`와 `Retry-After: 596`을 반환했다. 모든 요청은 guard에서 종료됐고 OpenAI 요청은 발생하지 않았다.
+- 상태: `PASS`
+- 검증 방법: 동일 origin 임시 local probe의 HTTP status/header/JSON, 개발 서버 `POST /api/analyze` 400·413·422·429 로그. probe 파일은 검증 직후 제거
 
 ## 새로고침·반응형·접근성
 

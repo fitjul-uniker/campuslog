@@ -126,6 +126,8 @@ CampusLog는 대학생이 프로젝트, 공모전, 인턴, 대외활동 등 다�
 
 ## Build and verify
 
+- `.next/types` 생성 경합을 피하도록 `npx tsc --noEmit`과 `npm run build`는 병렬로 실행하지 않고 순차 실행합니다.
+
 공통 회귀 확인:
 
 - 활동 추가와 날짜별 기록이 동작하는가
