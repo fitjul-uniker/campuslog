@@ -9,6 +9,7 @@
 - [x] v1.1 commit / push / Draft PR #27
 - [x] 팀 리뷰와 main merge
 - [x] 2차 MVP 기능 브랜치 시작
+- [x] 오늘의 기록 캘린더를 12개월 미래까지 열고 활동 기간 안의 계획 작성·표시와 AI 완료 경험 합성 제외 정책을 적용하고 사용자 직접 로직 테스트 완료 (`ISSUE-162`)
 - [x] 실제 구현 기준 `docs/testing/` 테스트 계획·35개 TC·최신 결과·누적 실패 이력 체계를 만들고 PASS 32·NOT_IMPLEMENTED 3·FAIL/BLOCKED/NOT_RUN 0으로 현재 범위의 코드 기반 QA 종료
 - [x] AI 사전 입력 guard와 mock 실패·취소 보존을 검증하고 test-only 회귀 테스트 추가 (`TC-023`, `TC-028`)
 - [x] 실제 OpenAI 경험 분석 1회와 500자 답변 초안 1회로 결과 구조·DB 저장·새로고침 재조회 확인, 실행 가능한 TC의 `NOT_RUN` 0으로 최종화 (`TC-022`, `TC-027`)

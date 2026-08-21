@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-21 - 오늘의 기록 미래 계획 작성
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-21 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록 캘린더에서 가까운 미래 날짜를 열고 활동별 계획을 미리 작성할 수 있도록 확장 |
+| 수정한 파일 | `README.md`, `PRD.md`, `docs/CURRENT_PHASE.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/DATA_CONTRACT.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `web/src/lib/activityDatePolicy.ts`, 활동 캘린더·대시보드·상세·repository·storage·스타일·테스트 |
+| 변경 내용 | 오늘 기준 12개월 뒤까지 연·월·날짜 이동을 허용하고 진행 중·시작 예정 활동의 기간 안에서 미래 계획을 생성·수정·삭제. 미래 작성 패널과 이벤트·타임라인에 계획 문구/표시를 제공하고 완료 경험 합성에는 오늘까지의 실제 기록만 전달. 기존 `DailyLog`/`daily_logs` schema와 RLS는 유지 |
+| 검증한 내용 | 전체 Node 테스트 191개, lint, typecheck, production build, `git diff --check` 통과. 사용자가 미래 날짜 선택과 계획 작성 흐름의 직접 로직 테스트 완료 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: allow future planning in daily records` |
+
 ### 2026-08-20 - 남은 AI QA 실행 및 테스트 체계 최종화
 
 | 항목 | 내용 |

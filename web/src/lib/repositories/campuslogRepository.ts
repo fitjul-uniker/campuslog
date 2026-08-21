@@ -71,6 +71,7 @@ import type {
   TrackedActivity,
   TrackedActivityInput,
 } from "@/lib/types";
+import { isActivityRecordableOnDate } from "@/lib/activityDatePolicy";
 
 export type CampusLogRepositorySource = "localStorage" | "supabase";
 type SupabaseClient = NonNullable<ReturnType<typeof createSupabaseBrowserClient>>;
@@ -617,27 +618,10 @@ function canWriteDailyLogForActivity(
   activity: TrackedActivity,
   date: string,
 ): boolean {
-  if (!isDateKey(date) || date < activity.startDate || date > getLocalDateString()) {
-    return false;
-  }
-
-  if (activity.status === "planned") {
-    return false;
-  }
-
-  if (activity.status === "completed") {
-    if (date >= getLocalDateString()) {
-      return false;
-    }
-
-    const completedDate = activity.completedAt
-      ? normalizeDate(activity.completedAt)
-      : activity.expectedEndDate;
-
-    return completedDate !== null && completedDate !== "" && date <= completedDate;
-  }
-
-  return !activity.expectedEndDate || date <= activity.expectedEndDate;
+  return (
+    isDateKey(date) &&
+    isActivityRecordableOnDate(activity, date, getLocalDateString())
+  );
 }
 
 async function refreshActivitySynthesisAfterLogChange(

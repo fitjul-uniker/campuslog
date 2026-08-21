@@ -61,6 +61,26 @@ export function parseLocalDate(dateKey: string): Date | null {
   return date;
 }
 
+export function getActivityPlanningHorizonDateKey(todayKey: string): string {
+  const today = parseLocalDate(todayKey);
+
+  if (!today) {
+    return todayKey;
+  }
+
+  const targetYear = today.getFullYear() + 1;
+  const targetMonth = today.getMonth();
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+  return getLocalDateKey(
+    new Date(
+      targetYear,
+      targetMonth,
+      Math.min(today.getDate(), lastDayOfTargetMonth),
+    ),
+  );
+}
+
 export function formatDateKey(
   dateKey: string,
   options: Intl.DateTimeFormatOptions = {
@@ -95,11 +115,11 @@ export function isActivityRecordableOnDate(
   dateKey: string,
   todayKey = getLocalDateKey(),
 ): boolean {
-  if (!parseLocalDate(dateKey) || dateKey > todayKey || dateKey < activity.startDate) {
-    return false;
-  }
-
-  if (activity.status === "planned") {
+  if (
+    !parseLocalDate(dateKey) ||
+    dateKey < activity.startDate ||
+    dateKey > getActivityPlanningHorizonDateKey(todayKey)
+  ) {
     return false;
   }
 
@@ -113,6 +133,10 @@ export function isActivityRecordableOnDate(
       : activity.expectedEndDate;
 
     return Boolean(completedDate) && dateKey <= completedDate;
+  }
+
+  if (activity.status === "planned" && dateKey <= todayKey) {
+    return false;
   }
 
   return !activity.expectedEndDate || dateKey <= activity.expectedEndDate;

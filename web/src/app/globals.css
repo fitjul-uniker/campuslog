@@ -10409,6 +10409,22 @@ html:has(.product-shell[data-liquid-glass="true"])[data-scrolling="true"]::-webk
   font-weight: 730;
 }
 
+.activity-event-plan-label,
+.activity-plan-label {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  border: 1px solid var(--activity-line);
+  border-radius: 999px;
+  background: var(--activity-soft);
+  color: var(--activity-muted);
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 730;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .activity-event-preview {
   display: -webkit-box;
   max-height: 1.55em;
@@ -11235,6 +11251,10 @@ html:has(.product-shell[data-liquid-glass="true"])[data-scrolling="true"]::-webk
 .activity-timeline-date svg {
   width: 16px;
   height: 16px;
+}
+
+.activity-plan-label {
+  justify-self: end;
 }
 
 .activity-timeline > ol p {

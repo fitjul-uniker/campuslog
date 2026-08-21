@@ -4,7 +4,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useMemo, useState } from "react";
 
-import { getLocalDateKey, parseLocalDate } from "@/components/activities/activityViewUtils";
+import {
+  getActivityPlanningHorizonDateKey,
+  getLocalDateKey,
+  parseLocalDate,
+} from "@/components/activities/activityViewUtils";
 import {
   Select,
   SelectContent,
@@ -98,17 +102,18 @@ export function ActivityCalendar({
     createMonthAnchor(selectedDate),
   );
   const today = getLocalDateKey();
-  const currentYear = new Date().getFullYear();
+  const planningHorizon = getActivityPlanningHorizonDateKey(today);
+  const lastPlanningYear = Number(planningHorizon.slice(0, 4));
   const yearOptions = useMemo(
     () =>
       Array.from(
-        { length: currentYear - FIRST_CALENDAR_YEAR + 1 },
+        { length: lastPlanningYear - FIRST_CALENDAR_YEAR + 1 },
         (_, index) => {
-          const year = currentYear - index;
+          const year = lastPlanningYear - index;
           return { label: `${year}년`, value: String(year) };
         },
       ),
-    [currentYear],
+    [lastPlanningYear],
   );
 
   const countsByDate = useMemo(
@@ -148,8 +153,11 @@ export function ActivityCalendar({
 
     const year = Number(value);
     const month =
-      year === currentYear
-        ? Math.min(monthAnchor.getMonth(), new Date().getMonth())
+      year === lastPlanningYear
+        ? Math.min(
+            monthAnchor.getMonth(),
+            Number(planningHorizon.slice(5, 7)) - 1,
+          )
         : monthAnchor.getMonth();
     setMonthAnchor(new Date(year, month, 1));
   }
@@ -197,7 +205,7 @@ export function ActivityCalendar({
       targetDate.getDate(),
     );
 
-    if (targetDateKey > today) {
+    if (targetDateKey > planningHorizon) {
       return;
     }
 
@@ -261,8 +269,11 @@ export function ActivityCalendar({
                   key={option.value}
                   value={option.value}
                   disabled={
-                    monthAnchor.getFullYear() === currentYear &&
-                    Number(option.value) > new Date().getMonth()
+                    formatDateKey(
+                      monthAnchor.getFullYear(),
+                      Number(option.value),
+                      1,
+                    ).slice(0, 7) > planningHorizon.slice(0, 7)
                   }
                 >
                   {option.label}
@@ -291,7 +302,7 @@ export function ActivityCalendar({
           <button
             type="button"
             onClick={() => moveMonth(1)}
-            disabled={nextMonthStart > today}
+            disabled={nextMonthStart > planningHorizon}
             aria-label="다음 달 보기"
           >
             <ChevronRight aria-hidden="true" />
@@ -319,9 +330,10 @@ export function ActivityCalendar({
               className="activity-calendar-day"
               data-outside-month={cell.isCurrentMonth ? undefined : "true"}
               data-has-records={count > 0 ? "true" : undefined}
+              data-future={isFuture ? "true" : undefined}
               data-calendar-date={cell.dateKey}
-              disabled={isFuture}
-              aria-label={`${cell.dateKey}${count > 0 ? `, 기록 ${count}개` : ", 기록 없음"}`}
+              disabled={cell.dateKey > planningHorizon}
+              aria-label={`${cell.dateKey}${count > 0 ? `, ${isFuture ? "계획" : "기록"} ${count}개` : `, ${isFuture ? "계획" : "기록"} 없음`}`}
               aria-current={isToday ? "date" : undefined}
               aria-pressed={isSelected}
               onClick={() => {
