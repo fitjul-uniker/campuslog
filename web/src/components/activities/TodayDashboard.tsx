@@ -333,6 +333,7 @@ export function TodayDashboard() {
     () => logs.filter((log) => log.date === selectedDate),
     [logs, selectedDate],
   );
+  const isPlanningDate = selectedDate > today;
 
   useEffect(() => {
     if (activities === null || requestedPanelHandledRef.current) {
@@ -437,7 +438,11 @@ export function TodayDashboard() {
     }
 
     if (!normalizedContent) {
-      setFormError("오늘 실제로 한 일을 한 문장 이상 적어 주세요.");
+      setFormError(
+        isPlanningDate
+          ? "미리 계획한 일을 한 문장 이상 적어 주세요."
+          : "오늘 실제로 한 일을 한 문장 이상 적어 주세요.",
+      );
       textareaRef.current?.focus();
       return;
     }
@@ -476,7 +481,13 @@ export function TodayDashboard() {
       setRecordsActionMessage("");
       setRecordsActionError("");
       setStatusMessage(
-        editingLog ? "기록을 수정했습니다." : "오늘 한 일을 기록했습니다.",
+        editingLog
+          ? isPlanningDate
+            ? "계획을 수정했습니다."
+            : "기록을 수정했습니다."
+          : isPlanningDate
+            ? "계획을 저장했습니다."
+            : "오늘 한 일을 기록했습니다.",
       );
       setIsRecordPanelOpen(false);
       resetForm();
@@ -520,7 +531,9 @@ export function TodayDashboard() {
     if (
       !activity ||
       !isActivityRecordableOnDate(activity, log.date, today) ||
-      !window.confirm("이 기록을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.")
+      !window.confirm(
+        `${log.date > today ? "이 계획" : "이 기록"}을 삭제할까요? 삭제한 내용은 복구할 수 없습니다.`,
+      )
     ) {
       return;
     }
@@ -546,7 +559,9 @@ export function TodayDashboard() {
       currentLogs.filter((storedLog) => storedLog.id !== log.id),
     );
     setStatusMessage("");
-    setRecordsActionMessage("기록을 삭제했습니다.");
+    setRecordsActionMessage(
+      log.date > today ? "계획을 삭제했습니다." : "기록을 삭제했습니다.",
+    );
     setRecordsActionError("");
 
     if (editingLog?.id === log.id) {
@@ -1023,7 +1038,10 @@ export function TodayDashboard() {
             <ol className="activity-event-list">
               {selectedLogs.map((log) => {
                 const activity = activitiesById[log.activityId];
-                const canEdit = activity?.status === "active";
+                const canEdit = Boolean(
+                  activity &&
+                    isActivityRecordableOnDate(activity, log.date, today),
+                );
 
                 return (
                   <li
@@ -1036,6 +1054,9 @@ export function TodayDashboard() {
                         <Link href={`/activities/${log.activityId}`}>
                           {activity?.title ?? "연결된 활동"}
                         </Link>
+                        {isPlanningDate ? (
+                          <span className="activity-event-plan-label">계획</span>
+                        ) : null}
                       </div>
                       <p className="activity-event-preview">{log.content}</p>
                     </div>
@@ -1046,7 +1067,7 @@ export function TodayDashboard() {
                           onClick={(event) =>
                             startEditing(log, event.currentTarget)
                           }
-                          aria-label={`${activity.title} 기록 수정`}
+                          aria-label={`${activity.title} ${isPlanningDate ? "계획" : "기록"} 수정`}
                           aria-haspopup="dialog"
                           aria-controls={recordPanelId}
                           aria-expanded={
@@ -1058,7 +1079,7 @@ export function TodayDashboard() {
                         <button
                           type="button"
                           onClick={() => handleDelete(log)}
-                          aria-label={`${activity.title} 기록 삭제`}
+                          aria-label={`${activity.title} ${isPlanningDate ? "계획" : "기록"} 삭제`}
                         >
                           <Trash2 aria-hidden="true" />
                         </button>
@@ -1120,8 +1141,20 @@ export function TodayDashboard() {
             fallbackFocusRef={recordTriggerRef}
             initialFocusRef={textareaRef}
             id={recordPanelId}
-            title={editingLog ? "한 일 수정하기" : "한 일 남기기"}
-            closeLabel="오늘 한 일 기록 패널 닫기"
+            title={
+              isPlanningDate
+                ? editingLog
+                  ? "계획 수정하기"
+                  : "계획 미리 세우기"
+                : editingLog
+                  ? "한 일 수정하기"
+                  : "한 일 남기기"
+            }
+            closeLabel={
+              isPlanningDate
+                ? "계획 작성 패널 닫기"
+                : "오늘 한 일 기록 패널 닫기"
+            }
             dismissible={!isSaving}
             description={formatDateKey(selectedDate, {
               month: "long",
@@ -1149,7 +1182,9 @@ export function TodayDashboard() {
                   }
                 >
                   <label id={`${recordPanelId}-activity-label`}>
-                    무슨 활동에서 한 일인가요?
+                    {isPlanningDate
+                      ? "어떤 활동의 계획인가요?"
+                      : "무슨 활동에서 한 일인가요?"}
                   </label>
                   <Combobox
                     items={activityComboboxOptions}
@@ -1191,14 +1226,22 @@ export function TodayDashboard() {
                 </Field>
 
                 <label className="activity-textarea-field">
-                  <span>어떤 일을 하셨나요?</span>
+                  <span>
+                    {isPlanningDate
+                      ? "어떤 일을 할 계획인가요?"
+                      : "어떤 일을 하셨나요?"}
+                  </span>
                   <textarea
                     ref={textareaRef}
                     value={content}
                     onChange={(event) => setContent(event.target.value)}
                     rows={5}
                     maxLength={2000}
-                    placeholder="예: 사용자 인터뷰 3건을 진행하고 반복해서 나온 불편을 정리했다."
+                    placeholder={
+                      isPlanningDate
+                        ? "예: 사용자 인터뷰 질문을 정리하고 참여자 3명에게 일정을 요청한다."
+                        : "예: 사용자 인터뷰 3건을 진행하고 반복해서 나온 불편을 정리했다."
+                    }
                     aria-invalid={hasContentError || undefined}
                     aria-describedby={
                       hasContentError
@@ -1213,7 +1256,9 @@ export function TodayDashboard() {
                   id={`${recordPanelId}-help`}
                 >
                   <span>
-                    한 일을 자세히 적을수록 AI가 더 정확하게 분석할 수 있어요.
+                    {isPlanningDate
+                      ? "미래 계획은 완료 경험의 근거에서 제외돼요. 날짜가 지난 뒤 실제로 한 내용으로 다듬어 주세요."
+                      : "한 일을 자세히 적을수록 AI가 더 정확하게 분석할 수 있어요."}
                   </span>
                   <span>{content.length}/2000</span>
                 </div>
@@ -1254,8 +1299,12 @@ export function TodayDashboard() {
                   {isSaving
                     ? "저장 중"
                     : editingLog
-                      ? "수정 내용 저장"
-                      : "기록 저장"}
+                      ? isPlanningDate
+                        ? "계획 수정 저장"
+                        : "수정 내용 저장"
+                      : isPlanningDate
+                        ? "계획 저장"
+                        : "기록 저장"}
                   <RippleButtonRipples />
                 </RippleButton>
               </div>

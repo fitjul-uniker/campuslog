@@ -80,3 +80,15 @@ test("모바일 완료 활동의 수정과 삭제는 한 줄의 보조 액션으
     /\.activity-inline-alert\s*\{[^}]*flex-direction:\s*column/,
   );
 });
+
+test("미래 날짜는 계획 작성 문구와 별도 표시를 제공한다", () => {
+  assert.match(calendarSource, /getActivityPlanningHorizonDateKey\(today\)/);
+  assert.match(calendarSource, /data-future=\{isFuture \? "true" : undefined\}/);
+  assert.match(source, /계획 미리 세우기/);
+  assert.match(source, /미래 계획은 완료 경험의 근거에서 제외돼요/);
+  assert.match(source, /activity-event-plan-label/);
+  assert.match(
+    source,
+    /isActivityRecordableOnDate\(activity, log\.date, today\)/,
+  );
+});

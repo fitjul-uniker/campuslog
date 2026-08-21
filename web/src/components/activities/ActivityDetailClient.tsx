@@ -116,6 +116,7 @@ function createActivityDeleteConfirmMessage(
 }
 
 export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
+  const today = getLocalDateKey();
   const router = useRouter();
   const {
     startTask,
@@ -225,9 +226,17 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
     const usedLogIdSet = new Set(draft.usedLogIds);
     return logs.filter((log) => usedLogIdSet.has(log.id));
   }, [draft, logs]);
+  const completedLogs = useMemo(
+    () => logs.filter((log) => log.date <= today),
+    [logs, today],
+  );
+  const futurePlans = useMemo(
+    () => logs.filter((log) => log.date > today),
+    [logs, today],
+  );
   const totalLogCharacterCount = useMemo(
-    () => logs.reduce((total, log) => total + log.content.length, 0),
-    [logs],
+    () => completedLogs.reduce((total, log) => total + log.content.length, 0),
+    [completedLogs],
   );
 
   async function handleActivate() {
@@ -247,20 +256,22 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   }
 
   function runSynthesis(sourceActivity: TrackedActivity) {
-    if (logs.length === 0) {
+    if (completedLogs.length === 0) {
       setError(
-        "AI가 정리할 실제 기록이 없습니다. 활동을 종료하기 전에 한 일을 한 건 이상 남겨 주세요.",
+        futurePlans.length > 0
+          ? "미래 계획은 완료 경험의 근거로 사용할 수 없습니다. 활동을 종료하기 전에 실제로 한 일을 한 건 이상 남겨 주세요."
+          : "AI가 정리할 실제 기록이 없습니다. 활동을 종료하기 전에 한 일을 한 건 이상 남겨 주세요.",
       );
       return;
     }
 
-    const totalContentLength = logs.reduce(
+    const totalContentLength = completedLogs.reduce(
       (total, log) => total + log.content.length,
       0,
     );
 
     if (
-      logs.length > ACTIVITY_SYNTHESIS_LIMITS.maxDailyLogCount ||
+      completedLogs.length > ACTIVITY_SYNTHESIS_LIMITS.maxDailyLogCount ||
       totalContentLength >
         ACTIVITY_SYNTHESIS_LIMITS.maxTotalDailyLogContentLength
     ) {
@@ -297,11 +308,15 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
         };
       }
 
-      const response = await requestActivitySynthesis(processingActivity, logs, {
-        signal,
-        stream: true,
-        onStatus: setStatusMessage,
-      });
+      const response = await requestActivitySynthesis(
+        processingActivity,
+        completedLogs,
+        {
+          signal,
+          stream: true,
+          onStatus: setStatusMessage,
+        },
+      );
 
       if (!response.ok) {
         if (response.error.code === "REQUEST_CANCELLED") {
@@ -377,10 +392,12 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       return;
     }
 
-    if (logs.length === 0) {
+    if (completedLogs.length === 0) {
       closeEndConfirmation();
       setError(
-        "아직 연결된 기록이 없습니다. 오늘의 기록에서 실제로 한 일을 먼저 남겨 주세요.",
+        futurePlans.length > 0
+          ? "미래 계획은 그대로 보존되지만 완료 경험의 근거가 되지 않습니다. 실제로 한 일을 먼저 남겨 주세요."
+          : "아직 연결된 기록이 없습니다. 오늘의 기록에서 실제로 한 일을 먼저 남겨 주세요.",
       );
       return;
     }
@@ -802,7 +819,11 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           <div>
             <h2 id="end-activity-title">이 활동을 종료할까요?</h2>
             <p id="end-activity-description">
-              연결된 기록 {logs.length}개를 AI가 검토해 활동 정리 초안을 만듭니다.
+              실제 기록 {completedLogs.length}개를 AI가 검토해 활동 정리 초안을
+              만듭니다.
+              {futurePlans.length > 0
+                ? ` 미래 계획 ${futurePlans.length}개는 초안 근거에서 제외됩니다.`
+                : ""}
               초안은 바로 저장되지 않으며 먼저 직접 확인하고 수정할 수 있습니다.
             </p>
             <div className="activity-confirmation-actions">
@@ -841,7 +862,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           description="기록에 없는 사실은 만들지 않고, 실제로 남긴 내용만 검토합니다."
           contextItems={[
             { label: "활동", value: activity.title },
-            { label: "기록 개수", value: `${logs.length}개` },
+            { label: "기록 개수", value: `${completedLogs.length}개` },
             { label: "기록 분량", value: `${totalLogCharacterCount}자` },
           ]}
           steps={[
@@ -982,7 +1003,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           <div className="activity-draft-provenance">
             <CheckCircle2 aria-hidden="true" />
             <p>
-              전체 {logs.length}개 중 {usedLogs.length}개의 기록을 초안 근거로
+              실제 기록 {completedLogs.length}개 중 {usedLogs.length}개를 초안 근거로
               사용했습니다. 저장하면 기존 경험 목록에서 별도 AI 분석을 이어갈 수
               있습니다.
             </p>
@@ -1033,6 +1054,9 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
                   </time>
                 </div>
                 <p>{log.content}</p>
+                {log.date > today ? (
+                  <span className="activity-plan-label">계획</span>
+                ) : null}
                 {draft?.usedLogIds.includes(log.id) ? (
                   <span className="activity-used-log-label">
                     <CheckCircle2 aria-hidden="true" />

@@ -18,7 +18,7 @@
 | `AnswerDraftResult` | `campuslog:v1:answer-drafts` | `AnswerDraftResult[]` | `recommendationId`와 `experienceId`로 추천 기록과 선택 경험을 참조. 추천 row 자체를 변경하지 않고 목적별 답변 초안을 type 단위로 누적 저장하며, 직접 입력 자기소개서는 목표 제한을 draft에 함께 저장 |
 | `ExperienceFollowup` | `campuslog:v1:experience-followups` | `ExperienceFollowup[]` | 원본 경험을 자동 수정하지 않는 별도 보완 질문 / 답변 호환 저장소. `experienceId`로 `Experience.id`를 참조하며 분석 부족 정보 답변도 함께 저장. 답변 저장만으로 `needs_reanalysis`를 강제하지 않음 |
 | `TrackedActivity` | `campuslog:v1:tracked-activities` | `TrackedActivity[]` | 진행 활동. 완료 저장 후 `generatedExperienceId`로 `Experience.id` 참조 |
-| `DailyLog` | `campuslog:v1:daily-logs` | `DailyLog[]` | `activityId`로 `TrackedActivity.id` 참조 |
+| `DailyLog` | `campuslog:v1:daily-logs` | `DailyLog[]` | `activityId`로 `TrackedActivity.id` 참조. 미래 날짜 항목은 날짜 기준으로 계획 UI를 사용하며 별도 type 필드 없이 기존 데이터와 호환 |
 | `SynthesisDraft` | `campuslog:v1:synthesis-drafts` | `Record<activityId, ExperienceSynthesisDraft>` | 활동별 합성 초안 1개. `usedLogIds`로 사용된 `DailyLog.id` 목록 보존 |
 | 즐겨찾기 환경설정 | `campuslog:v1:pinned-items` | 로그인 사용자 scope별 완료 경험·진행 활동·추천 id와 선택 시각 | `favorite_items` 적용 전 값의 1회 병합과 Supabase 설정 누락 개발 fallback에만 사용 |
 
@@ -40,7 +40,7 @@ Migrations:
 | --- | --- | --- | --- | --- |
 | `experiences` | `Experience` | `user_id uuid default auth.uid()` | `(user_id, id)` | `id`는 기존 localStorage id를 그대로 보존 |
 | `tracked_activities` | `TrackedActivity` | `user_id` | `(user_id, id)` | `generated_experience_id`로 `experiences.id` 참조. 사용자별 unique partial index로 같은 완료 경험 중복 연결 방지 |
-| `daily_logs` | `DailyLog` | `user_id` | `(user_id, id)` | `(user_id, activity_id)`가 `tracked_activities`를 참조하고 활동 삭제 시 cascade |
+| `daily_logs` | `DailyLog` | `user_id` | `(user_id, id)` | `(user_id, activity_id)`가 `tracked_activities`를 참조하고 활동 삭제 시 cascade. 오늘 기준 12개월 안 미래 계획도 같은 row로 저장하되 AI 완료 경험 합성 요청에서는 미래 날짜 row 제외 |
 | `experience_synthesis_drafts` | `ExperienceSynthesisDraft` | `user_id` | `(user_id, activity_id)` | 활동별 초안 1개만 upsert. 활동 삭제 시 cascade |
 | `experience_analyses` | `ExperienceAnalysis` | `user_id` | `(user_id, id)`, unique `(user_id, experience_id)` | 경험별 최신 분석 1개를 upsert. v2/v2.1 분석은 `schema_version`, `prompt_version`, `model`, `star`, `evidence`, `evidence_gaps`, `cover_letter_angles`, `competency_evidence`를 함께 저장하되 신규 v2.1은 표시하지 않는 레거시 배열을 빈 값으로 저장 |
 | `recommendations` | `RecommendationResult` | `user_id` | `(user_id, id)` | 1순위 추천 경험 삭제 시 추천 기록 cascade. v2 추천은 `schema_version`, `prompt_version`, `model`, `extracted_requirements`, `matches`, `input_source`를 함께 저장 |
