@@ -30,6 +30,162 @@
 
 ## 작업 로그
 
+### 2026-08-24 - 독립 상세 전환 기준선 및 하단 스크롤 보정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동에서 독립 경험 상세로 이동할 때 헤더 위치가 달라지는 문제와 하단 버튼·스크롤바 잘림을 보정 |
+| 수정한 파일 | `web/src/app/globals.css`, `DashboardExperienceDetail.structure.test.mjs`, `ExperienceAnalysisClient.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/ISSUE_LOG.md`, `docs/TODO.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 독립 상세·분석 도입부에 공통 페이지 기준선 보정, 78px 헤더 높이와 고정 최대 스크롤 여백을 적용. 마지막 액션 아래에 30px 안전 여백을 남기고 scrollbar gutter와 24px track inset을 유지해 패널 곡률과 겹치지 않게 함 |
+| 검증한 내용 | 관련 구조 테스트 14개, 전체 Node 테스트 209개, lint, typecheck, production build, `git diff --check` 통과. 로그인된 로컬 브라우저에서 나의 활동 목록과 독립 경험 상세의 Breadcrumb top 42px, H1 약 76px, 패널 top 약 184px 기준 일치와 스크롤 끝의 버튼 30.2px 하단 여백을 확인. 독립 AI 분석은 같은 CSS 규칙과 구조 테스트로 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: stabilize experience detail layout and scrollbar` |
+
+### 2026-08-24 - 독립 상세·분석 도입부 연동과 패널 하단 고정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 상세·AI 분석의 도입부와 패널을 분리한 채 함께 스크롤하고 패널 하단을 좌측 메뉴 하단에 항상 고정 |
+| 수정한 파일 | `ExperienceDetailClient.tsx`, `ExperienceAnalysisClient.tsx`, `DashboardExperienceDetail.tsx`, `AnalysisResult.tsx`, `use-transient-scrollbar.ts`, `globals.css`, 관련 구조 테스트와 디자인·화면·이슈·작업 기록 문서 |
+| 변경 내용 | Breadcrumb·페이지 H1·설명·상단 탐색 액션을 상세·분석 결과 표면 밖에 유지. 목록과 같은 Breadcrumb·H1 세로 기준선, 78px 헤더와 30px workspace 간격을 적용해 화면 전환 시 도입부 위치를 통일. 내부 scrollTop을 도입부 이동량과 패널 flex 확장에 연결하고 본문 위치를 보정해 두 영역이 같은 속도로 올라가도록 구성. 도입부가 사라지면 패널 상단이 좌측 메뉴 상단에 정렬되고 패널 하단은 모든 스크롤 상태에서 좌측 메뉴 하단에 고정. 외곽은 두꺼운 padding 띠 없이 1px hairline·32px 하단 곡률로 마감하고 스크롤 트랙을 위아래 24px 안쪽에 배치. 마지막 액션 아래에는 기본 30px과 도입부 최대 이동량을 처음부터 합친 고정 scroll padding을 확보해 스크롤바 범위 변화와 버튼 잘림을 방지. 인라인 상세·분석 스플릿뷰는 기존 동작 유지 |
+| 검증한 내용 | 관련 구조 테스트 26개와 전체 Node 테스트 209개, lint, typecheck, production build, diff check 통과. 로그인된 로컬 화면에서 나의 활동 목록과 상세의 Breadcrumb top 42px, H1 top 약 76px, 패널 top 약 184px 기준이 일치하는지 확인. 상세 패널 bottom은 초기·중간·최종 모두 좌측 메뉴와 같은 809px이고 최종 panel top 19.98px·sidebar top 20px, 하단 border 1px·좌우 곡률 32px를 확인. 스크롤 전후 scrollHeight는 1728px로 유지되며 끝에서 세 44px 액션의 bottom 777.8px·내부 viewport bottom 808px로 30.2px 안전 여백이 남음. 독립 AI 분석에는 같은 CSS 규칙을 적용하고 구조 테스트로 계약을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align scrolling detail panels with sidebar` |
+
+### 2026-08-24 - 독립 경험 상세·AI 분석 스크롤 및 액션 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 독립 경험 상세와 AI 분석의 스크롤바·하단선·구분선·버튼 위계를 다른 주요 탭과 통일 |
+| 수정한 파일 | `ExperienceDetailClient.tsx`, `DashboardExperienceDetail.tsx`, `ExperienceAnalysisClient.tsx`, `AnalysisResult.tsx`, `globals.css`, 관련 구조 테스트와 디자인·화면·이슈·작업 기록 문서 |
+| 변경 내용 | 경험 상세 H1·설명을 화면 목적에 맞게 교체하고 `나의 활동`을 우측 상단으로 이동. 하단 액션을 44px·12px 공통 모양으로 복원하고 삭제 휴지통 아이콘만 빨강으로 강조. 경험 상세와 독립 분석의 외곽 표면을 좌측 메뉴 하단에 맞추고 위·아래 24px 안쪽 내부 viewport에 transient scrollbar를 배치. 분석 헤더와 첫 결과 구획의 중복 가로선을 제거 |
+| 검증한 내용 | 관련 구조 테스트 26개, 전체 Node 테스트 209개, lint, typecheck, production build, diff check 통과 |
+| 남은 작업 | 로그인 화면의 최종 육안 확인은 실행 중인 로컬 서버에서 가능 |
+| 관련 커밋 메시지 | `fix: align experience detail and analysis chrome` |
+
+### 2026-08-24 - 독립 완료 경험 상세 폭·여백·하단 정렬
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 독립 완료 경험 상세를 나의 활동·오늘의 기록 주요 탭과 같은 폭·밀도·첫 viewport 하단선으로 통일 |
+| 수정한 파일 | `ExperienceDetailClient.tsx`, `globals.css`, 상세 구조 테스트와 디자인·화면·이슈·작업 기록 문서 |
+| 변경 내용 | 데스크톱 상세 페이지를 viewport 높이 flex column으로 전환하고 상세 Glass가 헤더 아래 남은 높이를 채우도록 구성. 최대 900px 제한 대신 공통 콘텐츠 레일 100%를 사용하고 외곽 48px·내부 38px 이중 여백을 외곽 0·내부 30~40px 한 겹으로 정리. 외곽 Glass를 고정하고 내부만 스크롤하며 모바일 문서 흐름은 유지 |
+| 검증한 내용 | 전체 Node 테스트 207개, lint, typecheck, production build 통과. 로그인 브라우저에서 상세 좌우가 페이지 헤더 레일과 일치하고 내부 여백이 한 겹이며 패널 하단이 좌측 메뉴 하단과 일치하는지 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align standalone experience detail workspace` |
+
+### 2026-08-24 - 독립 완료 경험 상세 페이지 헤더 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 독립 완료 경험 상세에 나의 활동 목록과 같은 페이지 제목·설명 위계를 적용 |
+| 수정한 파일 | `ExperienceDetailClient.tsx`, `DashboardExperienceDetail.tsx`, `globals.css`, 상세 구조 테스트와 디자인·화면·이슈·작업 기록 문서 |
+| 변경 내용 | Breadcrumb 아래에 H1 `나의 활동`과 공통 설명을 추가하고 경험명은 상세 Glass 내부 H2로 변경. 기존 상세 읽기 폭·상태·기간·역할·본문·액션과 모바일 typography는 유지 |
+| 검증한 내용 | 전체 Node 테스트 207개, lint, typecheck, production build 통과. 로그인 1214×829 브라우저에서 H1 1개·공통 설명·경험 H2와 페이지 헤더 아래 30px workspace 간격 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align standalone experience detail heading` |
+
+### 2026-08-24 - 진행 활동 상세 잘림·기록 추가 CTA 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동의 진행 중 상세 잘림을 해소하고 날짜별 기록 추가 버튼을 활동 추가와 같은 차콜 CTA로 통일 |
+| 수정한 파일 | `DashboardTrackedActivityDetail.tsx`, 경험·오늘의 기록 구조 테스트, `globals.css`, 디자인·화면·이슈·작업 기록 문서 |
+| 변경 내용 | 진행 활동 상세에 완료 경험과 같은 내부 `.dashboard-experience-detail-scroll`, transient scrollbar와 안전 여백을 적용해 외곽 패널 모서리에서 콘텐츠·하단 액션을 분리. 날짜별 기록의 44px `+`는 차콜 원형·흰 아이콘과 primary hover를 사용하되 접근성 이름·작성 dialog·비활성 동작은 유지 |
+| 검증한 내용 | 전체 Node 테스트 206개, lint, typecheck, production build 통과. 로그인 브라우저에서 상세 콘텐츠가 외곽보다 38px 안쪽에서 시작하고 내부 `overflow-y: auto`·stable gutter가 적용되는지, 기록 추가 버튼이 44px·999px 곡률·차콜 배경·흰 아이콘인지 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: prevent tracked activity detail clipping` |
+
+### 2026-08-24 - 활동 상태색·초안·관련 링크 위계 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 현황·활동 상세·나의 활동의 상태 표현을 통일하고 AI 초안·경험 수정 관련 링크의 중복 시각 요소 정리 |
+| 수정한 파일 | 활동 workflow 상태 유틸·Data Grid·상세·경험 폼·공통 스타일·구조 테스트, 디자인·화면·이슈·작업 기록 문서 |
+| 변경 내용 | 활동 현황과 활동 상세, 나의 활동 목록·상세가 공통 workflow 상태 계산과 색상 capsule을 사용하도록 통합. 진행 중은 초록, 시작 예정은 노랑, 종료 확인 필요·경험 정리 필요는 빨강의 명확한 파스텔 배경·테두리·점으로 표시하고 종료 후 경험 저장 전 활동은 `경험 정리 필요`로 안내. AI 합성 초안의 헤더 border·고정 메타 border-block과 주요 성과 하단 도움말 제거. 경험 수정의 관련 링크 legend를 다른 필드 label과 같은 레일·타이포그래피·8px 간격으로 정규화하고 선택된 설명 문장을 제거하되 최대 10개 안내·URL·설명·추가·삭제 기능은 유지 |
+| 검증한 내용 | 전체 Node 테스트 205개, lint, typecheck, production build 통과. 로그인 브라우저에서 활동 현황·활동 상세·나의 활동 목록과 열린 상세의 상태 색상, `경험 정리 필요` 상태, 초안 가로선·성과 도움말 제거, 관련 링크 제목 정렬·설명 제거와 기존 입력·버튼 유지를 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align activity workflow status and form hierarchy` |
+
+### 2026-08-24 - AI 분석 패널 높이·스크롤 모서리 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 AI 분석 결과 패널을 목록·상세와 같은 첫 viewport 하단선과 모서리 안쪽 내부 스크롤 구조로 통일 |
+| 수정한 파일 | `DashboardAnalysisSplitPanel.tsx`, `globals.css`, 분석·경험 대시보드 구조 테스트, 디자인·화면·작업 기록 문서 |
+| 변경 내용 | 분석 상태에도 데스크톱 페이지 높이와 workspace flex 잔여 높이를 적용하고, 숨은 상세 슬롯의 2px 잔여 폭을 제거해 분석 패널을 전체 workspace에 stretch. 외곽 Liquid Glass의 scroll을 제거하고 `.dashboard-analysis-split-scroll` 전용 viewport에 transient scrollbar·stable gutter·overscroll containment를 이동. 데스크톱 내부 viewport를 외곽 위·아래 30px 안쪽에 두고 헤더·본문 여백을 보정해 scrollbar 끝이 둥근 모서리에서 잘리지 않게 함. 860px 이하 문서 흐름과 분석 내용·액션·API 계약은 유지 |
+| 검증한 내용 | 전체 Node 테스트 200개, lint, typecheck, production build 통과. 로그인 브라우저에서 저장된 Co-Labor 분석 결과를 다시 열어 분석 외곽 패널과 내부 `.dashboard-analysis-split-scroll`이 각각 1개이며 닫기 액션·분석 콘텐츠가 유지되는지 확인. 하단 inset·상세 슬롯 제거·외곽 hidden/내부 auto·stable gutter·30px 모서리 안전 여백은 구조 테스트로 고정 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align analysis panel viewport height` |
+
+### 2026-08-24 - 오늘의 기록 활동 현황 Data Grid
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 상태별로 분리된 오늘의 기록 활동 목록을 ReUI row pinning 참고 Liquid Glass Data Grid로 통합 |
+| 수정한 파일 | `web/src/components/activities/ActivityOverviewDataGrid.tsx`, `web/src/components/activities/TodayDashboard.tsx`, `web/src/components/activities/TodayDashboard.structure.test.mjs`, `web/src/app/globals.css`, 활성 기준·작업 기록 문서 |
+| 변경 내용 | 완료 경험 저장 전 활동을 활동·상태·시작일·종료일 표로 통합하고 진행 중 초록, 시작 예정 노랑, 종료 확인 필요·경험 정리 필요 빨강 상태를 적용. 열 정렬, 고정 5행 단위 첫·이전·다음·마지막 이동, 선택 시 아이콘만 채워지는 pin 열, 행 전체 상세 진입, 한국어 수정·삭제 메뉴와 공용 인라인 수정 폼을 연결. 별도 활동 수 줄·페이지 크기 선택·Copy ID·새로고침·프로필 이미지는 제외하고 기존 활동 추가 버튼 왼쪽 개수 capsule은 유지. 종료일 없음은 `-`로 표시하고 hover는 왼쪽 선 없는 행 전체 회색으로 통일. 메뉴를 non-modal로 열어 폭 이동을 막고 데스크톱은 가로 스크롤 없이 한 행에 맞추며 640px 이하에서는 카드형 table 행으로 전환 |
+| 검증한 내용 | 전체 Node 테스트 197개, lint, typecheck, production build 통과. 로그인 브라우저에서 `활동 현황 · 2개 · 활동 추가` 헤더, 종료일 `-`, pin 후 첫 행 이동을 확인. 고정 행은 기본 배경, pin 버튼은 투명 배경, pin 내부만 채워지는 계산값을 확인하고 `···` 메뉴 열기 전후 viewport·body·grid의 위치와 너비 및 body padding이 동일해 가로 이동이 없는지 검증 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: add activity status data grid` |
+
+### 2026-08-23 - 나의 활동 목록·상세 패널 높이 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-23 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동의 제목·설명을 포함한 첫 화면에서 전체 활동과 열린 상세 패널 하단을 좌측 메뉴 하단과 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/experiences/ExperienceDashboard.structure.test.mjs`, 작업 기록 문서 |
+| 변경 내용 | 861px 이상에서 페이지 자체의 사용 가능 높이를 좌측 메뉴 하단 inset에 맞추고, 제목·설명 아래의 workspace가 남은 공간을 채우도록 변경. 상세 선택 여부와 관계없이 전체 활동·상세 패널 하단이 좌측 메뉴와 일치하며 각 내부만 스크롤. 861~1179px은 14px, 그 이상은 20px inset을 사용하고 모바일의 기존 세로 흐름은 유지 |
+| 검증한 내용 | 구조 테스트 3개, lint, typecheck, `git diff --check` 통과. 로그인된 1087×817 데스크톱 첫 진입 화면에서 좌측 메뉴·전체 활동 패널 하단이 모두 803px이고, 상세를 연 뒤에도 목록·상세 하단이 모두 803px인지 확인. 목록·상세 내부는 각각 `overflow-y: auto`로 독립 스크롤됨을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align activity list and detail panel heights` |
+
+### 2026-08-23 - 활동 상세 설명과 액션 영역 분리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-23 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 설명이 길 때 상단 액션이 줄바꿈되는 것을 방지하도록 설명을 활동 요약 패널로 이동하고 액션을 한 줄로 고정 |
+| 수정한 파일 | `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/app/globals.css`, 활동 상세 구조 테스트, 작업 기록 문서 |
+| 변경 내용 | 상단에는 제목·상태와 액션만 남기고, 회색 활동 설명은 흰색 요약 패널의 첫 줄 전체 폭에 배치. 활동 기간·기록된 날·쌓인 기록은 그 아래 행의 기존 3열 구조로 유지. 861px 이상에서 수정·삭제·기록·종료 액션은 줄바꿈 없이 한 줄로 유지하고, 640px 이하는 기존 전체 폭 세로 버튼으로 전환 |
+| 검증한 내용 | 구조 테스트 4개, lint, typecheck, production build, `git diff --check` 통과. 로그인된 1092px 활동 상세에서 액션 한 줄과 설명의 요약 패널 첫 행 배치 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: move activity description below actions` |
+
+### 2026-08-23 - 활동 상세 로딩 레거시 스타일 제거
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-23 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록에서 진행 중 활동 상세로 이동할 때 나타나던 과거 크림색 shimmer 로딩 카드를 제거 |
+| 수정한 파일 | `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/app/globals.css`, 활동 상세 구조 테스트, 작업 기록 문서 |
+| 변경 내용 | 활동 상세 초기 로딩을 공통 `LoadingState`의 보이지 않는 접근성 안내로 통일하고, 3개 크림색 skeleton·gradient·애니메이션과 reduced motion 예외를 제거 |
+| 검증한 내용 | 활동 상세 구조 테스트 4개, lint, typecheck, production build, `git diff --check` 통과. 로그인된 활동 상세 화면에서 기존 카드형 로딩 요소 없이 정상 렌더링 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: remove legacy activity loading skeleton` |
+
 ### 2026-08-21 - 오늘의 기록 미래 계획 작성
 
 | 항목 | 내용 |

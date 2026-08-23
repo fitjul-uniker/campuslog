@@ -4,6 +4,12 @@ export type TrackedActivityDisplayState =
   | ActivityStatus
   | "completion_due";
 
+export type ActivityWorkflowState =
+  | "active"
+  | "planned"
+  | "completion_due"
+  | "completion_required";
+
 export const ACTIVITY_STATUS_LABELS: Record<ActivityStatus, string> = {
   planned: "시작 예정",
   active: "진행 중",
@@ -16,6 +22,16 @@ export const ACTIVITY_DISPLAY_STATE_LABELS: Record<
 > = {
   ...ACTIVITY_STATUS_LABELS,
   completion_due: "종료 확인 필요",
+};
+
+export const ACTIVITY_WORKFLOW_STATE_LABELS: Record<
+  ActivityWorkflowState,
+  string
+> = {
+  active: "진행 중",
+  planned: "시작 예정",
+  completion_due: "종료 확인 필요",
+  completion_required: "경험 정리 필요",
 };
 
 export function getLocalDateKey(date = new Date()): string {
@@ -39,6 +55,19 @@ export function getTrackedActivityDisplayState(
   }
 
   return activity.status;
+}
+
+export function getTrackedActivityWorkflowState(
+  activity: TrackedActivity,
+  todayKey = getLocalDateKey(),
+): ActivityWorkflowState | null {
+  if (activity.status === "completed") {
+    return activity.generatedExperienceId ? null : "completion_required";
+  }
+
+  const displayState = getTrackedActivityDisplayState(activity, todayKey);
+
+  return displayState === "completion_due" ? displayState : activity.status;
 }
 
 export function parseLocalDate(dateKey: string): Date | null {

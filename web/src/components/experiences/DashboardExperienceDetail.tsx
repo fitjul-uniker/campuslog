@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import {
-  ArrowLeft,
   ArrowRight,
   BarChart3,
   ExternalLink,
@@ -153,32 +152,29 @@ export function DashboardExperienceDetail({
       <div
         className="dashboard-experience-detail-scroll"
         data-transient-scrollbar="true"
+        data-scroll-page-intro={isFullscreen ? "true" : undefined}
         onScroll={handleTransientScroll}
       >
-      <div className="dashboard-detail-header">
-        <div>
-          <div className="dashboard-detail-status">
-            <StatusBadge status={experience.analysisStatus} />
-          </div>
-          {isFullscreen ? (
-            <h1 id={titleId}>{experience.title}</h1>
-          ) : (
+        <div className="dashboard-detail-header">
+          <div>
+            <div className="dashboard-detail-status">
+              <StatusBadge status={experience.analysisStatus} />
+            </div>
             <h2 id={titleId}>{experience.title}</h2>
-          )}
+          </div>
+          {!isFullscreen && onClose ? (
+            <button
+              className="dashboard-detail-close"
+              type="button"
+              onClick={onClose}
+              aria-label="활동 상세 닫기"
+            >
+              <X aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
-        {!isFullscreen && onClose ? (
-          <button
-            className="dashboard-detail-close"
-            type="button"
-            onClick={onClose}
-            aria-label="활동 상세 닫기"
-          >
-            <X aria-hidden="true" />
-          </button>
-        ) : null}
-      </div>
 
-      <dl className="dashboard-detail-meta">
+        <dl className="dashboard-detail-meta">
         <div>
           <dt>활동 기간</dt>
           <dd>{experience.period}</dd>
@@ -187,9 +183,9 @@ export function DashboardExperienceDetail({
           <dt>역할</dt>
           <dd>{experience.role}</dd>
         </div>
-      </dl>
+        </dl>
 
-      <div className="dashboard-detail-content">
+        <div className="dashboard-detail-content">
         <section>
           <SectionHeading>활동 내용</SectionHeading>
           <p>{experience.description}</p>
@@ -285,9 +281,9 @@ export function DashboardExperienceDetail({
             )}
           </section>
         ) : null}
-      </div>
+        </div>
 
-      {isAnalyzing && !isAnalysisOpen ? (
+        {isAnalyzing && !isAnalysisOpen ? (
         <AIProcessingPanel
           className="analysis-ai-processing"
           title="경험을 분석하고 있어요"
@@ -327,21 +323,17 @@ export function DashboardExperienceDetail({
           onCancel={onCancelAnalysis}
           onBackground={onBackgroundAnalysis}
         />
-      ) : null}
+        ) : null}
 
-      {analysisError && !isAnalysisOpen ? (
+        {analysisError && !isAnalysisOpen ? (
         <p className="dashboard-detail-analysis-error" role="alert">
           {analysisError}
         </p>
-      ) : null}
+        ) : null}
 
-      <div className="dashboard-detail-actions">
+        <div className="dashboard-detail-actions">
         {isFullscreen ? (
           <>
-            <Link href="/experiences" className="dashboard-detail-action">
-              <ArrowLeft aria-hidden="true" />
-              나의 활동
-            </Link>
             {analysisAction}
             {editAction}
             {onDelete ? (
@@ -378,7 +370,7 @@ export function DashboardExperienceDetail({
             {analysisAction}
           </>
         )}
-      </div>
+        </div>
       </div>
     </motion.section>
   );

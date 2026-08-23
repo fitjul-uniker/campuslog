@@ -19,6 +19,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useExperienceAnalysisTask } from "@/hooks/use-experience-analysis-task";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
@@ -28,6 +29,7 @@ type ExperienceAnalysisClientProps = {
 
 export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) {
   const router = useRouter();
+  const handleTransientScroll = useTransientScrollbar<HTMLDivElement>();
   const [experience, setExperience] = useState<Experience | null | undefined>(
     undefined,
   );
@@ -187,8 +189,8 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
     );
   }
 
-  return (
-    <div className="page-stack sub-page">
+  const pageHeader = (
+    <div className="standalone-page-intro">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -234,7 +236,12 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
           </Link>
         </div>
       </section>
+    </div>
+  );
 
+  return (
+    <div className="page-stack sub-page analysis-detail-page">
+      {pageHeader}
       {analysis ? (
         <>
           <AnalysisResult
@@ -266,42 +273,49 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
       ) : (
         <>
           <section
-            className="detail-panel liquid-section"
+            className="detail-panel analysis-result liquid-section"
             aria-labelledby="analysis-title"
           >
-            <div className="detail-header">
-              <div>
-                <p className="experience-meta">{experience.title}</p>
-                <h2 id="analysis-title">아직 분석 결과가 없습니다</h2>
+            <div
+              className="analysis-result-scroll"
+              data-transient-scrollbar="true"
+              data-scroll-page-intro="true"
+              onScroll={handleTransientScroll}
+            >
+              <div className="detail-header">
+                <div>
+                  <p className="experience-meta">{experience.title}</p>
+                  <h2 id="analysis-title">아직 분석 결과가 없습니다</h2>
+                </div>
+                <StatusBadge status={experience.analysisStatus} />
               </div>
-              <StatusBadge status={experience.analysisStatus} />
-            </div>
 
-            <div className="analysis-empty">
-              <p>
-                이 경험에 저장된 AI 분석 결과가 없습니다. 상세 화면으로
-                돌아가거나 여기에서 바로 분석을 요청할 수 있습니다.
-              </p>
-            </div>
+              <div className="analysis-empty">
+                <p>
+                  이 경험에 저장된 AI 분석 결과가 없습니다. 상세 화면으로
+                  돌아가거나 여기에서 바로 분석을 요청할 수 있습니다.
+                </p>
+              </div>
 
-            {isAnalyzing ? analysisProcessingPanel : null}
+              {isAnalyzing ? analysisProcessingPanel : null}
 
-            {analysisError ? (
-              <p className="form-error" role="alert">
-                {analysisError}
-              </p>
-            ) : null}
+              {analysisError ? (
+                <p className="form-error" role="alert">
+                  {analysisError}
+                </p>
+              ) : null}
 
-            <div className="panel-actions analysis-page-footer-actions">
-              <AnimatedGradientActionButton
-                type="button"
-                onClick={handleAnalyze}
-                disabled={isAnalyzing}
-                aria-busy={isAnalyzing}
-                icon={<Sparkles />}
-              >
-                {isAnalyzing ? "분석 중..." : "AI 분석 요청"}
-              </AnimatedGradientActionButton>
+              <div className="panel-actions analysis-page-footer-actions">
+                <AnimatedGradientActionButton
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                  aria-busy={isAnalyzing}
+                  icon={<Sparkles />}
+                >
+                  {isAnalyzing ? "분석 중..." : "AI 분석 요청"}
+                </AnimatedGradientActionButton>
+              </div>
             </div>
           </section>
         </>

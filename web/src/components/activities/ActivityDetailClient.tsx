@@ -23,11 +23,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityCreateForm } from "@/components/activities/ActivityCreateForm";
 import {
   ACTIVITY_DISPLAY_STATE_LABELS,
+  ACTIVITY_WORKFLOW_STATE_LABELS,
   createExperiencePeriod,
   formatDateKey,
   getActivityDateRange,
   getLocalDateKey,
   getTrackedActivityDisplayState,
+  getTrackedActivityWorkflowState,
 } from "@/components/activities/activityViewUtils";
 import {
   RippleButton,
@@ -39,6 +41,7 @@ import {
   useAITask,
   type AITaskDefinition,
 } from "@/components/ai/AIBackgroundTaskProvider";
+import { LoadingState } from "@/components/common/LoadingState";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -553,14 +556,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   }
 
   if (isLoading) {
-    return (
-      <div className="activity-detail-page activity-page-loading" aria-busy="true">
-        <span className="sr-only">진행 활동을 불러오는 중입니다.</span>
-        <div />
-        <div />
-        <div />
-      </div>
-    );
+    return <LoadingState message="진행 활동을 불러오는 중입니다." />;
   }
 
   if (!activity) {
@@ -602,6 +598,11 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
 
   const isCompleted = activity.status === "completed";
   const displayState = getTrackedActivityDisplayState(activity);
+  const workflowState = getTrackedActivityWorkflowState(activity);
+  const detailStatus = workflowState ?? displayState;
+  const detailStatusLabel = workflowState
+    ? ACTIVITY_WORKFLOW_STATE_LABELS[workflowState]
+    : ACTIVITY_DISPLAY_STATE_LABELS[displayState];
   const isCompletionDue = displayState === "completion_due";
   const canActivate = activity.startDate <= getLocalDateKey();
   const canEditActivity =
@@ -639,8 +640,12 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
         <div className="activity-detail-heading">
           <h1>{activity.title}</h1>
           <div className="activity-status-row">
-            <span className={`activity-status-badge is-${displayState}`}>
-              {ACTIVITY_DISPLAY_STATE_LABELS[displayState]}
+            <span
+              className="activity-workflow-status"
+              data-status={detailStatus}
+            >
+              <span aria-hidden="true" />
+              {detailStatusLabel}
             </span>
             {isCompleted ? (
               <span className="activity-synthesis-label">
@@ -649,7 +654,6 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               </span>
             ) : null}
           </div>
-          <p>{activity.description}</p>
         </div>
 
         <div className="activity-detail-primary-actions liquid-control-group">
@@ -748,6 +752,10 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       </header>
 
       <dl className="activity-detail-meta liquid-content-plate">
+        <div className="activity-detail-description">
+          <dt>활동 설명</dt>
+          <dd>{activity.description}</dd>
+        </div>
         <div>
           <dt>활동 기간</dt>
           <dd>{getActivityDateRange(activity)}</dd>
@@ -983,7 +991,6 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
               maxLength={4000}
               placeholder="근거가 있는 성과를 한 줄에 하나씩 적어 주세요."
             />
-            <small>한 줄에 하나씩 입력합니다. 성과가 확인되지 않으면 비워도 됩니다.</small>
           </label>
 
           {draft.evidenceGaps.length > 0 ? (

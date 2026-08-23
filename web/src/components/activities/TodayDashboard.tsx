@@ -1,18 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import {
-  ArrowRight,
-  ChevronRight,
   Edit3,
-  FileCheck2,
   Loader2,
-  MoreHorizontal,
   Plus,
   Save,
-  Sparkles,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import type { FormEvent } from "react";
 import {
   useCallback,
@@ -26,11 +21,10 @@ import {
 import { ActivityCreateScreen } from "@/components/activities/ActivityCreateScreen";
 import { ActivityCreateForm } from "@/components/activities/ActivityCreateForm";
 import { ActivityCalendar } from "@/components/activities/ActivityCalendar";
-import { getActiveActivityItemPresentation } from "@/components/activities/activeActivityItemPresentation";
+import { ActivityOverviewDataGrid } from "@/components/activities/ActivityOverviewDataGrid";
 import {
   formatDateKey,
   getLocalDateKey,
-  getTrackedActivityDisplayState,
   isActivityRecordableOnDate,
 } from "@/components/activities/activityViewUtils";
 import {
@@ -49,12 +43,6 @@ import {
 import { Field } from "@/components/ui/field";
 import { FloatingPanel } from "@/components/ui/floating-panel";
 import { ExpandableScreen } from "@/components/ui/expandable-screen";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -96,19 +84,6 @@ function sortLogs(logs: DailyLog[]): DailyLog[] {
 
     return b.createdAt.localeCompare(a.createdAt);
   });
-}
-
-function getCompletionActionLabel(activity: TrackedActivity): string {
-  switch (activity.synthesisStatus) {
-    case "processing":
-      return "AI 정리 상태 확인";
-    case "draft_ready":
-      return "AI 초안 검토하기";
-    case "failed":
-      return "AI 정리 다시 시도";
-    default:
-      return "경험 정리 시작하기";
-  }
 }
 
 function createActivityDeleteConfirmMessage(
@@ -206,10 +181,8 @@ export function TodayDashboard() {
   const [isActivityCreateSaving, setIsActivityCreateSaving] = useState(false);
   const [activityCreateAnchor, setActivityCreateAnchor] =
     useState<HTMLElement | null>(null);
-  const [editingCompletionActivityId, setEditingCompletionActivityId] =
-    useState("");
-  const [isCompletionActivitySaving, setIsCompletionActivitySaving] =
-    useState(false);
+  const [editingActivityId, setEditingActivityId] = useState("");
+  const [isActivitySaving, setIsActivitySaving] = useState(false);
   const generatedPanelId = useId().replaceAll(":", "");
   const recordPanelId = `daily-log-panel-${generatedPanelId}`;
   const activityRequiredPanelId = `activity-required-panel-${generatedPanelId}`;
@@ -274,6 +247,14 @@ export function TodayDashboard() {
       ) ?? [],
     [activities, today],
   );
+  const overviewActivityCount = useMemo(
+    () =>
+      activities?.filter(
+        (activity) =>
+          activity.status !== "completed" || !activity.generatedExperienceId,
+      ).length ?? 0,
+    [activities],
+  );
   const recordableActivities = useMemo(
     () =>
       activities?.filter((activity) =>
@@ -293,28 +274,6 @@ export function TodayDashboard() {
     activityComboboxOptions.find(
       (activity) => activity.value === selectedActivityId,
     ) ?? null;
-  const plannedActivities = useMemo(
-    () => activities?.filter((activity) => activity.status === "planned") ?? [],
-    [activities],
-  );
-  const activitiesAwaitingEndConfirmation = useMemo(
-    () =>
-      activities?.filter(
-        (activity) =>
-          getTrackedActivityDisplayState(activity, today) ===
-          "completion_due",
-      ) ?? [],
-    [activities, today],
-  );
-  const activitiesRequiringCompletion = useMemo(
-    () =>
-      activities?.filter(
-        (activity) =>
-          activity.status === "completed" &&
-          !activity.generatedExperienceId,
-      ) ?? [],
-    [activities],
-  );
   const activitiesById = useMemo(
     () =>
       (activities ?? []).reduce<Record<string, TrackedActivity>>(
@@ -326,8 +285,8 @@ export function TodayDashboard() {
       ),
     [activities],
   );
-  const editingCompletionActivity = editingCompletionActivityId
-    ? (activitiesById[editingCompletionActivityId] ?? null)
+  const editingActivity = editingActivityId
+    ? (activitiesById[editingActivityId] ?? null)
     : null;
   const selectedLogs = useMemo(
     () => logs.filter((log) => log.date === selectedDate),
@@ -615,12 +574,12 @@ export function TodayDashboard() {
     );
     setActivityActionError("");
     setActivityActionMessage("활동을 삭제했습니다.");
-    if (editingCompletionActivityId === activity.id) {
-      setEditingCompletionActivityId("");
+    if (editingActivityId === activity.id) {
+      setEditingActivityId("");
     }
   }
 
-  function handleCompletionActivitySaved(updatedActivity: TrackedActivity) {
+  function handleActivitySaved(updatedActivity: TrackedActivity) {
     setActivities((currentActivities) =>
       currentActivities
         ? sortActivities(
@@ -630,7 +589,7 @@ export function TodayDashboard() {
           )
         : currentActivities,
     );
-    setEditingCompletionActivityId("");
+    setEditingActivityId("");
     setActivityActionError("");
     setActivityActionMessage("활동 정보를 수정했습니다.");
   }
@@ -691,11 +650,11 @@ export function TodayDashboard() {
       >
         <div className="activity-overview-heading">
           <div>
-            <h2 id="activity-overview-title">현재 진행 중인 활동</h2>
+            <h2 id="activity-overview-title">활동 현황</h2>
           </div>
           <div className="activity-overview-actions">
             <span className="activity-overview-count">
-              {activeActivities.length}개
+              {overviewActivityCount}개
             </span>
             <RippleButton
               ref={overviewActivityCreateTriggerRef}
@@ -742,202 +701,54 @@ export function TodayDashboard() {
           </div>
         ) : null}
 
-        {activeActivities.length > 0 ? (
-          <ul className="activity-summary-list activity-active-list">
-            {activeActivities.map((activity) => {
-              const item =
-                getActiveActivityItemPresentation(activity);
+        <ActivityOverviewDataGrid
+          activities={activities ?? []}
+          today={today}
+          editingActivityId={editingActivityId}
+          disabled={isActivitySaving}
+          onEdit={(activity) => {
+            setActivityActionError("");
+            setActivityActionMessage("");
+            setEditingActivityId((current) =>
+              current === activity.id ? "" : activity.id,
+            );
+          }}
+          onDelete={handleDeleteActivity}
+        />
 
-              return (
-                <li key={activity.id} className="activity-active-item">
-                  <Link
-                    href={item.href}
-                    className="activity-active-item-link"
-                    aria-label={item.openLabel}
-                  >
-                    <strong className="activity-summary-title">
-                      {item.title}
-                    </strong>
-                    <ChevronRight aria-hidden="true" />
-                  </Link>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="activity-active-item-menu-trigger"
-                        aria-label={item.menuLabel}
-                      >
-                        <MoreHorizontal aria-hidden="true" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="activity-active-item-menu"
-                    >
-                      <DropdownMenuItem
-                        className="activity-active-item-delete"
-                        aria-label={item.deleteLabel}
-                        onSelect={() => handleDeleteActivity(activity)}
-                      >
-                        <Trash2 aria-hidden="true" />
-                        <span>삭제</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <div className="activity-overview-empty">
-            <p>진행 중인 활동이 아직 없습니다.</p>
-          </div>
-        )}
-
-        {activitiesAwaitingEndConfirmation.length > 0 ? (
-          <div className="activity-finishing-section">
-            <div className="activity-finishing-heading">
-              <div>
-                <p className="activity-section-kicker">종료 확인 필요</p>
-                <h3>예상 종료일이 지난 활동</h3>
-              </div>
-              <span>{activitiesAwaitingEndConfirmation.length}개</span>
+        {editingActivity ? (
+          <section
+            className="activity-edit-section activity-data-grid-edit-section"
+            aria-labelledby="activity-data-grid-edit-title"
+          >
+            <div className="activity-edit-heading">
+              <h3 id="activity-data-grid-edit-title">활동 수정</h3>
+              <p>
+                제목, 내용과 활동 기간을 조정합니다. 이미 작성한 날짜별
+                기록을 벗어나는 기간으로는 바꿀 수 없습니다.
+              </p>
             </div>
-            <ul className="activity-summary-list activity-finishing-list">
-              {activitiesAwaitingEndConfirmation.map((activity) => (
-                <li key={activity.id}>
-                  <Link href={`/activities/${activity.id}`}>
-                    <span className="activity-summary-icon">
-                      <FileCheck2 aria-hidden="true" />
-                    </span>
-                    <span className="activity-summary-copy">
-                      <strong>{activity.title}</strong>
-                      <span>
-                        {formatDateKey(activity.expectedEndDate)} 종료 예정 ·
-                        종료 여부를 확인해 주세요
-                      </span>
-                    </span>
-                    <ArrowRight aria-hidden="true" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        {activitiesRequiringCompletion.length > 0 ? (
-          <div className="activity-finishing-section">
-            <div className="activity-finishing-heading">
-              <div>
-                <p className="activity-section-kicker">경험 정리 필요</p>
-                <h3>완료한 활동을 경험으로 정리하기</h3>
-              </div>
-              <span>{activitiesRequiringCompletion.length}개</span>
-            </div>
-            <ul className="activity-summary-list activity-finishing-list">
-              {activitiesRequiringCompletion.map((activity) => (
-                <li key={activity.id}>
-                  <Link href={`/activities/${activity.id}`}>
-                    <span className="activity-summary-icon">
-                      <Sparkles aria-hidden="true" />
-                    </span>
-                    <span className="activity-summary-copy">
-                      <strong>{activity.title}</strong>
-                      <span>{getCompletionActionLabel(activity)}</span>
-                    </span>
-                    <ArrowRight aria-hidden="true" />
-                  </Link>
-                  <button
-                    type="button"
-                    className="activity-summary-edit-button"
-                    onClick={() => {
-                      setActivityActionError("");
-                      setActivityActionMessage("");
-                      setEditingCompletionActivityId((current) =>
-                        current === activity.id ? "" : activity.id,
-                      );
-                    }}
-                    aria-expanded={editingCompletionActivityId === activity.id}
-                    aria-label={`${activity.title} 활동 수정`}
-                    disabled={isCompletionActivitySaving}
-                  >
-                    <Edit3 aria-hidden="true" />
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    className="activity-summary-delete-button"
-                    onClick={() => handleDeleteActivity(activity)}
-                    aria-label={`${activity.title} 활동 삭제`}
-                    disabled={isCompletionActivitySaving}
-                  >
-                    <Trash2 aria-hidden="true" />
-                    삭제
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {editingCompletionActivity ? (
-              <section
-                className="activity-edit-section activity-finishing-edit-section"
-                aria-labelledby="activity-finishing-edit-title"
-              >
-                <div className="activity-edit-heading">
-                  <h3 id="activity-finishing-edit-title">
-                    완료 경험 정리 전 활동 수정
-                  </h3>
-                  <p>
-                    제목, 내용, 시작일과 종료일을 조정합니다. 이미 쓴
-                    날짜별 기록을 벗어나는 기간으로는 바꿀 수 없습니다.
-                  </p>
-                </div>
-                <ActivityCreateForm
-                  key={editingCompletionActivity.id}
-                  activityId={editingCompletionActivity.id}
-                  allowEndDateUndecided={false}
-                  endDateLabel="종료일"
-                  initialValue={{
-                    title: editingCompletionActivity.title,
-                    description: editingCompletionActivity.description,
-                    startDate: editingCompletionActivity.startDate,
-                    expectedEndDate:
-                      editingCompletionActivity.completedAt ||
-                      editingCompletionActivity.expectedEndDate,
-                  }}
-                  onCancel={() => setEditingCompletionActivityId("")}
-                  onSaved={handleCompletionActivitySaved}
-                  onSavingChange={setIsCompletionActivitySaving}
-                  submitLabel="수정 저장"
-                  variant="expanded"
-                />
-              </section>
-            ) : null}
-          </div>
-        ) : null}
-
-        {plannedActivities.length > 0 ? (
-          <details className="activity-planned-list">
-            <summary>시작 예정 활동 {plannedActivities.length}개</summary>
-            <ul>
-              {plannedActivities.map((activity) => (
-                <li key={activity.id}>
-                  <Link href={`/activities/${activity.id}`}>
-                    <span>{activity.title}</span>
-                    <span>{formatDateKey(activity.startDate)} 시작</span>
-                  </Link>
-                  <button
-                    type="button"
-                    className="activity-planned-delete-button"
-                    onClick={() => handleDeleteActivity(activity)}
-                    aria-label={`${activity.title} 예정 활동 삭제`}
-                  >
-                    <Trash2 aria-hidden="true" />
-                    삭제
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </details>
+            <ActivityCreateForm
+              key={editingActivity.id}
+              activityId={editingActivity.id}
+              allowEndDateUndecided={editingActivity.status !== "completed"}
+              endDateLabel={
+                editingActivity.status === "completed" ? "종료일" : "예상 종료일"
+              }
+              initialValue={{
+                title: editingActivity.title,
+                description: editingActivity.description,
+                startDate: editingActivity.startDate,
+                expectedEndDate:
+                  editingActivity.completedAt || editingActivity.expectedEndDate,
+              }}
+              onCancel={() => setEditingActivityId("")}
+              onSaved={handleActivitySaved}
+              onSavingChange={setIsActivitySaving}
+              submitLabel="수정 저장"
+              variant="expanded"
+            />
+          </section>
         ) : null}
       </section>
 

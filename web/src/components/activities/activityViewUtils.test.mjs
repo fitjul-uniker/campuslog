@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getActivityPlanningHorizonDateKey as getUiPlanningHorizonDateKey,
   getTrackedActivityDisplayState,
+  getTrackedActivityWorkflowState,
   isActivityRecordableOnDate as isUiActivityRecordableOnDate,
 } from "./activityViewUtils.ts";
 import {
@@ -50,6 +51,26 @@ test("종료가 확정된 활동은 경험 정리 필요 상태와 구분한다"
       "2026-07-23",
     ),
     "completed",
+  );
+});
+
+test("종료 후 경험 저장 전에는 경험 정리 필요 상태를 사용한다", () => {
+  const completedActivity = {
+    ...baseActivity,
+    status: "completed",
+    completedAt: "2026-07-22",
+  };
+
+  assert.equal(
+    getTrackedActivityWorkflowState(completedActivity, "2026-07-23"),
+    "completion_required",
+  );
+  assert.equal(
+    getTrackedActivityWorkflowState(
+      { ...completedActivity, generatedExperienceId: "experience-test" },
+      "2026-07-23",
+    ),
+    null,
   );
 });
 

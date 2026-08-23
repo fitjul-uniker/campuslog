@@ -6,6 +6,14 @@ const source = await readFile(
   new URL("./ExperienceDashboard.tsx", import.meta.url),
   "utf8",
 );
+const animatedListSource = await readFile(
+  new URL("./AnimatedExperienceList.tsx", import.meta.url),
+  "utf8",
+);
+const trackedDetailSource = await readFile(
+  new URL("./DashboardTrackedActivityDetail.tsx", import.meta.url),
+  "utf8",
+);
 const styles = await readFile(
   new URL("../../app/globals.css", import.meta.url),
   "utf8",
@@ -51,6 +59,49 @@ test("목록과 상세는 다른 주요 탭과 같은 frosted 외곽 표면을 �
   assert.match(
     styles,
     /\.dashboard-experience-detail\.liquid-section\s*\{[^}]*background:\s*var\(--liquid-frosted-fill\)/,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-experience-workspace\[data-detail-open="true"\]\s*\{[^}]*align-items:\s*stretch/,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-experience-detail-slot[\s\S]*?>\s*\.dashboard-experience-detail\s*\{[^}]*flex:\s*1\s+1\s+auto/,
+  );
+  assert.match(
+    styles,
+    /@media \(min-width: 861px\)[\s\S]*?\.dashboard-experience-page\s*\{[^}]*height:\s*calc\(100svh\s*-\s*var\(--experience-panel-viewport-inset\)\)[^}]*padding-bottom:\s*0/,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-experience-workspace:not\(\[data-analysis-open="true"\]\)\s*\{[^}]*height:\s*auto[^}]*align-items:\s*stretch[^}]*flex:\s*1\s+1\s+auto/,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-experience-detail-scroll\s*\{[^}]*height:\s*100%[^}]*max-height:\s*none/,
+  );
+});
+
+test("진행 활동 목록과 상세는 활동 현황과 같은 상태색 capsule을 사용한다", () => {
+  assert.match(
+    animatedListSource,
+    /className="activity-workflow-status dashboard-activity-progress-badge"[\s\S]*?data-status=\{item\.displayState\}/,
+  );
+  assert.match(
+    trackedDetailSource,
+    /className="activity-workflow-status dashboard-detail-progress-badge"[\s\S]*?data-status=\{displayState\}/,
+  );
+  assert.match(
+    trackedDetailSource,
+    /className="dashboard-experience-detail-scroll"[\s\S]*?data-transient-scrollbar="true"[\s\S]*?onScroll=\{handleTransientScroll\}/,
+  );
+  assert.match(
+    styles,
+    /\.activity-workflow-status\[data-status="active"\]\s*\{[^}]*background:\s*#e4f7eb[^}]*color:\s*#126a3b/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.product-shell\[data-liquid-glass="true"\]\s*:is\([^)]*dashboard-(?:activity|detail)-progress-badge/,
   );
 });
 
