@@ -44,9 +44,16 @@ const [hook, appShell, dashboard, list, detail, analysis, styles] = await Promis
 
 test("상세와 분석 패널이 공용 transient scrollbar 동작을 연결한다", () => {
   assert.match(hook, /useTransientScrollbar/);
+  assert.match(hook, /updateScrollablePageIntro/);
+  assert.match(hook, /target\.dataset\.scrollPageIntro !== "true"/);
+  assert.match(hook, /--standalone-page-intro-scroll-offset/);
   assert.match(detail, /useTransientScrollbar/);
   assert.match(detail, /className="dashboard-experience-detail-scroll"/);
   assert.match(detail, /data-transient-scrollbar="true"/);
+  assert.match(
+    detail,
+    /data-scroll-page-intro=\{isFullscreen \? "true" : undefined\}/,
+  );
   assert.match(detail, /onScroll=\{handleTransientScroll\}/);
   assert.match(analysis, /useTransientScrollbar/);
   assert.match(analysis, /data-transient-scrollbar="true"/);

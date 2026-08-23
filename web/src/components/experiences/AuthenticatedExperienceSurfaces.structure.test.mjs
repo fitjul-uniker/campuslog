@@ -78,6 +78,23 @@ test("관련 링크의 열 제목은 첫 행에만 보이고 추가 행은 입�
   );
 });
 
+test("관련 링크 제목은 다른 필드 라벨과 정렬하고 중복 설명을 표시하지 않는다", () => {
+  assert.match(formSource, /<legend>관련 링크<\/legend>/);
+  assert.doesNotMatch(
+    formSource,
+    /작업 결과나 참고 자료를 링크와 설명으로 나누어 정리해보세요\./,
+  );
+  assert.match(formSource, /최대 \{MAX_RELATED_LINKS\}개까지 추가할 수 있습니다\./);
+  assert.match(
+    styles,
+    /\.related-links-fieldset legend\s*\{[^}]*width:\s*100%[^}]*margin:\s*0[^}]*padding:\s*0/,
+  );
+  assert.match(
+    styles,
+    /\.related-links-fieldset\s*\{[^}]*gap:\s*8px/,
+  );
+});
+
 test("역할 입력은 다른 단문 입력보다 여유 있는 높이를 사용한다", () => {
   assert.match(
     styles,
@@ -107,7 +124,7 @@ test("긴 경험 입력은 한도에 가까울 때만 글자 수를 안내한다
 test("독립 AI 분석과 임베디드 분석은 서로 다른 Liquid Glass 밀도를 사용한다", () => {
   assert.match(
     analysisClientSource,
-    /detail-panel liquid-section/,
+    /detail-panel analysis-result liquid-section/,
   );
   assert.match(
     resultSource,
@@ -141,6 +158,10 @@ test("AI 분석 결과는 추천 기록과 같은 kicker·생성일·대표 제�
 test("독립 분석 결과는 후속 액션을 같은 결과 표면 안에 넣을 수 있다", () => {
   assert.match(resultSource, /footer\?: ReactNode/);
   assert.match(resultSource, /analysis-result-footer/);
+  assert.match(resultSource, /className="analysis-result-scroll"/);
+  assert.match(resultSource, /data-transient-scrollbar="true"/);
+  assert.match(resultSource, /data-scroll-page-intro="true"/);
+  assert.match(resultSource, /onScroll=\{handleTransientScroll\}/);
 });
 
 test("첨부 목록은 상세 내부에서 안정적인 content plate로 읽힌다", () => {

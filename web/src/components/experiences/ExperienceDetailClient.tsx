@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpenText } from "lucide-react";
+import { ArrowLeft, BookOpenText } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -152,24 +153,40 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
   }
 
   return (
-    <div className="product-page product-detail-page sub-page">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
-              CampusLog
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>경험 상세</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <div className="product-page product-detail-page experience-detail-page sub-page">
+      <div className="standalone-page-intro">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+                CampusLog
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>경험 상세</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <header className="sub-page-heading experience-detail-page-heading">
+          <div>
+            <h1>경험 상세</h1>
+            <p className="page-description">
+              저장한 경험의 활동 내용과 성과, AI 분석을 확인합니다.
+            </p>
+          </div>
+          <div className="header-actions experience-detail-page-header-actions">
+            <Link href="/experiences" className="button button-secondary">
+              <ArrowLeft className="button-icon" aria-hidden="true" />
+              나의 활동
+            </Link>
+          </div>
+        </header>
+      </div>
       <DashboardExperienceDetail
         experience={experience}
         analysis={analysis}

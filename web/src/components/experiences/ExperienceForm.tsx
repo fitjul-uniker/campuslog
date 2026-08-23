@@ -706,10 +706,7 @@ export function ExperienceForm({
       <fieldset className="related-links-fieldset">
         <legend>관련 링크</legend>
         <div className="related-links-toolbar">
-          <div>
-            <p>작업 결과나 참고 자료를 링크와 설명으로 나누어 정리해보세요.</p>
-            <span>최대 {MAX_RELATED_LINKS}개까지 추가할 수 있습니다.</span>
-          </div>
+          <span>최대 {MAX_RELATED_LINKS}개까지 추가할 수 있습니다.</span>
           <button
             ref={addRelatedLinkButtonRef}
             className="related-link-add"

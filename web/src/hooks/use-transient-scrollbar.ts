@@ -9,6 +9,33 @@ import {
 
 import { createTransientScrollbarController } from "@/hooks/transient-scrollbar-controller";
 
+function updateScrollablePageIntro(target: HTMLElement): void {
+  if (target.dataset.scrollPageIntro !== "true") {
+    return;
+  }
+
+  const page = target.closest<HTMLElement>(
+    ".experience-detail-page, .analysis-detail-page",
+  );
+  const intro = page?.querySelector<HTMLElement>(
+    ":scope > .standalone-page-intro",
+  );
+
+  if (!page || !intro) {
+    return;
+  }
+
+  const workspaceGap = Number.parseFloat(
+    window.getComputedStyle(page).getPropertyValue("--product-workspace-gap"),
+  );
+  const maximumOffset = intro.offsetHeight + (workspaceGap || 0);
+
+  page.style.setProperty(
+    "--standalone-page-intro-scroll-offset",
+    `${Math.min(target.scrollTop, maximumOffset)}px`,
+  );
+}
+
 export function useTransientScrollbar<
   T extends HTMLElement,
 >(): UIEventHandler<T> {
@@ -25,6 +52,7 @@ export function useTransientScrollbar<
     }
 
     controllerRef.current.handleScroll(event.currentTarget);
+    updateScrollablePageIntro(event.currentTarget);
   }, []);
 
   useEffect(

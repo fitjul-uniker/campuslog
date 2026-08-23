@@ -57,9 +57,7 @@ export function DashboardAnalysisSplitPanel({
     <motion.aside
       id={DASHBOARD_ANALYSIS_SPLIT_PANEL_ID}
       className="dashboard-analysis-split-panel liquid-section"
-      data-transient-scrollbar="true"
       aria-labelledby={titleId}
-      onScroll={handleTransientScroll}
       initial={
         shouldReduceMotion ? false : { opacity: 0, x: 28, scale: 0.985 }
       }
@@ -72,6 +70,11 @@ export function DashboardAnalysisSplitPanel({
         ease: [0.22, 1, 0.36, 1],
       }}
     >
+      <div
+        className="dashboard-analysis-split-scroll"
+        data-transient-scrollbar="true"
+        onScroll={handleTransientScroll}
+      >
       <header className="dashboard-analysis-split-header">
         <div>
           <div className="analysis-result-kicker-row">
@@ -168,6 +171,7 @@ export function DashboardAnalysisSplitPanel({
             {isAnalyzing ? "분석 중..." : "다시 분석하기"}
           </AnimatedGradientActionButton>
         </div>
+      </div>
       </div>
     </motion.aside>
   );

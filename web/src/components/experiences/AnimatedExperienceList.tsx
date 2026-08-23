@@ -10,7 +10,10 @@ import {
 import type { KeyboardEvent, UIEvent } from "react";
 import { useRef } from "react";
 
-import type { TrackedActivityDisplayState } from "@/components/activities/activityViewUtils";
+import {
+  ACTIVITY_DISPLAY_STATE_LABELS,
+  type TrackedActivityDisplayState,
+} from "@/components/activities/activityViewUtils";
 import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 
 export type MyActivityListItem = {
@@ -147,12 +150,11 @@ export function AnimatedExperienceList({
             <span className="dashboard-activity-title">{item.title}</span>
             {item.kind === "tracked" ? (
               <span
-                className="dashboard-activity-progress-badge"
-                data-activity-status={item.displayState}
+                className="activity-workflow-status dashboard-activity-progress-badge"
+                data-status={item.displayState}
               >
-                {item.displayState === "completion_due"
-                  ? "종료 확인 필요"
-                  : "진행 중"}
+                <span aria-hidden="true" />
+                {ACTIVITY_DISPLAY_STATE_LABELS[item.displayState!]}
               </span>
             ) : null}
           </button>

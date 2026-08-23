@@ -1,8 +1,11 @@
+"use client";
+
 import { AlertTriangle } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { AnalysisGapAnswerList } from "@/components/ai/AnalysisGapAnswerList";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import { formatDateTime } from "@/lib/date";
 import type { Experience, ExperienceAnalysis } from "@/lib/types";
 
@@ -31,6 +34,7 @@ export function AnalysisResult({
   ] as const;
   const hasStar = starItems.some(([, value]) => value);
   const isEmbedded = variant === "embedded";
+  const handleTransientScroll = useTransientScrollbar<HTMLDivElement>();
   const analysisNotice = isSourceOutdated
     ? {
         variant: "warning" as const,
@@ -45,16 +49,8 @@ export function AnalysisResult({
         }
       : null;
 
-  return (
-    <section
-      className={`detail-panel analysis-result ${
-        isEmbedded
-          ? "is-embedded liquid-content-plate"
-          : "liquid-section"
-      }`}
-      aria-label={isEmbedded ? "상세 AI 분석 결과" : undefined}
-      aria-labelledby={isEmbedded ? undefined : "analysis-result-title"}
-    >
+  const content = (
+    <>
       {!isEmbedded ? (
         <div className="detail-header analysis-result-header">
           <div>
@@ -147,6 +143,31 @@ export function AnalysisResult({
       </div>
 
       {footer ? <div className="analysis-result-footer">{footer}</div> : null}
+    </>
+  );
+
+  return (
+    <section
+      className={`detail-panel analysis-result ${
+        isEmbedded
+          ? "is-embedded liquid-content-plate"
+          : "liquid-section"
+      }`}
+      aria-label={isEmbedded ? "상세 AI 분석 결과" : undefined}
+      aria-labelledby={isEmbedded ? undefined : "analysis-result-title"}
+    >
+      {isEmbedded ? (
+        content
+      ) : (
+        <div
+          className="analysis-result-scroll"
+          data-transient-scrollbar="true"
+          data-scroll-page-intro="true"
+          onScroll={handleTransientScroll}
+        >
+          {content}
+        </div>
+      )}
     </section>
   );
 }

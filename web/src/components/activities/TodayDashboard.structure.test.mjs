@@ -6,6 +6,14 @@ const source = await readFile(
   new URL("./TodayDashboard.tsx", import.meta.url),
   "utf8",
 );
+const dataGridSource = await readFile(
+  new URL("./ActivityOverviewDataGrid.tsx", import.meta.url),
+  "utf8",
+);
+const viewUtilsSource = await readFile(
+  new URL("./activityViewUtils.ts", import.meta.url),
+  "utf8",
+);
 const calendarSource = await readFile(
   new URL("./ActivityCalendar.tsx", import.meta.url),
   "utf8",
@@ -15,24 +23,78 @@ const styles = await readFile(
   "utf8",
 );
 
-test("활동 공통 피드백은 개별 활동 목록보다 먼저 표시한다", () => {
+test("활동 공통 피드백은 활동 현황 Data Grid보다 먼저 표시한다", () => {
   const feedbackIndex = source.indexOf("{activityActionError ? (");
-  const activeListIndex = source.indexOf("{activeActivities.length > 0 ? (");
-  const completionListIndex = source.indexOf(
-    "{activitiesRequiringCompletion.length > 0 ? (",
-  );
+  const dataGridIndex = source.indexOf("<ActivityOverviewDataGrid");
 
   assert.notEqual(feedbackIndex, -1, "공통 피드백 영역을 찾을 수 없습니다.");
-  assert.notEqual(activeListIndex, -1, "진행 활동 목록을 찾을 수 없습니다.");
-  assert.notEqual(
-    completionListIndex,
-    -1,
-    "경험 정리 필요 목록을 찾을 수 없습니다.",
-  );
+  assert.notEqual(dataGridIndex, -1, "활동 현황 Data Grid를 찾을 수 없습니다.");
   assert.ok(
-    feedbackIndex < activeListIndex && feedbackIndex < completionListIndex,
-    "공통 피드백은 특정 활동 목록 아래가 아니라 모든 목록 위에 있어야 합니다.",
+    feedbackIndex < dataGridIndex,
+    "공통 피드백은 활동 현황 Data Grid 위에 있어야 합니다.",
   );
+});
+
+test("활동 현황 Data Grid는 상태·기간·고정·한국어 행 메뉴를 제공한다", () => {
+  assert.match(source, /<h2 id="activity-overview-title">활동 현황<\/h2>/);
+  assert.match(dataGridSource, /활동[\s\S]*상태[\s\S]*시작일[\s\S]*종료일/);
+  assert.match(viewUtilsSource, /active: "진행 중"/);
+  assert.match(viewUtilsSource, /planned: "시작 예정"/);
+  assert.match(viewUtilsSource, /completion_due: "종료 확인 필요"/);
+  assert.match(viewUtilsSource, /completion_required: "경험 정리 필요"/);
+  assert.match(dataGridSource, /className="activity-workflow-status"/);
+  assert.match(dataGridSource, /상단에 고정/);
+  assert.match(dataGridSource, /활동 수정/);
+  assert.match(dataGridSource, /활동 삭제/);
+  assert.doesNotMatch(dataGridSource, /Copy ID|ID 복사|RefreshCw/);
+});
+
+test("활동 현황 Data Grid는 고정 5개 페이지와 행 상세 진입을 제공한다", () => {
+  assert.match(dataGridSource, /const pageSize = 5;/);
+  assert.doesNotMatch(dataGridSource, /페이지당 행|<select/);
+  assert.match(dataGridSource, /router\.push\(`\/activities\/\$\{activityId\}`\)/);
+  assert.match(dataGridSource, /aria-label=\{`\$\{row\.activity\.title\} 활동 상세 보기`\}/);
+});
+
+test("활동 수 요약 줄을 제거하고 고정 핀은 선택 시 채워진다", () => {
+  assert.doesNotMatch(dataGridSource, /개 활동|activity-data-grid-toolbar/);
+  assert.match(
+    source,
+    /activity-overview-actions[\s\S]*activity-overview-count[\s\S]*overviewActivityCount[\s\S]*activity-create-expanding-button/,
+  );
+  assert.match(dataGridSource, /<Pin aria-hidden="true" \/>/);
+  assert.match(
+    styles,
+    /\.activity-data-grid-pin-cell > button\[aria-pressed="true"\] svg\s*\{[^}]*fill:\s*currentColor/,
+  );
+  assert.match(dataGridSource, /:\s*"-"/);
+});
+
+test("활동 표는 데스크톱에서 가로 스크롤 없이 한 행으로 맞춘다", () => {
+  assert.match(
+    styles,
+    /\.activity-data-grid-scroll\s*\{[^}]*overflow-x:\s*hidden/,
+  );
+  assert.match(
+    styles,
+    /\.activity-data-grid table\s*\{[^}]*min-width:\s*0/,
+  );
+});
+
+test("행 hover와 고정 상태를 배경·채움으로만 구분하고 메뉴 열림은 폭을 잠그지 않는다", () => {
+  assert.match(
+    styles,
+    /\.activity-data-grid tbody tr:is\([^)]*:hover[^)]*\)\s*\{[^}]*background:\s*rgb\(232 237 244 \/ 72%\)/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.activity-data-grid tbody tr:is\([^)]*:hover[^)]*\)\s*\{[^}]*box-shadow/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.activity-data-grid tbody tr\.is-pinned\s*\{/,
+  );
+  assert.match(dataGridSource, /<DropdownMenu modal=\{false\}>/);
 });
 
 test("오늘의 기록 핵심 영역은 페이지별 Liquid Glass 계층을 사용한다", () => {
@@ -63,6 +125,14 @@ test("활동 추가는 포인터 환경에서 아이콘에서 라벨로 확장�
   assert.match(
     styles,
     /\.activity-create-expanding-label\s*\{[^}]*white-space:\s*nowrap;/i,
+  );
+});
+
+test("날짜별 기록 추가는 활동 추가와 같은 차콜 primary 원형 버튼을 사용한다", () => {
+  assert.match(source, /className="activity-add-record-button"/);
+  assert.match(
+    styles,
+    /\.product-shell\[data-liquid-glass="true"\]\s+\.activity-add-record-button\s*\{[^}]*border:\s*1px solid var\(--activity-green-strong\)[^}]*border-radius:\s*999px[^}]*background:\s*var\(--activity-green\)[^}]*color:\s*#ffffff/s,
   );
 });
 

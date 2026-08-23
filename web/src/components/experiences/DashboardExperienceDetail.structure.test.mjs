@@ -14,6 +14,10 @@ const trackedDetailSource = await readFile(
   new URL("./DashboardTrackedActivityDetail.tsx", import.meta.url),
   "utf8",
 );
+const detailPageSource = await readFile(
+  new URL("./ExperienceDetailClient.tsx", import.meta.url),
+  "utf8",
+);
 const globalCssSource = await readFile(
   new URL("../../app/globals.css", import.meta.url),
   "utf8",
@@ -166,7 +170,7 @@ test("독립 경험 상세는 상태부터 읽히는 하나의 Liquid Glass 표�
 
   assert.ok(
     headerSource.indexOf("dashboard-detail-status") <
-      headerSource.indexOf("<h1"),
+      headerSource.indexOf("<h2"),
     "독립 상세의 분석 상태는 제목보다 먼저 읽혀야 합니다.",
   );
   assert.match(
@@ -179,10 +183,80 @@ test("독립 경험 상세는 상태부터 읽히는 하나의 Liquid Glass 표�
   );
   assert.match(
     globalCssSource,
-    /\.dashboard-experience-detail\.is-fullscreen[\s\S]*\.dashboard-detail-action\s*\{[^}]*border-radius:\s*999px/s,
+    /\.dashboard-experience-detail\.is-fullscreen[\s\S]*\.dashboard-detail-action\s*\{[^}]*border-radius:\s*12px/s,
   );
   assert.match(
     globalCssSource,
     /\.dashboard-experience-detail\.is-fullscreen[\s\S]*\.dashboard-detail-tags span[\s\S]*background:\s*var\(--liquid-control-fill\)/s,
+  );
+});
+
+test("독립 경험 상세는 나의 활동 페이지 헤더와 카드 제목 위계를 사용한다", () => {
+  assert.match(
+    detailPageSource,
+    /className="product-page product-detail-page experience-detail-page sub-page"/,
+  );
+  assert.match(
+    detailPageSource,
+    /className="standalone-page-intro"[\s\S]*className="sub-page-heading experience-detail-page-heading"[\s\S]*?<h1>경험 상세<\/h1>[\s\S]*?저장한 경험의 활동 내용과 성과, AI 분석을 확인합니다\.[\s\S]*<DashboardExperienceDetail/,
+  );
+  assert.match(
+    detailPageSource,
+    /className="header-actions experience-detail-page-header-actions"[\s\S]*?href="\/experiences"[\s\S]*?나의 활동/,
+  );
+  assert.match(detailSource, /<h2 id=\{titleId\}>\{experience\.title\}<\/h2>/);
+  assert.doesNotMatch(detailSource, /<h1 id=\{titleId\}>/);
+  assert.doesNotMatch(
+    detailSource.slice(
+      detailSource.indexOf('<div className="dashboard-detail-actions">'),
+    ),
+    /href="\/experiences"/,
+  );
+  assert.match(
+    globalCssSource,
+    /@media \(min-width: 861px\)[\s\S]*?\.experience-detail-page\s*\{[^}]*height:\s*100svh[^}]*padding:\s*var\(--experience-detail-viewport-inset\) var\(--sub-page-gutter\)[^}]*\}[\s\S]*?>\s*\.dashboard-experience-detail\.is-fullscreen\s*\{[^}]*width:\s*100%[^}]*max-width:\s*none[^}]*flex:\s*1\s+1\s+auto[^}]*overflow:\s*hidden[^}]*border-radius:\s*32px[^}]*padding:\s*0;/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.experience-detail-page[\s\S]*?>\s*\.dashboard-experience-detail\.is-fullscreen[\s\S]*?\.dashboard-experience-detail-scroll\s*\{[^}]*flex:\s*1\s+1\s+auto[^}]*overflow-y:\s*auto[^}]*padding:\s*30px clamp\(30px, 3\.2vw, 40px\)\s*calc\(30px \+ var\(--standalone-page-intro-max-offset\)\)[^}]*scroll-padding-bottom:\s*calc\(30px \+ var\(--standalone-page-intro-max-offset\)\)/s,
+  );
+  assert.match(
+    detailSource,
+    /data-scroll-page-intro=\{isFullscreen \? "true" : undefined\}/,
+  );
+  assert.match(
+    globalCssSource,
+    />\s*\.standalone-page-intro[\s\S]*margin-bottom:\s*calc\([^}]*--standalone-page-intro-scroll-offset[^}]*transform:\s*translateY\([^}]*--standalone-page-intro-scroll-offset/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.standalone-page-intro\s*\{[^}]*padding-top:\s*calc\(\s*var\(--sub-page-top\) - 34px - var\(--standalone-page-viewport-inset\)\s*\)[\s\S]*?\.standalone-page-intro\s*>\s*\.breadcrumb\s*\{[^}]*margin:\s*0 0 15\.625px/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.standalone-page-intro\s*>\s*\.sub-page-heading\s*\{[^}]*height:\s*var\(--product-page-heading-min-height\)[^}]*min-height:\s*0[^}]*align-items:\s*flex-start/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-detail-scroll\s*>\s*\*\s*\{[^}]*transform:\s*translateY\(var\(--standalone-page-intro-scroll-offset\)\)/s,
+  );
+});
+
+test("독립 경험 상세는 스크롤바를 모서리에서 띄우고 공통 버튼 모양을 사용한다", () => {
+  assert.match(
+    globalCssSource,
+    />\s*\.dashboard-experience-detail\.is-fullscreen\s*\{[^}]*border-radius:\s*32px[^}]*padding:\s*0;/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-detail-scroll[\s\S]*\[data-transient-scrollbar="true"\]::\-webkit-scrollbar-track\s*\{[^}]*margin-block:\s*24px/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-experience-detail\.is-fullscreen[\s\S]*?\.dashboard-detail-action\s*\{[^}]*border-radius:\s*12px/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.dashboard-detail-delete\s+svg\s*\{[^}]*color:\s*#c5443d/s,
   );
 });
