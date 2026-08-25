@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
+import { LoadingStatus } from "@/components/common/LoadingState";
 import { DashboardExperienceDetail } from "@/components/experiences/DashboardExperienceDetail";
 import {
   Breadcrumb,
@@ -128,11 +129,7 @@ export function ExperienceDetailClient({ id }: ExperienceDetailClientProps) {
 
   if (experience === undefined) {
     return (
-      <div className="page-stack">
-        <section className="placeholder-panel">
-          <p className="muted-text">저장된 경험을 불러오는 중입니다.</p>
-        </section>
-      </div>
+      <LoadingStatus message="저장된 경험을 불러오는 중입니다." />
     );
   }
 

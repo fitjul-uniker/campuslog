@@ -2,7 +2,6 @@
 
 import {
   CircleAlert,
-  CloudUpload,
   FileText,
   Images,
   Trash2,
@@ -182,20 +181,9 @@ export function ExperienceAttachmentPicker({
               </span>
             </div>
             <div className="experience-attachment-table-actions">
-              {!isAtLimit ? (
-                <button
-                  type="button"
-                  className="liquid-capsule"
-                  onClick={() => inputRef.current?.click()}
-                  disabled={disabled}
-                >
-                  <CloudUpload aria-hidden="true" />
-                  파일 추가
-                </button>
-              ) : null}
               <button
                 type="button"
-                className="liquid-capsule"
+                className="liquid-capsule experience-attachment-clear-button"
                 onClick={clearFiles}
                 disabled={disabled}
               >
@@ -254,6 +242,7 @@ export function ExperienceAttachmentPicker({
                       <td className="experience-attachment-action-column">
                         <button
                           type="button"
+                          className="experience-attachment-remove-button"
                           onClick={() => removeFile(index)}
                           disabled={disabled}
                           aria-label={`${file.name} 첨부 파일 삭제`}

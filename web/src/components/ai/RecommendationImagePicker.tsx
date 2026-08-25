@@ -6,7 +6,6 @@ import {
   Images,
   Plus,
   Trash2,
-  Upload,
   X,
   ZoomIn,
 } from "lucide-react";
@@ -84,6 +83,7 @@ function RecommendationImagePreview({
           </button>
           <button
             type="button"
+            className="recommendation-image-delete-button"
             onClick={onRemove}
             disabled={disabled}
             aria-label={`${file.name} 이미지 삭제`}
@@ -328,7 +328,7 @@ export function RecommendationImagePicker({
           </span>
           <div className="recommendation-image-upload-copy">
             <h3>질문 또는 JD 이미지를 추가하세요</h3>
-            <p>여기에 끌어다 놓거나 이미지 선택을 눌러 주세요.</p>
+            <p>여기에 끌어다 놓거나 파일 선택을 눌러 주세요.</p>
             <span>JPG, PNG, WebP · 최대 3장 · 장당 5MB 이하</span>
           </div>
           <button
@@ -337,8 +337,7 @@ export function RecommendationImagePicker({
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
           >
-            <Upload aria-hidden="true" />
-            이미지 선택
+            파일 선택
           </button>
         </div>
       ) : (

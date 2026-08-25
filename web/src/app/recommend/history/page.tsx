@@ -11,13 +11,16 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
+import { LoadingStatus } from "@/components/common/LoadingState";
 import {
   RippleButton,
   RippleButtonRipples,
 } from "@/components/animate-ui/components/buttons/ripple";
 import { AnimatedRecommendationList } from "@/components/recommendations/AnimatedRecommendationList";
 import { GooeyInput } from "@/components/ui/GooeyInput";
+import { CountUp } from "@/components/ui/CountUp";
 import { usePinnedItems } from "@/hooks/use-pinned-items";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -58,6 +61,7 @@ export default function RecommendationHistoryPage() {
   const [loadError, setLoadError] = useState("");
   const lastSelectionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileScrollTimerRef = useRef<number | null>(null);
+  const handleDetailTransientScroll = useTransientScrollbar<HTMLDivElement>();
 
   const scrollToRecommendationDetailOnMobile = useCallback(() => {
     if (!window.matchMedia("(max-width: 860px)").matches) {
@@ -214,7 +218,7 @@ export default function RecommendationHistoryPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div
-        className={`recommendation-history-page sub-page${hasSelection ? " has-selection" : ""}`}
+        className={`recommendation-history-page primary-page${hasSelection ? " has-selection" : ""}`}
       >
         <div className="campuslog-ai-history-header">
           <Breadcrumb>
@@ -252,30 +256,38 @@ export default function RecommendationHistoryPage() {
           </p>
         </header>
 
-        <LayoutGroup id="recommendation-history-layout">
-          <motion.div
+        {recommendations === null || !recommendationPins.isLoaded ? (
+          <LoadingStatus message="추천 기록을 불러오는 중입니다." />
+        ) : (
+          <LayoutGroup id="recommendation-history-layout">
+            <motion.div
             layout
-            className="recommendation-history-workspace"
+            className="recommendation-history-workspace dashboard-experience-workspace"
             data-detail-open={hasSelection ? "true" : "false"}
             transition={{ layout: LAYOUT_TRANSITION }}
           >
             <motion.section
               layout="position"
-              className="recommendation-history-list-pane liquid-workspace"
+              className="recommendation-history-list-pane dashboard-experience-list-pane liquid-workspace"
               aria-labelledby="recommendation-history-heading"
               transition={{ layout: LAYOUT_TRANSITION }}
             >
-              <header className="recommendation-history-heading">
-                <div className="recommendation-history-heading-row">
-                  <div>
+              <header className="recommendation-history-heading dashboard-experience-section-heading">
+                <div className="recommendation-history-heading-row dashboard-experience-heading-row">
+                  <div className="dashboard-experience-title-group">
                     <h2 id="recommendation-history-heading">전체 기록</h2>
                     {recommendations && !loadError ? (
-                      <span>{recommendations.length}</span>
+                      <span className="dashboard-experience-count">
+                        <CountUp to={recommendations.length} duration={0.75} />
+                        <span className="sr-only">
+                          전체 기록 {recommendations.length}개
+                        </span>
+                      </span>
                     ) : null}
                   </div>
                   {recommendations && recommendations.length > 0 ? (
                     <GooeyInput
-                      className="recommendation-history-search liquid-capsule"
+                      className="recommendation-history-search dashboard-experience-search"
                       placeholder="검색"
                       value={searchQuery}
                       onValueChange={setSearchQuery}
@@ -309,16 +321,6 @@ export default function RecommendationHistoryPage() {
                     다시 시도
                     <RippleButtonRipples />
                   </RippleButton>
-                </div>
-              ) : recommendations === null ? (
-                <div
-                  className="recommendation-history-loading"
-                  aria-busy="true"
-                  aria-label="저장된 추천 기록을 불러오는 중입니다"
-                >
-                  {Array.from({ length: 4 }, (_, index) => (
-                    <span key={index} aria-hidden="true" />
-                  ))}
                 </div>
               ) : recommendations.length === 0 ? (
                 <div className="dashboard-list-state is-empty">
@@ -354,26 +356,33 @@ export default function RecommendationHistoryPage() {
                   key="recommendation-history-detail-slot"
                   layout
                   id={RECOMMENDATION_DETAIL_ID}
-                  className="recommendation-history-detail liquid-section"
+                  className="recommendation-history-detail recommendation-history-detail-slot dashboard-experience-detail-slot liquid-section"
                   aria-labelledby="recommendation-title"
                   initial={{ opacity: 0, x: 24, scale: 0.985 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   exit={{ opacity: 0, x: 16, scale: 0.99 }}
                   transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <RecommendationResult
-                    key={selectedRecommendation.id}
-                    result={selectedRecommendation}
-                    experience={recommendedExperience}
-                    experiences={experiences}
-                    variant="embedded"
-                    onClose={handleCloseDetail}
-                  />
+                  <div
+                    className="recommendation-history-detail-scroll"
+                    data-transient-scrollbar="true"
+                    onScroll={handleDetailTransientScroll}
+                  >
+                    <RecommendationResult
+                      key={selectedRecommendation.id}
+                      result={selectedRecommendation}
+                      experience={recommendedExperience}
+                      experiences={experiences}
+                      variant="embedded"
+                      onClose={handleCloseDetail}
+                    />
+                  </div>
                 </motion.aside>
               ) : null}
             </AnimatePresence>
-          </motion.div>
-        </LayoutGroup>
+            </motion.div>
+          </LayoutGroup>
+        )}
       </div>
     </MotionConfig>
   );

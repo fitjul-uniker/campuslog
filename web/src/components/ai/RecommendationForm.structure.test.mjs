@@ -29,6 +29,13 @@ test("추천 폼은 텍스트 또는 이미지 중 하나만 있어도 바로 �
 });
 
 test("추천 이미지 선택기는 최대 개수와 삭제 접근성 계약을 제공한다", () => {
+  assert.match(
+    pickerSource,
+    /여기에 끌어다 놓거나 파일 선택을 눌러 주세요\./,
+  );
+  assert.doesNotMatch(pickerSource, /이미지 선택을 눌러 주세요/);
+  assert.match(pickerSource, />\s*파일 선택\s*<\/button>/);
+  assert.doesNotMatch(pickerSource, /<Upload aria-hidden="true" \/>/);
   assert.match(pickerSource, /RECOMMENDATION_IMAGE_MAX_COUNT/);
   assert.match(pickerSource, /aria-label=.*이미지.*삭제/);
   assert.match(pickerSource, /accept=\{RECOMMENDATION_IMAGE_ACCEPT\}/);
@@ -78,11 +85,11 @@ test("추천 이미지 입력은 빈 업로드 안내에서 선택 Gallery로 �
   );
   assert.match(
     styles,
-    /\.recommendation-image-fieldset\.liquid-section\[data-has-files="false"\]\s*\{[\s\S]*border:\s*1px dashed var\(--liquid-hairline-strong\)/,
+    /\.recommendation-image-fieldset\.liquid-section\[data-has-files="false"\]\s*\{[\s\S]*border:\s*0/,
   );
   assert.match(
     styles,
-    /\.recommendation-image-fieldset\[data-has-files="false"\][\s\S]*\.recommendation-image-dropzone\s*\{[\s\S]*border:\s*0/,
+    /\.recommendation-image-fieldset\[data-has-files="false"\][\s\S]*\.recommendation-image-dropzone\s*\{[\s\S]*border:\s*1px dashed var\(--liquid-hairline-strong\)/,
   );
 });
 

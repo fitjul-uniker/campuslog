@@ -1,10 +1,12 @@
 "use client";
 
-import { PenLine } from "lucide-react";
+import { ArrowLeft, PenLine } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/common/EmptyState";
+import { LoadingStatus } from "@/components/common/LoadingState";
 import { ExperienceForm } from "@/components/experiences/ExperienceForm";
 import {
   Breadcrumb,
@@ -14,6 +16,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import { isDevelopmentUiPreview } from "@/lib/supabase/env";
 import type { Experience, ExperienceFormInput } from "@/lib/types";
@@ -38,6 +41,7 @@ function hasExperienceContentChanges(
 }
 
 export function EditExperienceClient({ id }: EditExperienceClientProps) {
+  const handleTransientScroll = useTransientScrollbar<HTMLDivElement>();
   const router = useRouter();
   const [experience, setExperience] = useState<Experience | null | undefined>(
     undefined,
@@ -118,11 +122,7 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
 
   if (experience === undefined) {
     return (
-      <div className="page-stack page-stack-narrow">
-        <section className="placeholder-panel">
-          <p className="muted-text">저장된 경험을 불러오는 중입니다.</p>
-        </section>
-      </div>
+      <LoadingStatus message="저장된 경험을 불러오는 중입니다." />
     );
   }
 
@@ -143,58 +143,78 @@ export function EditExperienceClient({ id }: EditExperienceClientProps) {
   }
 
   return (
-    <div className="page-stack page-stack-narrow sub-page">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
-              CampusLog
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href={`/experiences/${experience.id}`}>
-              경험 상세
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>경험 수정</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <div className="page-stack page-stack-narrow sub-page experience-form-page experience-edit-page">
+      <div className="standalone-page-intro">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+                CampusLog
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/experiences/${experience.id}`}>
+                경험 상세
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>경험 수정</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-      <section className="page-header sub-page-heading">
-        <div>
-          <h1>경험 수정</h1>
-          <p className="page-description">
-            저장된 경험 원본 내용을 수정합니다.
-          </p>
-        </div>
-      </section>
+        <section className="page-header sub-page-heading experience-detail-page-heading">
+          <div>
+            <h1>경험 수정</h1>
+            <p className="page-description">
+              저장된 경험 원본 내용을 수정합니다.
+            </p>
+          </div>
+          <div className="header-actions experience-detail-page-header-actions">
+            <Link
+              href={`/experiences/${experience.id}`}
+              className="button button-secondary"
+            >
+              <ArrowLeft className="button-icon" aria-hidden="true" />
+              경험 상세
+            </Link>
+          </div>
+        </section>
+      </div>
 
       <section
         className="form-panel liquid-workspace"
         aria-labelledby="edit-form-title"
       >
-        <h2 id="edit-form-title">경험 정보</h2>
-        {errorMessage ? (
-          <p className="form-error" role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
-        <ExperienceForm
-          mode="edit"
-          initialValue={experience}
-          cancelHref={`/experiences/${experience.id}`}
-          attachmentCount={attachmentCount}
-          attachmentsEnabled={attachmentsReady}
-          onSubmit={handleSubmit}
-        />
+        <div
+          className="experience-form-scroll"
+          data-transient-scrollbar="true"
+          data-scroll-page-intro="true"
+          onScroll={handleTransientScroll}
+        >
+          <div className="experience-form-content">
+            <h2 id="edit-form-title">경험 정보</h2>
+            {errorMessage ? (
+              <p className="form-error" role="alert">
+                {errorMessage}
+              </p>
+            ) : null}
+            <ExperienceForm
+              mode="edit"
+              initialValue={experience}
+              cancelHref={`/experiences/${experience.id}`}
+              attachmentCount={attachmentCount}
+              attachmentsEnabled={attachmentsReady}
+              onSubmit={handleSubmit}
+            />
+          </div>
+        </div>
       </section>
     </div>
   );

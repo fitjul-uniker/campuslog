@@ -41,7 +41,7 @@ import {
   useAITask,
   type AITaskDefinition,
 } from "@/components/ai/AIBackgroundTaskProvider";
-import { LoadingState } from "@/components/common/LoadingState";
+import { LoadingStatus } from "@/components/common/LoadingState";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -556,7 +556,9 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
   }
 
   if (isLoading) {
-    return <LoadingState message="진행 활동을 불러오는 중입니다." />;
+    return (
+      <LoadingStatus message="진행 활동을 불러오는 중입니다." />
+    );
   }
 
   if (!activity) {
@@ -674,7 +676,7 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
           <button
             type="button"
             onClick={handleDeleteActivity}
-            className="activity-secondary-button"
+            className="activity-secondary-button activity-delete-button"
             disabled={isSynthesizing || isSavingExperience}
           >
             <Trash2 aria-hidden="true" />

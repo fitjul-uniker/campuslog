@@ -77,8 +77,8 @@ test("데스크톱 분석 스크롤바는 둥근 외곽 모서리 안쪽에서�
   );
 });
 
-test("분석 스플릿 헤더는 추천 기록과 같은 결과 메타 위계를 사용한다", () => {
-  assert.match(source, /AI 경험 분석 결과/);
+test("분석 스플릿 헤더는 생성일과 결과 제목 위계를 사용한다", () => {
+  assert.doesNotMatch(source, /AI 경험 분석 결과/);
   assert.match(source, /formatDateTime\(analysis\.generatedAt\)/);
   assert.match(source, /analysis-result-kicker-row/);
   assert.match(source, /<h2 id=\{titleId\}>AI 분석 결과<\/h2>/);

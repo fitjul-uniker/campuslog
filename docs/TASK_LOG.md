@@ -30,6 +30,331 @@
 
 ## 작업 로그
 
+### 2026-08-25 - 하이퍼링크 전용 화면 개발 서버 복구
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | `/recommend` 새로고침 뒤 CSS가 404를 반환해 기본 하이퍼링크 위주로 보이는 개발 서버 상태 복구 (`ISSUE-200`) |
+| 수정한 파일 | 제품 코드 수정 없음. 기록 문서 `docs/TODO.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`만 수정 |
+| 변경 내용 | 브라우저에서 기본 링크 화면을 재현하고 현재 HTML의 `layout.css` 요청이 404인 것을 확인. 기존 localhost:3000 dev 서버를 종료한 뒤 `codex/new-work`에서 Next dev 서버 하나를 다시 실행. `.next` 캐시, 사용자 파일, 소스 코드는 삭제하거나 수정하지 않음 |
+| 검증한 내용 | 재시작 전 `layout.css` HTTP 404, 재시작 후 HTTP 200 OK를 확인. `/recommend` 새로고침 뒤 앱 셸·헤더·빈 상태가 Liquid Glass 스타일로 표시되는 브라우저 화면을 확인. 코드 변경이 없어 Node 테스트·lint·typecheck·production build는 다시 실행하지 않음 |
+| 남은 작업 | 개발 중 같은 worktree에서 Next dev 서버를 동시에 실행하면 산출물 불일치가 재발할 수 있으므로 localhost:3000 서버 한 개만 유지 |
+| 관련 커밋 메시지 | `docs: record dev server css recovery` |
+
+### 2026-08-25 - 시각 skeleton 적용 범위 최종 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 불필요한 책 표지·하위 화면 skeleton을 제거하고 시각적 초기 로딩을 세 주 화면에만 유지 (`ISSUE-199`) |
+| 수정한 파일 | `LoadingState.tsx`, `RouteLoadingState.tsx`, `recommend/RecommendationPageScaffold.tsx`, 활동·경험 상세/수정/분석과 추천 기록 초기 분기, `web/src/app/globals.css`, 관련 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 시각적 `LoadingState`는 `/dashboard`, `/experiences`, `/recommend`에만 유지하고 `/` 책 표지·인증·작성·상세·수정·분석·추천 기록은 `sr-only` `LoadingStatus`로 전환. 사용하지 않는 cover/auth/form/detail/history/analysis 시각 variant와 책 형태 skeleton·CSS를 제거. CampusLog AI root pending도 시각 skeleton 없이 실제 헤더와 접근성 상태만 유지하며 서버 경험 count 판별 뒤 올바른 content-only skeleton 한 개로 이어지게 정리 |
+| 검증한 내용 | 전체 Node 구조 테스트 228개, `npm run lint`, `npx tsc --noEmit`, `git diff --check` 통과. 정적 검색에서 시각 `LoadingState` 사용 지점이 오늘의 기록·나의 활동·CampusLog AI 계열에만 남은 것을 확인. 브라우저 전환 측정에서 `/recommend`는 실제 H1을 유지한 채 시각 skeleton 0개 → 빈 상태형 content-only skeleton 1개 → 최종 화면 순서였고 동시에 2개가 표시되거나 제목 skeleton이 나타난 구간은 없었음. 제품 워드마크→`/` 전환은 전 구간 책/cover skeleton 0개, 실제 cover scene 1개였으며 `/experiences/new` 전환도 시각 skeleton 0개 확인 |
+| 남은 작업 | 실행 중 dev server의 `.next` 경합을 피하기 위해 production build는 생략 |
+| 관련 커밋 메시지 | `fix: limit visual skeletons to primary pages` |
+
+### 2026-08-25 - CampusLog AI 제목 고정·단일 skeleton 전환
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog AI 진입에서 작은 skeleton 뒤 큰 skeleton이 이어지고 제목까지 skeleton으로 바뀌는 문제 수정 (`ISSUE-198`) |
+| 수정한 파일 | `RouteTransitionProvider.tsx`, `AppShell.tsx`, `Navigation.tsx`, `recommend/RecommendationPageScaffold.tsx`, `recommend/loading.tsx`, `recommend/page.tsx`, `RouteLoadingState.tsx`, `LoadingState.tsx`, `web/src/app/globals.css`, 관련 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | 상단 메뉴 클릭 목적지를 root fallback에 먼저 전달해 출발 페이지 skeleton을 차단. CampusLog AI root pending은 실제 Breadcrumb·제목·설명·추천 기록 액션과 `sr-only` `LoadingStatus`만 표시하고, `/recommend/loading`이 서버 경험 count로 빈 상태형·폼형 중 올바른 content-only skeleton 한 개를 선택하도록 책임을 분리. client repository 초기화도 같은 모드를 사용하며 제목 skeleton과 root의 임시 작은 skeleton, 중복 wrapper class를 제거 |
+| 검증한 내용 | 정적 구조에서 root pending이 시각 `LoadingState`를 사용하지 않고 서버 판별 route loading과 client 초기화만 같은 추천 mode의 skeleton을 렌더링하는 것을 확인. 변경 전 브라우저 측정과 전체 검사 결과는 후속 `ISSUE-199` 범위 정리 뒤 상위 작업에서 다시 검증 |
+| 남은 작업 | 실행 중 dev server의 `.next` 경합을 피하기 위해 production build는 생략 |
+| 관련 커밋 메시지 | `fix: keep one recommendation skeleton during navigation` |
+
+### 2026-08-25 - 제품 워드마크→책 표지 로딩 전환 수정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 제품 화면의 CampusLog 워드마크 클릭 시 목적지와 무관한 대시보드 또는 인증 skeleton이 끼어드는 문제 수정 |
+| 수정한 파일 | `AppShell.tsx`, `RouteLoadingState.tsx`, `LoadingState.tsx`, `web/src/app/globals.css`, AppShell·LoadingState 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | 데스크톱·모바일 제품 워드마크의 일반 좌클릭을 `/` 전체 문서 이동으로 처리해 출발 route fallback을 차단하고 modifier/new-tab 동작은 보존. 당시 `/` route loading을 실제 3D 책 비율의 cover skeleton으로 분리했으나 후속 `ISSUE-199`에서 해당 시각 skeleton을 제거하고 `sr-only` 상태만 유지 |
+| 검증한 내용 | 브라우저 클릭 후 60ms·180ms에 dashboard/auth skeleton 0개, cover/book skeleton 각 1개 확인. 완료 뒤 cover skeleton 0개·실제 cover scene 1개 확인. 전체 Node 테스트 226개, lint, typecheck, diff check 통과 |
+| 남은 작업 | 실행 중 dev server의 `.next` 경합을 피하기 위해 production build는 생략 |
+| 관련 커밋 메시지 | `fix: use cover skeleton for brand navigation` |
+
+### 2026-08-25 - CampusLog AI route skeleton 레일·행 높이 안정화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 route skeleton의 intro와 빈 상태 패널이 viewport 남은 높이만큼 늘어나 완료 화면보다 비정상적으로 크게 보이는 문제 수정 |
+| 수정한 파일 | `LoadingState.tsx`, `web/src/app/globals.css`, `LoadingState.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | 전체 높이 Grid에 `align-content: start`를 적용하고 primary-page와 같은 1200px 레일·반응형 top/gutter를 사용. Breadcrumb은 헤더보다 34px 위에 고정하고 intro를 78px/99px로 예약했으며 추천·추천 기록의 44px 우측 헤더 액션 skeleton을 추가 |
+| 검증한 내용 | 로그인 `/recommend` 새로고침 직후와 완료 화면을 브라우저에서 측정해 content x=264.80, breadcrumb y=42, header y=76·height=78, panel y=184·width=837.41이 일치하고 panel 높이는 215px 대 215.20px임을 확인. 전체 Node 테스트 226개, lint, typecheck, diff check 통과 |
+| 남은 작업 | 활동 보유 계정의 큰 폼형 skeleton 실제 시각 smoke test는 기존 후속 항목 유지. 실행 중인 dev server의 `.next` 경합을 피하기 위해 production build는 생략 |
+| 관련 커밋 메시지 | `fix: align recommendation skeleton with page geometry` |
+
+### 2026-08-25 - AI 추천 경험 유무별 로딩 프리셋 선택
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 빈 계정에 맞춘 작은 추천 skeleton이 활동 보유 계정에서는 큰 폼으로 확장되는 반대 크기 점프를 방지 |
+| 수정한 파일 | `recommend/layout.tsx`, `recommend/loading.tsx`, `RecommendationLoadingLayoutProvider.tsx`, `recommendationLoadingLayout.ts`, `recommend/page.tsx`, `LoadingState.tsx`, `web/src/app/globals.css`, `LoadingState.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | 서버가 로그인 사용자의 RLS 범위에서 경험 내용을 반환하지 않는 exact head count만 확인해 빈 상태형 `recommendation`과 활동 보유 폼형 `recommendation-form`을 선택. layout과 route loading은 React cache로 같은 판별을 공유하고 클라이언트 데이터 로드 뒤도 실제 개수와 모드를 동기화. 브라우저 쿠키·localStorage 힌트는 사용하지 않음 |
+| 검증한 내용 | 현재 빈 계정에서 새로고침 첫 fallback이 compact=true·form=false임을 브라우저 확인. 두 프리셋 선택·서버 head count·클라이언트 동기화 구조 테스트를 포함한 전체 Node 테스트 226개, lint, typecheck, diff check 통과 |
+| 남은 작업 | 활동 보유 로그인 계정에서 큰 폼형 skeleton의 실제 새로고침 시각 smoke test. 실행 중인 dev server의 `.next` 경합을 피하기 위해 production build는 이번 수정에서 생략 |
+| 관련 커밋 메시지 | `fix: select recommendation skeleton from experience count` |
+
+### 2026-08-25 - AI 추천 로딩·완료 탭 크기 일치
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog AI 새로고침에서 큰 입력·결과 skeleton이 실제 작은 빈 상태 탭으로 급격히 줄어드는 크기 점프 수정 |
+| 수정한 파일 | `LoadingState.tsx`, `web/src/app/globals.css`, `LoadingState.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | 추천 초기 skeleton을 약 906px 높이의 입력·결과 두 표면에서 215px 단일 진입 표면으로 변경. 추천 content-only 최소 높이, 30px 곡률, 40px padding과 내부 block 간격을 실제 완료 빈 상태 형상에 맞춤. 일반 폼·상세 등 다른 skeleton 프리셋과 추천 데이터 분기는 유지 |
+| 검증한 내용 | 브라우저에서 `/recommend` 새로고침 중/완료 탭을 직접 측정해 x·y·폭 차이 0px, 높이 차이 0.20px 확인. 전체 Node 테스트 226개·lint·typecheck·diff check 통과 |
+| 남은 작업 | 실행 중인 dev server의 `.next` 경합을 피하기 위해 production build는 이번 수정에서 생략 |
+| 관련 커밋 메시지 | `fix: stabilize recommendation loading surface` |
+
+### 2026-08-25 - 전체 페이지 Liquid Skeleton 로딩 복원
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 빈 화면으로 보이던 전체 라우트 전환과 주요 데이터 초기 로딩을 ReUI 참고 최종 레이아웃형 Liquid Skeleton으로 복원 |
+| 수정한 파일 | `LoadingState.tsx`, `RouteLoadingState.tsx`, `web/src/app/loading.tsx`, 오늘의 기록·나의 활동·활동 상세·경험 상세/수정/분석·추천·추천 기록 초기 분기, `web/src/app/globals.css`, 로딩/활동 상세 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | dashboard·list·history·recommendation·detail·form·analysis·auth 공용 프리셋과 페이지 intro 선택을 추가. 후속 비교에서 시각 placeholder 범위가 과하다고 판단해 `ISSUE-199`에서 `/dashboard`·`/experiences`·`/recommend`만 남기고 나머지는 `sr-only` 상태로 축소. 저채도 단색 block·reduced motion·`role=status`·`aria-live`·`aria-busy` 기반과 기존 AI 실행 overlay·데이터 계약은 유지 |
+| 검증한 내용 | 로딩·활동 상세 구조 테스트 10개, lint, typecheck 통과. in-app browser에서 `/experiences` reload 중 목록 5행 skeleton 표시와 완료 뒤 실제 workspace 교체·잔존 loading DOM 없음, `/recommend` 정상 최종 렌더링을 확인 |
+| 남은 작업 | production build는 실행 중인 Next dev server의 `.next` 경합을 피하기 위해 이번 작업에서 생략. 실제 저속 네트워크 환경의 인증·모바일 390px 전환 체감은 후속 smoke test 가능 |
+| 관련 커밋 메시지 | `feat: add route-aware liquid skeletons` |
+
+### 2026-08-25 - 완료 경험 첨부 파일·관련 링크 스타일 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 완료 경험 상세에서 과거형 중첩 카드로 보이던 첨부 파일을 관련 링크와 같은 평평한 구획·행 스타일로 통일 |
+| 수정한 파일 | `ExperienceAttachmentsSection.tsx`, `web/src/app/globals.css`, `AuthenticatedExperienceSurfaces.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | 첨부 section의 `liquid-content-plate`와 개수 표기를 제거하고 관련 링크와 같은 투명 section·hairline 위계를 적용. 파일 행은 36px preview, 10px 모서리, 11px 12px padding, 동일한 색상·hover·텍스트 밀도로 맞추고 사진 썸네일·PDF 아이콘·새 창 열기·독립 상세 삭제는 유지 |
+| 검증한 내용 | 관련 경험 구조 테스트 19개, lint, typecheck, diff check 통과. 브라우저에서 나의 활동 페이지 정상 렌더링과 CSS 적용을 확인했으나 현재 계정의 완료 경험이 0개여서 실제 사진·PDF 행의 시각 smoke test는 수행하지 못함 |
+| 남은 작업 | 첨부 데이터가 있는 로그인 계정에서 실제 사진·PDF 행의 데스크톱·모바일 시각 smoke test |
+| 관련 커밋 메시지 | `style: align experience attachments with related links` |
+
+### 2026-08-25 - 활동기간 그룹·하위 label 위계 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 폼의 활동기간 필드 제목과 시작·종료 하위 label이 같은 위계로 보이는 문제 개선 |
+| 수정한 파일 | `web/src/app/globals.css`, `AuthenticatedExperienceSurfaces.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | `활동기간` legend를 제목·역할·활동 내용과 같은 0.88rem·muted 색·800 굵기와 10px 하단 여백으로 유지하고 `시작`·`종료` label만 0.75rem·tertiary 색·700 굵기로 낮춰 필드 제목과 세부 입력을 즉시 구분하도록 조정 |
+| 검증한 내용 | 관련 경험 화면 구조 테스트 15개, lint, typecheck, diff check 통과. 브라우저에서 `활동기간`·`제목`·`역할`·`활동 내용`이 모두 14.08px·800·동일 muted 색과 normal 자간/행간을 사용하고, `시작`·`종료`만 12px·700·tertiary 색으로 표시됨을 확인. 두 단계 사이 10px 간격과 가로 overflow 없음 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: clarify experience period hierarchy` |
+
+### 2026-08-25 - 새 경험 폼 액션·상세형 스크롤 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 새 경험 폼의 문구와 관련 링크·첨부·저장 액션을 현재 Liquid Glass 체계로 정리하고 작성·수정 화면을 상세형 내부 스크롤 프레임으로 통일 |
+| 수정한 파일 | `ExperienceForm.tsx`, `NewExperienceClient.tsx`, `EditExperienceClient.tsx`, `use-transient-scrollbar.ts`, `web/src/app/globals.css`, `AuthenticatedExperienceSurfaces.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | 역할을 전체 폭 3줄·최소 96px textarea로 전환하고 month 입력의 native `----년 ---` 대신 `연도와 월 선택`·선택 월·`진행 중` 표시층과 24px 진행 체크를 추가하며 `내용`을 `활동 내용`으로 변경. 첨부 legend와 dropzone을 공통 8px 간격으로 분리. 링크 추가를 44px Glass capsule로 바꾸고 삭제 원형 capsule을 URL·설명 입력 중심선에 맞춤. 파일 선택은 단색 차콜, 저장은 단색 검정 capsule로 바꾸고 저장·취소 hover transform을 제거. 새 경험과 수정 폼이 공통 fixed-height 외곽 탭·transient 내부 scrollbar·intro 연동을 사용하도록 구성하고 scrollbar 채널만 외곽 곡률에서 8px 안쪽으로 이동해 잘림을 방지 |
+| 검증한 내용 | 관련 경험 화면 구조 테스트 15개와 나의 활동 빈 상태 테스트 5개, lint, typecheck, diff check 통과. 브라우저 데스크톱에서 작성 탭 bottom 809px, intro 연동 뒤 내부 scroller 787px·scrollTop 360, 하단 액션 아래 30.9px 안전 여백 확인. scrollbar 좌우 9px 실제 inset·본문 x축 유지, `연도와 월 선택`·`2026년 7월`·`진행 중` 표시와 native 달력 아이콘, 진행 체크 24px·라벨 44px, 3줄 역할 textarea 104.4px, `활동 내용`, 첨부 legend-dropzone 8px, 링크 추가 44px·999px, 삭제 버튼과 입력 중심 오차 1px 미만, 파일/저장 background image 없음과 단색 차콜·검정, 가로 overflow 없음 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: refine experience form actions and scrolling` |
+
+### 2026-08-25 - 나의 활동 빈 상태 높이·추가 액션 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 빈 목록의 어중간한 고정 높이와 오해 가능한 중앙 `+`를 제거하고 과거 경험 이동 액션을 공통 Glass capsule로 통일 |
+| 수정한 파일 | `ExperienceDashboard.tsx`, `web/src/app/globals.css`, `ExperienceDashboard.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | 데스크톱 빈 상태가 목록 헤더 아래 가용 높이를 채우도록 flex 전환하고 모바일은 260px 최소 높이로 유지. 중앙 `+`를 제거하고 `과거 경험 기록하기`를 오른쪽 화살표·44px·완전 capsule·18px blur·얕은 공통 그림자로 변경 |
+| 검증한 내용 | 나의 활동 구조 테스트 5개, lint, typecheck 통과. 브라우저 990px viewport에서 목록 외곽 687.6×631px, 빈 상태 626.3×518.5px로 하단 30.7px 패널 padding 전까지 채움, CTA 158.4×44px·999px·기본 transform 없음, 중앙 `+` 부재와 문서 가로 overflow 없음 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: refine experiences empty state` |
+
+### 2026-08-25 - 오늘의 기록 빈 상태·로딩 오류 팝업 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 현황의 빈 상태 문구와 레이아웃을 간결하게 정리하고 데이터 불러오기 오류를 작은 Glass 팝업으로 전환 |
+| 수정한 파일 | `ActivityOverviewDataGrid.tsx`, `TodayDashboard.tsx`, `web/src/app/globals.css`, `TodayDashboard.structure.test.mjs`, Track B 기준·기록 문서 |
+| 변경 내용 | 빈 표의 시스템형 `표시할 활동이 아직 없습니다.`를 `진행 중인 활동이 없습니다.`와 한 줄 안내로 변경하고 112px 중앙 정렬·투명 내부로 정리. 전체 폭 로딩 오류 배너를 우측 상단 360px Glass 팝업으로 바꾸고 경고 아이콘·데이터 보존 안내·capsule 재시도를 배치. 모바일 safe area 아래 고정 위치 적용 |
+| 검증한 내용 | 오늘의 기록 구조 테스트 14개, lint, typecheck 통과. 브라우저에서 빈 상태 632.2×112px 중앙 정렬, Data Grid 634.2×114px, 문서 폭 979px/viewport 990px로 가로 overflow 없음 확인 |
+| 남은 작업 | 오류 팝업은 브라우저 재진입 시 repository 요청이 성공해 실제 실패 상태가 재현되지 않아 구조·CSS 회귀 테스트로 검증. production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: refine dashboard empty and error states` |
+
+### 2026-08-24 - 로그인·회원가입 Liquid Glass 통합
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 공개 로그인 카드를 현재 제품의 쿨 뉴트럴 Liquid Glass로 현대화하고 회원가입 첫 화면을 로그인과 같은 양식으로 통합 |
+| 수정한 파일 | `web/src/components/auth/SignupForm.tsx`, `web/src/app/globals.css`, `PublicAuthLiquidGlass.structure.test.mjs`, 인증 흐름·화면·디자인·기록 문서 |
+| 변경 내용 | 인증 카드를 32px·92/84% 쿨 표면·36px blur·얕은 그림자로 변경하고 입력은 54px·16px 모서리, Primary·Google은 54px capsule로 통일. 회원가입의 `method` stage와 `이메일로 회원가입` 선택 버튼을 제거하고 이메일·비밀번호·`회원가입`·`또는`·`Google로 회원가입`을 즉시 표시. 이름·닉네임 단계의 모호한 `이메일 정보` 복귀 문구는 `가입 정보 수정`으로 변경. 인증 버튼 hover는 위로 이동하거나 gradient가 단색으로 튀지 않고 밝기·테두리·얕은 그림자만 변하도록 정리. 가입 완료는 중복 알림 상자를 제거하고 이메일 확인 아이콘·단일 안내·`로그인으로 이동` Glass capsule로 재구성. 기존 Stepper와 Google OAuth callback 흐름은 유지 |
+| 검증한 내용 | 인증 구조 테스트 4개, lint, typecheck, `git diff --check` 통과. 브라우저에서 로그인 카드 448×556·32px·36px blur, 회원가입 카드와 `회원가입`·`Google로 회원가입` 두 54px capsule 확인. Primary·Google hover 모두 `transform: none`과 의도한 배경·테두리·얕은 그림자 적용을 계산 스타일로 확인. 완료 상태는 448×403.3px 카드, 54px 로그인 capsule, 중복 성공·스팸함 안내 부재와 `인증 링크를 누르면 회원가입이 완료돼요` 문구를 확인. 414×829에서 카드 367×550, 버튼 321×54, 문서 폭 399px로 가로 overflow 없음 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: unify login and signup glass forms` |
+
+### 2026-08-24 - 오늘의 기록 작성 탭 레이어·투명도 재조정
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 활동 추가의 이중 탭과 과도한 전체 화면 확장 motion을 제거하고 날짜별 기록 탭의 투명도를 활동 추가와 통일 |
+| 수정한 파일 | `web/src/components/ui/expandable-screen.tsx`, `expandable-screen.module.css`, `web/src/app/globals.css`, 관련 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | ExpandableScreen의 viewport surface·anchor geometry morph를 제거하고 최대 760px 실제 dialog만 0.965 배율에서 0.22초간 열리도록 변경. 활동 추가 layout의 전체 화면 padding을 제거하고 단일 카드로 정리. 활동 추가와 날짜별 기록 표면을 모두 30/28px 곡률 범위의 `rgb(248 249 251 / 90%)`·28px blur·얕은 그림자로 통일 |
+| 검증한 내용 | 관련 구조 테스트 25개, lint, typecheck, `git diff --check` 통과. 변경 전 로그인 브라우저에서 활동 추가 dialog 1253×704 뒤 840×644 카드가 겹치는 계산값을 확인해 원인을 특정. 변경 후 브라우저 인증 세션 만료로 실제 로그인 화면 재진입 확인은 제한됨 |
+| 남은 작업 | 로그인 세션 재확보 시 두 `+` 탭의 최종 시각 확인. production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: simplify dashboard creation overlays` |
+
+### 2026-08-24 - 활동 추가·날짜별 기록 작성 overlay 고도화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록에서 두 `+` 버튼으로 여는 작성 화면을 현재 Liquid Glass 디자인으로 통일 |
+| 수정한 파일 | `web/src/components/ui/expandable-screen.tsx`, `expandable-screen.module.css`, `ActivityCreateScreen.tsx`, `web/src/app/globals.css`, 관련 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | 활동 추가는 cool translucent canvas와 32px·62% white·30px blur 중앙 작업 Glass, 새 활동 kicker·설명, 16px 입력, 44px capsule 액션으로 변경. 날짜별 기록은 28px·72% cool Glass 외곽, 날짜 capsule·원형 닫기, 투명 body/footer, 16px 입력과 capsule 액션으로 변경. 포털 자체 토큰과 640px·reduced transparency·forced colors fallback을 제공 |
+| 검증한 내용 | 관련 구조 테스트 25개, lint, typecheck, `git diff --check` 통과. 브라우저 1269×720에서 활동 추가 카드 840×644·32px·30px blur, 입력 16px, 두 액션 44px·999px과 가로 overflow 없음 확인. 날짜별 기록 패널 520×521·28px·34px blur, 날짜/닫기/액션 capsule, 투명 footer와 가로 overflow 없음 확인. dev 서버 관련 route 200 및 runtime compile error 없음 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: modernize activity creation overlays` |
+
+### 2026-08-24 - 새로고침 CSS 미적용 개발 서버 복구
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 새로고침 뒤 기본 링크만 보이던 개발 서버 CSS 캐시 장애 복구 |
+| 수정한 파일 | 제품 소스 변경 없음. 손상된 `web/.next`를 `/private/tmp/campuslog-next-broken-20260824-css`로 보존 이동하고 기록 문서만 갱신 |
+| 변경 내용 | 브라우저에서 stylesheet 미적용과 `.app-shell` 기본 block 상태를 확인한 뒤 기존 3000번 프로세스를 종료하고 `.next`를 새로 생성하도록 `npm run dev` 재시작 |
+| 검증한 내용 | `http://localhost:3000/experiences/.../edit` 신규 진입 및 같은 탭 연속 새로고침 후 `.app-shell` flex, Liquid Glass shell 존재, `경험 수정` H1 38.4px/720과 전체 폼 표시 확인 |
+| 남은 작업 | 없음. 보존한 손상 캐시는 필요 없을 때 수동 삭제 가능 |
+| 관련 커밋 메시지 | 문서 기록만 포함할 경우 `docs: record dev css cache recovery` |
+
+### 2026-08-24 - 삭제 색상·액션 그림자 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 삭제 버튼의 글자·아이콘 위험 색상을 통일하고 작은 액션의 과한 그림자를 개선 |
+| 수정한 파일 | `web/src/app/globals.css`, 경험 화면 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | 삭제 capsule과 아이콘형 삭제, 활동 현황 Dropdown 삭제의 글자·아이콘을 `#b42318`로 통일하고 SVG `currentColor` 상속을 보장. 이동·중립·삭제 capsule은 표면용 `0 10px 28px` 그림자 대신 기본 `0 2px 7px / 5%`, hover `0 4px 12px / 7%`의 작은 액션 전용 그림자를 공유. Dropdown 행은 그림자를 추가하지 않음 |
+| 검증한 내용 | 관련 구조 테스트 39개, lint, typecheck, diff check 통과. 브라우저 계산 스타일에서 완료 경험 `삭제`의 글자·아이콘 `rgb(180, 35, 24)`, 44px·999px, 얕은 inset + `0 2px 7px` 그림자를 확인. 중립 `AI 분석 결과`도 같은 그림자를 공유하고 활동 현황 `활동 삭제` 메뉴는 같은 빨강·무그림자를 유지함을 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: refine destructive action emphasis` |
+
+### 2026-08-24 - 삭제·AI 실행 버튼 capsule 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 삭제 액션과 colorful AI 분석 실행 버튼의 의미 효과를 유지하면서 공통 capsule geometry 적용 |
+| 수정한 파일 | 삭제 액션이 있는 활동·경험·첨부·추천 이미지 컴포넌트, `web/src/app/globals.css`, 관련 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | 글자형 삭제는 44px 완전 capsule, 아이콘 전용 삭제는 44px 원형 capsule로 통일하고 danger 색상·hover·접근성 이름을 유지. `AI 분석`은 외곽과 gradient border의 모서리만 999px로 변경하고 기존 주황–보라 border/text/icon gradient와 6초 animation을 보존. Dropdown 안 삭제 command는 행형 메뉴 계약 유지 |
+| 검증한 내용 | 관련 구조 테스트 39개, lint, typecheck, diff check 통과. 브라우저에서 완료 경험 `삭제`가 44px·999px이고 빨간 휴지통이 유지되며, 추천 `AI 분석`이 44px·999px인 상태에서 gradient border/text와 `ai-action-gradient-shift` 6초 animation이 유지됨을 계산 스타일로 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: unify semantic action capsules` |
+
+### 2026-08-24 - 이동·중립 실행 버튼을 추천 기록 capsule로 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 화면 이동 버튼과 중립 저장·수정 실행 버튼을 CampusLog AI `추천 기록`의 Liquid Glass capsule 형태로 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, 경험 화면 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | 링크형 화면 이동, 인라인 상세 이동, 중립 저장·수정·완료 버튼에 44px·999px capsule·44% 흰 Glass·hairline·18px blur/아이콘을 적용. AI 그라디언트, 삭제·위험, 즐겨찾기, 검은 확장형 활동 추가처럼 색상 의미나 고유 geometry가 있는 버튼은 제외 |
+| 검증한 내용 | 관련 구조 테스트 25개, lint, typecheck 통과. 브라우저에서 `추천 기록`, `AI 분석 결과`, 수정 이동, `수정 완료`, `취소`의 계산 스타일 일치와 AI 그라디언트·삭제 버튼의 기존 형태 유지 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: unify neutral action capsules` |
+
+### 2026-08-24 - 페이지 우측 상단 액션 위치 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 추천·추천 기록·경험 상세·수정·분석의 페이지 헤더 보조 액션을 같은 위치와 높이로 통일 |
+| 수정한 파일 | `web/src/app/globals.css`, 추천 페이지 구조 테스트, Track B 기준·기록 문서 |
+| 변경 내용 | 공통 page header 액션을 헤더 상단 정렬로 변경하고 `추천 기록`·`새 추천 받기`를 44px 높이로 통일. 추천 기록 Sparkles를 공통 18px 아이콘 크기로 조정 |
+| 검증한 내용 | 관련 구조 테스트 33개, lint, typecheck 통과. 1280×720 로그인 브라우저에서 추천·추천 기록·경험 상세·AI 분석 헤더 액션 y 약 76px, 우측 끝 1228.05px, 높이 44px 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: unify page header action alignment` |
+
+### 2026-08-24 - 경험 수정 탭을 경험 상세 스크롤 형식으로 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 경험 수정 폼의 상·하단 정렬과 내부 스크롤을 독립 경험 상세 형식으로 통일하고 중복 파일 추가 버튼 제거 |
+| 수정한 파일 | `EditExperienceClient.tsx`, `ExperienceAttachmentPicker.tsx`, 공용 scrollbar hook·CSS, 관련 구조 테스트와 Track B 문서 |
+| 변경 내용 | 데스크톱에서 경험 상세와 같은 폭·Breadcrumb·H1·설명·상단 복귀 버튼·본문·하단 액션 기준선을 사용하고, intro가 내부 스크롤과 함께 사라지면서 폼 탭 상단은 좌측 메뉴까지 확장되고 하단은 고정되도록 변경. 선택 파일 목록 상단의 `파일 추가`는 제거하고 dropzone의 `파일 선택`과 `전체 삭제`는 유지 |
+| 검증한 내용 | 관련 구조 테스트 13개, lint, typecheck, diff check 통과. 1280×720 브라우저에서 상세·수정의 헤더·패널·본문 x/y 좌표 일치, 하단 액션 x 345.95px·폭 830.09px·bottom 약 669.2px, 스크롤 뒤 panel/sidebar top 20px·bottom 700px, `파일 추가` 버튼 0개 확인 |
+| 남은 작업 | production build는 실행 중인 dev 서버와 `.next` 충돌 방지를 위해 생략 |
+| 관련 커밋 메시지 | `style: align experience edit scrolling with detail` |
+
+### 2026-08-24 - 추천 이미지 첨부를 활동 수정 첨부 양식과 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 입력의 빈 이미지 첨부 영역을 나의 활동 수정 파일 첨부와 같은 시각 양식으로 조정 |
+| 수정한 파일 | `web/src/app/globals.css`, 추천 폼 구조 테스트와 Track B 기준·기록 문서 |
+| 변경 내용 | 실제 dropzone이 1px 점선·18px 모서리·투명 배경·174px 최소 높이와 공통 hover/focus/drag 상태를 소유하도록 변경하고 문구·버튼 밀도를 활동 수정 첨부 영역에 맞춤. 기존 안내 문구는 유지 |
+| 검증한 내용 | 구조 테스트 7개, lint, typecheck 통과. 로그인 로컬 브라우저에서 문구와 계산 스타일 및 렌더링 확인 |
+| 남은 작업 | 실제 이미지 선택 뒤 Gallery 전환은 기존 계약을 유지하며 이번 시각 변경 범위에서 재실행하지 않음 |
+| 관련 커밋 메시지 | `style: align recommendation image upload field` |
+
+### 2026-08-24 - 추천 기록을 나의 활동 master-detail 형식으로 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 기록의 페이지 폭·검색·목록 선택·우측 상세·스크롤 체계를 나의 활동과 같은 형식으로 통일 |
+| 수정한 파일 | `web/src/app/recommend/history/page.tsx`, `web/src/components/recommendations/AnimatedRecommendationList.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/globals.css`, 관련 구조 테스트, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/TODO.md` |
+| 변경 내용 | 추천 기록을 1120px primary-page와 전체 폭 목록으로 전환하고, 기록 선택 시 목록 360px(중간 폭 300px)·우측 상세가 같은 높이로 열리는 flex master-detail을 적용. 검색은 나의 활동과 같은 차콜 Gooey 형태로 바꾸고 목록·상세에 공용 transient scrollbar를 연결. 우측 상세의 중복 `AI 기반 활동 추천 결과` kicker는 제거하고 생성일·대표 질문은 유지 |
+| 검증한 내용 | 관련 구조 테스트, 전체 lint·typecheck·production build와 로그인 로컬 브라우저에서 검색 재질·선택 인디케이터·목록/상세 상하단 정렬·frosted 재질·중복 kicker 제거 확인 |
+| 남은 작업 | 390px 실제 기기의 시각 회귀 확인은 후속 통합 QA에서 수행 |
+| 관련 커밋 메시지 | `style: align recommendation history with activity workspace` |
+
+### 2026-08-24 - AI 분석 결과 헤더 중복 문구 제거
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-24 |
+| 작업자 | Codex |
+| 작업 요약 | AI 분석 결과 표면에서 페이지·제목과 의미가 겹치는 `AI 경험 분석 결과` 보조 문구 제거 |
+| 수정한 파일 | `web/src/components/ai/AnalysisResult.tsx`, `web/src/components/experiences/DashboardAnalysisSplitPanel.tsx`, 관련 구조 테스트 2개, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TASK_LOG.md`, `docs/ISSUE_LOG.md`, `docs/TODO.md` |
+| 변경 내용 | 독립 분석 화면과 나의 활동 스플릿 분석 패널에서 중복 kicker를 제거하고 분석 생성일과 기존 대표 제목·상태는 유지. API·schema·저장 계약은 변경하지 않음 |
+| 검증한 내용 | 관련 구조 테스트, lint, typecheck, 로그인된 로컬 브라우저 화면 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `style: simplify AI analysis result header` |
+
 ### 2026-08-24 - 독립 상세 전환 기준선 및 하단 스크롤 보정
 
 | 항목 | 내용 |

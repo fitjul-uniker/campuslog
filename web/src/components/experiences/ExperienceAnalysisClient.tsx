@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { AIProcessingPanel } from "@/components/ai/AIProcessingPanel";
 import { AnalysisResult } from "@/components/ai/AnalysisResult";
 import { EmptyState } from "@/components/common/EmptyState";
+import { LoadingStatus } from "@/components/common/LoadingState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { AnimatedGradientActionButton } from "@/components/ui/AnimatedGradientActionButton";
 import {
@@ -165,11 +166,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
 
   if (experience === undefined) {
     return (
-      <div className="page-stack">
-        <section className="placeholder-panel">
-          <p className="muted-text">분석 상태를 불러오는 중입니다.</p>
-        </section>
-      </div>
+      <LoadingStatus message="분석 상태를 불러오는 중입니다." />
     );
   }
 

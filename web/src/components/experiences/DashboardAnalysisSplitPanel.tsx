@@ -78,9 +78,6 @@ export function DashboardAnalysisSplitPanel({
       <header className="dashboard-analysis-split-header">
         <div>
           <div className="analysis-result-kicker-row">
-            <p className="experience-meta analysis-result-kicker">
-              AI 경험 분석 결과
-            </p>
             <span className="analysis-result-generated-at">
               {formatDateTime(analysis.generatedAt)}
             </span>

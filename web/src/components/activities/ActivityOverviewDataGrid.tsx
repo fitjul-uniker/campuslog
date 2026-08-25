@@ -381,7 +381,8 @@ export function ActivityOverviewDataGrid({
         </div>
       ) : (
         <div className="activity-overview-empty">
-          <p>표시할 활동이 아직 없습니다.</p>
+          <strong>진행 중인 활동이 없습니다.</strong>
+          <p>새 활동을 추가하면 이곳에서 바로 확인할 수 있어요.</p>
         </div>
       )}
 

@@ -5,7 +5,6 @@ import {
   type RefObject,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -16,21 +15,6 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import styles from "./expandable-screen.module.css";
-
-type OriginGeometry = {
-  x: number;
-  y: number;
-  scaleX: number;
-  scaleY: number;
-  borderRadius: number;
-  backgroundColor: string;
-};
-
-const EXPANDED_SCREEN_INSET = 8;
-const EXPANDED_SCREEN_RADIUS = 28;
-const EXPANDED_SCREEN_COLOR = "#f5f5f7";
-const EXPANDED_GLASS_COLOR = "rgba(255, 255, 255, 0.78)";
-const TRIGGER_SCREEN_COLOR = "#242321";
 
 type ExpandableScreenProps = {
   open: boolean;
@@ -55,47 +39,6 @@ const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
-function getOriginGeometry(anchorElement: HTMLElement | null): OriginGeometry {
-  const targetWidth = Math.max(
-    window.innerWidth - EXPANDED_SCREEN_INSET * 2,
-    1,
-  );
-  const targetHeight = Math.max(
-    window.innerHeight - EXPANDED_SCREEN_INSET * 2,
-    1,
-  );
-
-  if (!anchorElement?.isConnected) {
-    return {
-      x: targetWidth / 2,
-      y: targetHeight / 2,
-      scaleX: 0.04,
-      scaleY: 0.04,
-      borderRadius: 18,
-      backgroundColor: TRIGGER_SCREEN_COLOR,
-    };
-  }
-
-  const rect = anchorElement.getBoundingClientRect();
-  const computedStyle = window.getComputedStyle(anchorElement);
-  const computedRadius = Number.parseFloat(computedStyle.borderRadius);
-  const computedBackgroundColor = computedStyle.backgroundColor;
-  const backgroundColor =
-    computedBackgroundColor === "transparent" ||
-    computedBackgroundColor === "rgba(0, 0, 0, 0)"
-      ? EXPANDED_SCREEN_COLOR
-      : computedBackgroundColor;
-
-  return {
-    x: rect.left - EXPANDED_SCREEN_INSET,
-    y: rect.top - EXPANDED_SCREEN_INSET,
-    scaleX: Math.max(rect.width / targetWidth, 0.01),
-    scaleY: Math.max(rect.height / targetHeight, 0.01),
-    borderRadius: Number.isFinite(computedRadius) ? computedRadius : 16,
-    backgroundColor,
-  };
-}
-
 export function ExpandableScreen({
   open,
   onOpenChange,
@@ -117,30 +60,11 @@ export function ExpandableScreen({
   const dismissibleRef = useRef(dismissible);
   const restoreModalStateRef = useRef<(() => void) | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [origin, setOrigin] = useState<OriginGeometry | null>(null);
   const shouldReduceMotion = useReducedMotion();
-  const hasOrigin = origin !== null;
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  useLayoutEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const updateOrigin = () => setOrigin(getOriginGeometry(anchorElement));
-
-    updateOrigin();
-    window.addEventListener("resize", updateOrigin);
-    window.visualViewport?.addEventListener("resize", updateOrigin);
-
-    return () => {
-      window.removeEventListener("resize", updateOrigin);
-      window.visualViewport?.removeEventListener("resize", updateOrigin);
-    };
-  }, [anchorElement, open]);
 
   useEffect(() => {
     onOpenChangeRef.current = onOpenChange;
@@ -157,7 +81,7 @@ export function ExpandableScreen({
   }, []);
 
   useEffect(() => {
-    if (!open || !hasOrigin) {
+    if (!open) {
       return;
     }
 
@@ -277,55 +201,16 @@ export function ExpandableScreen({
         }
       }, 600);
     };
-  }, [hasOrigin, initialFocusRef, open, returnFocusRef]);
+  }, [initialFocusRef, open, returnFocusRef]);
 
   if (!isMounted) {
     return null;
   }
 
-  const resolvedOrigin = origin ?? {
-    x: 0,
-    y: 0,
-    scaleX: 1,
-    scaleY: 1,
-    borderRadius: 0,
-    backgroundColor: EXPANDED_SCREEN_COLOR,
-  };
-  const surfaceInitial = shouldReduceMotion
-    ? { opacity: 0, backgroundColor: EXPANDED_SCREEN_COLOR }
-    : {
-        x: resolvedOrigin.x,
-        y: resolvedOrigin.y,
-        scaleX: resolvedOrigin.scaleX,
-        scaleY: resolvedOrigin.scaleY,
-        borderRadius: resolvedOrigin.borderRadius,
-        backgroundColor: resolvedOrigin.backgroundColor,
-        opacity: 1,
-      };
-  const surfaceExit = shouldReduceMotion
-    ? { opacity: 0, backgroundColor: EXPANDED_SCREEN_COLOR }
-    : {
-        x: resolvedOrigin.x,
-        y: resolvedOrigin.y,
-        scaleX: resolvedOrigin.scaleX,
-        scaleY: resolvedOrigin.scaleY,
-        borderRadius: resolvedOrigin.borderRadius,
-        backgroundColor: EXPANDED_SCREEN_COLOR,
-        opacity: 0,
-        transition: {
-          duration: 0.18,
-          ease: [0.22, 1, 0.36, 1] as const,
-          opacity: {
-            duration: 0.12,
-            ease: "easeOut" as const,
-          },
-        },
-      };
-
   return createPortal(
     <MotionConfig reducedMotion="user">
       <AnimatePresence onExitComplete={() => restoreModalStateRef.current?.()}>
-        {open && origin ? (
+        {open ? (
           <div className={styles.layer}>
             <motion.div
               className={styles.backdrop}
@@ -344,72 +229,56 @@ export function ExpandableScreen({
                   : { duration: 0.22, ease: "easeOut" }
               }
             />
-            <motion.div
-              className={styles.surface}
-              aria-hidden="true"
-              initial={surfaceInitial}
-              animate={{
-                x: 0,
-                y: 0,
-                scaleX: 1,
-                scaleY: 1,
-                borderRadius: EXPANDED_SCREEN_RADIUS,
-                backgroundColor: EXPANDED_GLASS_COLOR,
-                opacity: 1,
-              }}
-              exit={surfaceExit}
-              style={{ transformOrigin: "0 0" }}
-              transition={
-                shouldReduceMotion
-                  ? { duration: 0 }
-                  : { duration: 0.36, ease: [0.22, 1, 0.36, 1] }
-              }
-            />
-
-            <motion.div
-              ref={dialogRef}
-              className={cn(styles.dialog, className)}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={titleId}
-              aria-describedby={description ? descriptionId : undefined}
-              tabIndex={-1}
-              initial={
-                shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }
-              }
-              animate={{ opacity: 1, y: 0 }}
-              exit={{
-                opacity: 0,
-                y: shouldReduceMotion ? 0 : 4,
-                transition: shouldReduceMotion
-                  ? { duration: 0 }
-                  : { duration: 0.1, ease: "easeIn" },
-              }}
-              transition={
-                shouldReduceMotion
-                  ? { duration: 0 }
-                  : { duration: 0.18, delay: 0.08, ease: "easeOut" }
-              }
-            >
-              <h2 id={titleId} className="sr-only">
-                {title}
-              </h2>
-              {description ? (
-                <p id={descriptionId} className="sr-only">
-                  {description}
-                </p>
-              ) : null}
-              <button
-                type="button"
-                className={styles.close}
-                aria-label={closeLabel}
-                onClick={() => onOpenChangeRef.current(false)}
-                disabled={!dismissible}
+            <div className={styles.dialogFrame}>
+              <motion.div
+                ref={dialogRef}
+                className={cn(styles.dialog, className)}
+                data-has-anchor={anchorElement?.isConnected ? "true" : undefined}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                aria-describedby={description ? descriptionId : undefined}
+                tabIndex={-1}
+                initial={
+                  shouldReduceMotion
+                    ? { opacity: 1 }
+                    : { opacity: 0, scale: 0.965, y: 10 }
+                }
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{
+                  opacity: 0,
+                  scale: shouldReduceMotion ? 1 : 0.98,
+                  y: shouldReduceMotion ? 0 : 5,
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.13, ease: "easeIn" },
+                }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }
+                }
               >
-                <X aria-hidden="true" />
-              </button>
-              <div className={styles.content}>{children}</div>
-            </motion.div>
+                <h2 id={titleId} className="sr-only">
+                  {title}
+                </h2>
+                {description ? (
+                  <p id={descriptionId} className="sr-only">
+                    {description}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className={styles.close}
+                  aria-label={closeLabel}
+                  onClick={() => onOpenChangeRef.current(false)}
+                  disabled={!dismissible}
+                >
+                  <X aria-hidden="true" />
+                </button>
+                <div className={styles.content}>{children}</div>
+              </motion.div>
+            </div>
           </div>
         ) : null}
       </AnimatePresence>

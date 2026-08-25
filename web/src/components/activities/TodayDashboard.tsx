@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CircleAlert,
   Edit3,
   Loader2,
   Plus,
@@ -231,7 +232,7 @@ export function TodayDashboard() {
       setActivities([]);
       setLogs([]);
       setLoadError(
-        "저장된 기록을 불러오지 못했습니다. 계정 데이터는 지우지 않았으니 다시 시도해 주세요.",
+        "계정 데이터는 그대로 있어요. 잠시 후 다시 시도해 주세요.",
       );
     }
   }, [today]);
@@ -624,6 +625,8 @@ export function TodayDashboard() {
         <TodayDashboardHeader today={today} />
         <LoadingState
           message="오늘의 기록을 불러오는 중입니다."
+          variant="dashboard"
+          showIntro={false}
         />
       </div>
     );
@@ -635,9 +638,23 @@ export function TodayDashboard() {
       <TodayDashboardHeader today={today} />
 
       {loadError ? (
-        <div className="activity-inline-alert" role="alert">
-          <p>{loadError}</p>
-          <RippleButton type="button" onClick={loadDashboardData}>
+        <div
+          className="activity-inline-alert activity-load-error-toast"
+          role="alert"
+          aria-atomic="true"
+        >
+          <span className="activity-load-error-icon" aria-hidden="true">
+            <CircleAlert />
+          </span>
+          <div className="activity-load-error-copy">
+            <strong>기록을 불러오지 못했어요</strong>
+            <p>{loadError}</p>
+          </div>
+          <RippleButton
+            className="activity-load-error-retry"
+            type="button"
+            onClick={loadDashboardData}
+          >
             다시 불러오기
             <RippleButtonRipples />
           </RippleButton>
@@ -889,6 +906,7 @@ export function TodayDashboard() {
                         </button>
                         <button
                           type="button"
+                          className="activity-event-delete-button"
                           onClick={() => handleDelete(log)}
                           aria-label={`${activity.title} ${isPlanningDate ? "계획" : "기록"} 삭제`}
                         >

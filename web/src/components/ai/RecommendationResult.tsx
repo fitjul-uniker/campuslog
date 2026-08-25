@@ -748,7 +748,7 @@ export function RecommendationResult({
       () => {
         const item = matchItemRefs.current.get(openedValue);
         const scrollContainer = item?.closest<HTMLElement>(
-          ".recommendation-history-detail",
+          ".recommendation-history-detail-scroll",
         );
 
         if (!item || !scrollContainer) {
@@ -1026,9 +1026,11 @@ export function RecommendationResult({
       <div className="detail-header">
         <div>
           <div className="recommendation-result-kicker-row">
-            <p className="experience-meta recommendation-result-kicker">
-              AI 기반 활동 추천 결과
-            </p>
+            {!isEmbedded ? (
+              <p className="experience-meta recommendation-result-kicker">
+                AI 기반 활동 추천 결과
+              </p>
+            ) : null}
             <span className="recommendation-result-generated-at">
               {formatDateTime(result.generatedAt)}
             </span>

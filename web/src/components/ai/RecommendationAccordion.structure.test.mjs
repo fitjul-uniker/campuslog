@@ -105,7 +105,7 @@ test("추천 기록에서 경험을 펼치면 우측 상세 패널의 읽기 시
   assert.match(source, /matchItemRefs\.current\.set\(matchValue, node\)/);
   assert.match(
     source,
-    /closest<HTMLElement>\(\s*"\.recommendation-history-detail"/,
+    /closest<HTMLElement>\(\s*"\.recommendation-history-detail-scroll"/,
   );
   assert.match(source, /scrollContainer\.scrollTo\(\{/);
   assert.match(source, /prefers-reduced-motion: reduce/);
