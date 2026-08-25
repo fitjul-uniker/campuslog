@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { History } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -15,15 +13,7 @@ import {
 } from "@/components/ai/AIBackgroundTaskProvider";
 import { RecommendationResult } from "@/components/ai/RecommendationResult";
 import { EmptyState } from "@/components/common/EmptyState";
-import { LoadingState } from "@/components/common/LoadingState";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { useRecommendationLoadingLayout } from "@/components/common/RecommendationLoadingLayoutProvider";
 import { createIsoTimestamp } from "@/lib/date";
 import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { requestRecommendation } from "@/lib/recommendationApi";
@@ -42,10 +32,12 @@ import type {
   RecommendationResult as Recommendation,
 } from "@/lib/types";
 
+import { getRecommendationEmptyStatePresentation } from "./recommendationPagePresentation";
 import {
-  RECOMMENDATION_PAGE_DESCRIPTION,
-  getRecommendationEmptyStatePresentation,
-} from "./recommendationPagePresentation";
+  RecommendationPageBreadcrumb,
+  RecommendationPageHeader,
+  RecommendationPageLoadingState,
+} from "./RecommendationPageScaffold";
 
 type RecommendationFormInput = {
   purpose: RecommendationPurpose;
@@ -54,47 +46,6 @@ type RecommendationFormInput = {
 };
 
 const RECOMMENDATION_TASK_KEY = "recommendation:current";
-
-function RecommendationPageBreadcrumb() {
-  return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/" className="breadcrumb-brand-link">
-            CampusLog
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>AI 기반 활동 추천</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
-}
-
-function RecommendationPageHeader() {
-  return (
-    <section className="page-header recommendation-page-header primary-page-heading">
-      <div className="recommendation-page-header-copy">
-        <h1>AI 기반 활동 추천</h1>
-        <p className="page-description primary-page-description">
-          {RECOMMENDATION_PAGE_DESCRIPTION}
-        </p>
-      </div>
-
-      <div className="header-actions recommendation-header-actions">
-        <Link
-          href="/recommend/history"
-          className="button button-ghost recommendation-header-link liquid-capsule"
-        >
-          <History className="button-icon" aria-hidden="true" />
-          추천 기록
-        </Link>
-      </div>
-    </section>
-  );
-}
 
 function createRecommendationId(): string {
   if (typeof globalThis.crypto?.randomUUID === "function") {
@@ -118,6 +69,10 @@ function getRecommendationInputSource(
 
 export default function RecommendPage() {
   const router = useRouter();
+  const {
+    mode: recommendationLoadingLayout,
+    setMode: setRecommendationLoadingLayout,
+  } = useRecommendationLoadingLayout();
   const {
     startTask,
     cancelTask,
@@ -171,6 +126,9 @@ export default function RecommendPage() {
       ).filter((analysis): analysis is ExperienceAnalysis => Boolean(analysis));
 
       if (isMounted) {
+        setRecommendationLoadingLayout(
+          storedExperiences.length > 0 ? "form" : "empty",
+        );
         setExperiences(storedExperiences);
         setAnalyses(storedAnalyses);
         setTrackedActivityCount(storedTrackedActivities.length);
@@ -179,6 +137,7 @@ export default function RecommendPage() {
 
     loadRecommendationData().catch(() => {
       if (isMounted) {
+        setRecommendationLoadingLayout("empty");
         setExperiences([]);
         setAnalyses([]);
         setTrackedActivityCount(0);
@@ -191,7 +150,7 @@ export default function RecommendPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [setRecommendationLoadingLayout]);
 
   const recommendationId = recommendation?.id;
 
@@ -342,14 +301,13 @@ export default function RecommendPage() {
 
   if (experiences === null) {
     return (
-      <div className="page-stack page-stack-narrow recommendation-page primary-page">
-        <RecommendationPageBreadcrumb />
-        <RecommendationPageHeader />
-
-        <LoadingState
-          message="AI 기반 활동 추천을 불러오는 중입니다."
-        />
-      </div>
+      <RecommendationPageLoadingState
+        variant={
+          recommendationLoadingLayout === "form"
+            ? "recommendation-form"
+            : "recommendation"
+        }
+      />
     );
   }
 

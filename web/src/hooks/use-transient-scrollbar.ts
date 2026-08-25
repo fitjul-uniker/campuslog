@@ -15,7 +15,7 @@ function updateScrollablePageIntro(target: HTMLElement): void {
   }
 
   const page = target.closest<HTMLElement>(
-    ".experience-detail-page, .analysis-detail-page",
+    ".experience-detail-page, .analysis-detail-page, .experience-form-page",
   );
   const intro = page?.querySelector<HTMLElement>(
     ":scope > .standalone-page-intro",

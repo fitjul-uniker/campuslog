@@ -12,11 +12,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import { isDevelopmentUiPreview } from "@/lib/supabase/env";
 import type { ExperienceFormInput } from "@/lib/types";
 
 export function NewExperienceClient() {
+  const handleTransientScroll = useTransientScrollbar<HTMLDivElement>();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
   const [attachmentsEnabled] = useState(
@@ -60,50 +62,61 @@ export function NewExperienceClient() {
   }
 
   return (
-    <div className="page-stack page-stack-narrow sub-page">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="breadcrumb-brand-link">
-              CampusLog
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>새 경험 기록</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <div className="page-stack page-stack-narrow sub-page experience-form-page experience-new-page">
+      <div className="standalone-page-intro">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="breadcrumb-brand-link">
+                CampusLog
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/experiences">나의 활동</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>새 경험 기록</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-      <section className="page-header sub-page-heading">
-        <div>
-          <h1>새 경험 기록</h1>
-          <p className="page-description">
-            활동 내용과 성과, 관련 자료를 한곳에 기록합니다.
-          </p>
-        </div>
-      </section>
+        <section className="page-header sub-page-heading experience-detail-page-heading">
+          <div>
+            <h1>새 경험 기록</h1>
+            <p className="page-description">
+              활동 내용과 성과, 관련 자료를 한곳에 기록합니다.
+            </p>
+          </div>
+        </section>
+      </div>
 
       <section
         className="form-panel liquid-workspace"
         aria-labelledby="new-form-title"
       >
-        <h2 id="new-form-title">경험 정보</h2>
-        {errorMessage ? (
-          <p className="form-error" role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
-        <ExperienceForm
-          mode="create"
-          cancelHref="/experiences"
-          attachmentsEnabled={attachmentsEnabled}
-          onSubmit={handleSubmit}
-        />
+        <div
+          className="experience-form-scroll"
+          data-transient-scrollbar="true"
+          data-scroll-page-intro="true"
+          onScroll={handleTransientScroll}
+        >
+          <div className="experience-form-content">
+            <h2 id="new-form-title">경험 정보</h2>
+            {errorMessage ? (
+              <p className="form-error" role="alert">
+                {errorMessage}
+              </p>
+            ) : null}
+            <ExperienceForm
+              mode="create"
+              cancelHref="/experiences"
+              attachmentsEnabled={attachmentsEnabled}
+              onSubmit={handleSubmit}
+            />
+          </div>
+        </div>
       </section>
     </div>
   );

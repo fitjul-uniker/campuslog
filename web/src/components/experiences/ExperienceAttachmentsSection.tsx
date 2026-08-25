@@ -111,7 +111,7 @@ export function ExperienceAttachmentsSection({
 
   if (attachments === undefined) {
     return (
-      <section className="experience-attachments-section liquid-content-plate">
+      <section className="experience-attachments-section">
         <Heading>첨부 파일</Heading>
         <p className="is-muted">첨부 파일을 불러오는 중입니다.</p>
       </section>
@@ -123,11 +123,8 @@ export function ExperienceAttachmentsSection({
   }
 
   return (
-    <section className="experience-attachments-section liquid-content-plate">
-      <div className="experience-attachments-heading">
-        <Heading>첨부 파일</Heading>
-        {attachments.length > 0 ? <span>{attachments.length}개</span> : null}
-      </div>
+    <section className="experience-attachments-section">
+      <Heading>첨부 파일</Heading>
 
       {attachments.length > 0 ? (
         <ul className="experience-attachments-list">

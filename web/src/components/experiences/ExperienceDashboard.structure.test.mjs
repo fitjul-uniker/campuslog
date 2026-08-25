@@ -116,3 +116,24 @@ test("나의 활동 검색은 기존 차콜 Gooey morph를 유지한다", () => 
     /\.gooey-input-trigger,\s*\.gooey-input-surface,\s*\.gooey-input-bubble\s*\{[^}]*background:\s*#1d1d1f[^}]*color:\s*#ffffff/,
   );
 });
+
+test("나의 활동 빈 상태는 중복 추가 아이콘 없이 패널을 채우고 Glass 이동 액션을 사용한다", () => {
+  assert.match(source, /아직 등록한 활동이 없습니다/);
+  assert.doesNotMatch(source, /dashboard-empty-mark/);
+  assert.match(
+    source,
+    /className="dashboard-empty-action"[\s\S]*과거 경험 기록하기[\s\S]*<ArrowRight aria-hidden="true" \/>/,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-list-state\.is-empty\s*\{[^}]*min-height:\s*260px;[^}]*border:\s*0;/s,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-list-state\.is-empty\s*\{[^}]*min-height:\s*0;[^}]*flex:\s*1 1 auto;/s,
+  );
+  assert.match(
+    styles,
+    /\.dashboard-empty-action\s*\{[^}]*min-height:\s*44px;[^}]*border-radius:\s*999px;[^}]*background:\s*var\(--liquid-clear-fill\);[^}]*backdrop-filter:\s*blur\(18px\)/s,
+  );
+});

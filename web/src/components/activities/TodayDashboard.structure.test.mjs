@@ -49,6 +49,27 @@ test("활동 현황 Data Grid는 상태·기간·고정·한국어 행 메뉴를
   assert.doesNotMatch(dataGridSource, /Copy ID|ID 복사|RefreshCw/);
 });
 
+test("활동 현황 빈 상태는 진행 중인 활동과 다음 행동을 간결하게 안내한다", () => {
+  assert.match(dataGridSource, /진행 중인 활동이 없습니다\./);
+  assert.match(dataGridSource, /새 활동을 추가하면 이곳에서 바로 확인할 수 있어요\./);
+  assert.doesNotMatch(dataGridSource, /표시할 활동이 아직 없습니다/);
+  assert.match(
+    styles,
+    /\.activity-overview-empty\s*\{[^}]*min-height:\s*112px;[^}]*place-content:\s*center;[^}]*background:\s*transparent;[^}]*text-align:\s*center;/s,
+  );
+});
+
+test("대시보드 불러오기 오류는 본문 배너 대신 재시도 가능한 Glass 팝업으로 표시한다", () => {
+  assert.match(source, /activity-inline-alert activity-load-error-toast/);
+  assert.match(source, /기록을 불러오지 못했어요/);
+  assert.match(source, /계정 데이터는 그대로 있어요/);
+  assert.match(source, /activity-load-error-retry/);
+  assert.match(
+    styles,
+    /\.activity-inline-alert\.activity-load-error-toast\s*\{[^}]*position:\s*fixed;[^}]*width:\s*min\(360px, calc\(100vw - 48px\)\);[^}]*border-radius:\s*22px;[^}]*backdrop-filter:\s*blur\(24px\)/s,
+  );
+});
+
 test("활동 현황 Data Grid는 고정 5개 페이지와 행 상세 진입을 제공한다", () => {
   assert.match(dataGridSource, /const pageSize = 5;/);
   assert.doesNotMatch(dataGridSource, /페이지당 행|<select/);
@@ -110,6 +131,22 @@ test("오늘의 기록 핵심 영역은 페이지별 Liquid Glass 계층을 사�
   );
 });
 
+test("활동 추가와 날짜별 기록 overlay는 같은 쿨 뉴트럴 Glass 언어를 사용한다", () => {
+  assert.match(source, /className="activity-floating-record-panel"/);
+  assert.match(
+    styles,
+    /Liquid Glass creation overlays[\s\S]*?\.glass-overlay-surface\.activity-floating-record-panel\s*\{[\s\S]*?border-radius:\s*28px;[\s\S]*?background:\s*rgb\(248 249 251 \/ 90%\);[\s\S]*?backdrop-filter:\s*blur\(28px\)/,
+  );
+  assert.match(
+    styles,
+    /\.glass-overlay-surface\.activity-floating-record-panel[\s\S]*?\.floating-panel-header\s+p\s*\{[^}]*border-radius:\s*999px;[^}]*background:\s*var\(--liquid-overlay-clear\)/,
+  );
+  assert.match(
+    styles,
+    /\.activity-floating-record-footer[\s\S]*?:is\(\.activity-primary-button, \.activity-secondary-button\)\s*\{[^}]*border-radius:\s*999px;[^}]*box-shadow:\s*var\(--liquid-overlay-action-shadow\)/,
+  );
+});
+
 test("활동 추가는 포인터 환경에서 아이콘에서 라벨로 확장한다", () => {
   assert.match(source, /activity-create-expanding-button/);
   assert.match(source, /activity-create-expanding-icon/);
@@ -144,10 +181,6 @@ test("모바일 완료 활동의 수정과 삭제는 한 줄의 보조 액션으
   assert.match(
     styles,
     /\.activity-finishing-list li > a\s*\{[\s\S]*grid-column:\s*1 \/ -1/,
-  );
-  assert.match(
-    styles,
-    /\.activity-inline-alert\s*\{[^}]*flex-direction:\s*column/,
   );
 });
 

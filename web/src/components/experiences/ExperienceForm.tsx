@@ -117,6 +117,16 @@ function formatMonthForStorage(month: string): string {
   return month.replace("-", ".");
 }
 
+function formatMonthForDisplay(month: string): string {
+  const [year, monthNumber] = month.split("-");
+
+  if (!year || !monthNumber) {
+    return "연도와 월 선택";
+  }
+
+  return `${year}년 ${Number(monthNumber)}월`;
+}
+
 function createPeriodValue(periodFields: PeriodFields): string {
   const { startMonth, endMonth, isOngoing } = periodFields;
 
@@ -567,33 +577,48 @@ export function ExperienceForm({
         <div className="field-grid">
           <div className="form-field">
             <label htmlFor="experience-period-start">시작</label>
-            <input
-              id="experience-period-start"
-              name="periodStart"
-              type="month"
-              value={periodFields.startMonth}
-              onChange={(event) =>
-                updatePeriodField("startMonth", event.target.value)
-              }
-              aria-invalid={hasPeriodError}
-              required
-            />
+            <div className="experience-month-control">
+              <input
+                id="experience-period-start"
+                name="periodStart"
+                type="month"
+                value={periodFields.startMonth}
+                onChange={(event) =>
+                  updatePeriodField("startMonth", event.target.value)
+                }
+                aria-invalid={hasPeriodError}
+                required
+              />
+              <span className="experience-month-display" aria-hidden="true">
+                {formatMonthForDisplay(periodFields.startMonth)}
+              </span>
+            </div>
           </div>
           <div className="form-field">
             <label htmlFor="experience-period-end">종료</label>
-            <input
-              id="experience-period-end"
-              name="periodEnd"
-              type="month"
-              value={periodFields.endMonth}
-              min={periodFields.startMonth || undefined}
-              disabled={periodFields.isOngoing}
-              onChange={(event) =>
-                updatePeriodField("endMonth", event.target.value)
-              }
-              aria-invalid={hasPeriodError && !periodFields.isOngoing}
-              required={!periodFields.isOngoing}
-            />
+            <div
+              className="experience-month-control"
+              data-disabled={periodFields.isOngoing ? "true" : "false"}
+            >
+              <input
+                id="experience-period-end"
+                name="periodEnd"
+                type="month"
+                value={periodFields.endMonth}
+                min={periodFields.startMonth || undefined}
+                disabled={periodFields.isOngoing}
+                onChange={(event) =>
+                  updatePeriodField("endMonth", event.target.value)
+                }
+                aria-invalid={hasPeriodError && !periodFields.isOngoing}
+                required={!periodFields.isOngoing}
+              />
+              <span className="experience-month-display" aria-hidden="true">
+                {periodFields.isOngoing
+                  ? "진행 중"
+                  : formatMonthForDisplay(periodFields.endMonth)}
+              </span>
+            </div>
           </div>
         </div>
         <label
@@ -603,7 +628,7 @@ export function ExperienceForm({
           <Checkbox
             id="experience-period-ongoing"
             name="periodOngoing"
-            size="sm"
+            size="lg"
             checked={periodFields.isOngoing}
             onCheckedChange={(checked) =>
               updatePeriodOngoing(checked === true)
@@ -615,10 +640,10 @@ export function ExperienceForm({
 
       <div className="form-field">
         <label htmlFor="experience-role">역할</label>
-        <input
+        <textarea
           id="experience-role"
           name="role"
-          type="text"
+          rows={3}
           maxLength={EXPERIENCE_INPUT_LIMITS.role}
           value={formValue.role}
           onChange={(event) => updateField("role", event.target.value)}
@@ -628,7 +653,7 @@ export function ExperienceForm({
       </div>
 
       <div className="form-field">
-        <label htmlFor="experience-description">내용</label>
+        <label htmlFor="experience-description">활동 내용</label>
         <textarea
           ref={descriptionInputRef}
           id="experience-description"
@@ -832,6 +857,7 @@ export function ExperienceForm({
           className="button button-primary"
           type="submit"
           disabled={isSubmitting}
+          hoverScale={1}
         >
           <Save className="button-icon" aria-hidden="true" />
           {isSubmitting ? "저장 중..." : mode === "create" ? "저장" : "수정 완료"}

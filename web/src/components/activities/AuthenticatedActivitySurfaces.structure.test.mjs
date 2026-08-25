@@ -30,6 +30,16 @@ test("활동 작성 화면은 폼과 워크스페이스의 Liquid Glass 역할�
     /activity-create-expanded-card liquid-workspace/,
   );
   assert.match(newActivitySource, /activity-form-surface liquid-workspace/);
+  assert.match(screenSource, /activity-create-expanded-kicker/);
+  assert.match(screenSource, /활동의 내용과 기간을 정하면/);
+  assert.match(
+    styles,
+    /Liquid Glass creation overlays[\s\S]*?\.activity-create-expanded-card\.liquid-workspace\s*\{[^}]*border-radius:\s*30px;[^}]*background:\s*rgb\(248 249 251 \/ 90%\);[^}]*backdrop-filter:\s*blur\(28px\)/,
+  );
+  assert.match(
+    styles,
+    /\.activity-create-expanded-layout[\s\S]*?\.activity-form-actions[\s\S]*?:is\(\.activity-primary-button, \.activity-secondary-button\)\s*\{[^}]*border-radius:\s*999px;[^}]*box-shadow:\s*var\(--liquid-overlay-action-shadow\)/,
+  );
 });
 
 test("활동 상세의 요약, 편집, AI 초안과 타임라인은 목적별 Glass 계층을 사용한다", () => {
@@ -82,8 +92,12 @@ test("AI 활동 정리 초안은 중복 가로선과 주요 성과 보조 문구
   );
 });
 
-test("활동 상세 초기 로딩은 이전 카드형 shimmer 대신 접근성 안내만 제공한다", () => {
-  assert.match(detailSource, /<LoadingState message="진행 활동을 불러오는 중입니다\." \/>/);
+test("활동 상세 초기 로딩은 화면을 덮지 않는 접근성 상태만 제공한다", () => {
+  assert.match(
+    detailSource,
+    /<LoadingStatus message="진행 활동을 불러오는 중입니다\."/,
+  );
+  assert.doesNotMatch(detailSource, /<LoadingState\b/);
   assert.doesNotMatch(detailSource, /activity-page-loading/);
   assert.doesNotMatch(styles, /\.activity-page-loading/);
   assert.doesNotMatch(styles, /@keyframes activity-loading/);

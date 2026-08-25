@@ -99,6 +99,6 @@ test("quick log shares its overlay material and keeps accessibility fallbacks", 
   );
   assert.match(
     expandableStyles,
-    /\.content\s*\{[^}]*background:\s*rgb\(255 255 255 \/ 92%\)/is,
+    /\.content\s*\{[^}]*background:\s*transparent/is,
   );
 });

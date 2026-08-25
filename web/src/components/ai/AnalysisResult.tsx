@@ -55,9 +55,6 @@ export function AnalysisResult({
         <div className="detail-header analysis-result-header">
           <div>
             <div className="analysis-result-kicker-row">
-              <p className="experience-meta analysis-result-kicker">
-                AI 경험 분석 결과
-              </p>
               <span className="analysis-result-generated-at">
                 {formatDateTime(analysis.generatedAt)}
               </span>

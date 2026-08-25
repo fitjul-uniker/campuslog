@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowLeft, ArrowRight, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, MailCheck } from "lucide-react";
 
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { ProfileStepperFields } from "@/components/auth/ProfileStepperFields";
@@ -34,7 +34,7 @@ import {
 } from "@/lib/auth/actions";
 import { cn } from "@/lib/utils";
 
-type SignupStage = "method" | "credentials" | "profile";
+type SignupStage = "credentials" | "profile";
 
 type SignupFormProps = {
   returnTo: string;
@@ -62,7 +62,7 @@ function GoogleSignupButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button
-      className="button button-secondary auth-google-button auth-method-button"
+      className="button button-secondary auth-google-button"
       disabled={disabled || pending}
       type="submit"
     >
@@ -72,7 +72,6 @@ function GoogleSignupButton({ disabled }: { disabled: boolean }) {
         <GoogleIcon />
       )}
       <span>{pending ? "Google 연결 중" : "Google로 회원가입"}</span>
-      {!pending ? <ArrowRight className="auth-method-arrow" aria-hidden="true" /> : null}
     </button>
   );
 }
@@ -86,7 +85,7 @@ export function SignupForm({
   switchHref: switchHrefOverride,
 }: SignupFormProps) {
   const Heading = headingLevel;
-  const [stage, setStage] = useState<SignupStage>("method");
+  const [stage, setStage] = useState<SignupStage>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [hasClientEmailError, setHasClientEmailError] = useState(false);
@@ -136,13 +135,6 @@ export function SignupForm({
     return () => cancelAnimationFrame(frame);
   }, [state]);
 
-  function openCredentialsStage() {
-    setStage("credentials");
-    requestAnimationFrame(() =>
-      document.getElementById("signup-email")?.focus(),
-    );
-  }
-
   function handleCredentialsSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -166,16 +158,6 @@ export function SignupForm({
 
     setHasClientPasswordError(false);
     setStage("profile");
-  }
-
-  function returnToMethodStage() {
-    setHasClientEmailError(false);
-    setHasClientPasswordError(false);
-    setPassword("");
-    setStage("method");
-    requestAnimationFrame(() =>
-      document.getElementById("signup-email-method")?.focus(),
-    );
   }
 
   function returnToCredentialsStage() {
@@ -213,7 +195,7 @@ export function SignupForm({
         </div>
       ) : null}
 
-      {shouldShowFeedback ? (
+      {shouldShowFeedback && state.status !== "success" ? (
         <div
           id={feedbackId}
           className={cn(
@@ -227,51 +209,31 @@ export function SignupForm({
       ) : null}
 
       {state.status === "success" ? (
-        <div className="auth-complete-copy">
-          <p>메일함에서 인증을 마치면 CampusLog로 이어집니다.</p>
-        </div>
-      ) : stage === "method" ? (
-        <div className="auth-stage">
-          <div className="auth-stage-heading">
-            <h3>가입 방법을 선택해 주세요</h3>
-            <p>이메일 또는 Google 계정으로 시작할 수 있어요.</p>
+        <div
+          className="auth-complete"
+          role="status"
+          aria-labelledby="signup-complete-title"
+        >
+          <span className="auth-complete-icon" aria-hidden="true">
+            <MailCheck />
+          </span>
+
+          <div className="auth-complete-copy">
+            <span className="auth-complete-kicker">가입 정보 저장 완료</span>
+            <h3 id="signup-complete-title">이메일을 확인해 주세요</h3>
+            <p>보내드린 인증 링크를 누르면 회원가입이 완료돼요.</p>
           </div>
 
-          <div className="auth-method-list">
-            <button
-              id="signup-email-method"
-              className="button button-primary auth-submit auth-method-button"
-              disabled={!isSupabaseConfigured}
-              onClick={openCredentialsStage}
-              type="button"
-            >
-              <Mail className="button-icon" aria-hidden="true" />
-              <span>이메일로 회원가입</span>
-              <ArrowRight className="auth-method-arrow" aria-hidden="true" />
-            </button>
-
-            <form action={signUpWithGoogleAction} className="auth-form">
-              <input name="returnTo" type="hidden" value={returnTo} />
-              <GoogleSignupButton disabled={!isSupabaseConfigured} />
-            </form>
-          </div>
+          <Link
+            href={switchHref}
+            className="button button-secondary auth-google-button auth-complete-action"
+          >
+            <span>로그인으로 이동</span>
+            <ArrowRight className="auth-complete-action-icon" aria-hidden="true" />
+          </Link>
         </div>
       ) : stage === "credentials" ? (
-        <div className="auth-stage">
-          <button
-            className="auth-back-link"
-            onClick={returnToMethodStage}
-            type="button"
-          >
-            <ArrowLeft aria-hidden="true" />
-            가입 방법
-          </button>
-
-          <div className="auth-stage-heading">
-            <h3>이메일로 시작하기</h3>
-            <p>로그인에 사용할 이메일과 비밀번호를 입력해 주세요.</p>
-          </div>
-
+        <div className="auth-stage auth-credentials-stage">
           <form
             className="auth-form"
             noValidate
@@ -344,9 +306,18 @@ export function SignupForm({
               disabled={!isSupabaseConfigured}
               type="submit"
             >
-              <span>계속</span>
+              <span>회원가입</span>
               <ArrowRight className="button-icon" aria-hidden="true" />
             </button>
+          </form>
+
+          <div className="auth-divider" aria-hidden="true">
+            <span>또는</span>
+          </div>
+
+          <form action={signUpWithGoogleAction} className="auth-form">
+            <input name="returnTo" type="hidden" value={returnTo} />
+            <GoogleSignupButton disabled={!isSupabaseConfigured} />
           </form>
         </div>
       ) : (
@@ -358,7 +329,7 @@ export function SignupForm({
             type="button"
           >
             <ArrowLeft aria-hidden="true" />
-            이메일 정보
+            가입 정보 수정
           </button>
 
           <form
@@ -381,12 +352,14 @@ export function SignupForm({
         </div>
       )}
 
-      <p className="auth-switch">
-        <span>이미 계정이 있다면</span>
-        <Link href={switchHref} className="auth-switch-link">
-          로그인
-        </Link>
-      </p>
+      {state.status !== "success" ? (
+        <p className="auth-switch">
+          <span>이미 계정이 있다면</span>
+          <Link href={switchHref} className="auth-switch-link">
+            로그인
+          </Link>
+        </p>
+      ) : null}
     </section>
   );
 }

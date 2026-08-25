@@ -49,7 +49,7 @@ test("경험 작성 폼은 사진과 PDF를 함께 읽는 Table 첨부 패턴을
   assert.match(pickerSource, /<th scope="col">파일<\/th>/);
   assert.match(pickerSource, />\s*형식\s*</);
   assert.match(pickerSource, />\s*용량\s*</);
-  assert.match(pickerSource, /파일 추가/);
+  assert.doesNotMatch(pickerSource, /파일 추가/);
   assert.match(pickerSource, /전체 삭제/);
   assert.match(pickerSource, /첨부 파일 삭제/);
   assert.match(attachmentUtilsSource, /image\/jpeg,image\/png,image\/webp/);

@@ -7,11 +7,12 @@ import {
   motion,
   useReducedMotion,
 } from "motion/react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, UIEvent } from "react";
 import { useRef } from "react";
 
 import { formatDateTime } from "@/lib/date";
 import { getRecommendationPurposeConfig } from "@/lib/recommendationPurposeConfig";
+import { useTransientScrollbar } from "@/hooks/use-transient-scrollbar";
 import type { RecommendationResult } from "@/lib/types";
 
 type AnimatedRecommendationListProps = {
@@ -38,6 +39,11 @@ export function AnimatedRecommendationList({
 }: AnimatedRecommendationListProps) {
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const shouldReduceMotion = useReducedMotion();
+  const handleTransientScroll = useTransientScrollbar<HTMLDivElement>();
+
+  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
+    handleTransientScroll(event);
+  };
 
   const moveFocus = (index: number) => {
     const button = buttonRefs.current[index];
@@ -154,11 +160,13 @@ export function AnimatedRecommendationList({
   };
 
   return (
-    <div className="recommendation-animated-list-shell">
+    <div className="recommendation-animated-list-shell dashboard-animated-list-shell">
       <LayoutGroup id="recommendation-pinned-list">
         <motion.div
           layoutScroll
-          className="recommendation-animated-list pinned-list"
+          className="recommendation-animated-list dashboard-animated-list pinned-list"
+          data-transient-scrollbar="true"
+          onScroll={handleScroll}
         >
           <ul aria-label="저장된 추천 기록 목록">
             <AnimatePresence initial={false} mode="popLayout">

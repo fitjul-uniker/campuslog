@@ -4,6 +4,10 @@ import test from "node:test";
 
 const appShellPath = new URL("./AppShell.tsx", import.meta.url);
 const navigationPath = new URL("./Navigation.tsx", import.meta.url);
+const routeTransitionPath = new URL(
+  "./RouteTransitionProvider.tsx",
+  import.meta.url,
+);
 const globalsPath = new URL("../../app/globals.css", import.meta.url);
 
 test("authenticated shell uses one Glass surface per navigation layer", async () => {
@@ -15,9 +19,17 @@ test("authenticated shell uses one Glass surface per navigation layer", async ()
   assert.match(source, /as="header"/);
   assert.match(source, /<Navigation \/>/);
   assert.match(source, /<Navigation variant="mobile" \/>/);
+  assert.match(source, /<RouteTransitionProvider>/);
   assert.match(source, /<ProfileMenu \/>/);
   assert.match(source, /<ProfileMenu variant="mobile" \/>/);
   assert.match(source, /usePageTransientScrollbar\(\)/);
+  assert.match(source, /function handleProductBrandNavigation/);
+  assert.match(source, /event\.preventDefault\(\)/);
+  assert.match(source, /window\.location\.assign\("\/"\)/);
+  assert.equal(
+    source.match(/onClick=\{handleProductBrandNavigation\}/g)?.length,
+    2,
+  );
   assert.match(source, /pathname === "\/"/);
   assert.match(source, /isAuthRoute/);
   assert.match(
@@ -31,14 +43,18 @@ test("authenticated shell uses one Glass surface per navigation layer", async ()
 });
 
 test("active navigation keeps route semantics and the shell is responsive", async () => {
-  const [navigation, globals] = await Promise.all([
+  const [navigation, routeTransition, globals] = await Promise.all([
     readFile(navigationPath, "utf8"),
+    readFile(routeTransitionPath, "utf8"),
     readFile(globalsPath, "utf8"),
   ]);
 
   assert.match(navigation, /aria-current/);
   assert.match(navigation, /pendingHref/);
   assert.match(navigation, /setPendingHref\(item\.href\)/);
+  assert.match(navigation, /startRouteTransition\(item\.href\)/);
+  assert.match(routeTransition, /pendingPathname/);
+  assert.match(routeTransition, /setPendingPathname\(null\)/);
   assert.match(navigation, /prefers-reduced-motion: reduce/);
   assert.match(globals, /\.product-shell\[data-liquid-glass="true"\]/);
   assert.match(globals, /#eef1f6/i);

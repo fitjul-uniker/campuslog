@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useRouteTransition } from "@/components/layout/RouteTransitionProvider";
 import { cn } from "@/lib/utils";
 
 const PROXIMITY_RADIUS = 82;
@@ -46,6 +47,7 @@ type NavigationProps = {
 
 export function Navigation({ variant = "desktop" }: NavigationProps) {
   const pathname = usePathname();
+  const { startRouteTransition } = useRouteTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const pendingFromPathRef = useRef(pathname);
   const navigationRef = useRef<HTMLElement>(null);
@@ -229,6 +231,7 @@ export function Navigation({ variant = "desktop" }: NavigationProps) {
 
               pendingFromPathRef.current = pathname;
               setPendingHref(item.href);
+              startRouteTransition(item.href);
             }}
             aria-current={
               isRouteActive

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, Plus, RotateCcw } from "lucide-react";
+import { AlertCircle, ArrowRight, Plus, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   AnimatePresence,
@@ -536,7 +536,11 @@ export function ExperienceDashboard() {
         </header>
 
         {activityItems === null || !experiencePins.isLoaded ? (
-          <LoadingState message="나의 활동을 불러오는 중입니다." />
+          <LoadingState
+            message="나의 활동을 불러오는 중입니다."
+            variant="list"
+            showIntro={false}
+          />
         ) : (
           <div
             className="dashboard-experience-workspace"
@@ -608,12 +612,15 @@ export function ExperienceDashboard() {
                 </div>
               ) : activityItems.length === 0 ? (
                 <div className="dashboard-list-state is-empty">
-                  <span className="dashboard-empty-mark" aria-hidden="true">
-                    +
-                  </span>
                   <h2>아직 등록한 활동이 없습니다</h2>
                   <p>진행할 활동을 시작하거나 과거 경험을 직접 기록해 보세요.</p>
-                  <Link href="/experiences/new">과거 경험 기록하기</Link>
+                  <Link
+                    href="/experiences/new"
+                    className="dashboard-empty-action"
+                  >
+                    과거 경험 기록하기
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
                 </div>
               ) : filteredActivityItems?.length === 0 ? (
                 <div className="dashboard-list-state is-search-empty">

@@ -40,11 +40,18 @@ test("AI 실행 버튼은 기존 아이콘, gradient text, Chevron을 제공한�
   );
 });
 
-test("AI 실행 버튼 외곽은 기존 상세 액션 프레임을 따른다", () => {
+test("AI 실행 버튼은 colorful 효과를 보존한 capsule 프레임을 사용한다", () => {
   assert.match(buttonRule, /min-height: 44px;/);
   assert.match(buttonRule, /border: 1px solid transparent;/);
-  assert.match(buttonRule, /border-radius: 12px;/);
   assert.match(buttonRule, /padding: 10px 14px;/);
   assert.match(buttonRule, /box-shadow: none;/);
-  assert.doesNotMatch(buttonRule, /999px|inset|linear-gradient/);
+  assert.doesNotMatch(buttonRule, /inset|linear-gradient/);
+  assert.match(
+    cssSource,
+    /AI execution actions keep their colorful beam and text[\s\S]*?\.animated-gradient-action-button\s*\{[^}]*border-radius:\s*999px;[\s\S]*?\.animated-gradient-action-border\s*\{[^}]*border-radius:\s*inherit;/,
+  );
+  assert.match(
+    cssSource,
+    /\.animated-gradient-action-border\s*\{[\s\S]*?background:\s*linear-gradient\([\s\S]*?animation:\s*ai-action-gradient-shift 6s ease infinite;/,
+  );
 });

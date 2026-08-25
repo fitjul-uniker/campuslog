@@ -145,7 +145,7 @@ export function DashboardTrackedActivityDetail({
         <div className="dashboard-detail-actions">
           <button
             type="button"
-            className="dashboard-detail-action"
+            className="dashboard-detail-action dashboard-detail-delete"
             onClick={() => onDelete(activity, logs.length)}
           >
             활동 삭제
