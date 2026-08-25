@@ -14,7 +14,7 @@ import type {
 import { normalizeRecommendationPurpose } from "@/lib/recommendationPurposeConfig";
 
 export const RECOMMENDATION_SCHEMA_VERSION = "v2" as const;
-export const RECOMMENDATION_PROMPT_VERSION = "recommendation-v2.1";
+export const RECOMMENDATION_PROMPT_VERSION = "recommendation-v2.2";
 
 export const DEFAULT_RECOMMENDATION_REQUIREMENTS: RecommendationExtractedRequirements =
   {

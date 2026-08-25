@@ -48,6 +48,7 @@ import {
   getRecommendationPurposeConfig,
   type RecommendationGenerationOption,
 } from "@/lib/recommendationPurposeConfig";
+import { getRecommendationResultTitle } from "@/lib/recommendationResultTitle";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type {
   ActiveAnswerDraftType,
@@ -627,15 +628,9 @@ export function RecommendationResult({
   const purposeConfig = getRecommendationPurposeConfig(result.purpose);
   const generationOptions = getGenerationOptionsForPurpose(result.purpose);
   const requirements = result.extractedRequirements;
-  const normalizedRequirementIntent = requirements.intent.trim();
   const isLongJdPrompt =
     result.purpose === "jd" && result.prompt.trim().length > 240;
-  const resultTitle = isLongJdPrompt
-    ? normalizedRequirementIntent.length > 0 &&
-      normalizedRequirementIntent.length <= 100
-      ? normalizedRequirementIntent
-      : "JD 요구사항과 경험 적합도 분석"
-    : result.prompt;
+  const resultTitle = getRecommendationResultTitle(result);
   const hasRequirements =
     hasListContent(requirements.preferredCompetencies) ||
     requirements.intent.trim().length > 0;

@@ -30,6 +30,32 @@
 
 ## 작업 로그
 
+### 2026-08-25 - 이미지 자기소개서 추천 결과 제목 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 이미지 단독 자기소개서 추천 분석의 OCR 전체 문장 제목을 짧고 자연스러운 내용 기반 제목으로 정리 (`ISSUE-202`) |
+| 수정한 파일 | `web/src/lib/recommendationResultTitle.ts`, `web/src/lib/recommendationResultTitle.test.mjs`, `RecommendationResult.tsx`, `RecommendationResult.structure.test.mjs`, `/api/recommend/route.ts`, `web/src/lib/recommendationResult.ts`, `PRD.md`, 활성 문서 |
+| 변경 내용 | 이미지 단독·자기소개서 목적에만 60자 이하 추출 의도를 제목으로 사용하고, 부적합하면 중복 제거 핵심 키워드 최대 3개 또는 고정 제목으로 fallback. 새 AI 결과의 의도를 자연스러운 명사형 문구로 생성하도록 prompt를 `recommendation-v2.2`로 올림. OCR 원 질문과 저장 schema, 텍스트·혼합 입력, 긴 JD 제목 규칙은 유지 |
+| 검증한 내용 | 사용자가 실제 이미지 단독 자기소개서 입력부터 분석 결과·추천 기록의 자연스러운 제목까지 직접 로직 테스트 완료. 최신 `main` 병합 뒤 전체 Node 테스트 238개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: persist activity pins and refine AI titles` |
+
+### 2026-08-25 - 오늘의 기록 Data Grid 핀 DB 저장
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록 Data Grid 압정을 사용자별 DB에 저장하고 고정 활동을 상단에 유지 (`ISSUE-201`) |
+| 수정한 파일 | `supabase/migrations/20260825000100_dashboard_activity_pins.sql`, `web/src/lib/dashboardActivityPins.ts`, `web/src/hooks/use-dashboard-activity-pins.ts`, `ActivityOverviewDataGrid.tsx`, `TodayDashboard.tsx`, `globals.css`, 핀·로딩 구조 테스트, 활성 문서 |
+| 변경 내용 | 별 즐겨찾기와 분리된 `dashboard_activity_pins` table·본인 CRUD RLS·활동 복합 FK cascade를 추가. 최신 Data Grid의 pin 열·행 메뉴에 핀 데이터 준비, 고정 시각 역순 상단 정렬, 저장 중 비활성, 낙관적 이동·실패 rollback·오류 안내·화면 재활성화 재조회를 연결. Supabase 설정이 없는 개발 미리보기만 별도 localStorage fallback 사용 |
+| 검증한 내용 | Supabase SQL Editor에서 migration 실행 성공 후 REST에서 `user_id,activity_id,pinned_at` 조회가 HTTP 200·빈 배열로 응답해 table·column 노출 확인. 최신 `main` 병합 뒤 전체 Node 테스트 238개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과 |
+| 남은 작업 | 로그인 화면에서 고정·해제·새로고침 유지와 다른 계정 RLS UI smoke test |
+| 관련 커밋 메시지 | `feat: persist activity pins and refine AI titles` |
+
 ### 2026-08-25 - 하이퍼링크 전용 화면 개발 서버 복구
 
 | 항목 | 내용 |
