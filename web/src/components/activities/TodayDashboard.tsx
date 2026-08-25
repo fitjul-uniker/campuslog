@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getCampusLogRepository } from "@/lib/repositories/campuslogRepository";
 import type { DailyLog, TrackedActivity } from "@/lib/types";
+import { useDashboardActivityPins } from "@/hooks/use-dashboard-activity-pins";
 
 type EditingLog = {
   id: string;
@@ -159,6 +160,7 @@ function TodayDashboardHeader({ today }: { today: string }) {
 
 export function TodayDashboard() {
   const today = getLocalDateKey();
+  const activityPins = useDashboardActivityPins();
   const [selectedDate, setSelectedDate] = useState(today);
   const [activities, setActivities] = useState<TrackedActivity[] | null>(null);
   const [logs, setLogs] = useState<DailyLog[]>([]);
@@ -618,7 +620,7 @@ export function TodayDashboard() {
         ? "date-unavailable"
         : "needs-activity";
 
-  if (activities === null) {
+  if (activities === null || !activityPins.isLoaded) {
     return (
       <div className="activity-today-page primary-page">
         <TodayDashboardBreadcrumb />
@@ -694,7 +696,7 @@ export function TodayDashboard() {
           </div>
         </div>
 
-        {activityActionError || activityActionMessage ? (
+        {activityActionError || activityActionMessage || activityPins.error ? (
           <div
             className="activity-overview-feedback-region"
             aria-label="활동 처리 결과"
@@ -715,6 +717,17 @@ export function TodayDashboard() {
                 {activityActionMessage}
               </p>
             ) : null}
+            {activityPins.error ? (
+              <div
+                className="activity-form-error activity-overview-feedback activity-pin-feedback"
+                role="alert"
+              >
+                <span>{activityPins.error}</span>
+                <button type="button" onClick={activityPins.clearError}>
+                  닫기
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -723,6 +736,9 @@ export function TodayDashboard() {
           today={today}
           editingActivityId={editingActivityId}
           disabled={isActivitySaving}
+          pinnedItems={activityPins.pinnedItems}
+          pendingPinIds={activityPins.pendingIds}
+          onTogglePin={activityPins.togglePinned}
           onEdit={(activity) => {
             setActivityActionError("");
             setActivityActionMessage("");

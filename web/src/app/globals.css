@@ -9852,7 +9852,18 @@ html:has(.product-shell[data-liquid-glass="true"])[data-scrolling="true"]::-webk
   text-align: center !important;
 }
 
-.activity-data-grid-pin-cell > button,
+.activity-data-grid-pin-cell > button {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--liquid-text-tertiary, var(--activity-muted));
+  cursor: pointer;
+}
+
 .activity-data-grid-actions-cell > button {
   display: inline-grid;
   width: 38px;
@@ -10064,6 +10075,30 @@ html:has(.product-shell[data-liquid-glass="true"])[data-scrolling="true"]::-webk
   margin-bottom: 0;
 }
 
+.activity-pin-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.activity-pin-feedback button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 760;
+}
+
+.activity-pin-feedback button:hover,
+.activity-pin-feedback button:focus-visible {
+  background: rgba(143, 53, 47, 0.08);
+  outline: none;
+}
 .activity-planned-list {
   margin-top: 16px;
   border-top: 1px solid var(--activity-line);

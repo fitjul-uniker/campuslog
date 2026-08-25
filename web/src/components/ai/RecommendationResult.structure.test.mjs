@@ -10,6 +10,10 @@ const styles = await readFile(
   new URL("../../app/globals.css", import.meta.url),
   "utf8",
 );
+const titleSource = await readFile(
+  new URL("../../lib/recommendationResultTitle.ts", import.meta.url),
+  "utf8",
+);
 
 test("추천 결과는 요청한 보조 정보 블록을 렌더링하지 않는다", () => {
   assert.doesNotMatch(source, /requirements\.requiredCompetencies/);
@@ -50,15 +54,24 @@ test("추천 결과는 긴 내용을 보호하는 Liquid Glass section을 사용
 });
 
 test("짧은 질문은 제목으로 유지하고 긴 JD 원문은 접힌 영역에서 확인한다", () => {
-  assert.match(source, /result\.purpose === "jd"/);
-  assert.match(source, /result\.prompt\.trim\(\)\.length > 240/);
-  assert.match(source, /JD 요구사항과 경험 적합도 분석/);
+  assert.match(source, /getRecommendationResultTitle\(result\)/);
+  assert.match(titleSource, /result\.purpose === "jd"/);
+  assert.match(titleSource, /prompt\.length > 240/);
+  assert.match(titleSource, /JD 요구사항과 경험 적합도 분석/);
   assert.match(source, /<h2 id="recommendation-title">\{resultTitle\}<\/h2>/);
   assert.match(source, /입력한 JD 보기/);
   assert.match(source, /recommendation-source-disclosure-content/);
   assert.match(styles, /\.recommendation-source-disclosure/);
   assert.match(source, /recommendation-result-generated-at/);
   assert.doesNotMatch(source, /<dt>추천 생성일<\/dt>/);
+});
+
+test("이미지 단독 자기소개서 제목은 추출 의도와 키워드로 정리한다", () => {
+  assert.match(titleSource, /result\.purpose === "cover_letter"/);
+  assert.match(titleSource, /result\.inputSource === "image"/);
+  assert.match(titleSource, /result\.extractedRequirements\.intent/);
+  assert.match(titleSource, /result\.extractedRequirements\.keywords/);
+  assert.match(titleSource, /자기소개서 문항과 경험 적합도 분석/);
 });
 
 test("현재 추천과 추천 기록은 활동 메타와 질문을 하단에 중복하지 않는다", () => {

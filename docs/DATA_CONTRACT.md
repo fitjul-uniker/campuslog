@@ -48,6 +48,7 @@ Migrations:
 | `experience_followups` | `ExperienceFollowup` | `user_id` | `(user_id, id)` | 경험별 보완 질문 / 답변을 별도 저장. 경험 삭제 시 cascade. 원본 `Experience.description` / `achievements`를 자동 수정하지 않음 |
 | `experience_attachments` | `ExperienceAttachment` | `user_id` | `(user_id, id)`, unique `(user_id, storage_path)` | `(user_id, experience_id)`가 `experiences`를 참조하며 경험 삭제 시 metadata cascade. 경험당 최대 3개 |
 | `favorite_items` | 즐겨찾기 환경설정 | `user_id` | `(user_id, item_type, item_id)` | `experience`·`tracked_activity`·`recommendation` id와 선택 시각 저장. 대상 삭제 trigger로 관련 행 정리 |
+| `dashboard_activity_pins` | 오늘의 기록 진행 활동 고정 환경설정 | `user_id` | `(user_id, activity_id)` | `(user_id, activity_id)`가 `tracked_activities`를 참조하며 활동 삭제 시 cascade. 고정 시각만 저장하고 `favorite_items`와 분리 |
 | `local_data_migration_batches` | migration ledger | `user_id` | unique `(user_id, client_migration_id)` | 사용자 확인 기반 이전 작업 단위 |
 | `local_data_migration_items` | migration ledger | `user_id` | unique `(user_id, entity_type, local_id)` | 재시도 시 동일 로컬 항목 중복 이전 방지 |
 
@@ -71,6 +72,14 @@ Migrations:
 - DB 저장 실패 시 화면의 낙관적 이동을 되돌리고 로컬 원본은 삭제하지 않습니다. 화면을 다시 활성화하면 DB 값을 다시 읽어 다른 기기의 변경을 반영합니다.
 - 완료 경험·진행 활동·추천 기록이 삭제되면 DB trigger가 같은 사용자의 연결된 즐겨찾기를 삭제합니다.
 - Supabase 공개 설정이 없는 개발 미리보기에서는 기존 localStorage adapter를 fallback으로 유지합니다.
+
+## 오늘의 기록 진행 활동 고정 계약
+
+- `/dashboard`의 진행 활동 압정은 `dashboard_activity_pins`에서 사용자별 활동 id·고정 시각을 조회·추가·해제합니다.
+- 고정된 활동은 `pinned_at` 내림차순으로 먼저 표시하고, 고정되지 않은 활동은 기존 활동 정렬을 유지합니다.
+- 이 압정은 `/experiences`의 별 즐겨찾기와 별도 환경설정이며 서로의 선택 상태나 정렬에 영향을 주지 않습니다.
+- 저장 실패 시 화면의 낙관적 이동을 되돌리고, 화면 재활성화 시 DB를 다시 조회합니다. Supabase 설정이 없는 개발 미리보기만 `campuslog:v1:dashboard-activity-pins` localStorage fallback을 사용합니다.
+- 활동이 삭제되면 복합 FK의 `on delete cascade`로 연결된 핀도 삭제합니다.
 
 ## 완료 경험 첨부 계약
 
@@ -113,6 +122,7 @@ Migrations:
 - `inputSource`는 `text`, `image`, `text_and_image` 중 하나이며 기존 row와 migration 미적용 fallback은 `text`로 읽습니다. `20260724000200_recommendation_image_input.sql`은 `recommendations.input_source`만 추가하고 이미지 binary나 data URL column은 만들지 않습니다.
 - 추천 요청의 `images`는 JPG·PNG·WebP data URL 최대 3개로 제한하며 서버가 형식, MIME, base64, 장당 준비 크기를 다시 검증합니다. OpenAI 응답의 `resolvedPrompt`는 추천 기록 `prompt`로 저장해 후속 답변 초안이 이미지에서 읽은 문항을 참조할 수 있게 합니다.
 - v2 추천은 `schemaVersion`, `promptVersion`, `model`, `extractedRequirements`, `matches`를 추가로 저장합니다.
+- `recommendation-v2.2`는 이미지 단독 자기소개서의 `extractedRequirements.intent`를 결과 제목에도 사용할 수 있는 60자 이하의 자연스러운 명사형 문구로 생성합니다. `prompt`에는 OCR로 읽은 원 질문을 계속 보존하며 schema와 DB column은 변경하지 않습니다.
 - `extractedRequirements`는 문항 / 면접 질문 / JD / 지원서 원문에서 추출한 필수 역량, 우대 역량, 키워드, 답변 의도, 제약 조건입니다.
 - `matches`는 최대 3개 추천 경험의 `rank`, `score`, `fitLevel`, `matchReason`, `matchedEvidence`, `missingEvidence`, `overclaimRisks`, `suggestedAngle`, `relatedCompetencies`를 포함합니다.
 - Supabase의 v2 확장 필드는 JSONB 객체 또는 배열로 저장하며, 기존 row는 `schema_version: "v1"`과 빈 v2 구조를 기본값으로 받습니다.
@@ -166,4 +176,5 @@ Migrations:
 - 기록 보완 migration `20260714000400_experience_followups.sql`은 Supabase project 적용 후 로그인 세션에서 분석 부족 정보 답변 저장, 수정, 새로고침 유지, 추천 반영 smoke test가 필요합니다.
 - 추천 이미지 입력 migration `20260724000200_recommendation_image_input.sql`은 Supabase project 적용 후 이미지 기반 추천 저장·재조회와 출처 배지 유지 smoke test가 필요합니다.
 - 계정 즐겨찾기 migration `20260803000100_account_favorites.sql` 기반 저장·조회 흐름은 사용자가 실제 환경에서 직접 로직 테스트를 완료했습니다.
+- 오늘의 기록 활동 핀 migration `20260825000100_dashboard_activity_pins.sql`은 실제 Supabase에 적용했고 REST table·column 응답을 확인했습니다. 로그인 UI 고정·해제·새로고침 smoke test는 후속 확인 대상입니다.
 - SQL-level 또는 자동화된 select / insert / update / delete RLS 정책 검증은 아직 별도 hardening 작업으로 남아 있습니다.

@@ -47,6 +47,9 @@ type ActivityOverviewDataGridProps = {
   editingActivityId?: string;
   onDelete: (activity: TrackedActivity) => void;
   onEdit: (activity: TrackedActivity) => void;
+  onTogglePin: (activityId: string) => void | Promise<void>;
+  pendingPinIds: ReadonlySet<string>;
+  pinnedItems: Readonly<Record<string, string>>;
   today: string;
 };
 
@@ -100,11 +103,13 @@ export function ActivityOverviewDataGrid({
   editingActivityId = "",
   onDelete,
   onEdit,
+  onTogglePin,
+  pendingPinIds,
+  pinnedItems,
   today,
 }: ActivityOverviewDataGridProps) {
   const router = useRouter();
   const [pageIndex, setPageIndex] = useState(0);
-  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [sortDirection, setSortDirection] =
     useState<SortDirection>("ascending");
@@ -132,11 +137,6 @@ export function ActivityOverviewDataGrid({
     [activities, today],
   );
 
-  useEffect(() => {
-    const rowIds = new Set(rows.map((row) => row.activity.id));
-    setPinnedIds((current) => current.filter((id) => rowIds.has(id)));
-  }, [rows]);
-
   const orderedRows = useMemo(() => {
     const direction = sortDirection === "ascending" ? 1 : -1;
     const sortedRows = [...rows].sort((a, b) => {
@@ -149,27 +149,25 @@ export function ActivityOverviewDataGrid({
 
       return String(aValue).localeCompare(String(bValue), "ko-KR") * direction;
     });
-    const pinOrder = new Map(pinnedIds.map((id, index) => [id, index]));
-
     return sortedRows.sort((a, b) => {
-      const aPinned = pinOrder.get(a.activity.id);
-      const bPinned = pinOrder.get(b.activity.id);
+      const aPinned = pinnedItems[a.activity.id];
+      const bPinned = pinnedItems[b.activity.id];
 
-      if (aPinned !== undefined && bPinned !== undefined) {
-        return aPinned - bPinned;
+      if (aPinned && bPinned) {
+        return bPinned.localeCompare(aPinned);
       }
 
-      if (aPinned !== undefined) {
+      if (aPinned) {
         return -1;
       }
 
-      if (bPinned !== undefined) {
+      if (bPinned) {
         return 1;
       }
 
       return 0;
     });
-  }, [pinnedIds, rows, sortDirection, sortKey]);
+  }, [pinnedItems, rows, sortDirection, sortKey]);
 
   const pageSize = 5;
   const pageCount = Math.max(1, Math.ceil(orderedRows.length / pageSize));
@@ -200,12 +198,8 @@ export function ActivityOverviewDataGrid({
   }
 
   function togglePin(activityId: string) {
-    setPinnedIds((current) =>
-      current.includes(activityId)
-        ? current.filter((id) => id !== activityId)
-        : [...current, activityId],
-    );
     setPageIndex(0);
+    void onTogglePin(activityId);
   }
 
   function openActivity(activityId: string) {
@@ -268,7 +262,8 @@ export function ActivityOverviewDataGrid({
             </thead>
             <tbody>
               {pageRows.map((row) => {
-                const isPinned = pinnedIds.includes(row.activity.id);
+                const isPinned = Boolean(pinnedItems[row.activity.id]);
+                const isPinPending = pendingPinIds.has(row.activity.id);
                 const isEditing = editingActivityId === row.activity.id;
 
                 return (
@@ -308,6 +303,8 @@ export function ActivityOverviewDataGrid({
                             : `${row.activity.title} 상단에 고정`
                         }
                         aria-pressed={isPinned}
+                        aria-busy={isPinPending}
+                        disabled={disabled || isPinPending}
                         onClick={() => togglePin(row.activity.id)}
                       >
                         <Pin aria-hidden="true" />
@@ -349,6 +346,7 @@ export function ActivityOverviewDataGrid({
                           className="activity-data-grid-menu"
                         >
                           <DropdownMenuItem
+                            disabled={disabled || isPinPending}
                             onSelect={() => togglePin(row.activity.id)}
                           >
                             {isPinned ? (

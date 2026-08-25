@@ -122,7 +122,8 @@ const recommendationV2ResponseSchema = {
         },
         intent: {
           type: "string",
-          description: "지원자가 답변에서 증명해야 하는 의도",
+          description:
+            "지원자가 답변에서 증명해야 하는 의도. 자기소개서 이미지 단독 입력이면 결과 제목으로도 쓸 수 있는 60자 이내의 자연스러운 명사형 문구",
         },
         constraints: {
           type: "array",
@@ -593,6 +594,7 @@ function createRecommendationPrompt(body: RecommendRequest): string {
         "질문이나 JD를 역량, 기술, 행동, 역할, 성과 단위로 분해합니다.",
         "JD나 긴 원문은 담당 업무, 필수 자격요건, 우대사항, 기술 스택, 요구 경험을 구분합니다.",
         "제약 조건에는 분량, 형식, 직무 조건, 금지사항처럼 답변 전략에 영향을 주는 내용을 넣습니다.",
+        "purpose가 cover_letter이고 이미지 단독 입력이면 extractedRequirements.intent는 문항 의도를 담은 60자 이내의 자연스러운 명사형 문구로 작성합니다.",
       ],
       imageGuidelines: [
         "첨부 이미지가 있으면 표시된 순서대로 모든 이미지의 질문, JD, 요구사항, 우대사항을 읽습니다.",

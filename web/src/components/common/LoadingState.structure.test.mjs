@@ -211,7 +211,7 @@ test("라우트 전환의 시각적 스켈레톤은 세 주요 화면에만 적�
 test("데이터 초기 로딩도 오늘의 기록·나의 활동·CampusLog AI에만 스켈레톤을 유지한다", () => {
   assert.match(
     todaySource,
-    /if \(activities === null\)[\s\S]*?<TodayDashboardHeader today=\{today\} \/>[\s\S]*?<LoadingState[\s\S]*?variant="dashboard"[\s\S]*?showIntro=\{false\}/,
+    /if \(activities === null \|\| !activityPins\.isLoaded\)[\s\S]*?<TodayDashboardHeader today=\{today\} \/>[\s\S]*?<LoadingState[\s\S]*?variant="dashboard"[\s\S]*?showIntro=\{false\}/,
   );
   assert.match(
     experiencesSource,
