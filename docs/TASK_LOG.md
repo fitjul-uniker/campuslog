@@ -30,6 +30,58 @@
 
 ## 작업 로그
 
+### 2026-08-26 - 답변 초안 작성 경험 정돈
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-26 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 경험의 답변 초안을 실제 생성·확인 도구처럼 정돈 (`ISSUE-206`) |
+| 수정한 파일 | `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/globals.css`, `web/src/components/ai/RecommendationResult.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `답변 초안` 제목과 근거 기반 안내를 추가하고 형식 선택을 Liquid Glass segmented tab으로 통합. 생성 전 중복 빈 문장을 제거하고 선택 값·예상 분량·`초안 만들기`를 단일 미리보기 작업면에 배치. 생성 후 같은 위치에서 실제 글자 수·본문·복사·다시 만들기와 근거를 확인. 생성된 형식 상태점, tab/tabpanel 연결, 모바일 action grid와 접근성 fallback을 적용 |
+| 검증한 내용 | 관련 구조 테스트 18개와 전체 구조 테스트 243개 통과, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 개발 서버의 `/recommend` 200 응답과 데스크톱 1280px·모바일 390px에서 가로 overflow 없음 확인 |
+| 남은 작업 | 현재 브라우저 계정에는 추천 가능한 경험이 없어 실제 추천 상세에서 생성 전·후·복사·다시 만들기 상태의 최종 시각 확인은 수행하지 못했으며 후속 smoke test로 유지 |
+| 관련 커밋 메시지 | `style: refine answer draft workspace` |
+
+### 2026-08-26 - 직접 입력 글자 수 control 간소화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-26 |
+| 작업자 | Codex |
+| 작업 요약 | 자기소개서 `직접 입력`의 글자 수 설정을 작은 Liquid Glass control로 축약 (`ISSUE-205`) |
+| 수정한 파일 | `web/src/components/ai/RecommendationResult.tsx`, `web/src/app/globals.css`, `web/src/components/ai/RecommendationResult.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `지원서 글자 수 제한`을 `최대 글자 수`로 줄이고 큰 외곽 카드와 도움말 구분선을 제거. 숫자와 `자`는 native 마우스 증감 화살표가 없는 44px 반투명·blur·specular edge control에 유지하고 안내는 `약 n~n자로 생성` 또는 `100~2000자 입력`으로 축약. 모바일 숫자 키패드·줄바꿈과 focus·invalid·disabled·reduced transparency·forced colors 대체 표현 및 기존 100~2000자 생성 계약은 유지 |
+| 검증한 내용 | 추천 결과·Accordion 대상 테스트 17개와 전체 Node 테스트 242개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 개발 서버를 3000번에서 다시 실행하고 `/recommend` 200 응답, 1280px·390px에서 가로 overflow가 없음을 확인 |
+| 남은 작업 | 브라우저 테스트 계정에 저장 경험이 없어 실제 추천 상세 안의 control 시각 캡처는 수행하지 못했으며 구조·스타일 계약은 테스트와 build로 검증 |
+| 관련 커밋 메시지 | `style: simplify custom answer length control` |
+
+### 2026-08-26 - CampusLog AI 추천 상세 가독성 완화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-26 |
+| 작업자 | Codex |
+| 작업 요약 | 추천 Top 3의 기존 형식과 순서를 보존한 가독성 개선 및 자기소개서 `직접 입력` control 현대화 (`ISSUE-204`) |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/ai/RecommendationAccordion.structure.test.mjs`, `web/src/components/ai/RecommendationResult.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 사용자가 재확인한 범위에 따라 `RecommendationResult` JSX·단일 Accordion·순위/경험명/적합도·`추천 이유 → 직접 근거 → 부족한 근거 → 과장 주의점 → 활용 각도`·답변 초안 순서는 그대로 유지. CSS에서 행 높이·본문 행간·구획 여백을 완화하고 세 근거 칸의 중첩 표면을 하나의 hairline grid로 정리하며 활용 각도도 별도 색면·accent 없이 같은 제목·본문 위계로 통일. 520px 이하 순위, 키보드 focus, reduced motion을 보강. `직접 입력`은 후속 `ISSUE-205`에서 소형 Liquid Glass control로 축약 |
+| 검증한 내용 | 추천 결과·Accordion 대상 테스트 17개와 전체 Node 테스트 242개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. production build 뒤 dev chunk 충돌은 캐시 삭제 없이 3000번 서버 재시작으로 복구했고 `/recommend` 200 응답을 확인. 브라우저 1280×720·390×844에서 실제 추천 진입 화면의 runtime 오류·가로 overflow가 없고 모바일 main/client width 379px가 일치함을 확인 |
+| 남은 작업 | 브라우저 테스트 세션에 저장 경험이 없어 실제 추천 상세 데이터의 시각 캡처는 수행하지 못했으며, 상세 구조·스타일 계약은 구조 테스트와 build로 검증 |
+| 관련 커밋 메시지 | `style: improve recommendation readability` |
+
+### 2026-08-25 - macOS형 포인터 기반 3D 책 표지 클릭 안내
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-25 |
+| 작업자 | Codex |
+| 작업 요약 | 인증 후 3D 책 표지에 별도 문구 없이 가끔 책 정중앙까지 이동하는 macOS형 포인터 안내 추가 (`ISSUE-203`) |
+| 수정한 파일 | `web/src/app/page.tsx`, `web/src/app/globals.css`, `web/src/app/CoverTurnHint.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/USER_FLOW.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 기존 `/dashboard` 책 Link 안에 흰 외곽선의 검은 `MousePointer2`만 추가하고 보이던 `책장을 넘겨주세요.` 문구는 최종 제거. 포인터는 데스크톱 우측·860px 이하 하단 방향에서 책 정중앙까지 이동해 한 번 눌린 뒤 머무르며 12초 주기의 앞 약 8초를 숨김. 작은 클릭 링 외 오로라·그라디언트·광택 변화·별도 원형 버튼은 배제. 책의 기존 WebGL 부유와 포인터 반응은 유지하고 링크 접근 가능 이름에 행동과 `오늘의 기록` 목적지를 함께 명시. hover·focus-visible과 reduced motion에서는 포인터를 책 중앙에 정지 |
+| 검증한 내용 | 신규 구조 테스트 3개와 전체 Node 테스트 241개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 브라우저 기본 데스크톱과 390×844 모바일에서 시각 문구 부재, 12초 주기·초기 opacity 0, 포인터 화살촉과 책 중심 좌표 일치, 가로 overflow 없음을 확인하고 전체 책 Link의 `/dashboard` 이동을 검증. 검증 뒤 localhost:3000 개발 서버를 단일 프로세스로 재시작 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `feat: add book cover turn cue` |
+
 ### 2026-08-25 - 이미지 자기소개서 추천 결과 제목 정리
 
 | 항목 | 내용 |

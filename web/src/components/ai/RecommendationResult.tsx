@@ -198,10 +198,19 @@ function AnswerDraftViewer({
     ? getCustomAnswerDraftCharacterLimit(parsedCustomCharacterCount)
     : null;
   const activeDraft = findDraftByType(draftResult, selectedType);
-  const activeLabel =
-    selectedType === "custom" && activeDraft?.targetCharacterCount
-      ? `${activeDraft.targetCharacterCount}자`
-      : ANSWER_DRAFT_TYPE_LABELS[selectedType];
+  const selectedOption = generationOptions.find(
+    (option) => option.type === selectedType,
+  );
+  const selectedDraftLabel =
+    selectedType === "custom" &&
+    supportsCustomCharacterCount &&
+    isCustomCharacterCountValid
+      ? `${parsedCustomCharacterCount}자`
+      : selectedOption?.label ?? ANSWER_DRAFT_TYPE_LABELS[selectedType];
+  const selectedDraftGuide =
+    selectedType === "custom" && customCharacterLimit
+      ? `약 ${customCharacterLimit.min}~${customCharacterLimit.max}자로 작성`
+      : selectedOption?.description ?? "선택한 형식으로 작성";
   const activeCharacterLimit = getAnswerDraftCharacterLimit(
     selectedType,
     activeDraft?.targetCharacterCount,
@@ -234,6 +243,11 @@ function AnswerDraftViewer({
 
   return (
     <div className="answer-draft-viewer">
+      <div className="answer-draft-viewer-header">
+        <h5>답변 초안</h5>
+        <p>선택한 경험의 기록을 바탕으로 작성합니다.</p>
+      </div>
+
       <div
         className="answer-draft-tabs"
         role="tablist"
@@ -248,7 +262,10 @@ function AnswerDraftViewer({
               key={option.type}
               type="button"
               role="tab"
+              id={`answer-draft-tab-${experienceId}-${option.type}`}
+              aria-controls={`answer-draft-panel-${experienceId}`}
               aria-selected={isActive}
+              aria-label={`${option.label}${hasDraft ? ", 저장된 초안 있음" : ""}`}
               data-has-draft={hasDraft ? "true" : "false"}
               className={
                 isActive
@@ -268,7 +285,7 @@ function AnswerDraftViewer({
       {selectedType === "custom" && supportsCustomCharacterCount ? (
         <div className="answer-draft-custom-length">
           <label htmlFor={`answer-draft-length-${experienceId}`}>
-            지원서 글자 수 제한
+            최대 글자 수
           </label>
           <div className="answer-draft-custom-length-control">
             <input
@@ -290,20 +307,22 @@ function AnswerDraftViewer({
           </div>
           <p id={`answer-draft-length-help-${experienceId}`}>
             {customCharacterLimit
-              ? `${parsedCustomCharacterCount}자 제한에 맞춰 약 ${customCharacterLimit.min}~${customCharacterLimit.max}자로 생성합니다.`
-              : `${CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS}~${CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS} 사이의 숫자를 입력해 주세요.`}
+              ? `약 ${customCharacterLimit.min}~${customCharacterLimit.max}자로 생성`
+              : `${CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS}~${CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS}자 입력`}
           </p>
         </div>
       ) : null}
 
-      <div className="answer-draft-body">
+      <div
+        id={`answer-draft-panel-${experienceId}`}
+        className="answer-draft-body"
+        role="tabpanel"
+        aria-labelledby={`answer-draft-tab-${experienceId}-${selectedType}`}
+      >
         <div className="answer-draft-heading">
           <div>
-            <h5>{activeDraft?.title ?? activeLabel}</h5>
-            <p>
-              {activeDraft?.targetGuide ??
-                `아직 생성하지 않은 ${activeLabel} 초안`}
-            </p>
+            <h5>{activeDraft?.title ?? selectedDraftLabel}</h5>
+            <p>{activeDraft?.targetGuide ?? selectedDraftGuide}</p>
             {activeDraft && activeCharacterLimit ? (
               <p
                 className={
@@ -316,54 +335,60 @@ function AnswerDraftViewer({
               </p>
             ) : null}
           </div>
-          {activeDraft ? (
-            <CopyButton
-              className="button button-secondary"
-              content={activeDraft.content}
-              label="본문 복사"
-              copiedLabel="복사 완료"
-              onCopiedChange={(copied) =>
-                setCopyStatus(copied ? "success" : "idle")
+          <div className="answer-draft-heading-actions">
+            {activeDraft ? (
+              <CopyButton
+                className="button button-secondary"
+                content={activeDraft.content}
+                label="본문 복사"
+                copiedLabel="복사 완료"
+                onCopiedChange={(copied) =>
+                  setCopyStatus(copied ? "success" : "idle")
+                }
+                onCopyError={() => setCopyStatus("failed")}
+              />
+            ) : null}
+            <RippleButton
+              className="button button-secondary answer-draft-generate-button"
+              type="button"
+              disabled={
+                isGenerateDisabled ||
+                (selectedType === "custom" &&
+                  supportsCustomCharacterCount &&
+                  !isCustomCharacterCountValid)
               }
-              onCopyError={() => setCopyStatus("failed")}
-            />
-          ) : null}
+              onClick={() =>
+                onGenerate(
+                  selectedType,
+                  selectedType === "custom" && supportsCustomCharacterCount
+                    ? parsedCustomCharacterCount
+                    : undefined,
+                )
+              }
+            >
+              {isGenerating ? (
+                <Loader2
+                  className="button-icon is-spinning"
+                  aria-hidden="true"
+                />
+              ) : (
+                <FileText className="button-icon" aria-hidden="true" />
+              )}
+              {isGenerating
+                ? "만드는 중..."
+                : activeDraft
+                  ? "다시 만들기"
+                  : supportsCustomCharacterCount
+                    ? "초안 만들기"
+                    : primaryActionLabel}
+              <RippleButtonRipples />
+            </RippleButton>
+          </div>
         </div>
 
         {activeDraft ? (
           <p className="answer-draft-content">{activeDraft.content}</p>
-        ) : (
-          <p className="answer-draft-empty">
-            선택한 버전의 초안을 아직 생성하지 않았습니다.
-          </p>
-        )}
-
-        <RippleButton
-          className="button button-secondary answer-draft-generate-button"
-          type="button"
-          disabled={
-            isGenerateDisabled ||
-            (selectedType === "custom" &&
-              supportsCustomCharacterCount &&
-              !isCustomCharacterCountValid)
-          }
-          onClick={() =>
-            onGenerate(
-              selectedType,
-              selectedType === "custom" && supportsCustomCharacterCount
-                ? parsedCustomCharacterCount
-                : undefined,
-            )
-          }
-        >
-          {isGenerating ? (
-            <Loader2 className="button-icon is-spinning" aria-hidden="true" />
-          ) : (
-            <FileText className="button-icon" aria-hidden="true" />
-          )}
-          {activeDraft ? `${activeLabel} 다시 생성` : primaryActionLabel}
-          <RippleButtonRipples />
-        </RippleButton>
+        ) : null}
 
         {copyStatus === "success" ? (
           <p className="copy-status" role="status">

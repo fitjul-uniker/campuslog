@@ -15,6 +15,33 @@ const styles = await readFile(
   "utf8",
 );
 
+function extractCssBlock(css, marker) {
+  const markerIndex = css.indexOf(marker);
+  assert.notEqual(markerIndex, -1, `${marker} block should exist`);
+  const openingBraceIndex = css.indexOf("{", markerIndex);
+  let depth = 0;
+
+  for (let index = openingBraceIndex; index < css.length; index += 1) {
+    if (css[index] === "{") depth += 1;
+    if (css[index] === "}") depth -= 1;
+    if (depth === 0) return css.slice(openingBraceIndex + 1, index);
+  }
+
+  assert.fail(`${marker} block should close`);
+}
+
+const accordionStyles = styles.slice(
+  styles.indexOf("/* Recommendation match accordion"),
+);
+const mobileAccordionStyles = extractCssBlock(
+  accordionStyles,
+  "@media (max-width: 520px)",
+);
+const reducedMotionAccordionStyles = extractCssBlock(
+  accordionStyles,
+  "@media (prefers-reduced-motion: reduce)",
+);
+
 test("추천 경험은 첫 순위만 기본으로 여는 단일 Accordion을 사용한다", () => {
   assert.match(source, /<Accordion[\s\S]*multiple=\{false\}/);
   assert.match(
@@ -65,7 +92,7 @@ test("닫힌 추천 경험 행은 한 줄 제목과 적합도만으로 빠르게
   );
 });
 
-test("추천 경험 행은 차분한 글자 굵기와 행 전체 hover를 사용한다", () => {
+test("추천 경험 행은 기존 비교 형식을 유지하며 읽기 여백과 포커스를 보강한다", () => {
   assert.match(
     styles,
     /\.recommendation-match-trigger-copy\s*\{[^}]*align-items:\s*baseline;/s,
@@ -92,11 +119,23 @@ test("추천 경험 행은 차분한 글자 굵기와 행 전체 hover를 사용
   );
   assert.match(
     styles,
-    /\.recommendation-match-trigger\s*\{[^}]*height:\s*62px;[^}]*align-items:\s*center;[^}]*padding:\s*2px 2px 0;/s,
+    /\.recommendation-match-trigger\s*\{[^}]*height:\s*auto;[^}]*min-height:\s*68px;[^}]*align-items:\s*center;[^}]*padding:\s*8px 4px 8px 2px;/s,
   );
   assert.match(
     styles,
-    /\.recommendation-match-trigger:focus-visible\s*\{[^}]*outline:\s*1px[^}]*box-shadow:\s*none;/s,
+    /\.recommendation-match-trigger:focus-visible\s*\{[^}]*outline:\s*2px solid #34363a;[^}]*box-shadow:\s*none;/s,
+  );
+  assert.doesNotMatch(
+    mobileAccordionStyles,
+    /\.recommendation-match-rank\s*\{[^}]*display:\s*none;/s,
+  );
+  assert.match(
+    mobileAccordionStyles,
+    /\.recommendation-match-trigger-copy \.recommendation-match-rank\s*\{[^}]*display:\s*block;[^}]*color:\s*#666970;[^}]*font-size:\s*0\.75rem;/s,
+  );
+  assert.match(
+    reducedMotionAccordionStyles,
+    /\.accordion-content,[\s\S]*?\.answer-draft-custom-length-control\s*\{[^}]*transition:\s*none;/,
   );
 });
 

@@ -15,6 +15,29 @@ const titleSource = await readFile(
   "utf8",
 );
 
+function extractCssBlock(css, marker) {
+  const markerIndex = css.indexOf(marker);
+  assert.notEqual(markerIndex, -1, `${marker} block should exist`);
+  const openingBraceIndex = css.indexOf("{", markerIndex);
+  let depth = 0;
+
+  for (let index = openingBraceIndex; index < css.length; index += 1) {
+    if (css[index] === "{") depth += 1;
+    if (css[index] === "}") depth -= 1;
+    if (depth === 0) return css.slice(openingBraceIndex + 1, index);
+  }
+
+  assert.fail(`${marker} block should close`);
+}
+
+const readabilityMarker =
+  "/* Recommendation readability — preserve the existing fields and order. */";
+const readabilityStyles = styles.slice(styles.indexOf(readabilityMarker));
+const readabilityForcedColors = extractCssBlock(
+  readabilityStyles,
+  "@media (forced-colors: active)",
+);
+
 test("추천 결과는 요청한 보조 정보 블록을 렌더링하지 않는다", () => {
   assert.doesNotMatch(source, /requirements\.requiredCompetencies/);
   assert.doesNotMatch(source, /requirements\.keywords/);
@@ -32,12 +55,116 @@ test("추천 결과는 핵심 비교와 생성 흐름을 유지한다", () => {
   assert.match(source, /초안 본문을 클립보드에 복사했습니다/);
 });
 
+test("답변 초안은 형식 선택과 생성·복사 행동을 하나의 작업 영역으로 묶는다", () => {
+  assert.match(source, /<h5>답변 초안<\/h5>/);
+  assert.match(source, /선택한 경험의 기록을 바탕으로 작성합니다/);
+  assert.match(
+    source,
+    /role="tab"[\s\S]*?aria-controls=\{`answer-draft-panel-\$\{experienceId\}`\}/,
+  );
+  assert.match(
+    source,
+    /role="tabpanel"[\s\S]*?aria-labelledby=\{`answer-draft-tab-\$\{experienceId\}-\$\{selectedType\}`\}/,
+  );
+  assert.match(
+    source,
+    /className="answer-draft-heading-actions"[\s\S]*?<CopyButton[\s\S]*?<RippleButton/,
+  );
+  assert.match(source, /"만드는 중\.\.\."/);
+  assert.match(source, /"다시 만들기"/);
+  assert.match(source, /"초안 만들기"/);
+  assert.doesNotMatch(source, /선택한 버전의 초안을 아직 생성하지 않았습니다/);
+  assert.match(
+    styles,
+    /\.answer-draft-tabs\s*\{[^}]*display:\s*grid;[^}]*border-radius:\s*15px;[^}]*backdrop-filter:\s*blur\(18px\) saturate\(125%\);/s,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-body\s*\{[^}]*border-radius:\s*16px;[^}]*background:\s*rgb\(255 255 255 \/ 62%\);[^}]*padding:\s*18px;/s,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-heading-actions\s*\{[^}]*display:\s*inline-flex;[^}]*gap:\s*8px;/s,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-tab:focus-visible\s*\{[^}]*outline:\s*2px solid #34363a;/s,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.answer-draft-tab\.is-active\s*\{[^}]*background:\s*#1d1f23;/s,
+  );
+});
+
+test("추천 상세는 기존 정보 형식과 순서를 유지한 채 읽기 밀도만 완화한다", () => {
+  const matchDetailSource = source.slice(
+    source.indexOf('className="recommendation-match-reason"'),
+  );
+  const labels = [
+    "추천 이유",
+    "직접 근거",
+    "부족한 근거",
+    "과장 주의점",
+    "활용 각도",
+  ];
+  const positions = labels.map((label) => matchDetailSource.indexOf(label));
+
+  assert.ok(positions.every((position) => position >= 0));
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
+  assert.match(
+    readabilityStyles,
+    /\/\* Recommendation readability — preserve the existing fields and order\. \*\//,
+  );
+  assert.match(
+    readabilityStyles,
+    /\.recommendation-match-card\s+\.recommendation-match-details\s*\{[^}]*gap:\s*0;[^}]*border-top:\s*1px solid[^}]*border-bottom:\s*1px solid/s,
+  );
+  assert.match(
+    readabilityStyles,
+    /\.recommendation-match-card\s+\.recommendation-match-angle\s*\{[^}]*margin-top:\s*18px;[^}]*border:\s*0;[^}]*background:\s*transparent;[^}]*padding:\s*0;/s,
+  );
+  assert.doesNotMatch(
+    readabilityStyles,
+    /\.recommendation-result\s+\.recommendation-match-details\s*\{/s,
+  );
+});
+
 test("자기소개서 초안은 사용자가 글자 수 제한을 직접 입력할 수 있다", () => {
-  assert.match(source, /지원서 글자 수 제한/);
+  assert.match(source, /최대 글자 수/);
+  assert.match(source, /약 \$\{customCharacterLimit\.min\}~\$\{customCharacterLimit\.max\}자로 생성/);
+  assert.doesNotMatch(source, /지원서 글자 수 제한/);
   assert.match(source, /CUSTOM_ANSWER_DRAFT_MIN_CHARACTERS/);
   assert.match(source, /CUSTOM_ANSWER_DRAFT_MAX_CHARACTERS/);
   assert.match(source, /customCharacterCount/);
   assert.match(styles, /\.answer-draft-custom-length/);
+  assert.match(
+    styles,
+    /\.answer-draft-custom-length-control:focus-within\s*\{[^}]*border-color:[^}]*background:[^}]*box-shadow:/s,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-custom-length-control:has\(input\[aria-invalid="true"\]\)/,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-custom-length-control\s*\{[^}]*width:\s*116px;[^}]*height:\s*44px;[^}]*backdrop-filter:\s*blur\(18px\) saturate\(135%\);/s,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-custom-length-control input\s*\{[^}]*height:\s*100%;[^}]*min-height:\s*44px;/s,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-custom-length-control input::-webkit-inner-spin-button,[\s\S]*?input::-webkit-outer-spin-button\s*\{[^}]*-webkit-appearance:\s*none;/,
+  );
+  assert.match(
+    styles,
+    /\.answer-draft-custom-length-control:has\(input:disabled\)\s*\{[^}]*cursor:\s*not-allowed;[^}]*opacity:/s,
+  );
+  assert.match(
+    readabilityForcedColors,
+    /\.answer-draft-custom-length-control:focus-within\s*\{[^}]*outline:\s*2px solid Highlight;/,
+  );
 });
 
 test("이미지로 생성한 추천 결과는 출처를 명확히 표시한다", () => {
