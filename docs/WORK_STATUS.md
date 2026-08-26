@@ -9,6 +9,10 @@
 - [x] v1.1 commit / push / Draft PR #27
 - [x] 팀 리뷰와 main merge
 - [x] 2차 MVP 기능 브랜치 시작
+- [x] 추천 경험의 답변 초안을 Liquid Glass segmented 형식 선택과 단일 생성·미리보기·복사 작업면으로 정돈하고 코드·자동화 검증 완료 (`ISSUE-206`, 실제 추천 데이터 시각 smoke test 남음)
+- [x] 자기소개서 `직접 입력`의 큰 설정 표면을 `최대 글자 수`·44px Liquid Glass 숫자 control·짧은 예상 분량으로 축약 (`ISSUE-205`)
+- [x] CampusLog AI 추천 상세의 기존 Accordion·항목·순서를 유지하면서 여백·행간·hairline을 완화하고 자기소개서 `직접 입력` 숫자 control을 현대화 (`ISSUE-204`)
+- [x] 인증 후 3D 책 표지에 별도 문구 없이 가끔 나타나 책 정중앙까지 이동하는 macOS형 포인터와 reduced-motion 정지 적용 (`ISSUE-203`)
 - [x] 시각적 초기 skeleton을 오늘의 기록·나의 활동·CampusLog AI 세 화면에만 유지하고 책 표지·인증·작성·상세·수정·분석·추천 기록은 `sr-only` `LoadingStatus`로 전환 (`ISSUE-199`)
 - [x] CampusLog AI root pending은 실제 제목만 유지하고, 서버 경험 count 판별 뒤 빈 상태형·폼형 중 정확한 본문 skeleton 한 개만 표시 (`ISSUE-198`)
 - [x] 제품 워드마크→3D 책 표지 이동에 출발 화면 skeleton이 끼어드는 문제를 브랜드 문서 이동으로 제거하고, 전용 cover skeleton은 후속 범위 결정에서 제거 (`ISSUE-197`, `ISSUE-199`)
