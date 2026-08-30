@@ -30,6 +30,19 @@
 
 ## 작업 로그
 
+### 2026-08-31 - 답변 초안 사용 근거 간소화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-31 |
+| 작업자 | Codex |
+| 작업 요약 | 답변 초안의 `사용된 근거`에서 경험 원문 반복을 제거하고 추천 매칭 근거만 단일 제목 아래 표시 (`ISSUE-220`) |
+| 수정한 파일 | `web/src/components/ai/RecommendationResult.tsx`, `web/src/components/ai/RecommendationResult.structure.test.mjs`, `web/src/lib/answerDraftEvidencePresentation.ts`, `web/src/lib/answerDraftEvidencePresentation.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 답변 초안 viewer에 현재 추천 match의 `matchedEvidence`를 전달하고 표시용 helper에서 공백·중복과 선택적 `추천 매칭 근거:` 접두 제목을 제거. `사용된 근거` 제목과 기존 부족 정보·과장 주의점은 유지하며 `AnswerDraft.usedEvidence`, AI prompt, API, schema, DB 저장 데이터는 변경하지 않음 |
+| 검증한 내용 | 원격 최신 변경 통합 후 전체 구조·단위 테스트 255개, `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. 로그인된 추천 기록 실제 항목에서 `사용된 근거` 아래 매칭 문장 3개만 표시되고 `원본 설명:`·`추천 매칭 근거:` 텍스트는 각각 0건임을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: simplify answer draft evidence` |
+
 ### 2026-08-29 - 모바일 활동 현황 데스크톱 표 형식 통일
 
 | 항목 | 내용 |

@@ -14,6 +14,10 @@ const titleSource = await readFile(
   new URL("../../lib/recommendationResultTitle.ts", import.meta.url),
   "utf8",
 );
+const evidencePresentationSource = await readFile(
+  new URL("../../lib/answerDraftEvidencePresentation.ts", import.meta.url),
+  "utf8",
+);
 
 function extractCssBlock(css, marker) {
   const markerIndex = css.indexOf(marker);
@@ -53,6 +57,18 @@ test("추천 결과는 핵심 비교와 생성 흐름을 유지한다", () => {
   assert.match(source, /추천 이유/);
   assert.match(source, /AnswerDraftViewer/);
   assert.match(source, /초안 본문을 클립보드에 복사했습니다/);
+});
+
+test("답변 초안의 사용된 근거는 추천 매칭 문장만 중복 제목 없이 표시한다", () => {
+  assert.match(source, /getAnswerDraftRecommendationEvidence/);
+  assert.match(source, /matchedEvidence=\{match\.matchedEvidence\}/);
+  assert.match(source, /items=\{displayedEvidence\}/);
+  assert.match(source, /<h6>사용된 근거<\/h6>/);
+  assert.match(
+    evidencePresentationSource,
+    /\^추천 매칭 근거\\s\*:\\s\*/,
+  );
+  assert.doesNotMatch(source, /items=\{activeDraft\.usedEvidence\}/);
 });
 
 test("답변 초안은 형식 선택과 생성·복사 행동을 하나의 작업 영역으로 묶는다", () => {

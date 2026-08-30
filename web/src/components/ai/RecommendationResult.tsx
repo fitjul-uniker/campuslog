@@ -40,6 +40,7 @@ import {
   getCustomAnswerDraftCharacterLimit,
   isValidCustomAnswerDraftCharacterCount,
 } from "@/lib/answerDraftResult";
+import { getAnswerDraftRecommendationEvidence } from "@/lib/answerDraftEvidencePresentation";
 import { requestAnswerDraftsStream } from "@/lib/answerDraftApi";
 import { mergeAnalysisGapAnswersIntoAnalysis } from "@/lib/analysisGapAnswers";
 import { formatDateTime } from "@/lib/date";
@@ -160,6 +161,7 @@ function DraftEvidenceList({
 function AnswerDraftViewer({
   draftResult,
   experienceId,
+  matchedEvidence,
   selectedType,
   onSelectType,
   isGenerating,
@@ -171,6 +173,7 @@ function AnswerDraftViewer({
 }: {
   draftResult?: AnswerDraftResult;
   experienceId: string;
+  matchedEvidence: string[];
   selectedType: ActiveAnswerDraftType;
   onSelectType: (type: ActiveAnswerDraftType) => void;
   isGenerating: boolean;
@@ -198,6 +201,9 @@ function AnswerDraftViewer({
     ? getCustomAnswerDraftCharacterLimit(parsedCustomCharacterCount)
     : null;
   const activeDraft = findDraftByType(draftResult, selectedType);
+  const displayedEvidence = getAnswerDraftRecommendationEvidence(
+    matchedEvidence,
+  );
   const selectedOption = generationOptions.find(
     (option) => option.type === selectedType,
   );
@@ -406,8 +412,8 @@ function AnswerDraftViewer({
             <div>
               <h6>사용된 근거</h6>
               <DraftEvidenceList
-                items={activeDraft.usedEvidence}
-                emptyText="표시할 근거가 없습니다."
+                items={displayedEvidence}
+                emptyText="표시할 추천 매칭 근거가 없습니다."
               />
             </div>
             <div>
@@ -1470,6 +1476,7 @@ export function RecommendationResult({
                       <AnswerDraftViewer
                         draftResult={answerDrafts}
                         experienceId={matchedExperience.id}
+                        matchedEvidence={match.matchedEvidence}
                         selectedType={selectedDraftType}
                         onSelectType={(type) =>
                           setSelectedDraftTypes((currentTypes) => ({
