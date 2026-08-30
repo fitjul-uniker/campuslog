@@ -102,6 +102,42 @@ test("활동 표는 데스크톱에서 가로 스크롤 없이 한 행으로 맞
   );
 });
 
+test("활동 표는 모바일에서도 데스크톱 열 형식을 유지하고 내부에서만 스크롤한다", () => {
+  assert.match(
+    dataGridSource,
+    /className="activity-data-grid-scroll"[\s\S]*role="region"[\s\S]*aria-label="활동 현황 표"[\s\S]*aria-describedby="activity-data-grid-scroll-hint"[\s\S]*tabIndex=\{0\}/,
+  );
+  assert.match(dataGridSource, /좌우로 스크롤해 모든 열을 확인/);
+  assert.match(
+    styles,
+    /@media \(max-width: 860px\)[\s\S]*?\.activity-data-grid table\s*\{[^}]*min-width:\s*720px;/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 640px\)[\s\S]*?\.activity-data-grid table\s*\{[^}]*min-width:\s*640px;/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 640px\)[\s\S]*?\.activity-data-grid-scroll\s*\{[^}]*overflow-x:\s*auto;[^}]*overflow-y:\s*hidden;[^}]*overscroll-behavior-inline:\s*contain;/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.activity-data-grid table,\s*\.activity-data-grid tbody\s*\{[^}]*display:\s*block/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.activity-data-grid thead\s*\{[^}]*clip-path:\s*inset\(50%\)/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.activity-data-grid tbody tr\s*\{[^}]*display:\s*grid/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.activity-data-grid tbody td\[data-label\]::before/,
+  );
+});
+
 test("행 hover와 고정 상태를 배경·채움으로만 구분하고 메뉴 열림은 폭을 잠그지 않는다", () => {
   assert.match(
     styles,
@@ -128,6 +164,21 @@ test("오늘의 기록 핵심 영역은 페이지별 Liquid Glass 계층을 사�
   assert.match(
     calendarSource,
     /activity-calendar-navigation liquid-control-group/,
+  );
+});
+
+test("모바일 캘린더 헤더는 기간 선택과 이동 컨트롤을 한 행에 배치한다", () => {
+  assert.match(
+    styles,
+    /@media \(max-width: 640px\)[\s\S]*?\.activity-calendar-header\s*\{[^}]*align-items:\s*center;[^}]*flex-direction:\s*row;[^}]*gap:\s*8px;/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 640px\)[\s\S]*?\.activity-calendar-navigation\s*\{[^}]*width:\s*auto;[^}]*flex:\s*0 0 auto;[^}]*justify-content:\s*flex-end;/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 450px\)[\s\S]*?\.activity-calendar-year-trigger\s*\{[^}]*width:\s*82px;[\s\S]*?\.activity-calendar-month-trigger\s*\{[^}]*width:\s*62px;/,
   );
 });
 

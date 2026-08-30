@@ -30,6 +30,174 @@
 
 ## 작업 로그
 
+### 2026-08-29 - 모바일 활동 현황 데스크톱 표 형식 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록 활동 현황을 모바일에서도 데스크톱과 같은 머리글·열 순서·단일 행 table로 표시 (`ISSUE-219`) |
+| 수정한 파일 | `web/src/components/activities/ActivityOverviewDataGrid.tsx`, `web/src/app/globals.css`, `web/src/components/activities/TodayDashboard.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 640px 이하에서 thead를 숨기고 tbody·행·셀을 카드 Grid로 바꾸던 CSS를 제거. 모든 폭에서 pin·활동·상태·시작일·종료일·행 메뉴의 62px table 행을 유지하고 모바일 최소 폭은 640px로 압축. 부족한 폭은 `role=region`·접근성 이름·설명·키보드 초점이 있는 `.activity-data-grid-scroll` 내부에서만 x축 스크롤하며 활동명 말줄임·정렬·pin·행 상세·메뉴 계약은 보존 |
+| 검증한 내용 | 관련 누적 구조 테스트 57개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 1280×720은 clientWidth=scrollWidth=859px·overflow hidden, 587×1044는 640px 표·내부 최대 스크롤 136px, 390×844는 640px 표·상태 badge 첫 화면 완전 노출을 확인. 세 폭 모두 thead `table-header-group`, 행 `table-row`·62px, root 가로 overflow 0이며 내부 스크롤 우측 끝에서 행 메뉴 표시 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: keep activity grid table layout on mobile` |
+
+### 2026-08-29 - 백그라운드 AI 상태 문구 순환 적용
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 백그라운드로 전환한 AI 작업의 compact pending 상태에도 전체 화면 분석처럼 여러 상태 문구가 순환하도록 적용 (`ISSUE-218`) |
+| 수정한 파일 | `web/src/components/ai/AIBackgroundTaskProvider.tsx`, `web/src/components/ai/AIBackgroundTaskCenter.tsx`, `web/src/components/ai/AIBackgroundTaskProvider.structure.test.mjs`, `web/src/hooks/use-experience-analysis-task.ts`, `web/src/app/recommend/page.tsx`, `web/src/components/activities/ActivityDetailClient.tsx`, `web/src/components/ai/RecommendationResult.tsx`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 공용 AI 작업 정의에 작업별 `pendingMessages`를 추가하고 경험 분석·추천·활동 종료 합성·답변 초안에 전체 화면 대기 UX와 맞춘 문장 3개씩을 연결. compact 상태는 실제 서버 상태·기본 문장·작업별 문장을 중복 제거해 2.4초마다 순환하며 서버 상태 갱신 시 index를 0으로 되돌리지 않음. 시각 순환 문구는 `aria-hidden`, 실제 현재 상태는 `sr-only` 라이브 상태로 분리해 반복 낭독을 방지 |
+| 검증한 내용 | 관련 누적 구조 테스트 56개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 네 AI 작업 정의의 순환 문구 연결과 2.4초 modulo 갱신·index 비초기화·접근성 분리를 검증했으며 최신 개발 서버에서 526×886·390×844 대시보드 root 가로 overflow 0 확인. 브라우저 확인 시 진행 중 작업이 없어 새 과금 AI 요청은 만들지 않음 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: rotate background AI status messages` |
+
+### 2026-08-29 - 완료 경험 역할 구획 양식 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 완료 경험 상세의 역할 제목·본문 양식을 활동 내용·성과와 통일 (`ISSUE-216`) |
+| 수정한 파일 | `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/app/globals.css`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 역할 행에 전용 class를 추가하되 `dl/dt/dd` 의미 구조는 유지. 제목의 하단 10px·700 굵기·letter spacing과 본문의 400 굵기·글자 크기·1.75/1.88 행간·최대 폭을 활동 내용·성과 스타일과 공유하고 구획 상하 padding·경험 데이터는 보존 |
+| 검증한 내용 | 관련 누적 구조 테스트 44개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 1154×886과 390×844 독립 완료 경험 상세에서 역할과 활동 내용의 제목 간격·굵기·letter spacing, 본문 크기·굵기·행간·색, 구획 상하 padding이 모두 일치하고 데스크톱 최대 폭도 같으며 root 가로 overflow 0임을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: unify experience detail role layout` |
+
+### 2026-08-29 - AI 분석 첫 구획 간격 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 분석 결과 hairline과 첫 `경험 요약` 제목 사이의 과한 간격을 이후 구획과 통일 (`ISSUE-217`) |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/experiences/ExperienceAnalysisClient.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 분석 상세에만 `.analysis-result-header`의 공통 24px 하단 margin을 제거하고 첫 구획의 22px 상단 padding과 헤더 1px hairline은 유지. 다른 상세·추천 헤더의 공통 margin에는 영향 없음 |
+| 검증한 내용 | 관련 누적 구조 테스트 44개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 1154×886과 390×844에서 hairline→첫 제목 22px, 이후 구획 border→제목 23px, root 가로 overflow 0을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align analysis summary spacing` |
+
+### 2026-08-29 - AI 분석 결과 이중 구분선 제거
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 독립 AI 분석 결과 헤더 아래의 중복 구분선을 모든 화면 폭에서 하나로 정리 (`ISSUE-215`) |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/experiences/ExperienceAnalysisClient.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 861px 이상 media query 안에 있던 첫 `경험 요약` 상단선 제거 selector를 전체 breakpoint 공통 범위로 이동. 결과 헤더가 소유한 기존 1px 하단 hairline은 유지 |
+| 검증한 내용 | 관련 누적 구조 테스트 44개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 828×886과 390×844에서 결과 헤더 하단 1px solid, 첫 구획 상단 0px none, root 가로 overflow 0을 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: remove duplicate analysis divider` |
+
+### 2026-08-29 - AI 분석 헤더 복귀 액션 단일화
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 독립 AI 분석 헤더에서 중복 `나의 활동으로 돌아가기`를 제거하고 `활동 경험 상세` 단일 복귀 액션을 데스크톱·모바일에 유지 (`ISSUE-214`) |
+| 수정한 파일 | `web/src/components/experiences/ExperienceAnalysisClient.tsx`, `web/src/components/experiences/ExperienceAnalysisClient.structure.test.mjs`, `web/src/app/globals.css`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 정상 분석 헤더의 `/experiences` 중복 링크를 제거하고 동적 경험 상세 링크의 ArrowLeft·경로는 유지한 채 문구를 `활동 경험 상세`로 축약. 데스크톱은 nowrap과 54px 상단 여백으로 기존 선택된 두 번째 버튼 위치를 유지하고, 860px 이하에서는 H1 161px 안전 여백·우측 상단 absolute 액션·자연 높이 header로 설명과 분석 표면 겹침을 방지. 경험을 찾지 못한 EmptyState의 `나의 활동으로 돌아가기`는 유효한 상세 목적지가 없으므로 유지 |
+| 검증한 내용 | 관련 단위·구조 테스트 44개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 877×802에서 단일 버튼이 기존 두 번째 버튼과 같은 y=129.98px·145.05×44px·우측 끝에 있고, 390×844에서 H1과 15.95px 간격·분석 표면 겹침 0px·root 가로 overflow 없음 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: simplify analysis header navigation` |
+
+### 2026-08-29 - 모바일 경험 상세 복귀 액션 우측 상단 정렬
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 독립 완료 경험 상세의 모바일 `나의 활동` 복귀 액션을 데스크톱과 같은 H1 우측 상단에 배치 (`ISSUE-213`) |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 860px 이하의 독립 경험 상세에만 헤더 relative·복귀 액션 absolute 우측 상단 배치를 적용하고 모바일 전역의 전체 폭·세로 버튼 규칙을 auto·row로 재정의. H1에만 132px 우측 안전 여백을 두어 설명은 전체 폭을 유지하고 기존 ArrowLeft·문구·`/experiences` 경로·44px 조작 영역은 보존 |
+| 검증한 내용 | 관련 단위·구조 테스트 38개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 550×802와 390×844 브라우저에서 `나의 활동` 버튼 115.52×44px, 18px 아이콘, H1과 16.48px 간격, 상세 Glass 겹침 0px, root 가로 overflow 없음 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align mobile experience detail back action` |
+
+### 2026-08-29 - 모바일 CampusLog AI 브랜드 서체 통일
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | 모바일 상단 앱 바의 `CampusLog AI`에서 `CampusLog`를 PC 메뉴와 같은 브랜드 워드마크체로 통일 (`ISSUE-212`) |
+| 수정한 파일 | `web/src/components/layout/Navigation.tsx`, `web/src/app/globals.css`, `web/src/components/layout/AppShell.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/IA.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | `/recommend` 메뉴의 데스크톱 전용 분할 markup을 공통화해 모바일에서도 `CampusLog`는 브랜드 serif, `AI`는 UI 서체로 표시. 전체 문구와 링크 접근성 이름 `CampusLog AI`, 경로·활성 상태·키보드 동작은 유지 |
+| 검증한 내용 | 관련 단위·구조 테스트 37개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 581×802와 390×844 브라우저에서 `CampusLog` Petrona 800·`AI` Pretendard 600, 전체 접근성 이름, 5px 간격, 44px 높이, 워드마크·다른 메뉴·계정 버튼 무겹침과 root 가로 overflow 없음 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: match mobile CampusLog AI branding` |
+
+### 2026-08-29 - 모바일 추천 기록 아이콘·문구 동시 표시
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-29 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog AI 추천 헤더의 모바일 `추천 기록` 액션에 History 아이콘과 문구를 함께 표시 (`ISSUE-211`) |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/app/recommend/page.structure.test.mjs`, `docs/CURRENT_PHASE.md`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 640px 이하에서도 18px History 아이콘과 `추천 기록` 문구를 유지하고 간격 6px·좌우 padding 10px의 44px ghost capsule로 조정. 제목 copy의 100px 우측 안전 여백, nowrap, 링크 경로와 접근성 이름은 유지 |
+| 검증한 내용 | 관련 단위·구조 테스트 37개, `npm run lint`, `npx tsc --noEmit`, `npm run build` 통과. 496×802와 390×844 브라우저에서 18×18px History 아이콘·`추천 기록` 문구, 버튼 94.44×44px, 제목과 5.56px 간격, root 가로 overflow 없음 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: show mobile recommendation history icon and label` |
+
+### 2026-08-28 - 추천 화면 설명 한 줄 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-28 |
+| 작업자 | Codex |
+| 작업 요약 | CampusLog AI 추천 화면의 긴 활용 안내를 모바일 한 줄 copy로 정리 (`ISSUE-210`) |
+| 수정한 파일 | `web/src/app/recommend/recommendationPagePresentation.ts`, `web/src/app/recommend/recommendationPagePresentation.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 설명을 `지원 문항·JD에 맞는 경험을 찾아보세요.`로 축약. nowrap이나 작은 글자 override를 추가하지 않아 기존 반응형 글자 크기·읽기 흐름과 overflow 보호를 유지 |
+| 검증한 내용 | 관련 단위·구조 테스트 32개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 449×802와 390×844 브라우저에서 한 줄 표시, 기존 0.9rem 글자 크기·23.76px line-height, root 가로 overflow 없음 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: refine mobile recommendation header` |
+
+### 2026-08-28 - 모바일 완료 경험 상세 액션 대칭 정리
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-28 |
+| 작업자 | Codex |
+| 작업 요약 | 나의 활동 모바일 완료 경험 상세의 우측 단독 여백과 마지막 AI 분석 반쪽 배치를 제거해 좌우 대칭 액션 구성으로 정리 (`ISSUE-209`) |
+| 수정한 파일 | `web/src/components/experiences/DashboardExperienceDetail.tsx`, `web/src/app/globals.css`, `web/src/components/experiences/DashboardExperienceDetail.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 분석 요청·결과에 공통 `dashboard-analysis-action`을 추가하고 640px 이하에서 전체 폭으로 지정. 선택 상태 액션 영역의 오른쪽 전용 44px padding을 제거해 좌우 inset을 동일하게 맞추고 `상세 보기` 전체 폭 → `수정/삭제` 동일 2열 → AI 분석 전체 폭 순서를 유지 |
+| 검증한 내용 | 관련 단위·구조 테스트 32개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 449×802 로그인 브라우저에서 AI 분석 요청 상태의 좌우 inset 각각 20px, 전체 폭 버튼 364px, 수정·삭제 각각 177.5px, 모든 버튼 44px 높이와 root 가로 overflow 없음 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: balance mobile experience actions` |
+
+### 2026-08-28 - 모바일 상단 메뉴 원래 제목 복원
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-28 |
+| 작업자 | Codex |
+| 작업 요약 | 모바일 상단 앱 바의 `오늘 / 활동 / AI` 축약 메뉴를 `오늘의 기록 / 나의 활동 / CampusLog AI` 원래 제목으로 복원 (`ISSUE-208`) |
+| 수정한 파일 | `web/src/components/layout/Navigation.tsx`, `web/src/app/globals.css`, `web/src/components/layout/AppShell.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 모바일 전용 중복 `mobileLabel`을 제거해 데스크톱·모바일이 같은 원문을 사용. 420px 이하에서는 워드마크와 메뉴 글자·간격·padding만 축소하고 각 링크의 44px 높이와 기존 경로·활성 상태·접근성 계약은 유지 |
+| 검증한 내용 | 관련 구조 테스트 18개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 574×1044와 390×844 로그인 브라우저에서 세 원래 제목 표시, 워드마크·내비게이션·계정 메뉴 무겹침, root 가로 overflow 없음, 각 링크 44px 높이를 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: show full mobile navigation labels` |
+
+### 2026-08-28 - 모바일 캘린더 헤더 우측 정렬
+
+| 항목 | 내용 |
+| --- | --- |
+| 날짜 | 2026-08-28 |
+| 작업자 | Codex |
+| 작업 요약 | 오늘의 기록 캘린더 모바일 헤더에서 이전·오늘·다음 control group을 연·월 Select와 같은 행의 우측 상단으로 이동 (`ISSUE-207`) |
+| 수정한 파일 | `web/src/app/globals.css`, `web/src/components/activities/TodayDashboard.structure.test.mjs`, `docs/DESIGN.md`, `docs/SCREEN_SPEC.md`, `docs/WORK_STATUS.md`, `docs/TODO.md`, `docs/ISSUE_LOG.md`, `docs/TASK_LOG.md` |
+| 변경 내용 | 640px 이하 캘린더 헤더를 가로 배치로 유지하고 월 이동 control group을 고정 폭 우측 정렬. 450px 이하에서는 연·월 Select의 폭·gap·padding만 축소해 이동 버튼의 44px 터치 높이와 기존 기능·접근 가능한 이름을 보존 |
+| 검증한 내용 | 구조 회귀 테스트 15개, `npm run lint`, `npx tsc --noEmit`, `npm run build`, `git diff --check` 통과. 499×1044와 390×844 로그인 브라우저에서 두 control group 동일 행, 우측 끝 정렬, root 가로 overflow 없음, 이동 버튼 44px 높이를 확인 |
+| 남은 작업 | 없음 |
+| 관련 커밋 메시지 | `fix: align mobile calendar controls` |
 ### 2026-08-26 - 답변 초안 작성 경험 정돈
 
 | 항목 | 내용 |

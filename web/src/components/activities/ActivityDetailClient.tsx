@@ -291,6 +291,11 @@ export function ActivityDetailClient({ id }: ActivityDetailClientProps) {
       targetId: sourceActivity.id,
       title: `${sourceActivity.title} 완료 경험 정리`,
       pendingMessage: "CampusLog AI가 날짜별 기록을 정리하고 있어요.",
+      pendingMessages: [
+        "날짜별 기록의 흐름을 살펴보고 있어요.",
+        "하나의 완료 경험으로 묶을 내용을 정리하고 있어요.",
+        "초안에 쓸 수 있는 성과와 부족한 정보를 확인하고 있어요.",
+      ],
       successMessage: "완료 경험 초안이 준비되었습니다.",
       sourceHref: `/activities/${sourceActivity.id}`,
       resultHref: `/activities/${sourceActivity.id}`,

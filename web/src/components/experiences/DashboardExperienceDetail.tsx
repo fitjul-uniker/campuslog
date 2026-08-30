@@ -99,7 +99,7 @@ export function DashboardExperienceDetail({
   );
   const analysisAction = canRequestAnalysis ? (
     <AnimatedGradientActionButton
-      className="dashboard-detail-action dashboard-analysis-request"
+      className="dashboard-detail-action dashboard-analysis-action dashboard-analysis-request"
       type="button"
       onClick={onAnalyze}
       disabled={isAnalyzing}
@@ -111,7 +111,7 @@ export function DashboardExperienceDetail({
   ) : analysis && isFullscreen ? (
     <Link
       href={`/experiences/${experience.id}/analysis`}
-      className="dashboard-detail-action"
+      className="dashboard-detail-action dashboard-analysis-action"
     >
       <BarChart3 aria-hidden="true" />
       AI 분석 결과
@@ -119,7 +119,7 @@ export function DashboardExperienceDetail({
   ) : analysis && onOpenAnalysis ? (
     <button
       type="button"
-      className="dashboard-detail-action"
+      className="dashboard-detail-action dashboard-analysis-action"
       onClick={(event) => onOpenAnalysis(event.currentTarget)}
       aria-expanded={isAnalysisOpen}
       aria-controls="dashboard-analysis-split-panel"
@@ -179,7 +179,7 @@ export function DashboardExperienceDetail({
           <dt>활동 기간</dt>
           <dd>{experience.period}</dd>
         </div>
-        <div>
+        <div className="dashboard-detail-role">
           <dt>역할</dt>
           <dd>{experience.role}</dd>
         </div>

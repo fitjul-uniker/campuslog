@@ -25,6 +25,7 @@ export type AITaskDefinition = {
   targetId: string;
   title: string;
   pendingMessage: string;
+  pendingMessages: string[];
   successMessage: string;
   sourceHref: string;
   resultHref: string;

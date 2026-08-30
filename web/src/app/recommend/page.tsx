@@ -237,6 +237,11 @@ export default function RecommendPage() {
       targetId: RECOMMENDATION_TASK_KEY,
       title: `${purposeConfig.label} 경험 추천`,
       pendingMessage: "CampusLog AI가 요구사항과 경험을 비교하고 있어요.",
+      pendingMessages: [
+        "질문의 핵심 요구사항을 살펴보고 있어요.",
+        "선별된 후보 경험과 분석 결과를 비교하고 있어요.",
+        "적합한 경험과 추천 근거를 정리하고 있어요.",
+      ],
       successMessage: "AI 경험 추천이 완료되었습니다.",
       sourceHref: "/recommend",
       resultHref: "/recommend/history",

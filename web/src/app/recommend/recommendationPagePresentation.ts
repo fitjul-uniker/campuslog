@@ -11,7 +11,7 @@ export type RecommendationEmptyStatePresentation = {
 };
 
 export const RECOMMENDATION_PAGE_DESCRIPTION =
-  "지원 문항이나 JD에 어떤 경험을 쓸지 고민될 때 활용해 보세요.";
+  "지원 문항·JD에 맞는 경험을 찾아보세요.";
 
 export function getRecommendationEmptyStatePresentation(
   trackedActivityCount: number,

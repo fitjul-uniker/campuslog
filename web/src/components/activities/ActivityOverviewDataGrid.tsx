@@ -209,7 +209,16 @@ export function ActivityOverviewDataGrid({
   return (
     <div className="activity-data-grid" data-testid="activity-data-grid">
       {rows.length > 0 ? (
-        <div className="activity-data-grid-scroll">
+        <div
+          className="activity-data-grid-scroll"
+          role="region"
+          aria-label="활동 현황 표"
+          aria-describedby="activity-data-grid-scroll-hint"
+          tabIndex={0}
+        >
+          <span id="activity-data-grid-scroll-hint" className="sr-only">
+            화면이 좁을 때는 좌우로 스크롤해 모든 열을 확인할 수 있습니다.
+          </span>
           <table>
             <caption className="sr-only">
               활동별 상태, 시작일과 종료일
