@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, MousePointer2 } from "lucide-react";
 
 import { AuthForm } from "@/components/auth/AuthForm";
 import { HeroBook3D } from "@/components/hero/HeroBook3D";
@@ -27,9 +27,14 @@ function AuthenticatedCover() {
       <Link
         href="/dashboard"
         className="closed-notebook"
-        aria-label="대시보드로 이동"
+        aria-label="책장을 넘겨 오늘의 기록으로 이동"
       >
         <HeroBook3D />
+        <span className="cover-turn-hint" aria-hidden="true">
+          <span className="cover-turn-hint-cursor">
+            <MousePointer2 aria-hidden="true" />
+          </span>
+        </span>
         <h1 id="cover-title" className="sr-only">
           CampusLog
         </h1>
