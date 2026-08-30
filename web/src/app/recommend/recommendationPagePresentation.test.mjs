@@ -9,7 +9,7 @@ import {
 test("추천 화면은 사용자가 경험을 고르는 상황을 설명한다", () => {
   assert.equal(
     RECOMMENDATION_PAGE_DESCRIPTION,
-    "지원 문항이나 JD에 어떤 경험을 쓸지 고민될 때 활용해 보세요.",
+    "지원 문항·JD에 맞는 경험을 찾아보세요.",
   );
 });
 

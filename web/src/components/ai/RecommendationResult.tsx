@@ -837,6 +837,11 @@ export function RecommendationResult({
       targetId: match.experienceId,
       title: `${match.experienceTitle} 답변 초안`,
       pendingMessage: "CampusLog AI가 답변 초안을 작성하고 있어요.",
+      pendingMessages: [
+        "질문과 선택 경험의 연결 지점을 확인하고 있어요.",
+        "근거가 있는 문장만 사용해 초안을 작성하고 있어요.",
+        "답변의 구조와 목표 분량을 다듬고 있어요.",
+      ],
       successMessage: "답변 초안이 완성되었습니다.",
       sourceHref: pathname,
       resultHref: `/recommend/history?recommendationId=${encodeURIComponent(result.id)}`,

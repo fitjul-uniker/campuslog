@@ -57,6 +57,25 @@ test("인라인 완료 경험 상세에 삭제 액션을 연결한다", () => {
   );
 });
 
+test("모바일 상세 액션은 좌우 여백을 맞추고 분석 액션을 전체 폭으로 표시한다", () => {
+  assert.match(
+    detailSource,
+    /dashboard-detail-action dashboard-analysis-action dashboard-analysis-request/,
+  );
+  assert.match(
+    detailSource,
+    /dashboard-detail-action dashboard-analysis-action/,
+  );
+  assert.match(
+    globalCssSource,
+    /@media \(max-width: 640px\)[\s\S]*?\.dashboard-analysis-action\s*\{[^}]*width:\s*100%;[^}]*grid-column:\s*1 \/ -1;/,
+  );
+  assert.doesNotMatch(
+    globalCssSource,
+    /\.dashboard-experience-page\.has-selection \.dashboard-detail-actions\s*\{[^}]*padding-right:/,
+  );
+});
+
 test("분석 스플릿뷰가 열리면 왼쪽 상세는 중복 로딩 오버레이를 만들지 않는다", () => {
   assert.match(detailSource, /\{isAnalyzing && !isAnalysisOpen \? \(/);
   assert.match(detailSource, /\{analysisError && !isAnalysisOpen \? \(/);
@@ -149,12 +168,32 @@ test("상세는 현재 우측 슬롯에서 퇴장한 뒤 선택을 해제한다"
 
 test("활동 기간과 역할은 각각 전체 폭의 독립 행으로 표시한다", () => {
   assert.match(
+    detailSource,
+    /<div className="dashboard-detail-role">\s*<dt>역할<\/dt>\s*<dd>\{experience\.role\}<\/dd>/,
+  );
+  assert.match(
     globalCssSource,
     /\.dashboard-detail-meta\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)[^}]*gap:\s*0[^}]*padding:\s*0/s,
   );
   assert.match(
     globalCssSource,
     /\.dashboard-detail-meta\s*>\s*div\s*\{[^}]*border-bottom:\s*1px solid var\(--liquid-divider, #ededeb\)[^}]*padding:\s*24px 0/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.product-shell\[data-liquid-glass="true"\]\s+\.dashboard-experience-detail\s+\.dashboard-detail-meta\s+\.dashboard-detail-role\s+dt\s*\{[^}]*margin:\s*0 0 10px[^}]*font-weight:\s*700[^}]*letter-spacing:\s*0\.02em/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.product-shell\[data-liquid-glass="true"\]\s+\.dashboard-experience-detail\s+\.dashboard-detail-meta\s+\.dashboard-detail-role\s+dd\s*\{[^}]*font-size:\s*0\.95rem[^}]*font-weight:\s*400[^}]*line-height:\s*1\.75/s,
+  );
+  assert.match(
+    globalCssSource,
+    /\.product-shell\[data-liquid-glass="true"\]\s+\.product-surface\s+\.sub-page\s+\.dashboard-experience-detail\.is-fullscreen\s+\.dashboard-detail-meta\s+\.dashboard-detail-role\s+dd\s*\{[^}]*font-size:\s*1rem[^}]*line-height:\s*1\.88/s,
+  );
+  assert.match(
+    globalCssSource,
+    /@media \(max-width: 640px\)[\s\S]*?\.product-shell\[data-liquid-glass="true"\]\s+\.product-surface\s+\.sub-page\s+\.dashboard-experience-detail\.is-fullscreen\s+\.dashboard-detail-meta\s+\.dashboard-detail-role\s+dd\s*\{[^}]*font-size:\s*0\.94rem[^}]*line-height:\s*1\.78/s,
   );
 });
 
@@ -239,6 +278,17 @@ test("독립 경험 상세는 나의 활동 페이지 헤더와 카드 제목 �
   assert.match(
     globalCssSource,
     /\.dashboard-experience-detail-scroll\s*>\s*\*\s*\{[^}]*transform:\s*translateY\(var\(--standalone-page-intro-scroll-offset\)\)/s,
+  );
+});
+
+test("독립 경험 상세의 복귀 액션은 모바일에서도 헤더 우측 상단을 유지한다", () => {
+  assert.match(
+    globalCssSource,
+    /@media \(max-width: 860px\)[\s\S]*?\.experience-detail-page\s+\.experience-detail-page-heading\s*\{[^}]*position:\s*relative[^}]*display:\s*block[^}]*\}[\s\S]*?\.experience-detail-page\s+\.experience-detail-page-heading\s+h1\s*\{[^}]*padding-right:\s*132px[^}]*\}/s,
+  );
+  assert.match(
+    globalCssSource,
+    /@media \(max-width: 860px\)[\s\S]*?\.experience-detail-page\s+\.experience-detail-page-header-actions\s*\{[^}]*position:\s*absolute[^}]*top:\s*0[^}]*right:\s*0[^}]*width:\s*auto[^}]*flex-direction:\s*row[^}]*\}[\s\S]*?\.experience-detail-page\s+\.experience-detail-page-header-actions\s+\.button\s*\{[^}]*width:\s*auto[^}]*flex:\s*0 0 auto[^}]*white-space:\s*nowrap[^}]*\}/s,
   );
 });
 

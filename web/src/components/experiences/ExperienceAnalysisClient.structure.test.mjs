@@ -20,14 +20,40 @@ function count(text, pattern) {
   return text.split(pattern).length - 1;
 }
 
-test("분석 페이지 복귀 링크는 상단 헤더에만 배치한다", () => {
+test("분석 페이지 헤더는 활동 경험 상세 복귀 링크만 배치한다", () => {
   assert.match(source, /className="page-stack sub-page analysis-detail-page"/);
   assert.match(headerSource, /href=\{`\/experiences\/\$\{experience\.id\}`\}/);
-  assert.match(headerSource, /활동 경험 상세로 돌아가기/);
-  assert.match(headerSource, /href="\/experiences"/);
-  assert.match(headerSource, /나의 활동으로 돌아가기/);
-  assert.equal(count(source, "활동 경험 상세로 돌아가기"), 1);
-  assert.equal(count(source, "나의 활동으로 돌아가기"), 2);
+  assert.match(
+    headerSource,
+    /<ArrowLeft className="button-icon" aria-hidden="true" \/>[\s\S]*활동 경험 상세/,
+  );
+  assert.equal(count(headerSource, "<Link"), 1);
+  assert.doesNotMatch(headerSource, /href="\/experiences"/);
+  assert.doesNotMatch(headerSource, /나의 활동으로 돌아가기/);
+  assert.doesNotMatch(headerSource, /활동 경험 상세로 돌아가기/);
+  assert.equal(count(source, "나의 활동으로 돌아가기"), 1);
+});
+
+test("단일 활동 경험 상세 액션은 기존 두 번째 버튼 위치와 한 줄 높이를 유지한다", () => {
+  assert.match(
+    styles,
+    /\.analysis-page-header-actions\s+\.button\s*\{[^}]*white-space:\s*nowrap[^}]*\}/s,
+  );
+  assert.match(
+    styles,
+    /@media \(min-width: 861px\)[\s\S]*?\.analysis-detail-page\s+\.analysis-page-header-actions\s*\{[^}]*margin-top:\s*54px[^}]*\}/s,
+  );
+});
+
+test("단일 활동 경험 상세 액션은 모바일에서도 헤더 우측 상단을 유지한다", () => {
+  assert.match(
+    styles,
+    /@media \(max-width: 860px\)[\s\S]*?\.analysis-detail-page\s*>\s*\.standalone-page-intro\s*>\s*\.sub-page-heading\s*\{[^}]*position:\s*relative[^}]*display:\s*block[^}]*height:\s*auto[^}]*min-height:\s*var\(--product-page-heading-min-height\)[^}]*\}/s,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 860px\)[\s\S]*?\.analysis-detail-page\s+\.sub-page-heading\s+h1\s*\{[^}]*padding-right:\s*161px[^}]*\}[\s\S]*?\.analysis-detail-page\s+\.analysis-page-header-actions\s*\{[^}]*position:\s*absolute[^}]*top:\s*0[^}]*right:\s*0[^}]*width:\s*auto[^}]*flex-direction:\s*row[^}]*\}[\s\S]*?\.analysis-detail-page\s+\.analysis-page-header-actions\s+\.button\s*\{[^}]*width:\s*auto[^}]*flex:\s*0 0 auto[^}]*\}/s,
+  );
 });
 
 test("분석 페이지 하단에는 분석 실행 버튼만 유지한다", () => {
@@ -61,7 +87,11 @@ test("독립 분석 결과는 좌측 메뉴 하단에 맞춘 내부 스크롤 �
   );
   assert.match(
     styles,
-    /\.analysis-result-header\s*\+\s*\.detail-section\s*\{[^}]*border-top:\s*0/s,
+    /\.product-shell\[data-liquid-glass="true"\]\s+\.analysis-detail-page\s+\.analysis-result-header\s*\+\s*\.detail-section\s*\{[^}]*border-top:\s*0/s,
+  );
+  assert.match(
+    styles,
+    /\.product-shell\[data-liquid-glass="true"\]\s+\.analysis-detail-page\s+\.analysis-result-header\s*\{[^}]*margin-bottom:\s*0/s,
   );
   assert.match(source, /const pageHeader = \([\s\S]*standalone-page-intro/);
   assert.match(

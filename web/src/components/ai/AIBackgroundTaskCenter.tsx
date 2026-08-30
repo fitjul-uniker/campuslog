@@ -2,6 +2,7 @@
 
 import { CheckCircle2, RotateCcw, Sparkles, X, XCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import {
   useAIBackgroundTasks,
@@ -18,6 +19,45 @@ function getTaskResultHref(task: AITaskSnapshot): string {
   return typeof recommendationId === "string" && recommendationId
     ? `/recommend/history?recommendationId=${encodeURIComponent(recommendationId)}`
     : task.resultHref;
+}
+
+function getPendingMessages(task: AITaskSnapshot): string[] {
+  return Array.from(
+    new Set(
+      [task.statusMessage, task.pendingMessage, ...task.pendingMessages]
+        .map((message) => message.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function AIBackgroundTaskPendingMessage({
+  task,
+}: {
+  task: AITaskSnapshot;
+}) {
+  const messages = getPendingMessages(task);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  useEffect(() => {
+    if (messages.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCurrentMessageIndex(
+        (previousIndex) => (previousIndex + 1) % messages.length,
+      );
+    }, 2_400);
+
+    return () => window.clearInterval(intervalId);
+  }, [messages.length]);
+
+  return (
+    <p aria-hidden="true">
+      {messages[currentMessageIndex % messages.length] ?? task.pendingMessage}
+    </p>
+  );
 }
 
 export function AIBackgroundTaskCenter() {
@@ -63,13 +103,16 @@ export function AIBackgroundTaskCenter() {
 
             <div className="ai-background-task-copy">
               <strong>{task.title}</strong>
-              <p>
-                {isPending
-                  ? task.statusMessage || task.pendingMessage
-                  : isSuccess
-                    ? task.successMessage
-                    : task.errorMessage}
-              </p>
+              {isPending ? (
+                <>
+                  <span className="sr-only">
+                    {task.statusMessage || task.pendingMessage}
+                  </span>
+                  <AIBackgroundTaskPendingMessage task={task} />
+                </>
+              ) : (
+                <p>{isSuccess ? task.successMessage : task.errorMessage}</p>
+              )}
             </div>
 
             <div className="ai-background-task-actions">

@@ -56,6 +56,24 @@ test("active navigation keeps route semantics and the shell is responsive", asyn
   assert.match(routeTransition, /pendingPathname/);
   assert.match(routeTransition, /setPendingPathname\(null\)/);
   assert.match(navigation, /prefers-reduced-motion: reduce/);
+  assert.doesNotMatch(navigation, /mobileLabel/);
+  assert.doesNotMatch(navigation, /mobileMark/);
+  assert.match(
+    navigation,
+    /label: "오늘의 기록"[\s\S]*label: "나의 활동"[\s\S]*label: "CampusLog AI"/,
+  );
+  assert.match(
+    navigation,
+    /aria-label=\{item\.href === "\/recommend" \? item\.label : undefined\}/,
+  );
+  assert.match(
+    navigation,
+    /item\.href === "\/recommend" && "is-campuslog-ai"[\s\S]*item\.href === "\/recommend" \?[\s\S]*navigation-campuslog-brand[\s\S]*CampusLog[\s\S]*<span>AI<\/span>/,
+  );
+  assert.match(
+    globals,
+    /\.navigation-campuslog-brand\s*\{[^}]*font-family:\s*var\(--font-serif\);[^}]*font-weight:\s*800;/,
+  );
   assert.match(globals, /\.product-shell\[data-liquid-glass="true"\]/);
   assert.match(globals, /#eef1f6/i);
   assert.match(globals, /@media \(min-width: 861px\)/);

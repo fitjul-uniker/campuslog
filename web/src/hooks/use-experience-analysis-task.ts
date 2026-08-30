@@ -46,6 +46,11 @@ export function useExperienceAnalysisTask({
       targetId: experienceId,
       title: `${experienceTitle} 경험 분석`,
       pendingMessage: "CampusLog AI가 경험을 정리하고 있어요.",
+      pendingMessages: [
+        "경험 기록의 핵심 내용을 살펴보고 있어요.",
+        "STAR 구조와 주요 성과를 정리하고 있어요.",
+        "부족한 정보와 활용 키워드를 확인하고 있어요.",
+      ],
       successMessage: "경험 분석이 완료되었습니다.",
       sourceHref,
       resultHref: `/experiences/${experienceId}/analysis`,

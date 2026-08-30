@@ -15,17 +15,14 @@ const navigationItems = [
   {
     href: "/dashboard",
     label: "오늘의 기록",
-    mobileLabel: "오늘",
   },
   {
     href: "/experiences",
     label: "나의 활동",
-    mobileLabel: "활동",
   },
   {
     href: "/recommend",
     label: "CampusLog AI",
-    mobileLabel: "AI",
   },
 ];
 
@@ -240,22 +237,19 @@ export function Navigation({ variant = "desktop" }: NavigationProps) {
                   : "location"
                 : undefined
             }
+            aria-label={item.href === "/recommend" ? item.label : undefined}
           >
             <span
               className={cn(
                 "navigation-label",
-                item.href === "/recommend" &&
-                  variant === "desktop" &&
-                  "is-campuslog-ai",
+                item.href === "/recommend" && "is-campuslog-ai",
               )}
             >
-              {item.href === "/recommend" && variant === "desktop" ? (
+              {item.href === "/recommend" ? (
                 <>
                   <span className="navigation-campuslog-brand">CampusLog</span>
                   <span>AI</span>
                 </>
-              ) : variant === "mobile" ? (
-                item.mobileLabel
               ) : (
                 item.label
               )}

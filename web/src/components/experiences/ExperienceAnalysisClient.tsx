@@ -226,10 +226,7 @@ export function ExperienceAnalysisClient({ id }: ExperienceAnalysisClientProps) 
             className="button button-secondary"
           >
             <ArrowLeft className="button-icon" aria-hidden="true" />
-            활동 경험 상세로 돌아가기
-          </Link>
-          <Link href="/experiences" className="button button-secondary">
-            나의 활동으로 돌아가기
+            활동 경험 상세
           </Link>
         </div>
       </section>

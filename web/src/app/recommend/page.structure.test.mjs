@@ -52,3 +52,22 @@ test("추천 화면과 추천 기록의 우측 상단 액션은 공통 44px 기�
     /\.recommendation-history-new svg\s*\{[^}]*width:\s*18px[^}]*height:\s*18px/,
   );
 });
+
+test("추천 기록 액션은 모바일에서 History 아이콘과 텍스트를 함께 유지한다", () => {
+  assert.match(
+    scaffoldSource,
+    /<History className="button-icon" aria-hidden="true" \/>[\s\S]*추천 기록/,
+  );
+  assert.match(
+    styles,
+    /\.recommendation-page-header-copy\s*\{[^}]*padding-right:\s*100px;/,
+  );
+  assert.match(
+    styles,
+    /\.product-shell\[data-liquid-glass="true"\]\s*\.product-surface\s*\.recommendation-page\s*\.recommendation-header-link\.button\.liquid-capsule\s*\{[^}]*width:\s*auto;[^}]*min-width:\s*0;[^}]*flex:\s*0 0 auto;[^}]*gap:\s*6px;[^}]*padding:\s*8px 10px;[^}]*font-size:\s*0\.82rem;[^}]*white-space:\s*nowrap;/,
+  );
+  assert.match(
+    styles,
+    /\.recommendation-header-link\.button\.liquid-capsule\s*\.button-icon\s*\{[^}]*flex:\s*0 0 18px;/,
+  );
+});
